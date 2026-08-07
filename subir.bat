@@ -43,7 +43,7 @@ git commit -m "%commit_message%"
 :: 4. Subir archivos al repositorio
 echo.
 echo [INFO] Subiendo archivos a GitHub...
-git push origin main
+git push -f origin main
 
 :: 5. Si se especifico version, crear y subir el tag correspondiente
 if not "%version%"=="" (

@@ -2506,6 +2506,9 @@ jQuery(document).ready(function($) {
 		// Actualizar estado de botones y números en la UI
 		$('#wpat_seo_audit_page_num').text(seoAuditCurrentPage);
 		$('#wpat_seo_audit_total_pages').text(totalPages);
+		if (!$('#wpat_seo_audit_goto_page').is(':focus')) {
+			$('#wpat_seo_audit_goto_page').attr('max', totalPages).val(seoAuditCurrentPage);
+		}
 
 		$('#wpat_seo_audit_prev_btn').prop('disabled', seoAuditCurrentPage <= 1);
 		$('#wpat_seo_audit_next_btn').prop('disabled', seoAuditCurrentPage >= totalPages);
@@ -2537,6 +2540,29 @@ jQuery(document).ready(function($) {
 		var totalPages = parseInt($('#wpat_seo_audit_total_pages').text(), 10) || 1;
 		if (seoAuditCurrentPage < totalPages) {
 			seoAuditCurrentPage++;
+			applySeoTableFilters();
+		}
+	});
+
+	// Salto directo de página en la paginación SEO Audit
+	$(document).on('input change', '#wpat_seo_audit_goto_page', function(e) {
+		var totalPages = parseInt($('#wpat_seo_audit_total_pages').text(), 10) || 1;
+		var rawVal = $(this).val();
+		if (rawVal === '') {
+			return; // Permitir borrar temporalmente el valor para escribir
+		}
+		var page = parseInt(rawVal, 10);
+		if (isNaN(page)) {
+			return;
+		}
+		if (page < 1) {
+			page = 1;
+		}
+		if (page > totalPages) {
+			page = totalPages;
+		}
+		if (seoAuditCurrentPage !== page) {
+			seoAuditCurrentPage = page;
 			applySeoTableFilters();
 		}
 	});

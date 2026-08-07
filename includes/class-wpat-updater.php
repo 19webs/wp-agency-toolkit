@@ -56,7 +56,7 @@ class WPAT_Updater {
 	private function __construct() {
 		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_for_update' ) );
 		add_filter( 'plugins_api', array( $this, 'plugin_popup_info' ), 20, 3 );
-		add_filter( 'upgrader_post_install', array( $this, 'post_install' ), 10, 3 );
+		add_filter( 'upgrader_source_selection', array( $this, 'rename_github_source' ), 10, 4 );
 	}
 
 	/**
@@ -121,6 +121,12 @@ class WPAT_Updater {
 	 * Compara versiones y notifica a WordPress si hay una nueva actualización.
 	 */
 	public function check_for_update( $transient ) {
+		// Si se está forzando la comprobación nativa de WordPress, limpiar nuestra caché de GitHub
+		if ( isset( $_GET['force-check'] ) ) {
+			delete_transient( 'wpat_github_update_check' );
+			$this->github_response = null;
+		}
+
 		if ( empty( $transient->checked ) ) {
 			return $transient;
 		}
@@ -221,16 +227,16 @@ class WPAT_Updater {
 	}
 
 	/**
-	 * Corrige el nombre de la carpeta tras la instalación de la actualización de GitHub.
-	 * GitHub suele nombrar la carpeta descargada como "nombre-repo-tag" o "nombre-repo-branch".
+	 * Corrige el nombre de la carpeta en el directorio temporal de actualizaciones.
+	 * WordPress luego moverá la carpeta con el nombre correcto a la carpeta de plugins.
 	 */
-	public function post_install( $true, $hook_extra, $result ) {
-		// Solo aplicar si la actualización corresponde a nuestro propio plugin
-		if ( ! isset( $hook_extra['plugin'] ) || $hook_extra['plugin'] !== $this->plugin_slug ) {
-			return $result;
-		}
-
+	public function rename_github_source( $source, $remote_source, $upgrader, $hook_extra = array() ) {
 		global $wp_filesystem;
+
+		// 1. Asegurar que es nuestro plugin comprobando el archivo principal en la carpeta temporal
+		if ( ! file_exists( $source . '/wp-agency-toolkit.php' ) ) {
+			return $source;
+		}
 
 		// Asegurar que el objeto filesystem existe
 		if ( empty( $wp_filesystem ) ) {
@@ -238,23 +244,21 @@ class WPAT_Updater {
 			WP_Filesystem();
 		}
 
-		// Carpeta donde debería estar el plugin
-		$proper_destination = WP_PLUGIN_DIR . '/' . $this->plugin_dir;
+		// Carpeta destino correcta en la ruta temporal (ej: wp-content/upgrade/wp-agency-toolkit)
+		$correct_destination = trailingslashit( dirname( $source ) ) . $this->plugin_dir;
 
-		// Si el resultado de la instalación tiene una carpeta destino diferente
-		if ( isset( $result['destination'] ) && $result['destination'] !== $proper_destination ) {
-			// Eliminar la carpeta destino si ya existe para evitar errores de movimiento
-			if ( $wp_filesystem->exists( $proper_destination ) ) {
-				$wp_filesystem->delete( $proper_destination, true );
-			}
-
-			$move = $wp_filesystem->move( $result['destination'], $proper_destination );
-			if ( $move ) {
-				$result['destination'] = $proper_destination;
-			}
+		// Si ya existe la carpeta destino temporal, borrarla primero
+		if ( $wp_filesystem->exists( $correct_destination ) ) {
+			$wp_filesystem->delete( $correct_destination, true );
 		}
 
-		return $result;
+		// Renombrar la carpeta de origen a la carpeta destino correcta
+		$move = $wp_filesystem->move( $source, $correct_destination, true );
+		if ( $move ) {
+			return $correct_destination;
+		}
+
+		return $source;
 	}
 }
 

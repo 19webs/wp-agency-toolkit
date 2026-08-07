@@ -2807,8 +2807,11 @@ class WPAT_Admin {
 
 											<!-- Paginación SEO Audit -->
 											<div id="wpat_seo_audit_pagination" style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px 15px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 13px;">
-												<div style="font-weight: 600; color: #475569;">
+												<div style="font-weight: 600; color: #475569; display: flex; align-items: center; gap: 8px;">
 													Página <span id="wpat_seo_audit_page_num">1</span> de <span id="wpat_seo_audit_total_pages">1</span>
+													<span style="color: #cbd5e1; margin: 0 4px;">|</span>
+													Ir a la página:
+													<input type="number" id="wpat_seo_audit_goto_page" min="1" max="1" value="1" style="width: 60px; height: 26px; padding: 0 5px; font-size: 12px; border-radius: 4px; border: 1px solid #cbd5e1; text-align: center; margin: 0; display: inline-block;">
 												</div>
 												<div style="display: flex; gap: 8px;">
 													<button type="button" id="wpat_seo_audit_prev_btn" class="button button-small" disabled>Anterior</button>

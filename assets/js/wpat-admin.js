@@ -2673,6 +2673,8 @@ jQuery(document).ready(function($) {
 				$status.text('Error de conexión.');
 			}
 		});
+	});
+
 	// 8. Comprobación de actualización por AJAX (sin recarga de página)
 	$(document).on('click', '#wpat_force_update_check_btn', function(e) {
 		e.preventDefault();

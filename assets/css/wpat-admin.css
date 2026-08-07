@@ -1,0 +1,579 @@
+/**
+ * Estilos para el Panel de Administración de WP Agency Toolkit
+ */
+
+:root {
+	--wpat-primary: #2271b1;
+	--wpat-primary-hover: #135e96;
+	--wpat-bg-card: #ffffff;
+	--wpat-bg-panel: #f6f7f7;
+	--wpat-border: #dcdcde;
+	--wpat-text: #2c3338;
+	--wpat-text-light: #646970;
+	--wpat-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+	--wpat-shadow-hover: 0 4px 6px rgba(0,0,0,0.05), 0 2px 10px rgba(0,0,0,0.08);
+	--wpat-success: #46b450;
+}
+
+.wpat-admin-wrapper {
+	margin: 20px 20px 0 0;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	color: var(--wpat-text);
+}
+
+/* Header del plugin */
+.wpat-header {
+	background: linear-gradient(135deg, #1d2327 0%, #2c3338 100%);
+	color: #fff;
+	padding: 30px 40px;
+	border-radius: 8px 8px 0 0;
+	box-shadow: var(--wpat-shadow);
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 20px;
+}
+
+.wpat-title-area h1 {
+	color: #fff;
+	font-size: 28px;
+	font-weight: 700;
+	margin: 0 0 8px 0;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	line-height: 1;
+}
+
+.wpat-badge {
+	background: var(--wpat-primary);
+	font-size: 13px;
+	padding: 4px 10px;
+	border-radius: 4px;
+	font-weight: 500;
+	letter-spacing: 0.5px;
+}
+
+.wpat-title-area .description {
+	color: #c3c4c7;
+	font-size: 15px;
+	margin: 0;
+}
+
+/* Contenedor principal con pestañas laterales o superiores */
+.wpat-container {
+	display: flex;
+	background: var(--wpat-bg-card);
+	border: 1px solid var(--wpat-border);
+	border-top: none;
+	border-radius: 0 0 8px 8px;
+	box-shadow: var(--wpat-shadow);
+	min-height: 500px;
+}
+
+/* Navegación por pestañas lateral */
+.wpat-tabs-nav {
+	width: 250px;
+	background: #f0f0f1;
+	border-right: 1px solid var(--wpat-border);
+	display: flex;
+	flex-direction: column;
+	border-radius: 0 0 0 8px;
+}
+
+.wpat-tab-link {
+	background: none;
+	border: none;
+	border-bottom: 1px solid var(--wpat-border);
+	color: var(--wpat-text);
+	padding: 16px 20px;
+	text-align: left;
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	transition: all 0.2s ease;
+	outline: none;
+}
+
+.wpat-tab-link span.dashicons {
+	color: var(--wpat-text-light);
+	transition: color 0.2s ease;
+}
+
+.wpat-tab-link:hover {
+	background: #e4e6e8;
+}
+
+.wpat-tab-link.active {
+	background: var(--wpat-bg-card);
+	color: var(--wpat-primary);
+	border-right: 3px solid var(--wpat-primary);
+	width: calc(100% + 1px); /* Cubre el borde derecho */
+}
+
+.wpat-tab-link.active span.dashicons {
+	color: var(--wpat-primary);
+}
+
+/* Paneles de Contenido */
+.wpat-tabs-content {
+	flex: 1;
+	padding: 40px;
+	background: var(--wpat-bg-card);
+	border-radius: 0 0 8px 0;
+}
+
+.wpat-tab-panel {
+	display: none;
+}
+
+.wpat-tab-panel.active {
+	display: block;
+	animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+	from { opacity: 0; transform: translateY(4px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+
+.wpat-tab-panel h2 {
+	font-size: 22px;
+	font-weight: 600;
+	margin-top: 0;
+	margin-bottom: 5px;
+}
+
+.section-desc {
+	color: var(--wpat-text-light);
+	font-size: 14px;
+	margin-bottom: 30px;
+}
+
+/* Tarjetas de Módulo */
+.wpat-module-card {
+	background: #fafafa;
+	border: 1px solid var(--wpat-border);
+	border-radius: 6px;
+	margin-bottom: 24px;
+	overflow: hidden;
+	box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+	transition: all 0.2s ease;
+}
+
+.wpat-module-card:hover {
+	box-shadow: var(--wpat-shadow-hover);
+	border-color: #ccd0d4;
+}
+
+.wpat-module-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 20px 24px;
+	background: #ffffff;
+	border-bottom: 1px solid var(--wpat-border);
+}
+
+.wpat-module-info h3 {
+	margin: 0 0 4px 0;
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--wpat-text);
+}
+
+.wpat-module-info p {
+	margin: 0;
+	color: var(--wpat-text-light);
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+/* Switches / Toggles tipo iOS */
+.wpat-switch {
+	position: relative;
+	display: inline-block;
+	width: 48px;
+	height: 24px;
+}
+
+.wpat-switch input {
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+.wpat-slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #cbd5e1;
+	transition: .3s;
+	border-radius: 24px;
+}
+
+.wpat-slider:before {
+	position: absolute;
+	content: "";
+	height: 18px;
+	width: 18px;
+	left: 3px;
+	bottom: 3px;
+	background-color: white;
+	transition: .3s;
+	border-radius: 50%;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.wpat-switch input:checked + .wpat-slider {
+	background-color: var(--wpat-success);
+}
+
+.wpat-switch input:checked + .wpat-slider:before {
+	transform: translateX(24px);
+}
+
+.wpat-switch input:focus + .wpat-slider {
+	box-shadow: 0 0 1px var(--wpat-success);
+}
+
+/* Cuerpo desplegable del módulo */
+.wpat-module-body {
+	padding: 24px;
+	background: #fcfcfc;
+	border-top: 1px solid rgba(0,0,0,0.02);
+}
+
+.wpat-field-group {
+	margin-bottom: 20px;
+}
+
+.wpat-field-group:last-child {
+	margin-bottom: 0;
+}
+
+.wpat-field-group label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 8px;
+	font-size: 13px;
+}
+
+.wpat-field-group label input[type="checkbox"] {
+	margin-right: 6px;
+	vertical-align: middle;
+}
+
+.wpat-field-group select {
+	min-width: 250px;
+}
+
+/* Subidor de Logotipo */
+.logo-uploader-container {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	max-width: 500px;
+}
+
+.logo-uploader-container .regular-text {
+	width: 100%;
+}
+
+.wpat-image-preview {
+	border: 1px dashed var(--wpat-border);
+	padding: 10px;
+	background: #fff;
+	display: inline-block;
+	border-radius: 4px;
+	max-width: 200px;
+}
+
+.wpat-image-preview img {
+	max-width: 100%;
+	display: block;
+	height: auto;
+}
+
+/* Prefijo para slugs de Hide Login */
+.wpat-input-prefix-container {
+	display: flex;
+	align-items: stretch;
+	max-width: 500px;
+	border: 1px solid var(--wpat-border);
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.wpat-input-prefix {
+	background: #f0f0f1;
+	padding: 8px 12px;
+	border-right: 1px solid var(--wpat-border);
+	font-size: 13px;
+	color: var(--wpat-text-light);
+	display: flex;
+	align-items: center;
+	user-select: none;
+}
+
+.wpat-input-prefix-container input {
+	border: none !important;
+	box-shadow: none !important;
+	flex: 1;
+	padding: 8px 12px !important;
+	margin: 0 !important;
+}
+
+/* Área de código y Snippets */
+textarea.code {
+	font-family: Consolas, Monaco, monospace;
+	font-size: 13px;
+	background: #f0f0f1;
+	padding: 12px;
+	border-radius: 4px;
+	line-height: 1.5;
+}
+
+/* Contenedor de Botón de Guardado */
+.wpat-save-btn-container {
+	margin-top: 20px;
+	text-align: right;
+}
+
+.wpat-save-btn {
+	background-color: var(--wpat-primary) !important;
+	border-color: var(--wpat-primary) !important;
+	transition: all 0.2s ease !important;
+}
+
+.wpat-save-btn:hover {
+	background-color: var(--wpat-primary-hover) !important;
+	border-color: var(--wpat-primary-hover) !important;
+	transform: translateY(-1px);
+}
+
+/* Ajustes Responsive */
+@media (max-width: 782px) {
+	.wpat-container {
+		flex-direction: column;
+	}
+	.wpat-tabs-nav {
+		width: 100%;
+		border-right: none;
+		border-bottom: 1px solid var(--wpat-border);
+		flex-direction: row;
+		overflow-x: auto;
+	}
+	.wpat-tab-link {
+		border-bottom: none;
+		border-right: 1px solid var(--wpat-border);
+		padding: 12px 16px;
+		white-space: nowrap;
+	}
+	.wpat-tab-link.active {
+		border-right: none;
+		border-bottom: 3px solid var(--wpat-primary);
+		width: auto;
+	}
+	.wpat-tabs-content {
+		padding: 20px;
+	}
+}
+
+/* Subcampos Indentados */
+.wpat-sub-field {
+	margin-left: 28px;
+	padding-left: 14px;
+	border-left: 2px solid var(--wpat-border);
+	margin-top: 15px;
+	margin-bottom: 15px;
+	animation: fadeIn 0.25s ease-in-out;
+}
+
+/* Salud & Base de Datos */
+.wpat-health-grid {
+	margin-top: 15px;
+}
+
+.wpat-health-table tr {
+	transition: background-color 0.2s ease;
+}
+
+.wpat-health-table tr:hover {
+	background-color: #f8fafc;
+}
+
+.wpat-db-counter {
+	transition: color 0.3s ease;
+}
+
+.wpat-db-clean-btn {
+	min-width: 80px;
+	text-align: center;
+}
+
+/* Toast Notifications */
+.wpat-toast {
+	animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+	from {
+		transform: translateY(100px);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+/* Animación de rotación para actualizaciones */
+.wpat-spin {
+	animation: wpat-spin-anim 1s linear infinite;
+	display: inline-block;
+}
+
+@keyframes wpat-spin-anim {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
+
+/* --- IMPORTADOR DE KITS DE PLANTILLAS --- */
+#wpat_kit_dragdrop_zone {
+	transition: all 0.3s ease;
+}
+
+#wpat_kit_dragdrop_zone:hover {
+	border-color: #9333ea;
+	background-color: #faf5ff !important;
+}
+
+.wpat-kit-card {
+	transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wpat-kit-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.12), 0 4px 4px -2px rgba(0, 0, 0, 0.04);
+	border-color: #cbd5e1 !important;
+}
+
+.wpat-tpl-card-admin {
+	transition: all 0.2s ease;
+}
+
+.wpat-tpl-card-admin:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+	border-color: #cbd5e1 !important;
+}
+
+.wpat-tpl-thumb {
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+	background-color: #f1f5f9;
+}
+
+/* Botón de Colapsar/Desplegar Ajustes en tarjetas de módulos */
+.wpat-collapse-btn {
+	background: none !important;
+	border: none !important;
+	padding: 0 !important;
+	cursor: pointer;
+	color: #94a3b8 !important;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 4px;
+	transition: all 0.2s ease;
+}
+
+.wpat-collapse-btn:hover {
+	color: var(--wpat-primary) !important;
+	background-color: #f1f5f9 !important;
+}
+
+.wpat-collapse-btn .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+	transition: transform 0.2s ease;
+}
+
+.wpat-collapse-btn.collapsed .dashicons {
+	transform: rotate(180deg);
+}
+
+/* --- OPTIMIZACIÓN SEO --- */
+.wpat-seo-tab-btn {
+	transition: all 0.15s ease;
+}
+.wpat-seo-tab-btn:hover {
+	background: #f1f5f9 !important;
+	border-color: #94a3b8 !important;
+}
+.wpat-seo-tab-btn.active {
+	background: #3b82f6 !important;
+	color: #fff !important;
+	border-color: #2563eb !important;
+}
+
+#wpat-seo-google-preview-mobile,
+#wpat-seo-google-preview-desktop {
+	transition: opacity 0.2s ease;
+}
+
+.wpat-seo-google-preview-box h3:hover {
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+#wpat_seo_title_input:focus,
+#wpat_seo_slug_input:focus,
+#wpat_seo_desc_input:focus,
+#wpat_seo_og_image_input:focus {
+	border-color: #3b82f6 !important;
+	outline: none !important;
+	box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+.wpat-seo-metabox-container input,
+.wpat-seo-metabox-container textarea {
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Auditoría SEO */
+#wpat_seo_audit_results table th {
+	background: #f8fafc;
+	border-bottom: 2px solid #e2e8f0;
+}
+#wpat_seo_audit_results table tr:hover {
+	background-color: #f1f5f9;
+}
+
+/* Pestañas de metabox SEO */
+.wpat-seo-nav-tab:focus {
+	outline: none !important;
+	box-shadow: none !important;
+}
+.wpat-seo-nav-tab:hover {
+	color: #1e293b !important;
+	background-color: rgba(0, 0, 0, 0.02) !important;
+}
+.wpat-seo-nav-tab.active:hover {
+	background-color: #fff !important;
+}
+
+
+

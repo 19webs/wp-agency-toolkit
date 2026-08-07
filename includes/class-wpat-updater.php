@@ -90,13 +90,13 @@ class WPAT_Updater {
 		$body = wp_remote_retrieve_body( $response );
 		$data = json_decode( $body, true );
 
-		if ( ! is_array( $data ) || empty( $data ) ) {
+		if ( ! is_array( $data ) || empty( $data ) || ! isset( $data[0] ) ) {
 			return false;
 		}
 
 		// El primer elemento de la lista de etiquetas de Git es la más reciente
 		$latest_tag = $data[0];
-		if ( ! isset( $latest_tag['name'] ) || ! isset( $latest_tag['zipball_url'] ) ) {
+		if ( ! is_array( $latest_tag ) || ! isset( $latest_tag['name'] ) || ! isset( $latest_tag['zipball_url'] ) ) {
 			return false;
 		}
 

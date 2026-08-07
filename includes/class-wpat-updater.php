@@ -141,6 +141,14 @@ class WPAT_Updater {
 				'new_version' => $new_version,
 				'url'         => $release['html_url'],
 				'package'     => $release['zipball_url'], // URL directa de descarga de GitHub
+				'icons'       => array(
+					'1x' => WPAT_URL . 'assets/images/icon-256x256.jpg',
+					'2x' => WPAT_URL . 'assets/images/icon-256x256.jpg',
+				),
+				'banners'     => array(
+					'low'  => WPAT_URL . 'assets/images/banner-772x250.jpg',
+					'high' => WPAT_URL . 'assets/images/banner-772x250.jpg',
+				),
 			);
 
 			// Si el desarrollador subió un zip como asset (ej: wp-agency-toolkit.zip), preferimos ese
@@ -195,6 +203,14 @@ class WPAT_Updater {
 				}
 			}
 		}
+		$res->icons = array(
+			'1x' => WPAT_URL . 'assets/images/icon-256x256.jpg',
+			'2x' => WPAT_URL . 'assets/images/icon-256x256.jpg',
+		);
+		$res->banners = array(
+			'low'  => WPAT_URL . 'assets/images/banner-772x250.jpg',
+			'high' => WPAT_URL . 'assets/images/banner-772x250.jpg',
+		);
 
 		$res->sections = array(
 			'description' => 'Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.',

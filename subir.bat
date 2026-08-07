@@ -27,10 +27,8 @@ if "%version%"=="" (
 
 echo.
 echo [INFO] Actualizando version a v%version% en wp-agency-toolkit.php...
-:: Modificar la cabecera "Version:"
-powershell -Command "(GC wp-agency-toolkit.php) -replace 'Version:\s+[0-9.]+', 'Version:     %version%' | Out-File -encoding utf8 wp-agency-toolkit.php"
-:: Modificar la constante WPAT_VERSION
-powershell -Command "(GC wp-agency-toolkit.php) -replace 'define\(\s*''WPAT_VERSION''\s*,\s*''[0-9.]+''\s*\)', 'define( ''WPAT_VERSION'', ''%version%'' )' | Out-File -encoding utf8 wp-agency-toolkit.php"
+:: Modificar version de forma segura en UTF-8 sin BOM (evita corrupcion de caracteres y cabeceras invalidas)
+powershell -Command "$content = Get-Content 'wp-agency-toolkit.php' -Raw; $content = $content -replace 'Version:\s+[0-9.]+', 'Version:     %version%'; $content = $content -replace 'define\(\s*''WPAT_VERSION''\s*,\s*''[0-9.]+''\s*\)', 'define( ''WPAT_VERSION'', ''%version%'' )'; [System.IO.File]::WriteAllText('wp-agency-toolkit.php', $content, (New-Object System.Text.UTF8Encoding $false));"
 echo [OK] Archivo wp-agency-toolkit.php modificado.
 
 set commit_message=Version v%version%

@@ -67,6 +67,26 @@ class WPAT_Initial_Setup {
 			}
 		}
 
+		// 1b. Eliminar Hello Dolly
+		if ( ! empty( $actions['delete_hello_dolly'] ) ) {
+			if ( ! function_exists( 'deactivate_plugins' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
+			deactivate_plugins( 'hello.php' );
+
+			if ( file_exists( WP_PLUGIN_DIR . '/hello.php' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+				$deleted = delete_plugins( array( 'hello.php' ) );
+				if ( $deleted && ! is_wp_error( $deleted ) ) {
+					$results[] = 'Plugin por defecto "Hello Dolly" eliminado correctamente.';
+				} else {
+					$results[] = 'Error al eliminar el plugin "Hello Dolly".';
+				}
+			} else {
+				$results[] = 'El plugin "Hello Dolly" no está presente (ya eliminado).';
+			}
+		}
+
 		// 2. Eliminar página de ejemplo
 		if ( ! empty( $actions['delete_page'] ) ) {
 			// Buscar la página de ejemplo de WordPress por defecto (slug sample-page o pagina-de-ejemplo)
@@ -306,6 +326,56 @@ class WPAT_Initial_Setup {
 					}
 				} else {
 					$results[] = 'Error al instalar el plugin "Elementor" desde WordPress.org.';
+				}
+			}
+		}
+
+		// 6b. Instalar y activar el plugin TranslatePress
+		if ( ! empty( $actions['install_translatepress'] ) ) {
+			$plugin_slug = 'translatepress-multilingual';
+			$plugin_file = 'translatepress-multilingual/index.php';
+			
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			$plugin_installed = file_exists( WP_PLUGIN_DIR . '/' . $plugin_file );
+			$plugin_active = is_plugin_active( $plugin_file );
+
+			if ( $plugin_installed && $plugin_active ) {
+				$results[] = 'El plugin "TranslatePress" ya está instalado y activo.';
+			} else {
+				$was_installed = $plugin_installed;
+				if ( ! $plugin_installed ) {
+					include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+					include_once ABSPATH . 'wp-admin/includes/file.php';
+					WP_Filesystem();
+
+					$api_url = 'https://api.wordpress.org/plugins/info/1.0/' . $plugin_slug . '.json';
+					$response = wp_remote_get( $api_url );
+
+					if ( ! is_wp_error( $response ) ) {
+						$data = json_decode( wp_remote_retrieve_body( $response ), true );
+						if ( ! empty( $data['download_link'] ) ) {
+							$installer = new Plugin_Upgrader( new Automatic_Upgrader_Skin() );
+							$installed = $installer->install( $data['download_link'] );
+							if ( $installed && ! is_wp_error( $installed ) ) {
+								$plugin_installed = true;
+							}
+						}
+					}
+				}
+
+				if ( $plugin_installed ) {
+					$activated = activate_plugin( $plugin_file );
+					if ( ! is_wp_error( $activated ) ) {
+						if ( $was_installed ) {
+							$results[] = 'El plugin "TranslatePress" ya estaba instalado y ha sido activado.';
+						} else {
+							$results[] = 'Plugin "TranslatePress" instalado y activado correctamente.';
+						}
+					} else {
+						$results[] = 'El plugin "TranslatePress" está instalado pero falló su activación.';
+					}
+				} else {
+					$results[] = 'Error al instalar el plugin "TranslatePress" desde WordPress.org.';
 				}
 			}
 		}

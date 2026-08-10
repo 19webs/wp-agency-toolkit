@@ -2964,6 +2964,10 @@ class WPAT_Admin {
 											<input type="checkbox" name="wpat_init[delete_page]" value="1" class="wpat-init-action-checkbox" />
 											Eliminar "Página de ejemplo" (Sample Page)
 										</label>
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[delete_hello_dolly]" value="1" class="wpat-init-action-checkbox" />
+											Eliminar plugin por defecto "Hello Dolly"
+										</label>
 									</div>
 								</div>
 
@@ -3033,6 +3037,10 @@ class WPAT_Admin {
 										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
 											<input type="checkbox" name="wpat_init[install_elementor]" value="1" class="wpat-init-action-checkbox" />
 											Instalar y activar plugin gratuito "Elementor"
+										</label>
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[install_translatepress]" value="1" class="wpat-init-action-checkbox" />
+											Instalar y activar plugin gratuito "TranslatePress"
 										</label>
 									</div>
 								</div>

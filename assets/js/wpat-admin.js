@@ -2402,6 +2402,13 @@ jQuery(document).ready(function($) {
 										var hasNoKeyword = (!row.keyword);
 										var isOptimized = (row.title_status === 'correct' && row.desc_status === 'correct' && row.keyword);
 
+										var actionButton = '';
+										if (row.title_status === 'empty' || row.desc_status === 'empty') {
+											actionButton = '<button type="button" class="button button-small wpat-seo-single-fill-btn" data-post-id="' + row.id + '" style="background: #10b981; border-color: #059669; color: #fff; font-weight: 600; padding: 0 8px; height: 26px; line-height: 24px; font-size: 11px; margin: 0 auto; display: block; cursor: pointer;">Auto-rellenar</button>';
+										} else {
+											actionButton = '<div style="text-align: center; color: #10b981; font-weight: 700; font-size: 11.5px;">✓ Completo</div>';
+										}
+
 										var rowHTML = '<tr class="wpat-seo-audit-row" ' +
 											'data-title="' + row.title.toLowerCase() + '" ' +
 											'data-issues="' + (hasIssues ? '1' : '0') + '" ' +
@@ -2412,6 +2419,7 @@ jQuery(document).ready(function($) {
 											'<td style="padding:10px; border-bottom: 1px solid #f1f5f9; vertical-align:middle;">' + keywordBadge + '</td>' +
 											'<td style="padding:10px; border-bottom: 1px solid #f1f5f9; vertical-align:middle;">' + titleBadge + '</td>' +
 											'<td style="padding:10px; border-bottom: 1px solid #f1f5f9; vertical-align:middle;">' + descBadge + '</td>' +
+											'<td style="padding:10px; border-bottom: 1px solid #f1f5f9; vertical-align:middle; text-align:center;">' + actionButton + '</td>' +
 											'</tr>';
 										
 										$tableBody.append(rowHTML);
@@ -2714,6 +2722,107 @@ jQuery(document).ready(function($) {
 			error: function() {
 				$btn.prop('disabled', false).text('Auto-rellenar Campos Vacíos');
 				$status.text('Error de conexión.');
+			}
+		});
+	});
+
+	// Auto-relleno individual de campos SEO vacíos en la Auditoría
+	$(document).on('click', '.wpat-seo-single-fill-btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var postId = $btn.data('post-id');
+		var $row = $btn.closest('tr');
+
+		$btn.prop('disabled', true).text('Procesando...');
+
+		$.ajax({
+			url: ajaxurl,
+			type: 'POST',
+			data: {
+				action: 'wpat_seo_fill_posts_batch',
+				post_ids: [postId]
+			},
+			success: function(res) {
+				if (res.success) {
+					// Obtener los datos actualizados del post para refrescar la fila en caliente
+					$.ajax({
+						url: ajaxurl,
+						type: 'POST',
+						data: {
+							action: 'wpat_seo_audit_page',
+							post_ids: [postId]
+						},
+						success: function(auditRes) {
+							if (auditRes.success && auditRes.data.results && auditRes.data.results.length > 0) {
+								var updatedRow = auditRes.data.results[0];
+								
+								// Volver a calcular badges y estados
+								var indexableBadge = updatedRow.indexable === 'index' 
+									? '<span style="color:#047857; background:#d1fae5; padding:3px 8px; border-radius:12px; font-weight:700; font-size:11px;">🟢 Index</span>'
+									: '<span style="color:#4b5563; background:#e5e7eb; padding:3px 8px; border-radius:12px; font-weight:700; font-size:11px;">⚪ noindex</span>';
+								
+								var keywordBadge = updatedRow.keyword 
+									? '<span style="color:#1e293b; background:#f1f5f9; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600; display:inline-block; border:1px solid #cbd5e1;">' + updatedRow.keyword + '</span>'
+									: '<span style="color:#b91c1c; font-weight:700; font-size:11px; background:#fee2e2; padding:2px 6px; border-radius:4px;">🔴 Vacío</span>';
+
+								var titleBadge = '';
+								if (updatedRow.title_status === 'empty') {
+									titleBadge = '<span style="color:#b91c1c; font-weight:700; font-size:12px;">🔴 Vacío</span>';
+								} else if (updatedRow.title_status === 'correct') {
+									titleBadge = '<span style="color:#047857; font-weight:700; font-size:12px;">🟢 ' + updatedRow.title_length + ' carac.</span>';
+								} else {
+									titleBadge = '<span style="color:#b45309; font-weight:700; font-size:12px;">🟡 ' + updatedRow.title_length + ' carac. (Ajustar)</span>';
+								}
+
+								var descBadge = '';
+								if (updatedRow.desc_status === 'empty') {
+									descBadge = '<span style="color:#b91c1c; font-weight:700; font-size:12px;">🔴 Vacío</span>';
+								} else if (updatedRow.desc_status === 'correct') {
+									descBadge = '<span style="color:#047857; font-weight:700; font-size:12px;">🟢 ' + updatedRow.desc_length + ' carac.</span>';
+								} else {
+									descBadge = '<span style="color:#b45309; font-weight:700; font-size:12px;">🟡 ' + updatedRow.desc_length + ' carac. (Ajustar)</span>';
+								}
+
+								var hasIssues = (updatedRow.title_status !== 'correct' || updatedRow.desc_status !== 'correct' || updatedRow.title_status === 'empty' || updatedRow.desc_status === 'empty');
+								var hasNoKeyword = (!updatedRow.keyword);
+								var isOptimized = (updatedRow.title_status === 'correct' && updatedRow.desc_status === 'correct' && updatedRow.keyword);
+
+								// Actualizar los atributos data de la fila para los filtros
+								$row.attr('data-issues', hasIssues ? '1' : '0');
+								$row.attr('data-no-keyword', hasNoKeyword ? '1' : '0');
+								$row.attr('data-optimized', isOptimized ? '1' : '0');
+
+								// Actualizar celdas específicas en caliente
+								$row.find('td:eq(1)').html(indexableBadge);
+								$row.find('td:eq(2)').html(keywordBadge);
+								$row.find('td:eq(3)').html(titleBadge);
+								$row.find('td:eq(4)').html(descBadge);
+
+								// Actualizar celda de acciones
+								var updatedActionButton = '';
+								if (updatedRow.title_status === 'empty' || updatedRow.desc_status === 'empty') {
+									updatedActionButton = '<button type="button" class="button button-small wpat-seo-single-fill-btn" data-post-id="' + updatedRow.id + '" style="background: #10b981; border-color: #059669; color: #fff; font-weight: 600; padding: 0 8px; height: 26px; line-height: 24px; font-size: 11px; margin: 0 auto; display: block; cursor: pointer;">Auto-rellenar</button>';
+								} else {
+									updatedActionButton = '<div style="text-align: center; color: #10b981; font-weight: 700; font-size: 11.5px;">✓ Completo</div>';
+								}
+								$row.find('td:eq(5)').html(updatedActionButton);
+								
+								// Efecto de flash verde de éxito
+								$row.css('background-color', '#d1fae5');
+								setTimeout(function() {
+									$row.css('background-color', '');
+								}, 800);
+							}
+						}
+					});
+				} else {
+					$btn.prop('disabled', false).text('Auto-rellenar');
+					alert('Error al auto-rellenar: ' + (res.data.message || 'Desconocido'));
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).text('Auto-rellenar');
+				alert('Error de conexión.');
 			}
 		});
 	});

@@ -2793,11 +2793,12 @@ class WPAT_Admin {
 											<table class="wp-list-table widefat fixed striped" style="border: 1px solid #cbd5e1; border-radius: 4px; box-shadow: none; margin-bottom: 0;">
 												<thead>
 													<tr>
-														<th style="font-weight:700; width: 35%; padding: 10px;">Página / Entrada</th>
-														<th style="font-weight:700; width: 12%; padding: 10px;">Indexable</th>
-														<th style="font-weight:700; width: 18%; padding: 10px;">Frase Clave</th>
-														<th style="font-weight:700; width: 18%; padding: 10px;">Título SEO</th>
+														<th style="font-weight:700; width: 30%; padding: 10px;">Página / Entrada</th>
+														<th style="font-weight:700; width: 11%; padding: 10px;">Indexable</th>
+														<th style="font-weight:700; width: 15%; padding: 10px;">Frase Clave</th>
+														<th style="font-weight:700; width: 17%; padding: 10px;">Título SEO</th>
 														<th style="font-weight:700; width: 17%; padding: 10px;">Meta Descripción</th>
+														<th style="font-weight:700; width: 10%; padding: 10px; text-align: center;">Acciones</th>
 													</tr>
 												</thead>
 												<tbody id="wpat_seo_audit_table_body">

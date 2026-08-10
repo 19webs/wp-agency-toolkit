@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: WP Agency Toolkit
- * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     3.2.6
+ * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administraciÃ³n, seguridad, WooCommerce, rendimiento y optimizaciÃ³n de medios.
+ * Version:     3.2.7
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '3.2.6' );
+define( 'WPAT_VERSION', '3.2.7' );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -24,14 +24,14 @@ define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 class WPAT_Main {
 
 	/**
-	 * Instancia única de la clase.
+	 * Instancia Ãºnica de la clase.
 	 *
 	 * @var WPAT_Main
 	 */
 	private static $instance = null;
 
 	/**
-	 * Listado de módulos y sus archivos/clases.
+	 * Listado de mÃ³dulos y sus archivos/clases.
 	 *
 	 * @var array
 	 */
@@ -131,20 +131,20 @@ class WPAT_Main {
 	}
 
 	/**
-	 * Constructor privado para evitar instanciación externa.
+	 * Constructor privado para evitar instanciaciÃ³n externa.
 	 */
 	private function __construct() {
 		add_action( 'plugins_loaded', array( $this, 'init' ) );
 	}
 
 	/**
-	 * Inicializa el plugin, cargando módulos y el panel de administración.
+	 * Inicializa el plugin, cargando mÃ³dulos y el panel de administraciÃ³n.
 	 */
 	public function init() {
-		// Cargar configuración de forma centralizada
+		// Cargar configuraciÃ³n de forma centralizada
 		$settings = $this->get_settings();
 
-		// Cargar condicionalmente cada módulo si está activo (ON)
+		// Cargar condicionalmente cada mÃ³dulo si estÃ¡ activo (ON)
 		foreach ( $this->modules as $id => $module ) {
 			if ( isset( $settings[ $id ] ) && '1' === $settings[ $id ] ) {
 				$file_path = WPAT_PATH . $module['file'];
@@ -165,13 +165,13 @@ class WPAT_Main {
 			require_once $envato_importer_path;
 		}
 
-		// Cargar actualizador automático conectado con GitHub
+		// Cargar actualizador automÃ¡tico conectado con GitHub
 		$updater_path = WPAT_PATH . 'includes/class-wpat-updater.php';
 		if ( file_exists( $updater_path ) ) {
 			require_once $updater_path;
 		}
 
-		// Cargar panel de administración en el back-office
+		// Cargar panel de administraciÃ³n en el back-office
 		if ( is_admin() ) {
 			require_once WPAT_PATH . 'includes/class-wpat-admin.php';
 			WPAT_Admin::get_instance();
@@ -185,7 +185,7 @@ class WPAT_Main {
 	 */
 	public function get_settings() {
 		$defaults = array(
-			// Módulos (0 = desactivado, 1 = activo)
+			// MÃ³dulos (0 = desactivado, 1 = activo)
 			'login-customizer'          => '0',
 			'hide-login'                => '0',
 			'ssl-fixer'                 => '0',
@@ -196,7 +196,7 @@ class WPAT_Main {
 			'woo_catalog_hide_cart'     => '0',
 			'woo_catalog_wa_enable'     => '0',
 			'woo_catalog_wa_phone'      => '',
-			'woo_catalog_wa_message'    => 'Estoy interesado en el producto {product_title} ({product_url}). ¿Cómo podría comprarlo?',
+			'woo_catalog_wa_message'    => 'Estoy interesado en el producto {product_title} ({product_url}). Â¿CÃ³mo podrÃ­a comprarlo?',
 			'woo_catalog_form_enable'   => '0',
 			'woo_catalog_form_email'    => '',
 			'woo-zoom'                  => '0',
@@ -243,8 +243,8 @@ class WPAT_Main {
 			'admin_footer_text'         => '',
 			'hide_admin_bar'            => '0',
 			'dashboard_cleaner'         => '0',
-			'dashboard_welcome_title'   => 'Soporte y Gestión',
-			'dashboard_welcome_text'    => 'Bienvenido al panel de administración de tu sitio web.',
+			'dashboard_welcome_title'   => 'Soporte y GestiÃ³n',
+			'dashboard_welcome_text'    => 'Bienvenido al panel de administraciÃ³n de tu sitio web.',
 
 			// Opciones del Bloqueador de Bots
 			'bot_blocker'               => '0',
@@ -258,7 +258,7 @@ class WPAT_Main {
 			'google_search_console_code'  => '',
 			'google_analytics_id'         => '',
 
-			// Opciones de Configuración Inicial
+			// Opciones de ConfiguraciÃ³n Inicial
 			'initial-setup'               => '1',
 
 			// Opciones de Hide Login

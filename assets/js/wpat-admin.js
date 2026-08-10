@@ -1756,14 +1756,14 @@ jQuery(document).ready(function($) {
 		$('.wpat-init-page-checkbox').prop('checked', isChecked);
 	});
 
-	// Si se desmarca cualquier sub-página individual, desmarcar el padre
+	// Si se desmarca cualquier sub-página de página individual, actualizar el padre
 	$('.wpat-init-page-checkbox').on('change', function() {
 		var totalCheckboxes = $('.wpat-init-page-checkbox').length;
 		var checkedCheckboxes = $('.wpat-init-page-checkbox:checked').length;
-		$('#wpat_init_create_pages').prop('checked', checkedCheckboxes > 0);
+		$('#wpat_init_create_pages').prop('checked', totalCheckboxes === checkedCheckboxes);
 	});
 
-	// Confirmación antes de ejecutar
+	// Confirmación y overlay de carga antes de ejecutar
 	$('#wpat_run_initial_setup_btn').on('click', function(e) {
 		var anyChecked = $('.wpat-init-action-checkbox:checked').length > 0;
 		if (!anyChecked) {
@@ -1775,7 +1775,24 @@ jQuery(document).ready(function($) {
 		var confirmed = confirm('¿Estás seguro de que deseas ejecutar la configuración inicial seleccionada?\n\nEsta acción descargará temas/plugins y modificará contenidos y ajustes del sitio.');
 		if (!confirmed) {
 			e.preventDefault();
+			return;
 		}
+
+		// Mostrar overlay de carga premium
+		var overlayHtml = 
+			'<div id="wpat_setup_loading_overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); z-index: 999999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Oxygen-Sans, Ubuntu, Cantarell, \'Helvetica Neue\', sans-serif;">' +
+				'<div style="background: #1e293b; padding: 35px 40px; border-radius: 12px; border: 1px solid #334155; text-align: center; max-width: 450px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">' +
+					'<div style="font-size: 20px; font-weight: 700; margin-bottom: 12px; color: #38bdf8; letter-spacing: -0.025em;">Configuración Inicial en Progreso</div>' +
+					'<div style="font-size: 14px; color: #94a3b8; margin-bottom: 25px; line-height: 1.5;">Descargando recursos, configurando páginas y aplicando ajustes del sitio. Por favor, no cierres ni recargues la página...</div>' +
+					'<div style="width: 100%; height: 6px; background: #334155; border-radius: 999px; overflow: hidden; position: relative;">' +
+						'<div style="width: 35%; height: 100%; background: #38bdf8; border-radius: 999px; position: absolute; animation: wpatSetupProgress 1.6s infinite ease-in-out;"></div>' +
+					'</div>' +
+				'</div>' +
+				'<style>' +
+					'@keyframes wpatSetupProgress { 0% { left: -35%; } 50% { width: 45%; } 100% { left: 100%; } }' +
+				'</style>' +
+			'</div>';
+		$('body').append(overlayHtml);
 	});
 
 	// 5. Módulo SEO: Pestañas, Previsualización y Análisis SEO/Legibilidad Reactivo

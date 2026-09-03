@@ -2602,25 +2602,69 @@ jQuery(document).ready(function($) {
 		}
 	});
 
+	// Selector de Formato de Exportación (JSON vs CSV)
+	$(document).on('change', '#wpat_export_format_selector', function() {
+		var format = $(this).val();
+		if (format === 'csv') {
+			$('#wpat_export_json_options').hide();
+			$('#wpat_export_json_submit_btn').hide();
+			$('#wpat_export_csv_options').slideDown(200);
+			$('#wpat_csv_export_btn').show();
+		} else {
+			$('#wpat_export_csv_options').hide();
+			$('#wpat_csv_export_btn').hide();
+			$('#wpat_export_json_options').slideDown(200);
+			$('#wpat_export_json_submit_btn').show();
+		}
+	});
+
 	// Trigger selector de archivo de importación
 	$(document).on('click', '#wpat_select_import_file_btn', function(e) {
 		e.preventDefault();
 		$('#wpat_import_file_field').trigger('click');
 	});
 
-	// Feedback visual cuando seleccionan un archivo JSON
+	// Auto-detección inteligente de formato al seleccionar un archivo (.json o .csv)
 	$(document).on('change', '#wpat_import_file_field', function() {
 		var file = this.files[0];
 		if (file) {
-			$('#wpat_import_feedback_name').text(file.name);
+			var name = file.name;
+			var ext = name.split('.').pop().toLowerCase();
+			$('#wpat_import_feedback_name').text(name);
 			$('#wpat_import_file_feedback').slideDown(200);
-			$('#wpat_import_contents_submit_btn').prop('disabled', false);
-			$('#wpat_import_file_label').text('Archivo JSON listo');
+
+			if (ext === 'csv') {
+				$('#wpat_import_file_label').text('Archivo CSV listo (Excel)');
+				$('#wpat_import_contents_submit_btn').hide().prop('disabled', true);
+				$('#wpat_import_csv_options').slideDown(200);
+				$('#wpat_csv_start_import_btn').show().prop('disabled', true).text('Analizando CSV...');
+
+				var reader = new FileReader();
+				reader.onload = function(evt) {
+					var text = evt.target.result;
+					csvParsedRows = parseCSV(text);
+					if (csvParsedRows.length > 0) {
+						$('#wpat_csv_start_import_btn').prop('disabled', false).text('Iniciar Importación CSV (' + csvParsedRows.length + ' entradas)');
+					} else {
+						alert('El archivo CSV está vacío o no tiene un formato válido.');
+						$('#wpat_csv_start_import_btn').prop('disabled', true).text('Iniciar Importación CSV');
+					}
+				};
+				reader.readAsText(file);
+			} else {
+				// Es un archivo JSON (Backup/Migración)
+				$('#wpat_import_file_label').text('Archivo JSON listo (Backup/Migración)');
+				$('#wpat_import_csv_options').slideUp(200);
+				$('#wpat_csv_start_import_btn').hide().prop('disabled', true);
+				$('#wpat_import_contents_submit_btn').show().prop('disabled', false);
+			}
 		} else {
 			$('#wpat_import_feedback_name').text('ninguno');
 			$('#wpat_import_file_feedback').slideUp(200);
-			$('#wpat_import_contents_submit_btn').prop('disabled', true);
-			$('#wpat_import_file_label').text('Selecciona tu archivo .json');
+			$('#wpat_import_csv_options').slideUp(200);
+			$('#wpat_import_contents_submit_btn').show().prop('disabled', true);
+			$('#wpat_csv_start_import_btn').hide().prop('disabled', true);
+			$('#wpat_import_file_label').text('Selecciona tu archivo (.json o .csv)');
 		}
 	});
 

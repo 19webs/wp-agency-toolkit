@@ -3249,21 +3249,30 @@ class WPAT_Admin {
 
 						<!-- PESTAÑA: EXPORTACIÓN & IMPORTACIÓN -->
 						<div id="tab-tools" class="wpat-tab-panel <?php echo ( $active_tab === 'tab-tools' ) ? 'active' : ''; ?>">
-							<h2>Exportación & importación</h2>
-							<p class="section-desc">Exporta e importa contenidos completos del sitio (páginas, entradas, productos WooCommerce y biblioteca de medios) en un archivo JSON estructurado para migraciones y backups.</p>
+							<h2>Exportación & Importación</h2>
+							<p class="section-desc">Herramientas unificadas para respaldar, migrar o importar contenidos de tu sitio tanto en JSON (clonación/backup completo) como en CSV (hojas de cálculo de Excel).</p>
 
 							<div class="wpat-field-group-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
 								
-								<!-- TARJETA: EXPORTAR -->
-								<div class="wpat-module-card" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 380px;">
+								<!-- TARJETA UNIFICADA: EXPORTAR -->
+								<div class="wpat-module-card" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 420px;">
 									<div>
 										<h3 style="margin-top: 0; font-size:16px; font-weight:600; display: flex; align-items: center; gap: 8px;">
 											<span class="dashicons dashicons-external" style="color: var(--wpat-primary); font-size: 20px; width: 20px; height: 20px; margin: 0;"></span>
-											Exportador de Contenidos (JSON)
+											Exportador de Contenidos del Sitio
 										</h3>
-										<p class="description" style="margin-bottom: 20px;">Genera un archivo JSON con los datos estructurados. Útil para duplicar configuraciones o migrar posts de staging a producción.</p>
+										<p class="description" style="margin-bottom: 15px;">Selecciona el formato de salida deseado según el tipo de exportación que necesites realizar.</p>
 										
-										<div style="background: #f8fafc; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 6px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+										<div style="margin-bottom: 15px;">
+											<label for="wpat_export_format_selector" style="font-weight: 600; display: block; margin-bottom: 6px; font-size: 12px; color: #475569;">Formato de Exportación:</label>
+											<select id="wpat_export_format_selector" style="width: 100%; height: 36px; font-weight: 600; border-color: var(--wpat-primary);">
+												<option value="json">Formato JSON (Respaldo / Migración Completa de Sitio)</option>
+												<option value="csv">Formato CSV (Excel / Hoja de Cálculo para Redacción)</option>
+											</select>
+										</div>
+
+										<!-- OPCIONES EXPORTACIÓN JSON -->
+										<div id="wpat_export_json_options" style="background: #f8fafc; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 6px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
 											<label style="font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
 												<input type="checkbox" name="wpat_export_all" value="1" id="wpat_export_all_checkbox" />
 												Exportar todo el contenido público
@@ -3323,103 +3332,73 @@ class WPAT_Admin {
 												Incluir fragmentos de código (Snippets)
 											</label>
 										</div>
+
+										<!-- OPCIONES EXPORTACIÓN CSV -->
+										<div id="wpat_export_csv_options" style="display: none; background: #f8fafc; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+											<label for="wpat_csv_export_post_type" style="font-weight: 600; display: block; margin-bottom: 6px; font-size: 12px; color: #475569;">Selecciona el tipo de contenido a exportar a CSV:</label>
+											<select id="wpat_csv_export_post_type" style="width: 100%; height: 34px;">
+												<option value="post">Entradas (Blog)</option>
+												<option value="page">Páginas</option>
+												<?php
+												foreach ( $custom_post_types as $cpt ) {
+													echo '<option value="' . esc_attr( $cpt->name ) . '">' . esc_html( $cpt->labels->name ) . ' (CPT)</option>';
+												}
+												?>
+											</select>
+											<p class="description" style="margin-top: 8px;">Genera un archivo `.csv` compatible con Excel con los títulos, contenidos, extractos, categorías, etiquetas, imágenes destacadas y metas SEO.</p>
+										</div>
 									</div>
+
 									<div style="margin-top: auto;">
-										<input type="submit" name="wpat_export_contents_btn" class="button button-primary" value="Generar y Descargar JSON" style="width: 100%; height: 38px; font-weight:600;" />
+										<input type="submit" name="wpat_export_contents_btn" id="wpat_export_json_submit_btn" class="button button-primary" value="Generar y Descargar JSON" style="width: 100%; height: 38px; font-weight:600;" />
+										<button type="button" class="button button-primary" id="wpat_csv_export_btn" style="display: none; width: 100%; height: 38px; font-weight:600; background: #10b981; border-color: #059669;"><span class="dashicons dashicons-download" style="vertical-align:middle;"></span> Generar y Descargar CSV</button>
 									</div>
 								</div>
 
-								<!-- TARJETA: IMPORTAR -->
-								<div class="wpat-module-card" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 380px;">
+								<!-- TARJETA UNIFICADA: IMPORTAR -->
+								<div class="wpat-module-card" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 420px;">
 									<div>
 										<h3 style="margin-top: 0; font-size:16px; font-weight:600; display: flex; align-items: center; gap: 8px;">
 											<span class="dashicons dashicons-download" style="color: var(--wpat-primary); font-size: 20px; width: 20px; height: 20px; margin: 0;"></span>
-											Importador de Contenidos (JSON)
+											Importador Inteligente de Contenidos
 										</h3>
-										<p class="description" style="margin-bottom: 20px;">Sube el archivo JSON exportado por este plugin. Se crearán o actualizarán las páginas, entradas, productos y metas de forma nativa.</p>
+										<p class="description" style="margin-bottom: 15px;">Sube o arrastra tu archivo (formato <strong>.json</strong> para backups/migraciones o <strong>.csv</strong> para hojas de cálculo de Excel).</p>
 										
 										<div style="border: 2px dashed var(--wpat-border); background: #f8fafc; padding: 25px 15px; border-radius: 8px; text-align: center; margin-bottom: 15px;" id="wpat_import_dropzone">
 											<span class="dashicons dashicons-document" style="font-size: 36px; width: 36px; height: 36px; color: #94a3b8; margin-bottom: 8px; display: inline-block;"></span>
-											<h4 style="margin: 0 0 5px 0; font-size: 13.5px; font-weight: 600;" id="wpat_import_file_label">Selecciona tu archivo .json</h4>
+											<h4 style="margin: 0 0 5px 0; font-size: 13.5px; font-weight: 600;" id="wpat_import_file_label">Selecciona tu archivo (.json o .csv)</h4>
 											<p class="description" style="margin: 0 0 15px 0; font-size: 11px;">Tamaño máx: <?php echo esc_html( size_format( wp_max_upload_size() ) ); ?></p>
 											
-											<input type="file" name="wpat_import_file" id="wpat_import_file_field" style="display: none;" accept=".json" />
+											<input type="file" name="wpat_import_file" id="wpat_import_file_field" style="display: none;" accept=".json,.csv" />
 											<button type="button" class="button" id="wpat_select_import_file_btn">Elegir Archivo</button>
 										</div>
 
+										<!-- FEEDBACK DINÁMICO DE ARCHIVO DETECTADO -->
 										<div id="wpat_import_file_feedback" style="display: none; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; padding: 10px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; gap: 6px;">
 											<span class="dashicons dashicons-yes" style="color: #0284c7; margin: 0;"></span>
 											<span>Seleccionado: <strong id="wpat_import_feedback_name">ninguno</strong></span>
 										</div>
-									</div>
-									<div style="margin-top: auto;">
-										<input type="submit" name="wpat_import_contents_btn" id="wpat_import_contents_submit_btn" class="button button-primary" value="Iniciar Importación" style="width: 100%; height: 38px; font-weight:600;" disabled />
-									</div>
-								</div>
 
-							</div>
-
-							<!-- SECCIÓN DEDICADA: IMPORTADOR Y EXPORTADOR DE ENTRADAS EN CSV (EXCEL) -->
-							<div class="wpat-module-card" style="padding: 20px; margin-top: 25px;">
-								<h3 style="margin-top: 0; font-size:16px; font-weight:600; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--wpat-border); padding-bottom: 12px; margin-bottom: 15px;">
-									<span class="dashicons dashicons-spreadsheet" style="color: #10b981; font-size: 22px; width: 22px; height: 22px; margin: 0;"></span>
-									Importador / Exportador Masivo de Entradas en CSV (Excel / Hojas de Cálculo)
-								</h3>
-								<p class="description" style="margin-bottom: 20px;">Importa o exporta artículos de blog o tipos de contenido en formato CSV editable en Excel o Google Sheets, ideal para publicar artículos masivos o migrar textos.</p>
-
-								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-									
-									<!-- SUB-BLOQUE: EXPORTAR CSV -->
-									<div style="background: #f8fafc; border: 1px solid var(--wpat-border); padding: 18px; border-radius: 8px;">
-										<h4 style="margin-top: 0; font-size: 14px; font-weight: 600;">1. Exportar a CSV</h4>
-										<p class="description" style="margin-bottom: 15px;">Descarga todas las entradas en un archivo CSV formateado en UTF-8 con sus categorías, fechas, contenidos y meta datos SEO.</p>
-										
-										<div style="margin-bottom: 15px;">
-											<label for="wpat_csv_export_post_type" style="font-weight:600; display:block; margin-bottom:5px; font-size:12px;">Tipo de contenido:</label>
-											<select id="wpat_csv_export_post_type" style="width:100%; height:32px;">
+										<!-- OPCIONES ESPECÍFICAS DE CSV SI SE SUBE UN CSV -->
+										<div id="wpat_import_csv_options" style="display: none; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+											<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+												<span style="font-size: 12px; font-weight: 600; color: #166534;">Configuración de Importación CSV:</span>
+												<a href="<?php echo esc_url( admin_url( 'admin-ajax.php?action=wpat_csv_download_sample' ) ); ?>" class="button button-small" style="font-size:11px;"><span class="dashicons dashicons-media-spreadsheet" style="vertical-align:middle; font-size:14px;"></span> Plantilla de Ejemplo</a>
+											</div>
+											<label for="wpat_csv_import_post_type" style="font-weight:600; display:block; margin-bottom:4px; font-size:11px; color:#15803d;">Importar contenido como:</label>
+											<select id="wpat_csv_import_post_type" style="width:100%; height:30px; font-size:12px;">
 												<option value="post">Entradas (Blog)</option>
 												<option value="page">Páginas</option>
 												<?php
-												$cpts = get_post_types( array( '_builtin' => false ), 'objects' );
-												foreach ( $cpts as $cpt_obj ) {
-													echo '<option value="' . esc_attr( $cpt_obj->name ) . '">' . esc_html( $cpt_obj->labels->name ) . ' (CPT)</option>';
-												}
-												?>
-											</select>
-										</div>
-										<button type="button" class="button" id="wpat_csv_export_btn" style="width: 100%; font-weight:600;"><span class="dashicons dashicons-download" style="vertical-align:middle; font-size:16px;"></span> Exportar Entradas a CSV</button>
-									</div>
-
-									<!-- SUB-BLOQUE: IMPORTAR CSV -->
-									<div style="background: #f8fafc; border: 1px solid var(--wpat-border); padding: 18px; border-radius: 8px;">
-										<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-											<h4 style="margin:0; font-size: 14px; font-weight: 600;">2. Importar desde CSV</h4>
-											<a href="<?php echo esc_url( admin_url( 'admin-ajax.php?action=wpat_csv_download_sample' ) ); ?>" class="button button-small" style="font-size:11px;"><span class="dashicons dashicons-media-spreadsheet" style="vertical-align:middle; font-size:14px;"></span> Plantilla de Ejemplo</a>
-										</div>
-										<p class="description" style="margin-bottom: 15px;">Sube tu archivo CSV. El sistema detectará las columnas (título, contenido, categorías, imagen destacada, SEO) e importará en lotes fluídos.</p>
-
-										<div style="margin-bottom: 12px;">
-											<label for="wpat_csv_import_post_type" style="font-weight:600; display:block; margin-bottom:5px; font-size:12px;">Importar como tipo de contenido:</label>
-											<select id="wpat_csv_import_post_type" style="width:100%; height:32px;">
-												<option value="post">Entradas (Blog)</option>
-												<option value="page">Páginas</option>
-												<?php
-												foreach ( $cpts as $cpt_obj ) {
-													echo '<option value="' . esc_attr( $cpt_obj->name ) . '">' . esc_html( $cpt_obj->labels->name ) . ' (CPT)</option>';
+												foreach ( $custom_post_types as $cpt ) {
+													echo '<option value="' . esc_attr( $cpt->name ) . '">' . esc_html( $cpt->labels->name ) . ' (CPT)</option>';
 												}
 												?>
 											</select>
 										</div>
 
-										<div style="border: 2px dashed #cbd5e1; background: #fff; padding: 15px; border-radius: 6px; text-align: center; margin-bottom: 15px;">
-											<input type="file" id="wpat_csv_file_input" accept=".csv" style="display:none;" />
-											<button type="button" class="button" id="wpat_csv_select_file_btn"><span class="dashicons dashicons-upload" style="vertical-align:middle;"></span> Seleccionar Archivo CSV</button>
-											<div id="wpat_csv_file_name" style="margin-top: 8px; font-size: 12px; font-weight:600; color:#0284c7; display:none;"></div>
-										</div>
-
-										<button type="button" class="button button-primary" id="wpat_csv_start_import_btn" style="width: 100%; font-weight:600; background: #10b981; border-color: #059669;" disabled>Iniciar Importación CSV</button>
-
-										<div id="wpat_csv_progress_wrapper" style="display:none; margin-top:15px; background:#fff; padding:12px; border-radius:6px; border:1px solid #e2e8f0;">
+										<!-- BARRA DE PROGRESO DE CSV -->
+										<div id="wpat_csv_progress_wrapper" style="display:none; margin-bottom:15px; background:#fff; padding:12px; border-radius:6px; border:1px solid #e2e8f0;">
 											<div style="display:flex; justify-content:space-between; font-size:12px; font-weight:600; margin-bottom:5px;">
 												<span id="wpat_csv_progress_label">Procesando...</span>
 												<span id="wpat_csv_progress_percent">0%</span>
@@ -3430,7 +3409,15 @@ class WPAT_Admin {
 										</div>
 									</div>
 
+									<div style="margin-top: auto;">
+										<!-- Botón de Importación JSON por defecto -->
+										<input type="submit" name="wpat_import_contents_btn" id="wpat_import_contents_submit_btn" class="button button-primary" value="Iniciar Importación JSON" style="width: 100%; height: 38px; font-weight:600;" disabled />
+
+										<!-- Botón de Importación CSV (Lotes) cuando detecta CSV -->
+										<button type="button" class="button button-primary" id="wpat_csv_start_import_btn" style="display: none; width: 100%; height: 38px; font-weight:600; background: #10b981; border-color: #059669;" disabled>Iniciar Importación CSV (Lotes)</button>
+									</div>
 								</div>
+
 							</div>
 						</div>
 

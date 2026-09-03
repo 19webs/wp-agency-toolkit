@@ -2864,9 +2864,6 @@ jQuery(document).ready(function($) {
 						
 						alert('¡Tu plugin WP Agency Toolkit ya está actualizado a la última versión disponible (v' + data.current_version + ')!');
 					}
-				} else {
-					$btn.prop('disabled', false).text('Comprobar de nuevo');
-					alert('Error al comprobar actualizaciones.');
 				}
 			},
 			error: function() {
@@ -2876,5 +2873,160 @@ jQuery(document).ready(function($) {
 		});
 	});
 
+	/* ==========================================================================
+	   IMPORTADOR Y EXPORTADOR DE ENTRADAS EN CSV (EXCEL)
+	   ========================================================================== */
+	$(document).on('click', '#wpat_csv_export_btn', function(e) {
+		e.preventDefault();
+		var postType = $('#wpat_csv_export_post_type').val() || 'post';
+		window.location.href = ajaxurl + '?action=wpat_csv_export_posts&post_type=' + postType;
+	});
+
+	var csvParsedRows = [];
+
+	$(document).on('click', '#wpat_csv_select_file_btn', function(e) {
+		e.preventDefault();
+		$('#wpat_csv_file_input').trigger('click');
+	});
+
+	$(document).on('change', '#wpat_csv_file_input', function(e) {
+		var file = e.target.files[0];
+		if (!file) return;
+
+		$('#wpat_csv_file_name').text('📄 ' + file.name).show();
+
+		var reader = new FileReader();
+		reader.onload = function(evt) {
+			var text = evt.target.result;
+			csvParsedRows = parseCSV(text);
+			if (csvParsedRows.length > 0) {
+				$('#wpat_csv_start_import_btn').prop('disabled', false).text('Iniciar Importación (' + csvParsedRows.length + ' entradas)');
+			} else {
+				alert('El archivo CSV está vacío o no tiene un formato válido.');
+				$('#wpat_csv_start_import_btn').prop('disabled', true).text('Iniciar Importación CSV');
+			}
+		};
+		reader.readAsText(file);
+	});
+
+	function parseCSV(text) {
+		if (text.charCodeAt(0) === 0xFEFF) {
+			text = text.substr(1);
+		}
+		var lines = text.split(/\r\n|\n|\r/);
+		if (lines.length < 2) return [];
+
+		var delimiter = ';';
+		if (lines[0].indexOf(';') === -1 && lines[0].indexOf(',') !== -1) {
+			delimiter = ',';
+		}
+
+		var headers = parseCSVLine(lines[0], delimiter);
+		var cleanHeaders = headers.map(function(h) {
+			return h.trim().toLowerCase().replace(/^["']|["']$/g, '');
+		});
+
+		var results = [];
+		for (var i = 1; i < lines.length; i++) {
+			if (!lines[i].trim()) continue;
+			var row = parseCSVLine(lines[i], delimiter);
+			var obj = {};
+			for (var j = 0; j < cleanHeaders.length; j++) {
+				obj[cleanHeaders[j]] = row[j] ? row[j].trim() : '';
+			}
+			results.push(obj);
+		}
+		return results;
+	}
+
+	function parseCSVLine(text, delimiter) {
+		var pattern = new RegExp(
+			'(\\' + delimiter + '|\\r?\\n|\\r|^)' +
+			'(?:"([^"]*(?:""[^"]*)*)"|([^"\\' + delimiter + '\\r\\n]*))',
+			'gi'
+		);
+		var result = [];
+		var matches = null;
+		while (matches = pattern.exec(text)) {
+			var matchedDelimiter = matches[1];
+			if (matchedDelimiter.length && matchedDelimiter !== delimiter) {
+				break;
+			}
+			var matchedValue;
+			if (matches[2]) {
+				matchedValue = matches[2].replace(new RegExp('""', 'g'), '"');
+			} else {
+				matchedValue = matches[3];
+			}
+			result.push(matchedValue);
+		}
+		return result;
+	}
+
+	$(document).on('click', '#wpat_csv_start_import_btn', function(e) {
+		e.preventDefault();
+		if (!csvParsedRows || !csvParsedRows.length) return;
+
+		var $btn = $(this);
+		$btn.prop('disabled', true);
+
+		var $progressWrapper = $('#wpat_csv_progress_wrapper').show();
+		var $progressLabel = $('#wpat_csv_progress_label');
+		var $progressPercent = $('#wpat_csv_progress_percent');
+		var $progressBar = $('#wpat_csv_progress_bar');
+
+		var targetPostType = $('#wpat_csv_import_post_type').val() || 'post';
+		var totalRows = csvParsedRows.length;
+		var batchSize = 10;
+		var currentIndex = 0;
+		var totalImported = 0;
+		var totalUpdated = 0;
+
+		function processNextBatch() {
+			if (currentIndex >= totalRows) {
+				$progressLabel.html('<span style="color:#10b981;">✓ ¡Importación completada! ' + totalImported + ' creadas, ' + totalUpdated + ' actualizadas.</span>');
+				$progressPercent.text('100%');
+				$progressBar.css('width', '100%');
+				$btn.text('Importación Finalizada').prop('disabled', false);
+				return;
+			}
+
+			var chunk = csvParsedRows.slice(currentIndex, currentIndex + batchSize);
+			var percent = Math.round((currentIndex / totalRows) * 100);
+
+			$progressLabel.text('Importando entradas ' + (currentIndex + 1) + ' a ' + Math.min(currentIndex + batchSize, totalRows) + ' de ' + totalRows + '...');
+			$progressPercent.text(percent + '%');
+			$progressBar.css('width', percent + '%');
+
+			$.ajax({
+				url: ajaxurl,
+				type: 'POST',
+				data: {
+					action: 'wpat_csv_import_batch',
+					target_post_type: targetPostType,
+					rows: chunk
+				},
+				success: function(response) {
+					if (response.success) {
+						totalImported += response.data.imported || 0;
+						totalUpdated += response.data.updated || 0;
+						currentIndex += batchSize;
+						processNextBatch();
+					} else {
+						alert('Error durante la importación: ' + (response.data ? response.data.message : 'Error desconocido'));
+						$btn.prop('disabled', false).text('Reintentar Importación CSV');
+					}
+				},
+				error: function() {
+					alert('Fallo de conexión al importar lote CSV.');
+					$btn.prop('disabled', false).text('Reintentar Importación CSV');
+				}
+			});
+		}
+
+		processNextBatch();
+	});
+
 });
+
 

@@ -40,9 +40,7 @@ class WPAT_Initial_Setup {
 	public function run( $actions ) {
 		$results = array();
 
-		// Desactivar redireccionamientos de bienvenida de plugins (como Elementor o WooCommerce) durante la activación automática
-		add_filter( 'wp_redirect', '__return_false', 9999 );
-		add_filter( 'wp_safe_redirect', '__return_false', 9999 );
+		// Desactivar redireccionamientos de bienvenida de Elementor durante la activación automática
 		add_filter( 'elementor/admin/after_install_redirect', '__return_false', 9999 );
 
 		// 1. Eliminar entrada "Hola mundo"
@@ -333,7 +331,7 @@ class WPAT_Initial_Setup {
 		// 6b. Instalar y activar el plugin TranslatePress
 		if ( ! empty( $actions['install_translatepress'] ) ) {
 			$plugin_slug = 'translatepress-multilingual';
-			$plugin_file = 'translatepress-multilingual/index.php';
+			$plugin_file = 'translatepress-multilingual/translatepress-multilingual.php';
 			
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 			$plugin_installed = file_exists( WP_PLUGIN_DIR . '/' . $plugin_file );
@@ -407,10 +405,6 @@ class WPAT_Initial_Setup {
 			$results[] = 'Indexación de motores de búsqueda bloqueada temporalmente.';
 		}
 
-		// Desactivar temporalmente bloqueo de redirección
-		remove_filter( 'wp_redirect', '__return_false', 9999 );
-		remove_filter( 'wp_safe_redirect', '__return_false', 9999 );
-		
 		// Borrar transients de redireccionamiento de Elementor y WooCommerce por seguridad
 		delete_transient( 'elementor_activation_redirect' );
 		delete_transient( '_wc_activation_redirect' );

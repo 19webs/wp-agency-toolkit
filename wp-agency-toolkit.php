@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: WP Agency Toolkit
- * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n, seguridad, WooCommerce, rendimiento y optimizaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de medios.
- * Version:     3.2.8
+ * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administraciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n, seguridad, WooCommerce, rendimiento y optimizaciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n de medios.
+ * Version:     3.2.9
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '3.2.8' );
+define( 'WPAT_VERSION', '3.2.9' );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -24,14 +24,14 @@ define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 class WPAT_Main {
 
 	/**
-	 * Instancia ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âºnica de la clase.
+	 * Instancia ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºnica de la clase.
 	 *
 	 * @var WPAT_Main
 	 */
 	private static $instance = null;
 
 	/**
-	 * Listado de mÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³dulos y sus archivos/clases.
+	 * Listado de mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³dulos y sus archivos/clases.
 	 *
 	 * @var array
 	 */
@@ -116,6 +116,14 @@ class WPAT_Main {
 			'file'  => 'includes/modules/class-wpat-initial-setup.php',
 			'class' => 'WPAT_Initial_Setup',
 		),
+		'post-csv-importer' => array(
+			'file'  => 'includes/modules/class-wpat-post-csv-importer.php',
+			'class' => 'WPAT_Post_CSV_Importer',
+		),
+		'anti-spam' => array(
+			'file'  => 'includes/modules/class-wpat-anti-spam.php',
+			'class' => 'WPAT_Anti_Spam',
+		),
 	);
 
 	/**
@@ -131,20 +139,20 @@ class WPAT_Main {
 	}
 
 	/**
-	 * Constructor privado para evitar instanciaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n externa.
+	 * Constructor privado para evitar instanciaciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n externa.
 	 */
 	private function __construct() {
 		add_action( 'plugins_loaded', array( $this, 'init' ) );
 	}
 
 	/**
-	 * Inicializa el plugin, cargando mÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³dulos y el panel de administraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n.
+	 * Inicializa el plugin, cargando mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³dulos y el panel de administraciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n.
 	 */
 	public function init() {
-		// Cargar configuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de forma centralizada
+		// Cargar configuraciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n de forma centralizada
 		$settings = $this->get_settings();
 
-		// Cargar condicionalmente cada mÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³dulo si estÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ activo (ON)
+		// Cargar condicionalmente cada mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³dulo si estÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ activo (ON)
 		foreach ( $this->modules as $id => $module ) {
 			if ( isset( $settings[ $id ] ) && '1' === $settings[ $id ] ) {
 				$file_path = WPAT_PATH . $module['file'];
@@ -165,13 +173,13 @@ class WPAT_Main {
 			require_once $envato_importer_path;
 		}
 
-		// Cargar actualizador automÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡tico conectado con GitHub
+		// Cargar actualizador automÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡tico conectado con GitHub
 		$updater_path = WPAT_PATH . 'includes/class-wpat-updater.php';
 		if ( file_exists( $updater_path ) ) {
 			require_once $updater_path;
 		}
 
-		// Cargar panel de administraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n en el back-office
+		// Cargar panel de administraciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n en el back-office
 		if ( is_admin() ) {
 			require_once WPAT_PATH . 'includes/class-wpat-admin.php';
 			WPAT_Admin::get_instance();
@@ -185,7 +193,7 @@ class WPAT_Main {
 	 */
 	public function get_settings() {
 		$defaults = array(
-			// MÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³dulos (0 = desactivado, 1 = activo)
+			// MÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³dulos (0 = desactivado, 1 = activo)
 			'login-customizer'          => '0',
 			'hide-login'                => '0',
 			'ssl-fixer'                 => '0',
@@ -196,7 +204,7 @@ class WPAT_Main {
 			'woo_catalog_hide_cart'     => '0',
 			'woo_catalog_wa_enable'     => '0',
 			'woo_catalog_wa_phone'      => '',
-			'woo_catalog_wa_message'    => 'Estoy interesado en el producto {product_title} ({product_url}). ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¿CÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³mo podrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­a comprarlo?',
+			'woo_catalog_wa_message'    => 'Estoy interesado en el producto {product_title} ({product_url}). ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¿CÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³mo podrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­a comprarlo?',
 			'woo_catalog_form_enable'   => '0',
 			'woo_catalog_form_email'    => '',
 			'woo-zoom'                  => '0',
@@ -243,8 +251,8 @@ class WPAT_Main {
 			'admin_footer_text'         => '',
 			'hide_admin_bar'            => '0',
 			'dashboard_cleaner'         => '0',
-			'dashboard_welcome_title'   => 'Soporte y GestiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n',
-			'dashboard_welcome_text'    => 'Bienvenido al panel de administraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de tu sitio web.',
+			'dashboard_welcome_title'   => 'Soporte y GestiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n',
+			'dashboard_welcome_text'    => 'Bienvenido al panel de administraciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n de tu sitio web.',
 
 			// Opciones del Bloqueador de Bots
 			'bot_blocker'               => '0',
@@ -253,12 +261,23 @@ class WPAT_Main {
 			'bot_blocker_duration'      => '24',
 			'bot_blocker_whitelist'     => '',
 
+			// Opciones de Anti-Spam
+			'anti-spam'                 => '1',
+			'antispam_honeypot'          => '1',
+			'antispam_time_check'       => '1',
+			'antispam_max_links'        => '2',
+			'antispam_block_cyrillic'   => '1',
+			'antispam_keywords'         => '',
+
+			// Opciones de Importador CSV
+			'post-csv-importer'         => '1',
+
 			// Opciones de Integraciones
 			'integrations'                => '1',
 			'google_search_console_code'  => '',
 			'google_analytics_id'         => '',
 
-			// Opciones de ConfiguraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n Inicial
+			// Opciones de ConfiguraciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n Inicial
 			'initial-setup'               => '1',
 
 			// Opciones de Hide Login

@@ -1971,6 +1971,69 @@ class WPAT_Admin {
 								</div>
 							</div>
 
+							<!-- Módulo: Anti-Spam Inteligente -->
+							<div class="wpat-module-card">
+								<div class="wpat-module-header">
+									<div class="wpat-module-info">
+										<h3>Protección Anti-Spam Zero-Bloat</h3>
+										<p>Bloquea spam automatizado en Formularios de Elementor, MetForm, ElementsKit, Comentarios y Reseñas sin usar servicios externos ni Captchas molestos.</p>
+									</div>
+									<?php $this->render_module_toggle( 'anti-spam', $settings, true ); ?>
+								</div>
+								<div class="wpat-module-body" style="display: none;">
+									<?php
+									$antispam_blocked_count = get_option( 'wpat_antispam_blocked_count', 0 );
+									?>
+									<div style="background: #f8fafc; border: 1px solid var(--wpat-border); padding: 12px 15px; border-radius: 6px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+										<span style="font-weight: 600; font-size: 13px; color: #475569;">Spam bloqueado hasta la fecha:</span>
+										<span style="font-weight: 700; font-size: 16px; color: #10b981; background: #d1fae5; padding: 2px 10px; border-radius: 12px;"><?php echo esc_html( number_format_i18n( $antispam_blocked_count ) ); ?> envíos</span>
+									</div>
+
+									<div class="wpat-field-group" style="margin-bottom: 12px;">
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_settings[antispam_honeypot]" value="1" <?php checked( isset( $settings['antispam_honeypot'] ) ? $settings['antispam_honeypot'] : '1', '1' ); ?> style="margin-right:8px;" />
+											Activar campo trampa Honeypot (Invisible para humanos, detecta bots)
+										</label>
+									</div>
+
+									<div class="wpat-field-group" style="margin-bottom: 12px;">
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_settings[antispam_time_check]" value="1" <?php checked( isset( $settings['antispam_time_check'] ) ? $settings['antispam_time_check'] : '1', '1' ); ?> style="margin-right:8px;" />
+											Activar verificación de tiempo de envío (Bloquea envíos instantáneos menores a 2.5 segundos)
+										</label>
+									</div>
+
+									<div class="wpat-field-group" style="margin-bottom: 12px;">
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_settings[antispam_block_cyrillic]" value="1" <?php checked( isset( $settings['antispam_block_cyrillic'] ) ? $settings['antispam_block_cyrillic'] : '1', '1' ); ?> style="margin-right:8px;" />
+											Bloquear envíos con caracteres cirílicos (rusos) o alfabetos no latinos
+										</label>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px;">
+										<label for="wpat_antispam_max_links">Límite máximo de enlaces/URLs por envío</label>
+										<select name="wpat_settings[antispam_max_links]" id="wpat_antispam_max_links" class="regular-text" style="display:block; margin-bottom:5px;">
+											<option value="0" <?php selected( isset( $settings['antispam_max_links'] ) ? $settings['antispam_max_links'] : '2', '0' ); ?>>Sin enlaces (Bloquear cualquier URL)</option>
+											<option value="1" <?php selected( isset( $settings['antispam_max_links'] ) ? $settings['antispam_max_links'] : '2', '1' ); ?>>Máximo 1 enlace</option>
+											<option value="2" <?php selected( isset( $settings['antispam_max_links'] ) ? $settings['antispam_max_links'] : '2', '2' ); ?>>Máximo 2 enlaces (Recomendado)</option>
+											<option value="3" <?php selected( isset( $settings['antispam_max_links'] ) ? $settings['antispam_max_links'] : '2', '3' ); ?>>Máximo 3 enlaces</option>
+											<option value="99" <?php selected( isset( $settings['antispam_max_links'] ) ? $settings['antispam_max_links'] : '2', '99' ); ?>>Permitir ilimitados</option>
+										</select>
+										<p class="description">Rechaza envíos de formularios que contengan más hipervínculos que el límite fijado.</p>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px;">
+										<label for="wpat_antispam_keywords">Lista negra de palabras de spam (Una por línea)</label>
+										<textarea name="wpat_settings[antispam_keywords]" id="wpat_antispam_keywords" class="large-text" rows="3" placeholder="casino, crypto, viagra, loans, seo ranking"><?php echo esc_textarea( isset( $settings['antispam_keywords'] ) ? $settings['antispam_keywords'] : '' ); ?></textarea>
+										<p class="description">Si el contenido del formulario o comentario contiene cualquiera de estas palabras clave, el envío se rechazará.</p>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
+										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
+									</div>
+								</div>
+							</div>
+
 							<!-- Módulo: Hide Login -->
 							<div class="wpat-module-card">
 								<div class="wpat-module-header">
@@ -3294,6 +3357,80 @@ class WPAT_Admin {
 									</div>
 								</div>
 
+							</div>
+
+							<!-- SECCIÓN DEDICADA: IMPORTADOR Y EXPORTADOR DE ENTRADAS EN CSV (EXCEL) -->
+							<div class="wpat-module-card" style="padding: 20px; margin-top: 25px;">
+								<h3 style="margin-top: 0; font-size:16px; font-weight:600; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--wpat-border); padding-bottom: 12px; margin-bottom: 15px;">
+									<span class="dashicons dashicons-spreadsheet" style="color: #10b981; font-size: 22px; width: 22px; height: 22px; margin: 0;"></span>
+									Importador / Exportador Masivo de Entradas en CSV (Excel / Hojas de Cálculo)
+								</h3>
+								<p class="description" style="margin-bottom: 20px;">Importa o exporta artículos de blog o tipos de contenido en formato CSV editable en Excel o Google Sheets, ideal para publicar artículos masivos o migrar textos.</p>
+
+								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+									
+									<!-- SUB-BLOQUE: EXPORTAR CSV -->
+									<div style="background: #f8fafc; border: 1px solid var(--wpat-border); padding: 18px; border-radius: 8px;">
+										<h4 style="margin-top: 0; font-size: 14px; font-weight: 600;">1. Exportar a CSV</h4>
+										<p class="description" style="margin-bottom: 15px;">Descarga todas las entradas en un archivo CSV formateado en UTF-8 con sus categorías, fechas, contenidos y meta datos SEO.</p>
+										
+										<div style="margin-bottom: 15px;">
+											<label for="wpat_csv_export_post_type" style="font-weight:600; display:block; margin-bottom:5px; font-size:12px;">Tipo de contenido:</label>
+											<select id="wpat_csv_export_post_type" style="width:100%; height:32px;">
+												<option value="post">Entradas (Blog)</option>
+												<option value="page">Páginas</option>
+												<?php
+												$cpts = get_post_types( array( '_builtin' => false ), 'objects' );
+												foreach ( $cpts as $cpt_obj ) {
+													echo '<option value="' . esc_attr( $cpt_obj->name ) . '">' . esc_html( $cpt_obj->labels->name ) . ' (CPT)</option>';
+												}
+												?>
+											</select>
+										</div>
+										<button type="button" class="button" id="wpat_csv_export_btn" style="width: 100%; font-weight:600;"><span class="dashicons dashicons-download" style="vertical-align:middle; font-size:16px;"></span> Exportar Entradas a CSV</button>
+									</div>
+
+									<!-- SUB-BLOQUE: IMPORTAR CSV -->
+									<div style="background: #f8fafc; border: 1px solid var(--wpat-border); padding: 18px; border-radius: 8px;">
+										<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+											<h4 style="margin:0; font-size: 14px; font-weight: 600;">2. Importar desde CSV</h4>
+											<a href="<?php echo esc_url( admin_url( 'admin-ajax.php?action=wpat_csv_download_sample' ) ); ?>" class="button button-small" style="font-size:11px;"><span class="dashicons dashicons-media-spreadsheet" style="vertical-align:middle; font-size:14px;"></span> Plantilla de Ejemplo</a>
+										</div>
+										<p class="description" style="margin-bottom: 15px;">Sube tu archivo CSV. El sistema detectará las columnas (título, contenido, categorías, imagen destacada, SEO) e importará en lotes fluídos.</p>
+
+										<div style="margin-bottom: 12px;">
+											<label for="wpat_csv_import_post_type" style="font-weight:600; display:block; margin-bottom:5px; font-size:12px;">Importar como tipo de contenido:</label>
+											<select id="wpat_csv_import_post_type" style="width:100%; height:32px;">
+												<option value="post">Entradas (Blog)</option>
+												<option value="page">Páginas</option>
+												<?php
+												foreach ( $cpts as $cpt_obj ) {
+													echo '<option value="' . esc_attr( $cpt_obj->name ) . '">' . esc_html( $cpt_obj->labels->name ) . ' (CPT)</option>';
+												}
+												?>
+											</select>
+										</div>
+
+										<div style="border: 2px dashed #cbd5e1; background: #fff; padding: 15px; border-radius: 6px; text-align: center; margin-bottom: 15px;">
+											<input type="file" id="wpat_csv_file_input" accept=".csv" style="display:none;" />
+											<button type="button" class="button" id="wpat_csv_select_file_btn"><span class="dashicons dashicons-upload" style="vertical-align:middle;"></span> Seleccionar Archivo CSV</button>
+											<div id="wpat_csv_file_name" style="margin-top: 8px; font-size: 12px; font-weight:600; color:#0284c7; display:none;"></div>
+										</div>
+
+										<button type="button" class="button button-primary" id="wpat_csv_start_import_btn" style="width: 100%; font-weight:600; background: #10b981; border-color: #059669;" disabled>Iniciar Importación CSV</button>
+
+										<div id="wpat_csv_progress_wrapper" style="display:none; margin-top:15px; background:#fff; padding:12px; border-radius:6px; border:1px solid #e2e8f0;">
+											<div style="display:flex; justify-content:space-between; font-size:12px; font-weight:600; margin-bottom:5px;">
+												<span id="wpat_csv_progress_label">Procesando...</span>
+												<span id="wpat_csv_progress_percent">0%</span>
+											</div>
+											<div style="width:100%; height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden;">
+												<div id="wpat_csv_progress_bar" style="width:0%; height:100%; background:#10b981; transition:width 0.3s ease;"></div>
+											</div>
+										</div>
+									</div>
+
+								</div>
 							</div>
 						</div>
 

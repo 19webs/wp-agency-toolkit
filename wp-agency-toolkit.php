@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     3.4.12
+ * Version:     3.4.14
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '3.4.12' );
+define( 'WPAT_VERSION', '3.4.14' );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -290,7 +290,7 @@ class WPAT_Main {
 			'google_analytics_id'         => '',
 
 			// Opciones de WhatsApp
-			'whatsapp'                    => '1',
+			'whatsapp'                    => '0',
 			'whatsapp_enabled'            => '0',
 			'whatsapp_phone'              => '',
 			'whatsapp_message'            => '¡Hola! Quisiera más información.',
@@ -299,9 +299,10 @@ class WPAT_Main {
 			'whatsapp_agents'             => '',
 
 			// Opciones de Barra y Tiempo de Lectura
-			'reading-progress'            => '1',
+			'reading-progress'            => '0',
 			'reading_bar_enabled'         => '0',
 			'reading_bar_color'           => '#2563eb',
+			'reading_bar_height'          => '4',
 			'reading_time_enabled'        => '0',
 
 			// Opciones de Detector de Incompatibilidades

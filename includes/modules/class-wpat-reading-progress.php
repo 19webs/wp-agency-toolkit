@@ -33,6 +33,7 @@ class WPAT_Reading_Progress {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
 		add_filter( 'the_content', array( $this, 'prepend_reading_time' ), 10 );
 		add_shortcode( 'tiempo_lectura', array( $this, 'reading_time_shortcode' ) );
+		add_shortcode( 'wpat_reading_time', array( $this, 'reading_time_shortcode' ) );
 	}
 
 	/**
@@ -51,12 +52,14 @@ class WPAT_Reading_Progress {
 		}
 
 		if ( ! empty( $settings['reading_bar_enabled'] ) ) {
-			$bar_color = ! empty( $settings['reading_bar_color'] ) ? sanitize_hex_color( $settings['reading_bar_color'] ) : '#2563eb';
+			$bar_color  = ! empty( $settings['reading_bar_color'] ) ? sanitize_hex_color( $settings['reading_bar_color'] ) : '#2563eb';
+			$bar_height = ! empty( $settings['reading_bar_height'] ) ? max( 1, min( 30, absint( $settings['reading_bar_height'] ) ) ) : 4;
+
 			if ( ! $bar_color ) {
 				$bar_color = '#2563eb';
 			}
 
-			add_action( 'wp_footer', function() use ( $bar_color ) {
+			add_action( 'wp_footer', function() use ( $bar_color, $bar_height ) {
 				?>
 				<!-- WP Agency Toolkit - Reading Progress Bar -->
 				<style>
@@ -65,7 +68,7 @@ class WPAT_Reading_Progress {
 						top: 0;
 						left: 0;
 						width: 0%;
-						height: 4px;
+						height: <?php echo esc_attr( $bar_height ); ?>px;
 						background-color: <?php echo esc_attr( $bar_color ); ?>;
 						z-index: 999999;
 						transition: width 0.1s ease-out;
@@ -125,7 +128,7 @@ class WPAT_Reading_Progress {
 	 * @return string
 	 */
 	public function prepend_reading_time( $content ) {
-		if ( ! is_single() || ! in_the_loop() || ! is_main_query() || is_admin() ) {
+		if ( ! is_single() || is_admin() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
 			return $content;
 		}
 
@@ -134,11 +137,18 @@ class WPAT_Reading_Progress {
 			return $content;
 		}
 
+		static $processed_posts = array();
+		$post_id = get_the_ID();
+		if ( isset( $processed_posts[ $post_id ] ) ) {
+			return $content;
+		}
+		$processed_posts[ $post_id ] = true;
+
 		$minutes = self::calculate_reading_time( $content );
 		$badge_html = sprintf(
-			'<div class="wpat-reading-time-badge" style="display:inline-flex; align-items:center; gap:6px; background:#F3F4F6; color:#374151; padding:6px 12px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px;">
-				<svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-				<span>Tiempo de lectura: %d min</span>
+			'<div class="wpat-reading-time-badge" style="display:inline-flex; align-items:center; gap:6px; background:#f1f5f9; border:1px solid #cbd5e1; color:#334155; padding:6px 14px; border-radius:20px; font-size:13px; font-weight:600; margin-bottom:18px; line-height:1.2;">
+				<svg style="width:16px;height:16px;fill:none;stroke:#2563eb;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+				<span>Tiempo estimado de lectura: <strong>%d min</strong></span>
 			</div>',
 			$minutes
 		);
@@ -147,7 +157,7 @@ class WPAT_Reading_Progress {
 	}
 
 	/**
-	 * Shortcode [tiempo_lectura] para renderizar el distintivo en cualquier lugar de la plantilla o post.
+	 * Shortcode [tiempo_lectura] o [wpat_reading_time] para renderizar el distintivo en cualquier lugar de la plantilla o post.
 	 */
 	public function reading_time_shortcode() {
 		global $post;
@@ -156,8 +166,8 @@ class WPAT_Reading_Progress {
 		}
 		$minutes = self::calculate_reading_time( $post->post_content );
 		return sprintf(
-			'<span class="wpat-reading-time-shortcode" style="display:inline-flex; align-items:center; gap:4px; font-size:13px; color:#6B7280;">
-				<svg style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+			'<span class="wpat-reading-time-shortcode" style="display:inline-flex; align-items:center; gap:5px; font-size:13px; font-weight:500; color:#475569;">
+				<svg style="width:14px;height:14px;fill:none;stroke:#2563eb;stroke-width:2;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
 				%d min de lectura
 			</span>',
 			$minutes

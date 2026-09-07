@@ -729,6 +729,7 @@ class WPAT_Admin {
 		$new_settings['reading-progress']     = isset( $input_settings['reading-progress'] ) && '1' === $input_settings['reading-progress'] ? '1' : '0';
 		$new_settings['reading_bar_enabled']  = isset( $input_settings['reading_bar_enabled'] ) && '1' === $input_settings['reading_bar_enabled'] ? '1' : '0';
 		$new_settings['reading_bar_color']    = isset( $input_settings['reading_bar_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['reading_bar_color'] ) ? $input_settings['reading_bar_color'] : '#2563eb';
+		$new_settings['reading_bar_height']   = isset( $input_settings['reading_bar_height'] ) ? max( 1, min( 30, absint( $input_settings['reading_bar_height'] ) ) ) : 4;
 		$new_settings['reading_time_enabled'] = isset( $input_settings['reading_time_enabled'] ) && '1' === $input_settings['reading_time_enabled'] ? '1' : '0';
 
 		// 11. Sanitizar Detector de Incompatibilidades
@@ -2550,23 +2551,30 @@ class WPAT_Admin {
 								</div>
 								<div class="wpat-module-body" style="display: none;">
 									<div class="wpat-field-group">
-										<label>
+										<label style="font-weight: 600;">
 											<input type="checkbox" name="wpat_settings[reading_bar_enabled]" value="1" <?php checked( isset( $settings['reading_bar_enabled'] ) ? $settings['reading_bar_enabled'] : '0', '1' ); ?>>
 											Activar Barra de Progreso de Lectura Superior en Entradas (is_single)
 										</label>
 									</div>
 
-									<div class="wpat-field-group" style="margin-top: 15px;">
-										<label for="wpat_reading_bar_color" style="display:block; margin-bottom:5px;">Color de la Barra de Lectura</label>
-										<input type="text" name="wpat_settings[reading_bar_color]" id="wpat_reading_bar_color" value="<?php echo esc_attr( isset( $settings['reading_bar_color'] ) ? $settings['reading_bar_color'] : '#2563eb' ); ?>" class="wpat-color-picker" />
+									<div class="wpat-field-group" style="margin-top: 15px; display: flex; gap: 25px; align-items: flex-start; flex-wrap: wrap;">
+										<div>
+											<label for="wpat_reading_bar_color" style="display:block; margin-bottom:5px; font-weight:600;">Color de la Barra de Lectura</label>
+											<input type="text" name="wpat_settings[reading_bar_color]" id="wpat_reading_bar_color" value="<?php echo esc_attr( isset( $settings['reading_bar_color'] ) ? $settings['reading_bar_color'] : '#2563eb' ); ?>" class="wpat-color-picker" />
+										</div>
+										<div>
+											<label for="wpat_reading_bar_height" style="display:block; margin-bottom:5px; font-weight:600;">Grosor de la Barra (píxeles)</label>
+											<input type="number" name="wpat_settings[reading_bar_height]" id="wpat_reading_bar_height" min="1" max="30" value="<?php echo esc_attr( isset( $settings['reading_bar_height'] ) ? $settings['reading_bar_height'] : '4' ); ?>" class="small-text" style="height: 30px; text-align: center;" /> px
+											<p class="description" style="margin-top:3px;">Por defecto: 4px. Auméntalo (ej. 6px o 8px) para que sea más visible.</p>
+										</div>
 									</div>
 
-									<div class="wpat-field-group" style="margin-top: 15px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<label>
+									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
+										<label style="font-weight: 600;">
 											<input type="checkbox" name="wpat_settings[reading_time_enabled]" value="1" <?php checked( isset( $settings['reading_time_enabled'] ) ? $settings['reading_time_enabled'] : '0', '1' ); ?>>
-											Mostrar Tiempo Estimado de Lectura (Badge automático antes del contenido de la entrada)
+											Mostrar Tiempo Estimado de Lectura (Badge automático al inicio del artículo)
 										</label>
-										<p class="description">Calcula automáticamente la velocidad media de lectura (200 palabras/minuto). También puedes usar el shortcode <code>[tiempo_lectura]</code> en tus maquetadores o plantillas.</p>
+										<p class="description" style="margin-top:6px;">Calcula automáticamente el tiempo necesario en base a 200 palabras/minuto e inserta una etiqueta estilizada (ej. <code>⏱️ Tiempo estimado de lectura: 3 min</code>) justo antes del contenido de la entrada. También puedes insertarlo manualmente en cualquier maquetador (Elementor, Divi, Gutenberg) mediante los shortcodes <code>[tiempo_lectura]</code> o <code>[wpat_reading_time]</code>.</p>
 									</div>
 
 									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">

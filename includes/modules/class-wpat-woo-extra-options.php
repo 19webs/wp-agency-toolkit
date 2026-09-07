@@ -130,7 +130,16 @@ class WPAT_Woo_Extra_Options {
 				$price        = ! empty( $field['price'] ) ? floatval( $field['price'] ) : 0;
 				$max_length   = ! empty( $field['max_length'] ) ? intval( $field['max_length'] ) : 0;
 
-				$price_html = $price > 0 ? ' <span class="wpat-extra-price" style="color: #2563eb; font-weight: 600;">(+' . wc_price( $price ) . ')</span>' : '';
+				// Comprobar si las opciones tienen precios individuales por línea
+				$has_option_prices = false;
+				if ( in_array( $type, array( 'select', 'radio', 'swatch' ), true ) ) {
+					$raw_opts_text = ( 'swatch' === $type ) ? ( ! empty( $field['swatches'] ) ? $field['swatches'] : '' ) : ( ! empty( $field['options'] ) ? $field['options'] : '' );
+					if ( strpos( $raw_opts_text, '|' ) !== false ) {
+						$has_option_prices = true;
+					}
+				}
+
+				$price_html = ( ! $has_option_prices && $price > 0 ) ? ' <span class="wpat-extra-price" style="color: #2563eb; font-weight: 600;">(+' . wc_price( $price ) . ')</span>' : '';
 				$req_html   = $required ? ' <span class="required" style="color:#ef4444;">*</span>' : '';
 
 				echo '<div class="wpat-extra-field-group" style="margin-bottom: 14px;">';
@@ -159,7 +168,7 @@ class WPAT_Woo_Extra_Options {
 							if ( $opt_price > 0 ) {
 								$opt_disp .= ' (+' . wc_price( $opt_price ) . ')';
 							}
-							$value_attr = $opt_name . ( $opt_price > 0 ? '|' . $opt_price : '' );
+							$value_attr = $opt_name . '|' . $opt_price;
 							echo '<option value="' . esc_attr( $value_attr ) . '">' . esc_html( wp_strip_all_tags( $opt_disp ) ) . '</option>';
 						}
 					}
@@ -180,7 +189,7 @@ class WPAT_Woo_Extra_Options {
 							continue;
 						}
 
-						$val_attr = $color_name . ( $color_price > 0 ? '|' . $color_price : '' );
+						$val_attr = $color_name . '|' . $color_price;
 						$title_text = $color_name . ( $color_price > 0 ? ' (+' . wc_price( $color_price ) . ')' : '' );
 
 						echo '<button type="button" class="wpat-swatch-btn" data-target="' . esc_attr( $field_id ) . '" data-value="' . esc_attr( $val_attr ) . '" data-name="' . esc_attr( $color_name ) . '" data-price="' . esc_attr( $color_price ) . '" title="' . esc_attr( wp_strip_all_tags( $title_text ) ) . '" style="width: 34px; height: 34px; border-radius: 50%; background-color: ' . esc_attr( $color_hex ) . '; border: 2px solid #ffffff; box-shadow: 0 0 0 1px #cbd5e1; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; padding:0; outline:none;"></button>';
@@ -200,7 +209,7 @@ class WPAT_Woo_Extra_Options {
 							if ( $opt_price > 0 ) {
 								$opt_disp .= ' (+' . wc_price( $opt_price ) . ')';
 							}
-							$value_attr = $opt_name . ( $opt_price > 0 ? '|' . $opt_price : '' );
+							$value_attr = $opt_name . '|' . $opt_price;
 							$radio_id   = $field_id . '_' . $r_idx;
 
 							echo '<label for="' . esc_attr( $radio_id ) . '" style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">';
@@ -305,16 +314,21 @@ class WPAT_Woo_Extra_Options {
 		foreach ( $rules as $rule_idx => $rule ) {
 			$fields = isset( $rule['fields'] ) && is_array( $rule['fields'] ) ? $rule['fields'] : array();
 			foreach ( $fields as $f_idx => $field ) {
-				$field_id = 'wpat_extra_' . $rule_idx . '_' . $f_idx;
+				$field_id   = 'wpat_extra_' . $rule_idx . '_' . $f_idx;
+				$field_type = ! empty( $field['type'] ) ? $field['type'] : 'text';
+
 				if ( isset( $_POST[ $field_id ] ) && '' !== trim( wp_unslash( $_POST[ $field_id ] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-					$raw_val = sanitize_text_field( wp_unslash( $_POST[ $field_id ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+					$raw_val    = sanitize_text_field( wp_unslash( $_POST[ $field_id ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 					$base_price = ! empty( $field['price'] ) ? floatval( $field['price'] ) : 0;
 
 					$opt_label_display = $raw_val;
 					$opt_price         = $base_price;
 
-					if ( strpos( $raw_val, '|' ) !== false ) {
-						$parts = explode( '|', $raw_val );
+					if ( 'checkbox' === $field_type ) {
+						$opt_label_display = ! empty( $field['placeholder'] ) ? sanitize_text_field( $field['placeholder'] ) : __( 'Sí', 'wp-agency-toolkit' );
+						$opt_price         = $base_price;
+					} elseif ( strpos( $raw_val, '|' ) !== false ) {
+						$parts             = explode( '|', $raw_val );
 						$opt_label_display = trim( $parts[0] );
 						$opt_price         = isset( $parts[1] ) ? floatval( trim( $parts[1] ) ) : $base_price;
 					}
@@ -339,21 +353,30 @@ class WPAT_Woo_Extra_Options {
 	 * Calcula el precio dinámico sumando el coste de las opciones extra.
 	 */
 	public function calculate_extra_option_prices( $cart ) {
-		if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
+		if ( is_admin() && ! wp_doing_ajax() && ! ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
 			return;
 		}
 
-		foreach ( $cart->get_cart() as $cart_item ) {
+		foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
 			if ( ! empty( $cart_item['wpat_extra_options'] ) && is_array( $cart_item['wpat_extra_options'] ) ) {
 				$extra_price = 0;
 				foreach ( $cart_item['wpat_extra_options'] as $opt ) {
-					if ( ! empty( $opt['price'] ) ) {
+					if ( isset( $opt['price'] ) && floatval( $opt['price'] ) > 0 ) {
 						$extra_price += floatval( $opt['price'] );
 					}
 				}
+
 				if ( $extra_price > 0 ) {
-					$base_price = $cart_item['data']->get_price();
-					$cart_item['data']->set_price( $base_price + $extra_price );
+					$product = $cart_item['data'];
+
+					if ( ! isset( $cart_item['wpat_base_price'] ) || '' === $cart_item['wpat_base_price'] ) {
+						$raw_price = $product->get_price( 'edit' );
+						$cart_item['wpat_base_price'] = floatval( $raw_price );
+						$cart->cart_contents[ $cart_item_key ]['wpat_base_price'] = floatval( $raw_price );
+					}
+
+					$base_p = floatval( $cart_item['wpat_base_price'] );
+					$product->set_price( $base_p + $extra_price );
 				}
 			}
 		}

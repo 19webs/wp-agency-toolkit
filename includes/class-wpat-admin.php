@@ -740,6 +740,7 @@ class WPAT_Admin {
 		$new_settings['accessibility']                   = isset( $input_settings['accessibility'] ) && '1' === $input_settings['accessibility'] ? '1' : '0';
 		$new_settings['accessibility_enabled']           = isset( $input_settings['accessibility_enabled'] ) && '1' === $input_settings['accessibility_enabled'] ? '1' : '0';
 		$new_settings['accessibility_position']          = isset( $input_settings['accessibility_position'] ) && in_array( $input_settings['accessibility_position'], array( 'bottom-left', 'bottom-right', 'top-left', 'top-right' ), true ) ? $input_settings['accessibility_position'] : 'bottom-left';
+		$new_settings['accessibility_offset_y']          = isset( $input_settings['accessibility_offset_y'] ) ? max( 0, min( 500, absint( $input_settings['accessibility_offset_y'] ) ) ) : 25;
 		$new_settings['accessibility_bg_color']          = isset( $input_settings['accessibility_bg_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['accessibility_bg_color'] ) ? $input_settings['accessibility_bg_color'] : '#2563eb';
 		$new_settings['accessibility_text_zoom']         = isset( $input_settings['accessibility_text_zoom'] ) && '1' === $input_settings['accessibility_text_zoom'] ? '1' : '0';
 		$new_settings['accessibility_grayscale']         = isset( $input_settings['accessibility_grayscale'] ) && '1' === $input_settings['accessibility_grayscale'] ? '1' : '0';
@@ -2624,6 +2625,10 @@ class WPAT_Admin {
 												<option value="top-left" <?php selected( isset( $settings['accessibility_position'] ) ? $settings['accessibility_position'] : 'bottom-left', 'top-left' ); ?>>Superior Izquierda</option>
 												<option value="top-right" <?php selected( isset( $settings['accessibility_position'] ) ? $settings['accessibility_position'] : 'bottom-left', 'top-right' ); ?>>Superior Derecha</option>
 											</select>
+										</div>
+										<div>
+											<label for="wpat_accessibility_offset_y" style="display:block; margin-bottom:5px; font-weight:600;">Distancia Vertical (Margen en px)</label>
+											<input type="number" name="wpat_settings[accessibility_offset_y]" id="wpat_accessibility_offset_y" min="0" max="500" value="<?php echo esc_attr( isset( $settings['accessibility_offset_y'] ) ? $settings['accessibility_offset_y'] : '25' ); ?>" class="small-text" style="height: 32px; text-align: center;" /> px
 										</div>
 										<div>
 											<label for="wpat_accessibility_bg_color" style="display:block; margin-bottom:5px; font-weight:600;">Color del Icono Flotante</label>

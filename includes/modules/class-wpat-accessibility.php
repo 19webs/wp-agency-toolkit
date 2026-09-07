@@ -49,30 +49,34 @@ class WPAT_Accessibility {
 		}
 
 		$position = ! empty( $settings['accessibility_position'] ) ? $settings['accessibility_position'] : 'bottom-left';
+		$offset_y = isset( $settings['accessibility_offset_y'] ) ? max( 0, min( 500, absint( $settings['accessibility_offset_y'] ) ) ) : 25;
 		$bg_color = ! empty( $settings['accessibility_bg_color'] ) ? sanitize_hex_color( $settings['accessibility_bg_color'] ) : '#2563eb';
 		if ( ! $bg_color ) {
 			$bg_color = '#2563eb';
 		}
 
+		$menu_offset = $offset_y + 58;
+
 		// Posicionamiento CSS
 		$pos_css = '';
+		$menu_pos_css = '';
 		switch ( $position ) {
 			case 'bottom-right':
-				$pos_css = 'bottom: 25px; right: 25px;';
-				$menu_pos_css = 'bottom: 80px; right: 25px;';
+				$pos_css = "bottom: {$offset_y}px; right: 25px;";
+				$menu_pos_css = "bottom: {$menu_offset}px; right: 25px;";
 				break;
 			case 'top-left':
-				$pos_css = 'top: 25px; left: 25px;';
-				$menu_pos_css = 'top: 80px; left: 25px;';
+				$pos_css = "top: {$offset_y}px; left: 25px;";
+				$menu_pos_css = "top: {$menu_offset}px; left: 25px;";
 				break;
 			case 'top-right':
-				$pos_css = 'top: 25px; right: 25px;';
-				$menu_pos_css = 'top: 80px; right: 25px;';
+				$pos_css = "top: {$offset_y}px; right: 25px;";
+				$menu_pos_css = "top: {$menu_offset}px; right: 25px;";
 				break;
 			case 'bottom-left':
 			default:
-				$pos_css = 'bottom: 25px; left: 25px;';
-				$menu_pos_css = 'bottom: 80px; left: 25px;';
+				$pos_css = "bottom: {$offset_y}px; left: 25px;";
+				$menu_pos_css = "bottom: {$menu_offset}px; left: 25px;";
 				break;
 		}
 
@@ -88,129 +92,156 @@ class WPAT_Accessibility {
 		<!-- WP Agency Toolkit - Web Accessibility Toolbar -->
 		<style>
 			#wpat-a11y-btn {
-				position: fixed;
+				position: fixed !important;
 				<?php echo $pos_css; ?>
-				width: 48px;
-				height: 48px;
-				background-color: <?php echo esc_attr( $bg_color ); ?>;
-				border-radius: 50%;
-				box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				cursor: pointer;
-				z-index: 999998;
-				transition: transform 0.2s ease, box-shadow 0.2s ease;
-				border: none;
-				outline: none;
-				padding: 0;
+				width: 48px !important;
+				height: 48px !important;
+				background-color: <?php echo esc_attr( $bg_color ); ?> !important;
+				border-radius: 50% !important;
+				box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+				display: flex !important;
+				align-items: center !important;
+				justify-content: center !important;
+				cursor: pointer !important;
+				z-index: 999998 !important;
+				transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+				border: none !important;
+				outline: none !important;
+				padding: 0 !important;
+				margin: 0 !important;
 			}
 			#wpat-a11y-btn:hover {
-				transform: scale(1.08);
-				box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+				transform: scale(1.08) !important;
+				box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3) !important;
 			}
 			#wpat-a11y-btn svg {
-				width: 28px;
-				height: 28px;
-				fill: #ffffff;
+				width: 26px !important;
+				height: 26px !important;
+				fill: #ffffff !important;
 			}
 			#wpat-a11y-menu {
-				position: fixed;
+				position: fixed !important;
 				<?php echo $menu_pos_css; ?>
-				width: 280px;
-				background: #ffffff;
-				border-radius: 12px;
-				box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-				border: 1px solid #e2e8f0;
-				z-index: 999999;
+				width: 290px !important;
+				background: #ffffff !important;
+				border-radius: 8px !important;
+				box-shadow: 0 10px 30px rgba(0,0,0,0.14) !important;
+				border: 1px solid #e2e8f0 !important;
+				z-index: 999999 !important;
 				display: none;
-				overflow: hidden;
-				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-				direction: ltr;
+				overflow: hidden !important;
+				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif !important;
+				direction: ltr !important;
+				box-sizing: border-box !important;
 			}
 			#wpat-a11y-menu.wpat-open {
-				display: block;
-				animation: wpatA11yFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+				display: block !important;
+				animation: wpatA11yFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 			}
 			@keyframes wpatA11yFadeIn {
 				from { opacity: 0; transform: translateY(8px); }
 				to { opacity: 1; transform: translateY(0); }
 			}
 			.wpat-a11y-header {
-				background: #f8fafc;
-				padding: 14px 16px;
-				border-bottom: 1px solid #e2e8f0;
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
+				background: #ffffff !important;
+				padding: 14px 16px !important;
+				border-bottom: 1px solid #f1f5f9 !important;
+				display: flex !important;
+				justify-content: space-between !important;
+				align-items: center !important;
 			}
 			.wpat-a11y-header h4 {
-				margin: 0;
-				font-size: 15px;
-				font-weight: 700;
-				color: #0f172a;
+				margin: 0 !important;
+				font-size: 14.5px !important;
+				font-weight: 700 !important;
+				color: #0f172a !important;
+				border: none !important;
+				padding: 0 !important;
+				line-height: 1.2 !important;
 			}
 			.wpat-a11y-close {
-				background: transparent;
-				border: none;
-				font-size: 20px;
-				line-height: 1;
-				color: #64748b;
-				cursor: pointer;
-				padding: 2px 6px;
-				border-radius: 4px;
+				background: transparent !important;
+				border: none !important;
+				font-size: 20px !important;
+				line-height: 1 !important;
+				color: #64748b !important;
+				cursor: pointer !important;
+				padding: 2px 6px !important;
+				border-radius: 4px !important;
+				box-shadow: none !important;
+				margin: 0 !important;
 			}
 			.wpat-a11y-close:hover {
-				background: #e2e8f0;
-				color: #0f172a;
+				background: #f1f5f9 !important;
+				color: #0f172a !important;
 			}
 			.wpat-a11y-body {
-				padding: 8px 0;
-				max-height: 380px;
-				overflow-y: auto;
+				padding: 4px 0 !important;
+				max-height: 400px !important;
+				overflow-y: auto !important;
+				background: #ffffff !important;
 			}
 			.wpat-a11y-item {
-				display: flex;
-				align-items: center;
-				gap: 12px;
-				width: 100%;
-				padding: 10px 16px;
-				background: transparent;
-				border: none;
-				text-align: left;
-				font-size: 13.5px;
-				font-weight: 500;
-				color: #334155;
-				cursor: pointer;
-				transition: background 0.15s ease, color 0.15s ease;
+				display: flex !important;
+				align-items: center !important;
+				gap: 12px !important;
+				width: 100% !important;
+				padding: 10px 16px !important;
+				background: #ffffff !important;
+				border: none !important;
+				border-radius: 0 !important;
+				box-shadow: none !important;
+				text-align: left !important;
+				font-size: 13.5px !important;
+				font-weight: 500 !important;
+				color: #334155 !important;
+				cursor: pointer !important;
+				transition: background 0.15s ease, color 0.15s ease !important;
+				margin: 0 !important;
+				outline: none !important;
+				box-sizing: border-box !important;
+				border-left: 3px solid transparent !important;
 			}
 			.wpat-a11y-item:hover {
-				background: #f1f5f9;
-				color: #2563eb;
+				background: #f8fafc !important;
+				color: #0f172a !important;
 			}
 			.wpat-a11y-item.wpat-active {
-				background: #eff6ff;
-				color: #1d4ed8;
-				font-weight: 600;
+				background: #f0f9ff !important;
+				color: #0284c7 !important;
+				font-weight: 600 !important;
+				border-left: 3px solid #0284c7 !important;
 			}
 			.wpat-a11y-icon {
-				width: 20px;
-				height: 20px;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				flex-shrink: 0;
+				width: 20px !important;
+				height: 20px !important;
+				display: flex !important;
+				align-items: center !important;
+				justify-content: center !important;
+				flex-shrink: 0 !important;
 			}
 			.wpat-a11y-icon svg {
-				width: 18px;
-				height: 18px;
-				fill: currentColor;
+				width: 18px !important;
+				height: 18px !important;
+				fill: currentColor !important;
 			}
 			.wpat-a11y-divider {
-				height: 1px;
-				background: #f1f5f9;
-				margin: 4px 0;
+				height: 1px !important;
+				background: #f1f5f9 !important;
+				margin: 4px 0 !important;
 			}
+
+			/* Reglas CSS para Zoom de Texto */
+			html.wpat-a11y-zoom-1 body *:not(#wpat-a11y-menu *):not(#wpat-a11y-btn *) {
+				font-size: 112% !important;
+			}
+			html.wpat-a11y-zoom-2 body *:not(#wpat-a11y-menu *):not(#wpat-a11y-btn *) {
+				font-size: 125% !important;
+			}
+			html.wpat-a11y-zoom-3 body *:not(#wpat-a11y-menu *):not(#wpat-a11y-btn *) {
+				font-size: 138% !important;
+			}
+
 			/* Reglas CSS dinámicas aplicables al documento */
 			html.wpat-a11y-grayscale {
 				filter: grayscale(100%) !important;
@@ -339,7 +370,7 @@ class WPAT_Accessibility {
 
 				<div class="wpat-a11y-divider"></div>
 
-				<button type="button" class="wpat-a11y-item" data-action="reset" style="color: #ef4444;">
+				<button type="button" class="wpat-a11y-item" data-action="reset" style="color: #ef4444 !important;">
 					<span class="wpat-a11y-icon">
 						<svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
 					</span>
@@ -356,13 +387,24 @@ class WPAT_Accessibility {
 			var closeBtn = document.getElementById('wpat-a11y-close-btn');
 			if (!btn || !menu) return;
 
-			var zoomLevels = [100, 110, 120, 130];
 			var zoomIndex = 0;
+
+			function applyZoom() {
+				document.documentElement.classList.remove('wpat-a11y-zoom-1', 'wpat-a11y-zoom-2', 'wpat-a11y-zoom-3');
+				var zoomInBtn = menu.querySelector('[data-action="zoom-in"]');
+
+				if (zoomIndex > 0) {
+					document.documentElement.classList.add('wpat-a11y-zoom-' + zoomIndex);
+					if (zoomInBtn) zoomInBtn.classList.add('wpat-active');
+				} else {
+					if (zoomInBtn) zoomInBtn.classList.remove('wpat-active');
+				}
+			}
 
 			// Cargar estado guardado en sessionStorage
 			try {
 				var savedState = JSON.parse(sessionStorage.getItem('wpat_a11y_state') || '{}');
-				if (savedState.zoomIndex) {
+				if (typeof savedState.zoomIndex === 'number') {
 					zoomIndex = savedState.zoomIndex;
 					applyZoom();
 				}
@@ -390,14 +432,6 @@ class WPAT_Accessibility {
 						classes: activeClasses
 					}));
 				} catch(e) {}
-			}
-
-			function applyZoom() {
-				if (zoomIndex === 0) {
-					document.documentElement.style.fontSize = '';
-				} else {
-					document.documentElement.style.fontSize = zoomLevels[zoomIndex] + '%';
-				}
 			}
 
 			function toggleMenu() {
@@ -429,17 +463,21 @@ class WPAT_Accessibility {
 				var action = targetBtn.getAttribute('data-action');
 
 				if (action === 'zoom-in') {
-					if (zoomIndex < zoomLevels.length - 1) {
+					if (zoomIndex < 3) {
 						zoomIndex++;
-						applyZoom();
-						saveState();
+					} else {
+						zoomIndex = 0; // Alternar si llega al máximo
 					}
+					applyZoom();
+					saveState();
 				} else if (action === 'zoom-out') {
 					if (zoomIndex > 0) {
 						zoomIndex--;
-						applyZoom();
-						saveState();
+					} else {
+						zoomIndex = 0;
 					}
+					applyZoom();
+					saveState();
 				} else if (action === 'toggle-class') {
 					var cls = targetBtn.getAttribute('data-target');
 					if (cls) {

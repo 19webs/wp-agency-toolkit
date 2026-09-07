@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     3.3.2
+ * Version:     3.4.1
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '3.3.2' );
+define( 'WPAT_VERSION', '3.4.1' );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -123,6 +123,18 @@ class WPAT_Main {
 		'anti-spam' => array(
 			'file'  => 'includes/modules/class-wpat-anti-spam.php',
 			'class' => 'WPAT_Anti_Spam',
+		),
+		'whatsapp' => array(
+			'file'  => 'includes/modules/class-wpat-whatsapp.php',
+			'class' => 'WPAT_WhatsApp',
+		),
+		'reading-progress' => array(
+			'file'  => 'includes/modules/class-wpat-reading-progress.php',
+			'class' => 'WPAT_Reading_Progress',
+		),
+		'conflict-detector' => array(
+			'file'  => 'includes/modules/class-wpat-conflict-detector.php',
+			'class' => 'WPAT_Conflict_Detector',
 		),
 	);
 
@@ -276,6 +288,24 @@ class WPAT_Main {
 			'integrations'                => '1',
 			'google_search_console_code'  => '',
 			'google_analytics_id'         => '',
+
+			// Opciones de WhatsApp
+			'whatsapp'                    => '1',
+			'whatsapp_enabled'            => '0',
+			'whatsapp_phone'              => '',
+			'whatsapp_message'            => '¡Hola! Quisiera más información.',
+			'whatsapp_position'           => 'bottom-right',
+			'whatsapp_tooltip'            => '',
+			'whatsapp_agents'             => '',
+
+			// Opciones de Barra y Tiempo de Lectura
+			'reading-progress'            => '1',
+			'reading_bar_enabled'         => '0',
+			'reading_bar_color'           => '#2563eb',
+			'reading_time_enabled'        => '0',
+
+			// Opciones de Detector de Incompatibilidades
+			'conflict-detector'           => '1',
 
 			// Opciones de ConfiguraciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n Inicial
 			'initial-setup'               => '1',

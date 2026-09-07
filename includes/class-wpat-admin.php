@@ -600,6 +600,9 @@ class WPAT_Admin {
 			'bot-blocker',
 			'integrations',
 			'initial-setup',
+			'whatsapp',
+			'reading-progress',
+			'conflict-detector',
 		);
 
 		foreach ( $modules as $module_id ) {
@@ -712,6 +715,24 @@ class WPAT_Admin {
 			$new_settings['google_search_console_code'] = '';
 		}
 		$new_settings['google_analytics_id']          = isset( $input_settings['google_analytics_id'] ) ? sanitize_text_field( $input_settings['google_analytics_id'] ) : '';
+
+		// 9. Sanitizar WhatsApp
+		$new_settings['whatsapp']          = isset( $input_settings['whatsapp'] ) && '1' === $input_settings['whatsapp'] ? '1' : '0';
+		$new_settings['whatsapp_enabled']  = isset( $input_settings['whatsapp_enabled'] ) && '1' === $input_settings['whatsapp_enabled'] ? '1' : '0';
+		$new_settings['whatsapp_phone']    = isset( $input_settings['whatsapp_phone'] ) ? sanitize_text_field( $input_settings['whatsapp_phone'] ) : '';
+		$new_settings['whatsapp_message']  = isset( $input_settings['whatsapp_message'] ) ? sanitize_text_field( $input_settings['whatsapp_message'] ) : '¡Hola! Quisiera más información.';
+		$new_settings['whatsapp_position'] = isset( $input_settings['whatsapp_position'] ) && in_array( $input_settings['whatsapp_position'], array( 'bottom-right', 'bottom-left' ), true ) ? $input_settings['whatsapp_position'] : 'bottom-right';
+		$new_settings['whatsapp_tooltip']  = isset( $input_settings['whatsapp_tooltip'] ) ? sanitize_text_field( $input_settings['whatsapp_tooltip'] ) : '';
+		$new_settings['whatsapp_agents']   = isset( $input_settings['whatsapp_agents'] ) ? sanitize_textarea_field( $input_settings['whatsapp_agents'] ) : '';
+
+		// 10. Sanitizar Barra y Tiempo de Lectura
+		$new_settings['reading-progress']     = isset( $input_settings['reading-progress'] ) && '1' === $input_settings['reading-progress'] ? '1' : '0';
+		$new_settings['reading_bar_enabled']  = isset( $input_settings['reading_bar_enabled'] ) && '1' === $input_settings['reading_bar_enabled'] ? '1' : '0';
+		$new_settings['reading_bar_color']    = isset( $input_settings['reading_bar_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['reading_bar_color'] ) ? $input_settings['reading_bar_color'] : '#2563eb';
+		$new_settings['reading_time_enabled'] = isset( $input_settings['reading_time_enabled'] ) && '1' === $input_settings['reading_time_enabled'] ? '1' : '0';
+
+		// 11. Sanitizar Detector de Incompatibilidades
+		$new_settings['conflict-detector'] = isset( $input_settings['conflict-detector'] ) && '1' === $input_settings['conflict-detector'] ? '1' : '0';
 
 		// Guardar en la base de datos
 		update_option( 'wpat_settings', $new_settings );
@@ -2343,6 +2364,48 @@ class WPAT_Admin {
 								</div>
 							</div>
 
+							<!-- Módulo: Detector de Incompatibilidades y Salud de Plugins -->
+							<div class="wpat-module-card" style="margin-top: 20px;">
+								<div class="wpat-module-header">
+									<div class="wpat-module-info">
+										<h3>Detector de Incompatibilidades y Salud de Plugins</h3>
+										<p>Supervisa activamente la instalación en busca de plugins de terceros que colisionen o dupliquen las funciones integradas en WP Agency Toolkit.</p>
+									</div>
+									<?php $this->render_module_toggle( 'conflict-detector', $settings, false ); ?>
+								</div>
+								<div class="wpat-module-body" style="padding: 15px 20px 20px 20px;">
+									<?php
+									if ( class_exists( 'WPAT_Conflict_Detector' ) ) {
+										$active_conflicts = WPAT_Conflict_Detector::get_active_conflicts();
+									} else {
+										$active_conflicts = array();
+									}
+									?>
+									<?php if ( ! empty( $active_conflicts ) ) : ?>
+										<div style="background: #fffbe6; border: 1px solid #ffe58f; border-radius: 8px; padding: 16px; margin-bottom: 15px;">
+											<h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700; color: #b45309; display: flex; align-items: center; gap: 8px;">
+												⚠️ Conflictos o Duplicidades Detectadas (<?php echo count( $active_conflicts ); ?>)
+											</h4>
+											<?php foreach ( $active_conflicts as $plugin_file => $data ) : ?>
+												<div style="background: #ffffff; border: 1px solid #fef3c7; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+													<strong style="color: #92400e; font-size: 13px;"><?php echo esc_html( $data['name'] ); ?></strong>
+													<p style="margin: 4px 0 8px 0; font-size: 12.5px; color: #4b5563;"><?php echo esc_html( $data['reason'] ); ?></p>
+													<a href="<?php echo esc_url( admin_url( 'plugins.php' ) ); ?>" class="button button-small button-secondary">Desactivar / Gestionar Plugin</a>
+												</div>
+											<?php endforeach; ?>
+										</div>
+									<?php else : ?>
+										<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; display: flex; align-items: center; gap: 12px;">
+											<span style="font-size: 24px;">✅</span>
+											<div>
+												<strong style="color: #166534; font-size: 14px; display: block;">No se han detectado conflictos de plugins</strong>
+												<span style="color: #374151; font-size: 12.5px;">Tu instalación está limpia y no hay plugins activos de terceros que colisionen con las funciones nativas de WP Agency Toolkit.</span>
+											</div>
+										</div>
+									<?php endif; ?>
+								</div>
+							</div>
+
 						</div>
 
 						<!-- PESTAÑA 3: RENDIMIENTO Y CÓDIGO -->
@@ -2702,6 +2765,43 @@ class WPAT_Admin {
 									<div id="wpat_smtp_test_result" style="display:none; margin-top:15px; padding:15px; border-radius:6px; font-size:13px; line-height:1.5; font-family: monospace;"></div>
 								</div>
 							</div>
+
+							<!-- Módulo: Experiencia de Lectura & UX -->
+							<div class="wpat-module-card" style="margin-top: 20px;">
+								<div class="wpat-module-header">
+									<div class="wpat-module-info">
+										<h3>Experiencia de Lectura & UX en Entradas</h3>
+										<p>Muestra una barra superior de avance al hacer scroll y calcula automáticamente el tiempo estimado de lectura en las entradas (posts).</p>
+									</div>
+									<?php $this->render_module_toggle( 'reading-progress', $settings, true ); ?>
+								</div>
+								<div class="wpat-module-body" style="display: none;">
+									<div class="wpat-field-group">
+										<label>
+											<input type="checkbox" name="wpat_settings[reading_bar_enabled]" value="1" <?php checked( isset( $settings['reading_bar_enabled'] ) ? $settings['reading_bar_enabled'] : '0', '1' ); ?>>
+											Activar Barra de Progreso de Lectura Superior en Entradas (is_single)
+										</label>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px;">
+										<label for="wpat_reading_bar_color" style="display:block; margin-bottom:5px;">Color de la Barra de Lectura</label>
+										<input type="text" name="wpat_settings[reading_bar_color]" id="wpat_reading_bar_color" value="<?php echo esc_attr( isset( $settings['reading_bar_color'] ) ? $settings['reading_bar_color'] : '#2563eb' ); ?>" class="wpat-color-picker" />
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
+										<label>
+											<input type="checkbox" name="wpat_settings[reading_time_enabled]" value="1" <?php checked( isset( $settings['reading_time_enabled'] ) ? $settings['reading_time_enabled'] : '0', '1' ); ?>>
+											Mostrar Tiempo Estimado de Lectura (Badge automático antes del contenido de la entrada)
+										</label>
+										<p class="description">Calcula automáticamente la velocidad media de lectura (200 palabras/minuto). También puedes usar el shortcode <code>[tiempo_lectura]</code> en tus maquetadores o plantillas.</p>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
+										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
+									</div>
+								</div>
+							</div>
+
 						</div>
 
 						<!-- PESTAÑA: SEO -->
@@ -2998,6 +3098,61 @@ class WPAT_Admin {
 										<a href="<?php echo esc_url( 'https://pagespeed.web.dev/analysis?url=' . urlencode( home_url( '/' ) ) ); ?>" target="_blank" rel="noopener noreferrer" class="button button-primary" style="height: 32px; display: inline-flex; align-items: center; gap: 5px;">
 											<span class="dashicons dashicons-performance" style="font-size: 16px; width: 16px; height: 16px; margin: 0;"></span> Analizar Velocidad del Sitio
 										</a>
+									</div>
+								</div>
+							</div>
+
+							<!-- Tarjeta: Botón Flotante de WhatsApp -->
+							<div class="wpat-module-card" style="margin-top: 20px;">
+								<div class="wpat-module-header">
+									<div class="wpat-module-info">
+										<h3>Botón Flotante de WhatsApp (Ultra-ligero)</h3>
+										<p>Muestra un botón flotante directo a WhatsApp en tu web sin librerías pesadas, con soporte para mensaje personalizado y múltiples agentes.</p>
+									</div>
+									<?php $this->render_module_toggle( 'whatsapp', $settings, true ); ?>
+								</div>
+								<div class="wpat-module-body" style="display: none;">
+									<div class="wpat-field-group">
+										<label>
+											<input type="checkbox" name="wpat_settings[whatsapp_enabled]" value="1" <?php checked( isset( $settings['whatsapp_enabled'] ) ? $settings['whatsapp_enabled'] : '0', '1' ); ?>>
+											Activar botón flotante de WhatsApp en la web
+										</label>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px;">
+										<label for="wpat_whatsapp_phone">Número de Teléfono Principal (con prefijo de país)</label>
+										<input type="text" name="wpat_settings[whatsapp_phone]" id="wpat_whatsapp_phone" value="<?php echo esc_attr( isset( $settings['whatsapp_phone'] ) ? $settings['whatsapp_phone'] : '' ); ?>" class="regular-text" placeholder="Ej: 34600000000" style="display:block; margin-top: 5px;" />
+										<p class="description">Introduce el número internacional sin espacios ni signos +. Ejemplo para España: 34600000000.</p>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px;">
+										<label for="wpat_whatsapp_message">Mensaje Predeterminado de Inicio</label>
+										<input type="text" name="wpat_settings[whatsapp_message]" id="wpat_whatsapp_message" value="<?php echo esc_attr( isset( $settings['whatsapp_message'] ) ? $settings['whatsapp_message'] : '¡Hola! Quisiera más información.' ); ?>" class="large-text" style="display:block; margin-top: 5px;" />
+										<p class="description">Texto inicial con el que el usuario empezará el chat.</p>
+									</div>
+
+									<div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 15px;">
+										<div class="wpat-field-group" style="flex: 1; min-width: 220px;">
+											<label for="wpat_whatsapp_position">Posición en la pantalla</label>
+											<select name="wpat_settings[whatsapp_position]" id="wpat_whatsapp_position" style="display:block; margin-top: 5px; width: 100%;">
+												<option value="bottom-right" <?php selected( isset( $settings['whatsapp_position'] ) ? $settings['whatsapp_position'] : 'bottom-right', 'bottom-right' ); ?>>Inferior Derecha</option>
+												<option value="bottom-left" <?php selected( isset( $settings['whatsapp_position'] ) ? $settings['whatsapp_position'] : 'bottom-right', 'bottom-left' ); ?>>Inferior Izquierda</option>
+											</select>
+										</div>
+										<div class="wpat-field-group" style="flex: 2; min-width: 260px;">
+											<label for="wpat_whatsapp_tooltip">Globo de Saludo / Tooltip (Opcional)</label>
+											<input type="text" name="wpat_settings[whatsapp_tooltip]" id="wpat_whatsapp_tooltip" value="<?php echo esc_attr( isset( $settings['whatsapp_tooltip'] ) ? $settings['whatsapp_tooltip'] : '' ); ?>" class="regular-text" placeholder="Ej. ¿Necesitas ayuda? ¡Escríbenos!" style="display:block; margin-top: 5px; width: 100%;" />
+										</div>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px;">
+										<label for="wpat_whatsapp_agents">Múltiples Agentes / Departamentos (Opcional)</label>
+										<textarea name="wpat_settings[whatsapp_agents]" id="wpat_whatsapp_agents" rows="3" class="large-text" placeholder="Soporte | 34600000001 | Técnico&#10;Ventas | 34600000002 | Comercial" style="font-family: monospace; display:block; margin-top: 5px;"><?php echo esc_textarea( isset( $settings['whatsapp_agents'] ) ? $settings['whatsapp_agents'] : '' ); ?></textarea>
+										<p class="description">Escribe un agente por línea en formato: <code>Nombre | Teléfono | Cargo/Departamento</code>. Si se define, al pulsar el icono de WhatsApp se desplegará una lista emergente para elegir agente.</p>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
+										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
 									</div>
 								</div>
 							</div>

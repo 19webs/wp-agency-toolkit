@@ -36,8 +36,8 @@ class WPAT_Woo_Extra_Options {
 		// Guardar datos de opciones en el elemento del carrito
 		add_filter( 'woocommerce_add_cart_item_data', array( $this, 'add_cart_item_data' ), 10, 3 );
 
-		// Ajustar precio dinámico en el carrito
-		add_action( 'woocommerce_before_calculate_totals', array( $this, 'calculate_extra_option_prices' ), 10, 1 );
+		// Ajustar precio dinámico en el carrito (prioridad 99)
+		add_action( 'woocommerce_before_calculate_totals', array( $this, 'calculate_extra_option_prices' ), 99, 1 );
 
 		// Mostrar metadatos en el carrito y en el checkout
 		add_filter( 'woocommerce_get_item_data', array( $this, 'display_extra_options_in_cart' ), 10, 2 );
@@ -450,6 +450,12 @@ class WPAT_Woo_Extra_Options {
 
 		if ( ! empty( $extra_options ) ) {
 			$cart_item_data['wpat_extra_options'] = $extra_options;
+
+			$target_id = $variation_id ? $variation_id : $product_id;
+			$prod_obj  = wc_get_product( $target_id );
+			if ( $prod_obj ) {
+				$cart_item_data['wpat_base_price'] = floatval( $prod_obj->get_price( 'edit' ) );
+			}
 		}
 
 		return $cart_item_data;
@@ -475,14 +481,8 @@ class WPAT_Woo_Extra_Options {
 				if ( $extra_price > 0 ) {
 					$product = $cart_item['data'];
 
-					if ( ! isset( $cart_item['wpat_base_price'] ) || '' === $cart_item['wpat_base_price'] ) {
-						$raw_price = $product->get_price( 'edit' );
-						$cart_item['wpat_base_price'] = floatval( $raw_price );
-						$cart->cart_contents[ $cart_item_key ]['wpat_base_price'] = floatval( $raw_price );
-					}
-
-					$base_p = floatval( $cart_item['wpat_base_price'] );
-					$product->set_price( $base_p + $extra_price );
+					$base_price = isset( $cart_item['wpat_base_price'] ) && floatval( $cart_item['wpat_base_price'] ) > 0 ? floatval( $cart_item['wpat_base_price'] ) : floatval( $product->get_price( 'edit' ) );
+					$product->set_price( $base_price + $extra_price );
 				}
 			}
 		}

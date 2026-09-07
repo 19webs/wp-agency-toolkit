@@ -2868,7 +2868,7 @@ class WPAT_Admin {
 																				<option value="checkbox" <?php selected( $f_type, 'checkbox' ); ?>>Casilla (Checkbox)</option>
 																			</select>
 																		</div>
-																		<div>
+																		<div class="wpat-field-price-wrap" style="<?php echo in_array( $f_type, array( 'select', 'radio', 'swatch' ), true ) ? 'opacity: 0.4; pointer-events: none;' : ''; ?>">
 																			<label style="font-size: 10px; font-weight: 600; display: block;">Precio Extra (€)</label>
 																			<input type="number" step="0.01" min="0" name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][price]" value="<?php echo $f_price; ?>" placeholder="0.00" style="width: 100%;" />
 																		</div>
@@ -2969,7 +2969,7 @@ class WPAT_Admin {
 													'<div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr auto; gap: 10px; align-items: center;">' +
 														'<div><label style="font-size: 10px; font-weight: 600; display: block;">Etiqueta / Nombre</label><input type="text" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][label]" value="" placeholder="Ej. Texto de Grabado" class="regular-text" style="width: 100%;" required /></div>' +
 														'<div><label style="font-size: 10px; font-weight: 600; display: block;">Tipo de Opción</label><select name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][type]" class="wpat-extra-type-select" style="width: 100%;"><option value="text">Texto Corto</option><option value="textarea">Área de Texto</option><option value="select">Desplegable (Select)</option><option value="radio">Radio (Botones de Opción)</option><option value="swatch">Muestrario de Color (Swatch)</option><option value="checkbox">Casilla (Checkbox)</option></select></div>' +
-														'<div><label style="font-size: 10px; font-weight: 600; display: block;">Precio Extra (€)</label><input type="number" step="0.01" min="0" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][price]" value="0.00" placeholder="0.00" style="width: 100%;" /></div>' +
+														'<div class="wpat-field-price-wrap"><label style="font-size: 10px; font-weight: 600; display: block;">Precio Extra (€)</label><input type="number" step="0.01" min="0" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][price]" value="0.00" placeholder="0.00" style="width: 100%;" /></div>' +
 														'<div><label style="font-size: 10px; font-weight: 600; display: block;">Máx Caracteres</label><input type="number" min="0" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][max_length]" value="" placeholder="Sin límite" style="width: 100%;" /></div>' +
 														'<div style="text-align: right; padding-top: 12px;"><button type="button" class="button button-link-delete wpat-remove-field-item-btn" style="color: #ef4444;">Eliminar</button></div>' +
 													'</div>' +
@@ -2999,9 +2999,16 @@ class WPAT_Admin {
 												var fRow = e.target.closest('.wpat-field-item-row');
 												var swatchWrap = fRow.querySelector('.wpat-extra-swatches-wrap');
 												var optWrap = fRow.querySelector('.wpat-extra-options-wrap');
+												var priceWrap = fRow.querySelector('.wpat-field-price-wrap');
+
+												var isMultiOpt = (e.target.value === 'select' || e.target.value === 'radio' || e.target.value === 'swatch');
 
 												if (swatchWrap) swatchWrap.style.display = (e.target.value === 'swatch') ? 'block' : 'none';
 												if (optWrap) optWrap.style.display = (e.target.value === 'select' || e.target.value === 'radio') ? 'block' : 'none';
+												if (priceWrap) {
+													priceWrap.style.opacity = isMultiOpt ? '0.4' : '1';
+													priceWrap.style.pointerEvents = isMultiOpt ? 'none' : 'auto';
+												}
 											} else if (e.target && e.target.classList.contains('wpat-rule-scope-select')) {
 												var card = e.target.closest('.wpat-extra-rule-card');
 												var catWrap = card.querySelector('.wpat-scope-category-wrap');

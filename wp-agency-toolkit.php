@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     3.4.18
+ * Version:     3.5.0
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '3.4.18' );
+define( 'WPAT_VERSION', '3.5.0' );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -139,6 +139,10 @@ class WPAT_Main {
 		'accessibility' => array(
 			'file'  => 'includes/modules/class-wpat-accessibility.php',
 			'class' => 'WPAT_Accessibility',
+		),
+		'woo-checkout-editor' => array(
+			'file'  => 'includes/modules/class-wpat-woo-checkout-editor.php',
+			'class' => 'WPAT_Woo_Checkout_Editor',
 		),
 	);
 
@@ -322,6 +326,14 @@ class WPAT_Main {
 			'accessibility_light_bg'          => '1',
 			'accessibility_underline_links'   => '1',
 			'accessibility_readable_font'     => '1',
+
+			// Opciones de Editor de Campos de Checkout (WooCommerce)
+			'woo-checkout-editor'             => '0',
+			'checkout_editor_enabled'         => '0',
+			'checkout_nif_enabled'            => '1',
+			'checkout_nif_required'           => '1',
+			'checkout_disabled_fields'        => array(),
+			'checkout_custom_fields'          => array(),
 
 			// Opciones de Detector de Incompatibilidades
 			'conflict-detector'           => '1',

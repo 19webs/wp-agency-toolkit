@@ -750,6 +750,34 @@ class WPAT_Admin {
 		$new_settings['accessibility_underline_links']   = isset( $input_settings['accessibility_underline_links'] ) && '1' === $input_settings['accessibility_underline_links'] ? '1' : '0';
 		$new_settings['accessibility_readable_font']     = isset( $input_settings['accessibility_readable_font'] ) && '1' === $input_settings['accessibility_readable_font'] ? '1' : '0';
 
+		// 13. Sanitizar Editor de Campos de Checkout (WooCommerce)
+		$new_settings['woo-checkout-editor']      = isset( $input_settings['woo-checkout-editor'] ) && '1' === $input_settings['woo-checkout-editor'] ? '1' : '0';
+		$new_settings['checkout_editor_enabled']  = isset( $input_settings['checkout_editor_enabled'] ) && '1' === $input_settings['checkout_editor_enabled'] ? '1' : '0';
+		$new_settings['checkout_nif_enabled']     = isset( $input_settings['checkout_nif_enabled'] ) && '1' === $input_settings['checkout_nif_enabled'] ? '1' : '0';
+		$new_settings['checkout_nif_required']    = isset( $input_settings['checkout_nif_required'] ) && '1' === $input_settings['checkout_nif_required'] ? '1' : '0';
+
+		$new_settings['checkout_disabled_fields'] = isset( $input_settings['checkout_disabled_fields'] ) && is_array( $input_settings['checkout_disabled_fields'] ) ? array_map( 'sanitize_key', $input_settings['checkout_disabled_fields'] ) : array();
+
+		$custom_fields_clean = array();
+		if ( isset( $input_settings['checkout_custom_fields'] ) && is_array( $input_settings['checkout_custom_fields'] ) ) {
+			foreach ( $input_settings['checkout_custom_fields'] as $cf ) {
+				if ( ! empty( $cf['label'] ) ) {
+					$key = ! empty( $cf['key'] ) ? sanitize_key( $cf['key'] ) : 'cf_' . substr( md5( $cf['label'] ), 0, 8 );
+					$custom_fields_clean[] = array(
+						'key'         => $key,
+						'label'       => sanitize_text_field( $cf['label'] ),
+						'type'        => isset( $cf['type'] ) && in_array( $cf['type'], array( 'text', 'select', 'checkbox', 'textarea', 'date' ), true ) ? $cf['type'] : 'text',
+						'placeholder' => isset( $cf['placeholder'] ) ? sanitize_text_field( $cf['placeholder'] ) : '',
+						'required'    => isset( $cf['required'] ) && '1' === $cf['required'] ? '1' : '0',
+						'section'     => isset( $cf['section'] ) && in_array( $cf['section'], array( 'billing', 'shipping', 'order' ), true ) ? $cf['section'] : 'billing',
+						'priority'    => isset( $cf['priority'] ) ? intval( $cf['priority'] ) : 100,
+						'options'     => isset( $cf['options'] ) ? sanitize_textarea_field( $cf['options'] ) : '',
+					);
+				}
+			}
+		}
+		$new_settings['checkout_custom_fields'] = $custom_fields_clean;
+
 		// Guardar en la base de datos
 		update_option( 'wpat_settings', $new_settings );
 
@@ -986,6 +1014,7 @@ class WPAT_Admin {
 			'reading-progress',
 			'conflict-detector',
 			'accessibility',
+			'woo-checkout-editor',
 		);
 
 		if ( ! in_array( $module_id, $modules, true ) ) {
@@ -2426,6 +2455,196 @@ class WPAT_Admin {
 											Desactivar Deslizador de Galería (Slider)
 										</label>
 									</div>
+									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
+										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
+									</div>
+								</div>
+							</div>
+
+							<!-- Módulo: Editor de Campos de Checkout -->
+							<div class="wpat-module-card" style="margin-top: 20px;">
+								<div class="wpat-module-header">
+									<div class="wpat-module-info">
+										<h3>Editor de Campos de Checkout (WooCommerce)</h3>
+										<p>Modifica, oculta o añade nuevos campos en el formulario de finalizar pago (NIF/CIF, campos personalizados, fecha) y expónlos automáticamente en la API REST (CRM/ERP).</p>
+									</div>
+									<?php $this->render_module_toggle( 'woo-checkout-editor', $settings, true ); ?>
+								</div>
+								<div class="wpat-module-body" style="display: none;">
+									<div class="wpat-field-group">
+										<label style="font-weight: 600;">
+											<input type="checkbox" name="wpat_settings[checkout_editor_enabled]" value="1" <?php checked( isset( $settings['checkout_editor_enabled'] ) ? $settings['checkout_editor_enabled'] : '0', '1' ); ?>>
+											Activar Editor de Campos de Checkout
+										</label>
+									</div>
+
+									<!-- NIF / CIF -->
+									<div class="wpat-field-group" style="margin-top: 15px; background: #f8fafc; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 6px;">
+										<h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700;">🆔 Campo NIF / CIF / DNI (Facturación)</h4>
+										<div style="display: flex; gap: 20px; flex-wrap: wrap;">
+											<label style="font-weight: normal;">
+												<input type="checkbox" name="wpat_settings[checkout_nif_enabled]" value="1" <?php checked( isset( $settings['checkout_nif_enabled'] ) ? $settings['checkout_nif_enabled'] : '1', '1' ); ?>>
+												Activar Campo NIF / CIF / DNI en el Checkout
+											</label>
+											<label style="font-weight: normal;">
+												<input type="checkbox" name="wpat_settings[checkout_nif_required]" value="1" <?php checked( isset( $settings['checkout_nif_required'] ) ? $settings['checkout_nif_required'] : '1', '1' ); ?>>
+												Campo NIF / CIF Obligatorio
+											</label>
+										</div>
+									</div>
+
+									<!-- Ocultar Campos Nativos -->
+									<div class="wpat-field-group" style="margin-top: 15px;">
+										<label style="font-weight: 600; display: block; margin-bottom: 8px;">Ocultar o Desactivar Campos Nativos de WooCommerce:</label>
+										<?php $disabled_fields = isset( $settings['checkout_disabled_fields'] ) && is_array( $settings['checkout_disabled_fields'] ) ? $settings['checkout_disabled_fields'] : array(); ?>
+										<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;">
+											<label style="font-weight: normal;">
+												<input type="checkbox" name="wpat_settings[checkout_disabled_fields][]" value="billing_company" <?php checked( in_array( 'billing_company', $disabled_fields, true ) ); ?>>
+												Ocultar Empresa (Facturación)
+											</label>
+											<label style="font-weight: normal;">
+												<input type="checkbox" name="wpat_settings[checkout_disabled_fields][]" value="billing_address_2" <?php checked( in_array( 'billing_address_2', $disabled_fields, true ) ); ?>>
+												Ocultar Dirección Línea 2
+											</label>
+											<label style="font-weight: normal;">
+												<input type="checkbox" name="wpat_settings[checkout_disabled_fields][]" value="billing_phone" <?php checked( in_array( 'billing_phone', $disabled_fields, true ) ); ?>>
+												Ocultar Teléfono
+											</label>
+											<label style="font-weight: normal;">
+												<input type="checkbox" name="wpat_settings[checkout_disabled_fields][]" value="shipping_company" <?php checked( in_array( 'shipping_company', $disabled_fields, true ) ); ?>>
+												Ocultar Empresa (Envío)
+											</label>
+											<label style="font-weight: normal;">
+												<input type="checkbox" name="wpat_settings[checkout_disabled_fields][]" value="shipping_address_2" <?php checked( in_array( 'shipping_address_2', $disabled_fields, true ) ); ?>>
+												Ocultar Dirección Línea 2 (Envío)
+											</label>
+										</div>
+									</div>
+
+									<!-- Campos Personalizados -->
+									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+											<label style="font-weight: 600;">Campos Personalizados Adicionales:</label>
+											<button type="button" class="button button-secondary" id="wpat_add_checkout_field_btn">+ Añadir Nuevo Campo</button>
+										</div>
+
+										<div id="wpat_checkout_fields_container">
+											<?php
+											$custom_fields = isset( $settings['checkout_custom_fields'] ) && is_array( $settings['checkout_custom_fields'] ) ? $settings['checkout_custom_fields'] : array();
+											if ( empty( $custom_fields ) ) :
+												?>
+												<p class="description" id="wpat_no_custom_fields_msg">No hay campos personalizados adicionales creados aún.</p>
+											<?php endif; ?>
+
+											<?php
+											foreach ( $custom_fields as $index => $cf ) :
+												$f_key         = esc_attr( isset( $cf['key'] ) ? $cf['key'] : '' );
+												$f_label       = esc_attr( isset( $cf['label'] ) ? $cf['label'] : '' );
+												$f_type        = esc_attr( isset( $cf['type'] ) ? $cf['type'] : 'text' );
+												$f_placeholder = esc_attr( isset( $cf['placeholder'] ) ? $cf['placeholder'] : '' );
+												$f_required    = isset( $cf['required'] ) && '1' === $cf['required'] ? '1' : '0';
+												$f_section     = esc_attr( isset( $cf['section'] ) ? $cf['section'] : 'billing' );
+												$f_options     = esc_textarea( isset( $cf['options'] ) ? $cf['options'] : '' );
+												?>
+												<div class="wpat-custom-field-row" style="background: #ffffff; border: 1px solid var(--wpat-border); padding: 12px 15px; border-radius: 6px; margin-bottom: 10px;">
+													<div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr auto; gap: 10px; align-items: center;">
+														<div>
+															<label style="font-size: 11px; display: block; font-weight: 600;">Nombre del Campo (Etiqueta)</label>
+															<input type="text" name="wpat_settings[checkout_custom_fields][<?php echo $index; ?>][label]" value="<?php echo $f_label; ?>" class="regular-text" placeholder="Ej. Horario de Preferencia" required style="width: 100%;" />
+														</div>
+														<div>
+															<label style="font-size: 11px; display: block; font-weight: 600;">Identificador Único (Key)</label>
+															<input type="text" name="wpat_settings[checkout_custom_fields][<?php echo $index; ?>][key]" value="<?php echo $f_key; ?>" class="regular-text" placeholder="ej. horario_entrega" style="width: 100%;" />
+														</div>
+														<div>
+															<label style="font-size: 11px; display: block; font-weight: 600;">Tipo de Campo</label>
+															<select name="wpat_settings[checkout_custom_fields][<?php echo $index; ?>][type]" class="wpat-field-type-select" style="width: 100%;">
+																<option value="text" <?php selected( $f_type, 'text' ); ?>>Texto Corto</option>
+																<option value="select" <?php selected( $f_type, 'select' ); ?>>Desplegable (Select)</option>
+																<option value="textarea" <?php selected( $f_type, 'textarea' ); ?>>Área de Texto</option>
+																<option value="checkbox" <?php selected( $f_type, 'checkbox' ); ?>>Casilla (Checkbox)</option>
+																<option value="date" <?php selected( $f_type, 'date' ); ?>>Fecha (Calendario)</option>
+															</select>
+														</div>
+														<div>
+															<label style="font-size: 11px; display: block; font-weight: 600;">Sección</label>
+															<select name="wpat_settings[checkout_custom_fields][<?php echo $index; ?>][section]" style="width: 100%;">
+																<option value="billing" <?php selected( $f_section, 'billing' ); ?>>Facturación</option>
+																<option value="shipping" <?php selected( $f_section, 'shipping' ); ?>>Envío</option>
+																<option value="order" <?php selected( $f_section, 'order' ); ?>>Notas Adicionales</option>
+															</select>
+														</div>
+														<div style="text-align: right; padding-top: 15px;">
+															<button type="button" class="button button-link-delete wpat-remove-field-btn" style="color: #ef4444;">Eliminar</button>
+														</div>
+													</div>
+
+													<div style="display: flex; gap: 15px; margin-top: 10px; align-items: center;">
+														<label style="font-weight: normal; font-size: 12px;">
+															<input type="checkbox" name="wpat_settings[checkout_custom_fields][<?php echo $index; ?>][required]" value="1" <?php checked( $f_required, '1' ); ?> />
+															Campo Obligatorio
+														</label>
+														<input type="text" name="wpat_settings[checkout_custom_fields][<?php echo $index; ?>][placeholder]" value="<?php echo $f_placeholder; ?>" placeholder="Placeholder o texto de ayuda..." style="font-size: 12px; flex-grow: 1;" />
+													</div>
+
+													<div class="wpat-options-field-wrap" style="margin-top: 10px; <?php echo ( 'select' === $f_type ) ? '' : 'display:none;'; ?>">
+														<label style="font-size: 11px; display: block; font-weight: 600;">Opciones del Desplegable (Una opción por línea):</label>
+														<textarea name="wpat_settings[checkout_custom_fields][<?php echo $index; ?>][options]" rows="2" style="width: 100%; font-size: 12px;" placeholder="Mañana (09:00 - 14:00)&#10;Tarde (16:00 - 20:00)"><?php echo $f_options; ?></textarea>
+													</div>
+												</div>
+											<?php endforeach; ?>
+										</div>
+									</div>
+
+									<script>
+									document.addEventListener('DOMContentLoaded', function() {
+										var addBtn = document.getElementById('wpat_add_checkout_field_btn');
+										var container = document.getElementById('wpat_checkout_fields_container');
+										var noMsg = document.getElementById('wpat_no_custom_fields_msg');
+										if (!addBtn || !container) return;
+
+										addBtn.addEventListener('click', function() {
+											if (noMsg) noMsg.style.display = 'none';
+											var index = container.querySelectorAll('.wpat-custom-field-row').length;
+											var html = '<div class="wpat-custom-field-row" style="background: #ffffff; border: 1px solid var(--wpat-border); padding: 12px 15px; border-radius: 6px; margin-bottom: 10px;">' +
+												'<div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr auto; gap: 10px; align-items: center;">' +
+													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Nombre del Campo (Etiqueta)</label><input type="text" name="wpat_settings[checkout_custom_fields][' + index + '][label]" value="" class="regular-text" placeholder="Ej. Horario de Preferencia" required style="width: 100%;" /></div>' +
+													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Identificador Único (Key)</label><input type="text" name="wpat_settings[checkout_custom_fields][' + index + '][key]" value="" class="regular-text" placeholder="ej. horario_entrega" style="width: 100%;" /></div>' +
+													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Tipo de Campo</label><select name="wpat_settings[checkout_custom_fields][' + index + '][type]" class="wpat-field-type-select" style="width: 100%;"><option value="text">Texto Corto</option><option value="select">Desplegable (Select)</option><option value="textarea">Área de Texto</option><option value="checkbox">Casilla (Checkbox)</option><option value="date">Fecha (Calendario)</option></select></div>' +
+													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Sección</label><select name="wpat_settings[checkout_custom_fields][' + index + '][section]" style="width: 100%;"><option value="billing">Facturación</option><option value="shipping">Envío</option><option value="order">Notas Adicionales</option></select></div>' +
+													'<div style="text-align: right; padding-top: 15px;"><button type="button" class="button button-link-delete wpat-remove-field-btn" style="color: #ef4444;">Eliminar</button></div>' +
+												'</div>' +
+												'<div style="display: flex; gap: 15px; margin-top: 10px; align-items: center;">' +
+													'<label style="font-weight: normal; font-size: 12px;"><input type="checkbox" name="wpat_settings[checkout_custom_fields][' + index + '][required]" value="1" /> Campo Obligatorio</label>' +
+													'<input type="text" name="wpat_settings[checkout_custom_fields][' + index + '][placeholder]" value="" placeholder="Placeholder o texto de ayuda..." style="font-size: 12px; flex-grow: 1;" />' +
+												'</div>' +
+												'<div class="wpat-options-field-wrap" style="margin-top: 10px; display:none;">' +
+													'<label style="font-size: 11px; display: block; font-weight: 600;">Opciones del Desplegable (Una opción por línea):</label>' +
+													'<textarea name="wpat_settings[checkout_custom_fields][' + index + '][options]" rows="2" style="width: 100%; font-size: 12px;" placeholder="Mañana (09:00 - 14:00)\nTarde (16:00 - 20:00)"></textarea>' +
+												'</div>' +
+											'</div>';
+											container.insertAdjacentHTML('beforeend', html);
+										});
+
+										container.addEventListener('change', function(e) {
+											if (e.target && e.target.classList.contains('wpat-field-type-select')) {
+												var row = e.target.closest('.wpat-custom-field-row');
+												var optWrap = row.querySelector('.wpat-options-field-wrap');
+												if (optWrap) {
+													optWrap.style.display = (e.target.value === 'select') ? 'block' : 'none';
+												}
+											}
+										});
+
+										container.addEventListener('click', function(e) {
+											if (e.target && e.target.classList.contains('wpat-remove-field-btn')) {
+												var row = e.target.closest('.wpat-custom-field-row');
+												if (row) row.remove();
+											}
+										});
+									});
+									</script>
+
 									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
 										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
 									</div>

@@ -778,6 +778,45 @@ class WPAT_Admin {
 		}
 		$new_settings['checkout_custom_fields'] = $custom_fields_clean;
 
+		// 14. Sanitizar Opciones Extra y Swatches de Producto (WooCommerce)
+		$new_settings['woo-extra-options']     = isset( $input_settings['woo-extra-options'] ) && '1' === $input_settings['woo-extra-options'] ? '1' : '0';
+		$new_settings['extra_options_enabled'] = isset( $input_settings['extra_options_enabled'] ) && '1' === $input_settings['extra_options_enabled'] ? '1' : '0';
+
+		$rules_clean = array();
+		if ( isset( $input_settings['extra_options_rules'] ) && is_array( $input_settings['extra_options_rules'] ) ) {
+			foreach ( $input_settings['extra_options_rules'] as $rule ) {
+				if ( ! empty( $rule['title'] ) ) {
+					$fields_clean = array();
+					if ( isset( $rule['fields'] ) && is_array( $rule['fields'] ) ) {
+						foreach ( $rule['fields'] as $f ) {
+							if ( ! empty( $f['label'] ) ) {
+								$fields_clean[] = array(
+									'label'       => sanitize_text_field( $f['label'] ),
+									'type'        => isset( $f['type'] ) && in_array( $f['type'], array( 'text', 'textarea', 'select', 'swatch', 'checkbox' ), true ) ? $f['type'] : 'text',
+									'price'       => isset( $f['price'] ) ? floatval( $f['price'] ) : 0,
+									'required'    => isset( $f['required'] ) && '1' === $f['required'] ? '1' : '0',
+									'placeholder' => isset( $f['placeholder'] ) ? sanitize_text_field( $f['placeholder'] ) : '',
+									'max_length'  => isset( $f['max_length'] ) ? absint( $f['max_length'] ) : 0,
+									'options'     => isset( $f['options'] ) ? sanitize_textarea_field( $f['options'] ) : '',
+									'swatches'    => isset( $f['swatches'] ) ? sanitize_textarea_field( $f['swatches'] ) : '',
+								);
+							}
+						}
+					}
+
+					$rules_clean[] = array(
+						'title'      => sanitize_text_field( $rule['title'] ),
+						'enabled'    => isset( $rule['enabled'] ) && '1' === $rule['enabled'] ? '1' : '0',
+						'scope'      => isset( $rule['scope'] ) && in_array( $rule['scope'], array( 'global', 'category', 'product' ), true ) ? $rule['scope'] : 'global',
+						'categories' => isset( $rule['categories'] ) && is_array( $rule['categories'] ) ? array_map( 'absint', $rule['categories'] ) : array(),
+						'products'   => isset( $rule['products'] ) && is_array( $rule['products'] ) ? array_map( 'absint', $rule['products'] ) : array(),
+						'fields'     => $fields_clean,
+					);
+				}
+			}
+		}
+		$new_settings['extra_options_rules'] = $rules_clean;
+
 		// Guardar en la base de datos
 		update_option( 'wpat_settings', $new_settings );
 
@@ -1015,6 +1054,7 @@ class WPAT_Admin {
 			'conflict-detector',
 			'accessibility',
 			'woo-checkout-editor',
+			'woo-extra-options',
 		);
 
 		if ( ! in_array( $module_id, $modules, true ) ) {
@@ -2640,6 +2680,223 @@ class WPAT_Admin {
 											if (e.target && e.target.classList.contains('wpat-remove-field-btn')) {
 												var row = e.target.closest('.wpat-custom-field-row');
 												if (row) row.remove();
+											}
+										});
+									});
+									</script>
+
+									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
+										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
+									</div>
+								</div>
+							</div>
+
+							<!-- Módulo: Opciones Extra y Swatches de Producto -->
+							<div class="wpat-module-card" style="margin-top: 20px;">
+								<div class="wpat-module-header">
+									<div class="wpat-module-info">
+										<h3>Opciones Extra y Swatches de Producto (WooCommerce)</h3>
+										<p>Añade campos adicionales a los productos (grabados, papel regalo, muestrarios de color) con recargos de precio automáticos en el carrito y pedido.</p>
+									</div>
+									<?php $this->render_module_toggle( 'woo-extra-options', $settings, true ); ?>
+								</div>
+								<div class="wpat-module-body" style="display: none;">
+									<div class="wpat-field-group">
+										<label style="font-weight: 600;">
+											<input type="checkbox" name="wpat_settings[extra_options_enabled]" value="1" <?php checked( isset( $settings['extra_options_enabled'] ) ? $settings['extra_options_enabled'] : '0', '1' ); ?>>
+											Activar Opciones Extra y Swatches en Productos
+										</label>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+											<label style="font-weight: 600; font-size: 14px;">Grupos de Reglas y Opciones:</label>
+											<button type="button" class="button button-secondary" id="wpat_add_extra_rule_btn">+ Añadir Nuevo Grupo de Opciones</button>
+										</div>
+
+										<div id="wpat_extra_rules_container">
+											<?php
+											$extra_rules = isset( $settings['extra_options_rules'] ) && is_array( $settings['extra_options_rules'] ) ? $settings['extra_options_rules'] : array();
+											if ( empty( $extra_rules ) ) :
+												?>
+												<p class="description" id="wpat_no_extra_rules_msg">No hay grupos de opciones de producto creados aún.</p>
+											<?php endif; ?>
+
+											<?php
+											foreach ( $extra_rules as $r_idx => $rule ) :
+												$r_title   = esc_attr( isset( $rule['title'] ) ? $rule['title'] : '' );
+												$r_enabled = isset( $rule['enabled'] ) && '1' === $rule['enabled'] ? '1' : '0';
+												$r_scope   = esc_attr( isset( $rule['scope'] ) ? $rule['scope'] : 'global' );
+												$r_fields  = isset( $rule['fields'] ) && is_array( $rule['fields'] ) ? $rule['fields'] : array();
+												?>
+												<div class="wpat-extra-rule-card" style="background: #ffffff; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+													<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 12px;">
+														<div style="display: flex; gap: 15px; align-items: center; flex-grow: 1;">
+															<input type="text" name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][title]" value="<?php echo $r_title; ?>" placeholder="Título del Grupo (ej. Opciones de Personalización)" class="regular-text" style="font-weight: 700; font-size: 14px;" required />
+															<label style="font-weight: normal; font-size: 12px; margin: 0;">
+																<input type="checkbox" name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][enabled]" value="1" <?php checked( $r_enabled, '1' ); ?> />
+																Grupo Activo
+															</label>
+														</div>
+														<button type="button" class="button button-link-delete wpat-remove-rule-btn" style="color: #ef4444;">Eliminar Grupo</button>
+													</div>
+
+													<div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px;">
+														<label style="font-size: 12px; font-weight: 600;">Aplicar este grupo a:</label>
+														<select name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][scope]" class="wpat-rule-scope-select" style="height: 30px;">
+															<option value="global" <?php selected( $r_scope, 'global' ); ?>>Todos los Productos (Global)</option>
+														</select>
+													</div>
+
+													<!-- Lista de Campos dentro de la Regla -->
+													<div class="wpat-rule-fields-wrapper" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px;">
+														<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+															<span style="font-size: 12px; font-weight: 700; color: #475569;">Campos e Opciones de este Grupo:</span>
+															<button type="button" class="button button-small wpat-add-field-to-rule-btn" data-rule="<?php echo $r_idx; ?>">+ Añadir Campo</button>
+														</div>
+
+														<div class="wpat-fields-list-container">
+															<?php foreach ( $r_fields as $f_idx => $f ) :
+																$f_label       = esc_attr( isset( $f['label'] ) ? $f['label'] : '' );
+																$f_type        = esc_attr( isset( $f['type'] ) ? $f['type'] : 'text' );
+																$f_price       = esc_attr( isset( $f['price'] ) ? $f['price'] : '0' );
+																$f_required    = isset( $f['required'] ) && '1' === $f['required'] ? '1' : '0';
+																$f_placeholder = esc_attr( isset( $f['placeholder'] ) ? $f['placeholder'] : '' );
+																$f_max_length  = esc_attr( isset( $f['max_length'] ) ? $f['max_length'] : '' );
+																$f_options     = esc_textarea( isset( $f['options'] ) ? $f['options'] : '' );
+																$f_swatches    = esc_textarea( isset( $f['swatches'] ) ? $f['swatches'] : '' );
+																?>
+																<div class="wpat-field-item-row" style="background: #ffffff; border: 1px solid #cbd5e1; padding: 10px 12px; border-radius: 6px; margin-bottom: 8px;">
+																	<div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr auto; gap: 10px; align-items: center;">
+																		<div>
+																			<label style="font-size: 10px; font-weight: 600; display: block;">Etiqueta / Nombre</label>
+																			<input type="text" name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][label]" value="<?php echo $f_label; ?>" placeholder="Ej. Texto de Grabado" class="regular-text" style="width: 100%;" required />
+																		</div>
+																		<div>
+																			<label style="font-size: 10px; font-weight: 600; display: block;">Tipo de Opción</label>
+																			<select name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][type]" class="wpat-extra-type-select" style="width: 100%;">
+																				<option value="text" <?php selected( $f_type, 'text' ); ?>>Texto Corto</option>
+																				<option value="textarea" <?php selected( $f_type, 'textarea' ); ?>>Área de Texto</option>
+																				<option value="select" <?php selected( $f_type, 'select' ); ?>>Desplegable (Select)</option>
+																				<option value="swatch" <?php selected( $f_type, 'swatch' ); ?>>Muestrario de Color (Swatch)</option>
+																				<option value="checkbox" <?php selected( $f_type, 'checkbox' ); ?>>Casilla (Checkbox)</option>
+																			</select>
+																		</div>
+																		<div>
+																			<label style="font-size: 10px; font-weight: 600; display: block;">Precio Extra (€)</label>
+																			<input type="number" step="0.01" min="0" name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][price]" value="<?php echo $f_price; ?>" placeholder="0.00" style="width: 100%;" />
+																		</div>
+																		<div>
+																			<label style="font-size: 10px; font-weight: 600; display: block;">Máx Caracteres</label>
+																			<input type="number" min="0" name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][max_length]" value="<?php echo $f_max_length; ?>" placeholder="Sin límite" style="width: 100%;" />
+																		</div>
+																		<div style="text-align: right; padding-top: 12px;">
+																			<button type="button" class="button button-link-delete wpat-remove-field-item-btn" style="color: #ef4444;">Eliminar</button>
+																		</div>
+																	</div>
+
+																	<div style="display: flex; gap: 15px; margin-top: 8px; align-items: center;">
+																		<label style="font-weight: normal; font-size: 11px;">
+																			<input type="checkbox" name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][required]" value="1" <?php checked( $f_required, '1' ); ?> />
+																			Obligatorio
+																		</label>
+																		<input type="text" name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][placeholder]" value="<?php echo $f_placeholder; ?>" placeholder="Texto de ayuda o placeholder..." style="font-size: 11px; flex-grow: 1;" />
+																	</div>
+
+																	<div class="wpat-extra-swatches-wrap" style="margin-top: 8px; <?php echo ( 'swatch' === $f_type ) ? '' : 'display:none;'; ?>">
+																		<label style="font-size: 10px; font-weight: 600; display: block;">Configuración de Colores (Un color por línea: Nombre | #HEX):</label>
+																		<textarea name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][swatches]" rows="2" style="width: 100%; font-size: 11px;" placeholder="Azul Real | #2563eb&#10;Rojo Pasión | #ef4444&#10;Verde Esmeralda | #10b981"><?php echo $f_swatches; ?></textarea>
+																	</div>
+
+																	<div class="wpat-extra-options-wrap" style="margin-top: 8px; <?php echo ( 'select' === $f_type ) ? '' : 'display:none;'; ?>">
+																		<label style="font-size: 10px; font-weight: 600; display: block;">Opciones del Desplegable (Una por línea):</label>
+																		<textarea name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][options]" rows="2" style="width: 100%; font-size: 11px;" placeholder="Envase Estándar&#10;Caja de Regalo Premium"><?php echo $f_options; ?></textarea>
+																	</div>
+																</div>
+															<?php endforeach; ?>
+														</div>
+													</div>
+												</div>
+											<?php endforeach; ?>
+										</div>
+									</div>
+
+									<script>
+									document.addEventListener('DOMContentLoaded', function() {
+										var addRuleBtn = document.getElementById('wpat_add_extra_rule_btn');
+										var rulesContainer = document.getElementById('wpat_extra_rules_container');
+										var noRulesMsg = document.getElementById('wpat_no_extra_rules_msg');
+										if (!addRuleBtn || !rulesContainer) return;
+
+										addRuleBtn.addEventListener('click', function() {
+											if (noRulesMsg) noRulesMsg.style.display = 'none';
+											var rIndex = rulesContainer.querySelectorAll('.wpat-extra-rule-card').length;
+											var html = '<div class="wpat-extra-rule-card" style="background: #ffffff; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 8px; margin-bottom: 15px;">' +
+												'<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 12px;">' +
+													'<div style="display: flex; gap: 15px; align-items: center; flex-grow: 1;">' +
+														'<input type="text" name="wpat_settings[extra_options_rules][' + rIndex + '][title]" value="" placeholder="Título del Grupo (ej. Opciones de Personalización)" class="regular-text" style="font-weight: 700; font-size: 14px;" required />' +
+														'<label style="font-weight: normal; font-size: 12px; margin: 0;"><input type="checkbox" name="wpat_settings[extra_options_rules][' + rIndex + '][enabled]" value="1" checked /> Grupo Activo</label>' +
+													'</div>' +
+													'<button type="button" class="button button-link-delete wpat-remove-rule-btn" style="color: #ef4444;">Eliminar Grupo</button>' +
+												'</div>' +
+												'<div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px;">' +
+													'<label style="font-size: 12px; font-weight: 600;">Aplicar este grupo a:</label>' +
+													'<select name="wpat_settings[extra_options_rules][' + rIndex + '][scope]" class="wpat-rule-scope-select" style="height: 30px;"><option value="global">Todos los Productos (Global)</option></select>' +
+												'</div>' +
+												'<div class="wpat-rule-fields-wrapper" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px;">' +
+													'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><span style="font-size: 12px; font-weight: 700; color: #475569;">Campos e Opciones de este Grupo:</span><button type="button" class="button button-small wpat-add-field-to-rule-btn" data-rule="' + rIndex + '">+ Añadir Campo</button></div>' +
+													'<div class="wpat-fields-list-container"></div>' +
+												'</div>' +
+											'</div>';
+											rulesContainer.insertAdjacentHTML('beforeend', html);
+										});
+
+										rulesContainer.addEventListener('click', function(e) {
+											if (e.target && e.target.classList.contains('wpat-remove-rule-btn')) {
+												var card = e.target.closest('.wpat-extra-rule-card');
+												if (card) card.remove();
+											} else if (e.target && e.target.classList.contains('wpat-add-field-to-rule-btn')) {
+												var card = e.target.closest('.wpat-extra-rule-card');
+												var listContainer = card.querySelector('.wpat-fields-list-container');
+												var rIndex = e.target.getAttribute('data-rule');
+												var fIndex = listContainer.querySelectorAll('.wpat-field-item-row').length;
+
+												var fHtml = '<div class="wpat-field-item-row" style="background: #ffffff; border: 1px solid #cbd5e1; padding: 10px 12px; border-radius: 6px; margin-bottom: 8px;">' +
+													'<div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr auto; gap: 10px; align-items: center;">' +
+														'<div><label style="font-size: 10px; font-weight: 600; display: block;">Etiqueta / Nombre</label><input type="text" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][label]" value="" placeholder="Ej. Texto de Grabado" class="regular-text" style="width: 100%;" required /></div>' +
+														'<div><label style="font-size: 10px; font-weight: 600; display: block;">Tipo de Opción</label><select name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][type]" class="wpat-extra-type-select" style="width: 100%;"><option value="text">Texto Corto</option><option value="textarea">Área de Texto</option><option value="select">Desplegable (Select)</option><option value="swatch">Muestrario de Color (Swatch)</option><option value="checkbox">Casilla (Checkbox)</option></select></div>' +
+														'<div><label style="font-size: 10px; font-weight: 600; display: block;">Precio Extra (€)</label><input type="number" step="0.01" min="0" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][price]" value="0.00" placeholder="0.00" style="width: 100%;" /></div>' +
+														'<div><label style="font-size: 10px; font-weight: 600; display: block;">Máx Caracteres</label><input type="number" min="0" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][max_length]" value="" placeholder="Sin límite" style="width: 100%;" /></div>' +
+														'<div style="text-align: right; padding-top: 12px;"><button type="button" class="button button-link-delete wpat-remove-field-item-btn" style="color: #ef4444;">Eliminar</button></div>' +
+													'</div>' +
+													'<div style="display: flex; gap: 15px; margin-top: 8px; align-items: center;">' +
+														'<label style="font-weight: normal; font-size: 11px;"><input type="checkbox" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][required]" value="1" /> Obligatorio</label>' +
+														'<input type="text" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][placeholder]" value="" placeholder="Texto de ayuda o placeholder..." style="font-size: 11px; flex-grow: 1;" />' +
+													'</div>' +
+													'<div class="wpat-extra-swatches-wrap" style="margin-top: 8px; display:none;">' +
+														'<label style="font-size: 10px; font-weight: 600; display: block;">Configuración de Colores (Un color por línea: Nombre | #HEX):</label>' +
+														'<textarea name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][swatches]" rows="2" style="width: 100%; font-size: 11px;" placeholder="Azul Real | #2563eb\nRojo Pasión | #ef4444\nVerde Esmeralda | #10b981"></textarea>' +
+													'</div>' +
+													'<div class="wpat-extra-options-wrap" style="margin-top: 8px; display:none;">' +
+														'<label style="font-size: 10px; font-weight: 600; display: block;">Opciones del Desplegable (Una por línea):</label>' +
+														'<textarea name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][options]" rows="2" style="width: 100%; font-size: 11px;" placeholder="Envase Estándar\nCaja de Regalo Premium"></textarea>' +
+													'</div>' +
+												'</div>';
+												listContainer.insertAdjacentHTML('beforeend', fHtml);
+											} else if (e.target && e.target.classList.contains('wpat-remove-field-item-btn')) {
+												var fRow = e.target.closest('.wpat-field-item-row');
+												if (fRow) fRow.remove();
+											}
+										});
+
+										rulesContainer.addEventListener('change', function(e) {
+											if (e.target && e.target.classList.contains('wpat-extra-type-select')) {
+												var fRow = e.target.closest('.wpat-field-item-row');
+												var swatchWrap = fRow.querySelector('.wpat-extra-swatches-wrap');
+												var optWrap = fRow.querySelector('.wpat-extra-options-wrap');
+
+												if (swatchWrap) swatchWrap.style.display = (e.target.value === 'swatch') ? 'block' : 'none';
+												if (optWrap) optWrap.style.display = (e.target.value === 'select') ? 'block' : 'none';
 											}
 										});
 									});

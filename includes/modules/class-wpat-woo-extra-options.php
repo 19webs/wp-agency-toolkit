@@ -146,35 +146,47 @@ class WPAT_Woo_Extra_Options {
 					$max_attr = $max_length > 0 ? ' maxlength="' . $max_length . '"' : '';
 					echo '<textarea id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '" class="wpat-extra-input" rows="3" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;" placeholder="' . esc_attr( ! empty( $field['placeholder'] ) ? $field['placeholder'] : '' ) . '"' . $max_attr . '></textarea>';
 				} elseif ( 'select' === $type ) {
-					$options = ! empty( $field['options'] ) ? explode( "\n", $field['options'] ) : array();
+					$options = ! empty( $field['options'] ) ? preg_split( '/\r\n|\r|\n/', $field['options'] ) : array();
 					echo '<select id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '" class="wpat-extra-input" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">';
 					echo '<option value="">' . esc_html__( '-- Seleccionar --', 'wp-agency-toolkit' ) . '</option>';
 					foreach ( $options as $opt ) {
 						$opt = trim( $opt );
 						if ( ! empty( $opt ) ) {
-							echo '<option value="' . esc_attr( $opt ) . '">' . esc_html( $opt ) . '</option>';
+							$parts      = explode( '|', $opt );
+							$opt_name   = trim( $parts[0] );
+							$opt_price  = isset( $parts[1] ) ? floatval( trim( $parts[1] ) ) : $price;
+							$opt_disp   = $opt_name;
+							if ( $opt_price > 0 ) {
+								$opt_disp .= ' (+' . wc_price( $opt_price ) . ')';
+							}
+							$value_attr = $opt_name . ( $opt_price > 0 ? '|' . $opt_price : '' );
+							echo '<option value="' . esc_attr( $value_attr ) . '">' . esc_html( wp_strip_all_tags( $opt_disp ) ) . '</option>';
 						}
 					}
 					echo '</select>';
 				} elseif ( 'swatch' === $type ) {
 					// Muestrario de Color (Color Swatches)
-					$swatches = ! empty( $field['swatches'] ) ? explode( "\n", $field['swatches'] ) : array();
-					echo '<div class="wpat-swatch-container" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;">';
+					$swatches = ! empty( $field['swatches'] ) ? preg_split( '/\r\n|\r|\n/', $field['swatches'] ) : array();
+					echo '<div class="wpat-swatch-container" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px;">';
 					echo '<input type="hidden" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '" value="" />';
 
 					foreach ( $swatches as $s_idx => $sw ) {
-						$parts = explode( '|', trim( $sw ) );
+						$parts      = explode( '|', trim( $sw ) );
 						$color_name = isset( $parts[0] ) ? trim( $parts[0] ) : '';
 						$color_hex  = isset( $parts[1] ) ? trim( $parts[1] ) : '#2563eb';
+						$color_price= isset( $parts[2] ) ? floatval( trim( $parts[2] ) ) : $price;
 
 						if ( empty( $color_name ) ) {
 							continue;
 						}
 
-						echo '<button type="button" class="wpat-swatch-btn" data-target="' . esc_attr( $field_id ) . '" data-value="' . esc_attr( $color_name ) . '" title="' . esc_attr( $color_name ) . '" style="width: 32px; height: 32px; border-radius: 50%; background-color: ' . esc_attr( $color_hex ) . '; border: 2px solid #ffffff; box-shadow: 0 0 0 1px #cbd5e1; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; padding:0; outline:none;"></button>';
+						$val_attr = $color_name . ( $color_price > 0 ? '|' . $color_price : '' );
+						$title_text = $color_name . ( $color_price > 0 ? ' (+' . wc_price( $color_price ) . ')' : '' );
+
+						echo '<button type="button" class="wpat-swatch-btn" data-target="' . esc_attr( $field_id ) . '" data-value="' . esc_attr( $val_attr ) . '" data-name="' . esc_attr( $color_name ) . '" data-price="' . esc_attr( $color_price ) . '" title="' . esc_attr( wp_strip_all_tags( $title_text ) ) . '" style="width: 34px; height: 34px; border-radius: 50%; background-color: ' . esc_attr( $color_hex ) . '; border: 2px solid #ffffff; box-shadow: 0 0 0 1px #cbd5e1; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; padding:0; outline:none;"></button>';
 					}
 					echo '</div>';
-					echo '<span class="wpat-swatch-selected-label" id="' . esc_attr( $field_id ) . '_label" style="font-size: 12px; color: #475569; margin-top: 4px; display: block;"></span>';
+					echo '<span class="wpat-swatch-selected-label" id="' . esc_attr( $field_id ) . '_label" style="font-size: 12px; font-weight: 600; color: #334155; margin-top: 6px; display: block; min-height: 18px;"></span>';
 				} elseif ( 'checkbox' === $type ) {
 					echo '<label style="font-weight: normal; cursor: pointer;">';
 					echo '<input type="checkbox" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '" value="1" /> ' . esc_html( ! empty( $field['placeholder'] ) ? $field['placeholder'] : 'Activar esta opción' );
@@ -195,7 +207,9 @@ class WPAT_Woo_Extra_Options {
 			swatchBtns.forEach(function(btn) {
 				btn.addEventListener('click', function() {
 					var targetId = this.getAttribute('data-target');
-					var val = this.getAttribute('data-value');
+					var valAttr = this.getAttribute('data-value');
+					var colorName = this.getAttribute('data-name');
+					var priceVal = parseFloat(this.getAttribute('data-price') || 0);
 					var hiddenInput = document.getElementById(targetId);
 					var labelSpan = document.getElementById(targetId + '_label');
 
@@ -207,15 +221,21 @@ class WPAT_Woo_Extra_Options {
 						});
 					}
 
-					if (hiddenInput && hiddenInput.value === val) {
+					if (hiddenInput && hiddenInput.value === valAttr) {
 						// Deseleccionar si ya estaba marcado
 						hiddenInput.value = '';
 						if (labelSpan) labelSpan.textContent = '';
 					} else {
-						if (hiddenInput) hiddenInput.value = val;
-						this.style.boxShadow = '0 0 0 2px #2563eb';
-						this.style.transform = 'scale(1.1)';
-						if (labelSpan) labelSpan.textContent = 'Seleccionado: ' + val;
+						if (hiddenInput) hiddenInput.value = valAttr;
+						this.style.boxShadow = '0 0 0 2.5px #2563eb';
+						this.style.transform = 'scale(1.12)';
+						if (labelSpan) {
+							var labelText = 'Seleccionado: ' + colorName;
+							if (priceVal > 0) {
+								labelText += ' (+' + priceVal.toFixed(2) + ' €)';
+							}
+							labelSpan.textContent = labelText;
+						}
 					}
 				});
 			});
@@ -265,13 +285,22 @@ class WPAT_Woo_Extra_Options {
 			foreach ( $fields as $f_idx => $field ) {
 				$field_id = 'wpat_extra_' . $rule_idx . '_' . $f_idx;
 				if ( isset( $_POST[ $field_id ] ) && '' !== trim( wp_unslash( $_POST[ $field_id ] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-					$val = sanitize_text_field( wp_unslash( $_POST[ $field_id ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-					$price = ! empty( $field['price'] ) ? floatval( $field['price'] ) : 0;
+					$raw_val = sanitize_text_field( wp_unslash( $_POST[ $field_id ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+					$base_price = ! empty( $field['price'] ) ? floatval( $field['price'] ) : 0;
+
+					$opt_label_display = $raw_val;
+					$opt_price         = $base_price;
+
+					if ( strpos( $raw_val, '|' ) !== false ) {
+						$parts = explode( '|', $raw_val );
+						$opt_label_display = trim( $parts[0] );
+						$opt_price         = isset( $parts[1] ) ? floatval( trim( $parts[1] ) ) : $base_price;
+					}
 
 					$extra_options[] = array(
 						'label' => sanitize_text_field( $field['label'] ),
-						'value' => $val,
-						'price' => $price,
+						'value' => $opt_label_display,
+						'price' => $opt_price,
 					);
 				}
 			}

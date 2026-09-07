@@ -79,16 +79,25 @@ class WPAT_Woo_Checkout_Editor {
 			}
 		}
 
-		// 2. Ajustar campos requeridos nativos
+		// 2. Ajustar NIF de Facturación
 		if ( ! empty( $settings['checkout_nif_enabled'] ) ) {
 			$nif_required = isset( $settings['checkout_nif_required'] ) ? '1' === $settings['checkout_nif_required'] : true;
+			$nif_pos      = isset( $settings['checkout_nif_position'] ) ? $settings['checkout_nif_position'] : 'after_names';
+			
+			$nif_priority = 21; // Después de Apellidos (first_name: 10, last_name: 20)
+			if ( 'after_company' === $nif_pos ) {
+				$nif_priority = 31;
+			} elseif ( 'at_end' === $nif_pos ) {
+				$nif_priority = 120;
+			}
+
 			$fields['billing']['billing_nif'] = array(
 				'label'       => __( 'NIF / CIF / DNI', 'wp-agency-toolkit' ),
 				'placeholder' => __( 'Ej. 12345678X', 'wp-agency-toolkit' ),
 				'required'    => $nif_required,
 				'class'       => array( 'form-row-wide' ),
 				'clear'       => true,
-				'priority'    => 25,
+				'priority'    => $nif_priority,
 			);
 		}
 
@@ -106,25 +115,55 @@ class WPAT_Woo_Checkout_Editor {
 			}
 
 			$field_type = ! empty( $cf['type'] ) ? $cf['type'] : 'text';
+			$pos        = ! empty( $cf['position'] ) ? $cf['position'] : 'after_names';
+
+			// Calcular prioridad según posición elegida por el usuario
+			$priority = 22;
+			if ( 'after_company' === $pos ) {
+				$priority = 32;
+			} elseif ( 'after_address' === $pos ) {
+				$priority = 95;
+			} elseif ( 'end_of_section' === $pos ) {
+				$priority = 120;
+			}
+
 			$field_data = array(
-				'type'        => 'date' === $field_type ? 'date' : ( 'select' === $field_type ? 'select' : ( 'checkbox' === $field_type ? 'checkbox' : ( 'textarea' === $field_type ? 'textarea' : 'text' ) ) ),
 				'label'       => sanitize_text_field( $cf['label'] ),
 				'placeholder' => ! empty( $cf['placeholder'] ) ? sanitize_text_field( $cf['placeholder'] ) : '',
 				'required'    => ! empty( $cf['required'] ) && '1' === $cf['required'],
 				'class'       => array( 'form-row-wide' ),
-				'priority'    => ! empty( $cf['priority'] ) ? intval( $cf['priority'] ) : 100,
+				'clear'       => true,
+				'priority'    => $priority,
 			);
 
-			if ( 'select' === $field_type && ! empty( $cf['options'] ) ) {
-				$opts_arr = array( '' => __( '-- Seleccionar --', 'wp-agency-toolkit' ) );
-				$lines = explode( "\n", $cf['options'] );
-				foreach ( $lines as $line ) {
-					$line = trim( $line );
-					if ( ! empty( $line ) ) {
-						$opts_arr[ $line ] = $line;
+			if ( 'date' === $field_type ) {
+				// woocommerce_form_field requiere type text con custom_attributes para HTML5 datepicker
+				$field_data['type']              = 'text';
+				$field_data['custom_attributes'] = array( 'type' => 'date' );
+			} elseif ( 'select' === $field_type ) {
+				$field_data['type'] = 'select';
+				$opts_arr           = array( '' => __( '-- Seleccionar --', 'wp-agency-toolkit' ) );
+				if ( ! empty( $cf['options'] ) ) {
+					$lines = preg_split( '/\r\n|\r|\n/', $cf['options'] );
+					foreach ( $lines as $line ) {
+						$line = trim( $line );
+						if ( ! empty( $line ) ) {
+							if ( strpos( $line, ':' ) !== false ) {
+								$parts = explode( ':', $line, 2 );
+								$opts_arr[ trim( $parts[0] ) ] = trim( $parts[1] );
+							} else {
+								$opts_arr[ $line ] = $line;
+							}
+						}
 					}
 				}
 				$field_data['options'] = $opts_arr;
+			} elseif ( 'checkbox' === $field_type ) {
+				$field_data['type'] = 'checkbox';
+			} elseif ( 'textarea' === $field_type ) {
+				$field_data['type'] = 'textarea';
+			} else {
+				$field_data['type'] = 'text';
 			}
 
 			$fields[ $section ][ sanitize_key( $cf['key'] ) ] = $field_data;

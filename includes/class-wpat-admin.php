@@ -755,6 +755,7 @@ class WPAT_Admin {
 		$new_settings['checkout_editor_enabled']  = isset( $input_settings['checkout_editor_enabled'] ) && '1' === $input_settings['checkout_editor_enabled'] ? '1' : '0';
 		$new_settings['checkout_nif_enabled']     = isset( $input_settings['checkout_nif_enabled'] ) && '1' === $input_settings['checkout_nif_enabled'] ? '1' : '0';
 		$new_settings['checkout_nif_required']    = isset( $input_settings['checkout_nif_required'] ) && '1' === $input_settings['checkout_nif_required'] ? '1' : '0';
+		$new_settings['checkout_nif_position']    = isset( $input_settings['checkout_nif_position'] ) && in_array( $input_settings['checkout_nif_position'], array( 'after_names', 'after_company', 'at_end' ), true ) ? $input_settings['checkout_nif_position'] : 'after_names';
 
 		$new_settings['checkout_disabled_fields'] = isset( $input_settings['checkout_disabled_fields'] ) && is_array( $input_settings['checkout_disabled_fields'] ) ? array_map( 'sanitize_key', $input_settings['checkout_disabled_fields'] ) : array();
 
@@ -770,6 +771,7 @@ class WPAT_Admin {
 						'placeholder' => isset( $cf['placeholder'] ) ? sanitize_text_field( $cf['placeholder'] ) : '',
 						'required'    => isset( $cf['required'] ) && '1' === $cf['required'] ? '1' : '0',
 						'section'     => isset( $cf['section'] ) && in_array( $cf['section'], array( 'billing', 'shipping', 'order' ), true ) ? $cf['section'] : 'billing',
+						'position'    => isset( $cf['position'] ) && in_array( $cf['position'], array( 'after_names', 'after_company', 'after_address', 'end_of_section' ), true ) ? $cf['position'] : 'after_names',
 						'priority'    => isset( $cf['priority'] ) ? intval( $cf['priority'] ) : 100,
 						'options'     => isset( $cf['options'] ) ? sanitize_textarea_field( $cf['options'] ) : '',
 					);
@@ -2532,7 +2534,7 @@ class WPAT_Admin {
 									<!-- NIF / CIF -->
 									<div class="wpat-field-group" style="margin-top: 15px; background: #f8fafc; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 6px;">
 										<h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700;">🆔 Campo NIF / CIF / DNI (Facturación)</h4>
-										<div style="display: flex; gap: 20px; flex-wrap: wrap;">
+										<div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: center;">
 											<label style="font-weight: normal;">
 												<input type="checkbox" name="wpat_settings[checkout_nif_enabled]" value="1" <?php checked( isset( $settings['checkout_nif_enabled'] ) ? $settings['checkout_nif_enabled'] : '1', '1' ); ?>>
 												Activar Campo NIF / CIF / DNI en el Checkout
@@ -2541,6 +2543,15 @@ class WPAT_Admin {
 												<input type="checkbox" name="wpat_settings[checkout_nif_required]" value="1" <?php checked( isset( $settings['checkout_nif_required'] ) ? $settings['checkout_nif_required'] : '1', '1' ); ?>>
 												Campo NIF / CIF Obligatorio
 											</label>
+											<div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+												<label style="font-size: 12px; font-weight: 600;">Ubicación en Checkout:</label>
+												<?php $nif_pos = isset( $settings['checkout_nif_position'] ) ? $settings['checkout_nif_position'] : 'after_names'; ?>
+												<select name="wpat_settings[checkout_nif_position]" style="font-size: 12px; height: 30px;">
+													<option value="after_names" <?php selected( $nif_pos, 'after_names' ); ?>>Debajo de Apellidos (Recomendado)</option>
+													<option value="after_company" <?php selected( $nif_pos, 'after_company' ); ?>>Debajo de Empresa</option>
+													<option value="at_end" <?php selected( $nif_pos, 'at_end' ); ?>>Al final de Facturación</option>
+												</select>
+											</div>
 										</div>
 									</div>
 
@@ -2595,10 +2606,11 @@ class WPAT_Admin {
 												$f_placeholder = esc_attr( isset( $cf['placeholder'] ) ? $cf['placeholder'] : '' );
 												$f_required    = isset( $cf['required'] ) && '1' === $cf['required'] ? '1' : '0';
 												$f_section     = esc_attr( isset( $cf['section'] ) ? $cf['section'] : 'billing' );
+												$f_position    = esc_attr( isset( $cf['position'] ) ? $cf['position'] : 'after_names' );
 												$f_options     = esc_textarea( isset( $cf['options'] ) ? $cf['options'] : '' );
 												?>
 												<div class="wpat-custom-field-row" style="background: #ffffff; border: 1px solid var(--wpat-border); padding: 12px 15px; border-radius: 6px; margin-bottom: 10px;">
-													<div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr auto; gap: 10px; align-items: center;">
+													<div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr auto; gap: 10px; align-items: center;">
 														<div>
 															<label style="font-size: 11px; display: block; font-weight: 600;">Nombre del Campo (Etiqueta)</label>
 															<input type="text" name="wpat_settings[checkout_custom_fields][<?php echo $index; ?>][label]" value="<?php echo $f_label; ?>" class="regular-text" placeholder="Ej. Horario de Preferencia" required style="width: 100%;" />
@@ -2623,6 +2635,15 @@ class WPAT_Admin {
 																<option value="billing" <?php selected( $f_section, 'billing' ); ?>>Facturación</option>
 																<option value="shipping" <?php selected( $f_section, 'shipping' ); ?>>Envío</option>
 																<option value="order" <?php selected( $f_section, 'order' ); ?>>Notas Adicionales</option>
+															</select>
+														</div>
+														<div>
+															<label style="font-size: 11px; display: block; font-weight: 600;">Posición</label>
+															<select name="wpat_settings[checkout_custom_fields][<?php echo $index; ?>][position]" style="width: 100%;">
+																<option value="after_names" <?php selected( $f_position, 'after_names' ); ?>>Después de Apellidos</option>
+																<option value="after_company" <?php selected( $f_position, 'after_company' ); ?>>Después de Empresa</option>
+																<option value="after_address" <?php selected( $f_position, 'after_address' ); ?>>Después de Dirección</option>
+																<option value="end_of_section" <?php selected( $f_position, 'end_of_section' ); ?>>Al final de Sección</option>
 															</select>
 														</div>
 														<div style="text-align: right; padding-top: 15px;">
@@ -2658,11 +2679,12 @@ class WPAT_Admin {
 											if (noMsg) noMsg.style.display = 'none';
 											var index = container.querySelectorAll('.wpat-custom-field-row').length;
 											var html = '<div class="wpat-custom-field-row" style="background: #ffffff; border: 1px solid var(--wpat-border); padding: 12px 15px; border-radius: 6px; margin-bottom: 10px;">' +
-												'<div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr auto; gap: 10px; align-items: center;">' +
+												'<div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr auto; gap: 10px; align-items: center;">' +
 													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Nombre del Campo (Etiqueta)</label><input type="text" name="wpat_settings[checkout_custom_fields][' + index + '][label]" value="" class="regular-text" placeholder="Ej. Horario de Preferencia" required style="width: 100%;" /></div>' +
 													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Identificador Único (Key)</label><input type="text" name="wpat_settings[checkout_custom_fields][' + index + '][key]" value="" class="regular-text" placeholder="ej. horario_entrega" style="width: 100%;" /></div>' +
 													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Tipo de Campo</label><select name="wpat_settings[checkout_custom_fields][' + index + '][type]" class="wpat-field-type-select" style="width: 100%;"><option value="text">Texto Corto</option><option value="select">Desplegable (Select)</option><option value="textarea">Área de Texto</option><option value="checkbox">Casilla (Checkbox)</option><option value="date">Fecha (Calendario)</option></select></div>' +
 													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Sección</label><select name="wpat_settings[checkout_custom_fields][' + index + '][section]" style="width: 100%;"><option value="billing">Facturación</option><option value="shipping">Envío</option><option value="order">Notas Adicionales</option></select></div>' +
+													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Posición</label><select name="wpat_settings[checkout_custom_fields][' + index + '][position]" style="width: 100%;"><option value="after_names">Después de Apellidos</option><option value="after_company">Después de Empresa</option><option value="after_address">Después de Dirección</option><option value="end_of_section">Al final de Sección</option></select></div>' +
 													'<div style="text-align: right; padding-top: 15px;"><button type="button" class="button button-link-delete wpat-remove-field-btn" style="color: #ef4444;">Eliminar</button></div>' +
 												'</div>' +
 												'<div style="display: flex; gap: 15px; margin-top: 10px; align-items: center;">' +
@@ -2717,6 +2739,11 @@ class WPAT_Admin {
 											<input type="checkbox" name="wpat_settings[extra_options_enabled]" value="1" <?php checked( isset( $settings['extra_options_enabled'] ) ? $settings['extra_options_enabled'] : '0', '1' ); ?>>
 											Activar Opciones Extra y Swatches en Productos
 										</label>
+										<div style="margin-top: 10px; padding: 10px 14px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; font-size: 12px; color: #0369a1;">
+											💡 <strong>Formato de Opciones Especiales:</strong><br/>
+											• <strong>Desplegable (Select):</strong> <code>Nombre de Opción | Precio</code> (Ej: <code>Cena Sí | 15.00</code> ó <code>Cena No | 0</code>).<br/>
+											• <strong>Muestrario de Color (Swatch):</strong> <code>Nombre del Color | #HEX | Precio</code> (Ej: <code>Azul Real | #2563eb | 0</code> ó <code>Oro Metalizado | #ffd700 | 5.00</code>).
+										</div>
 									</div>
 
 									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
@@ -2815,13 +2842,13 @@ class WPAT_Admin {
 																	</div>
 
 																	<div class="wpat-extra-swatches-wrap" style="margin-top: 8px; <?php echo ( 'swatch' === $f_type ) ? '' : 'display:none;'; ?>">
-																		<label style="font-size: 10px; font-weight: 600; display: block;">Configuración de Colores (Un color por línea: Nombre | #HEX):</label>
-																		<textarea name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][swatches]" rows="2" style="width: 100%; font-size: 11px;" placeholder="Azul Real | #2563eb&#10;Rojo Pasión | #ef4444&#10;Verde Esmeralda | #10b981"><?php echo $f_swatches; ?></textarea>
+																		<label style="font-size: 10px; font-weight: 600; display: block;">Configuración de Colores (Formato por línea: Nombre | #HEX | Precio Opcional):</label>
+																		<textarea name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][swatches]" rows="2" style="width: 100%; font-size: 11px;" placeholder="Azul Real | #2563eb | 0&#10;Oro Metalizado | #ffd700 | 5.00"><?php echo $f_swatches; ?></textarea>
 																	</div>
 
 																	<div class="wpat-extra-options-wrap" style="margin-top: 8px; <?php echo ( 'select' === $f_type ) ? '' : 'display:none;'; ?>">
-																		<label style="font-size: 10px; font-weight: 600; display: block;">Opciones del Desplegable (Una por línea):</label>
-																		<textarea name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][options]" rows="2" style="width: 100%; font-size: 11px;" placeholder="Envase Estándar&#10;Caja de Regalo Premium"><?php echo $f_options; ?></textarea>
+																		<label style="font-size: 10px; font-weight: 600; display: block;">Opciones del Desplegable (Formato por línea: Nombre | Precio Opcional):</label>
+																		<textarea name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][options]" rows="2" style="width: 100%; font-size: 11px;" placeholder="Cena Sí | 15.00&#10;Cena No | 0"><?php echo $f_options; ?></textarea>
 																	</div>
 																</div>
 															<?php endforeach; ?>
@@ -2885,12 +2912,12 @@ class WPAT_Admin {
 														'<input type="text" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][placeholder]" value="" placeholder="Texto de ayuda o placeholder..." style="font-size: 11px; flex-grow: 1;" />' +
 													'</div>' +
 													'<div class="wpat-extra-swatches-wrap" style="margin-top: 8px; display:none;">' +
-														'<label style="font-size: 10px; font-weight: 600; display: block;">Configuración de Colores (Un color por línea: Nombre | #HEX):</label>' +
-														'<textarea name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][swatches]" rows="2" style="width: 100%; font-size: 11px;" placeholder="Azul Real | #2563eb\nRojo Pasión | #ef4444\nVerde Esmeralda | #10b981"></textarea>' +
+														'<label style="font-size: 10px; font-weight: 600; display: block;">Configuración de Colores (Formato por línea: Nombre | #HEX | Precio Opcional):</label>' +
+														'<textarea name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][swatches]" rows="2" style="width: 100%; font-size: 11px;" placeholder="Azul Real | #2563eb | 0\nOro Metalizado | #ffd700 | 5.00"></textarea>' +
 													'</div>' +
 													'<div class="wpat-extra-options-wrap" style="margin-top: 8px; display:none;">' +
-														'<label style="font-size: 10px; font-weight: 600; display: block;">Opciones del Desplegable (Una por línea):</label>' +
-														'<textarea name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][options]" rows="2" style="width: 100%; font-size: 11px;" placeholder="Envase Estándar\nCaja de Regalo Premium"></textarea>' +
+														'<label style="font-size: 10px; font-weight: 600; display: block;">Opciones del Desplegable (Formato por línea: Nombre | Precio Opcional):</label>' +
+														'<textarea name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][options]" rows="2" style="width: 100%; font-size: 11px;" placeholder="Cena Sí | 15.00\nCena No | 0"></textarea>' +
 													'</div>' +
 												'</div>';
 												listContainer.insertAdjacentHTML('beforeend', fHtml);

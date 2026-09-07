@@ -798,6 +798,7 @@ class WPAT_Admin {
 									'price'       => isset( $f['price'] ) ? floatval( $f['price'] ) : 0,
 									'required'    => isset( $f['required'] ) && '1' === $f['required'] ? '1' : '0',
 									'placeholder' => isset( $f['placeholder'] ) ? sanitize_text_field( $f['placeholder'] ) : '',
+									'default_val' => isset( $f['default_val'] ) ? sanitize_text_field( $f['default_val'] ) : '',
 									'max_length'  => isset( $f['max_length'] ) ? absint( $f['max_length'] ) : 0,
 									'options'     => isset( $f['options'] ) ? sanitize_textarea_field( $f['options'] ) : '',
 									'swatches'    => isset( $f['swatches'] ) ? sanitize_textarea_field( $f['swatches'] ) : '',
@@ -811,7 +812,7 @@ class WPAT_Admin {
 						'enabled'    => isset( $rule['enabled'] ) && '1' === $rule['enabled'] ? '1' : '0',
 						'scope'      => isset( $rule['scope'] ) && in_array( $rule['scope'], array( 'global', 'category', 'product' ), true ) ? $rule['scope'] : 'global',
 						'categories' => isset( $rule['categories'] ) && is_array( $rule['categories'] ) ? array_map( 'absint', $rule['categories'] ) : array(),
-						'products'   => isset( $rule['products'] ) && is_array( $rule['products'] ) ? array_map( 'absint', $rule['products'] ) : array(),
+						'products'   => isset( $rule['products'] ) ? ( is_array( $rule['products'] ) ? array_map( 'absint', $rule['products'] ) : array_filter( array_map( 'absint', explode( ',', $rule['products'] ) ) ) ) : array(),
 						'fields'     => $fields_clean,
 					);
 				}
@@ -2761,7 +2762,18 @@ class WPAT_Admin {
 
 										<div id="wpat_extra_rules_container">
 											<?php
-											$extra_rules = isset( $settings['extra_options_rules'] ) && is_array( $settings['extra_options_rules'] ) ? $settings['extra_options_rules'] : array();
+											$extra_rules  = isset( $settings['extra_options_rules'] ) && is_array( $settings['extra_options_rules'] ) ? $settings['extra_options_rules'] : array();
+											$product_cats = taxonomy_exists( 'product_cat' ) ? get_terms( array( 'taxonomy' => 'product_cat', 'hide_empty' => false ) ) : array();
+
+											$cat_options_js = '';
+											if ( ! empty( $product_cats ) && ! is_wp_error( $product_cats ) ) {
+												foreach ( $product_cats as $cat ) {
+													$cat_options_js .= '<option value="' . esc_attr( $cat->term_id ) . '">' . esc_js( $cat->name ) . '</option>';
+												}
+											} else {
+												$cat_options_js .= '<option value="" disabled>No hay categorías registradas</option>';
+											}
+
 											if ( empty( $extra_rules ) ) :
 												?>
 												<p class="description" id="wpat_no_extra_rules_msg">No hay grupos de opciones de producto creados aún.</p>
@@ -2769,10 +2781,12 @@ class WPAT_Admin {
 
 											<?php
 											foreach ( $extra_rules as $r_idx => $rule ) :
-												$r_title   = esc_attr( isset( $rule['title'] ) ? $rule['title'] : '' );
-												$r_enabled = isset( $rule['enabled'] ) && '1' === $rule['enabled'] ? '1' : '0';
-												$r_scope   = esc_attr( isset( $rule['scope'] ) ? $rule['scope'] : 'global' );
-												$r_fields  = isset( $rule['fields'] ) && is_array( $rule['fields'] ) ? $rule['fields'] : array();
+												$r_title      = esc_attr( isset( $rule['title'] ) ? $rule['title'] : '' );
+												$r_enabled    = isset( $rule['enabled'] ) && '1' === $rule['enabled'] ? '1' : '0';
+												$r_scope      = esc_attr( isset( $rule['scope'] ) ? $rule['scope'] : 'global' );
+												$r_categories = isset( $rule['categories'] ) && is_array( $rule['categories'] ) ? array_map( 'intval', $rule['categories'] ) : array();
+												$r_products   = isset( $rule['products'] ) && is_array( $rule['products'] ) ? implode( ', ', $rule['products'] ) : ( isset( $rule['products'] ) ? esc_attr( $rule['products'] ) : '' );
+												$r_fields     = isset( $rule['fields'] ) && is_array( $rule['fields'] ) ? $rule['fields'] : array();
 												?>
 												<div class="wpat-extra-rule-card" style="background: #ffffff; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
 													<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 12px;">
@@ -2786,11 +2800,36 @@ class WPAT_Admin {
 														<button type="button" class="button button-link-delete wpat-remove-rule-btn" style="color: #ef4444;">Eliminar Grupo</button>
 													</div>
 
-													<div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px;">
-														<label style="font-size: 12px; font-weight: 600;">Aplicar este grupo a:</label>
-														<select name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][scope]" class="wpat-rule-scope-select" style="height: 30px;">
-															<option value="global" <?php selected( $r_scope, 'global' ); ?>>Todos los Productos (Global)</option>
-														</select>
+													<div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px; flex-wrap: wrap;">
+														<div style="display: flex; gap: 10px; align-items: center;">
+															<label style="font-size: 12px; font-weight: 600;">Aplicar este grupo a:</label>
+															<select name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][scope]" class="wpat-rule-scope-select" style="height: 30px;">
+																<option value="global" <?php selected( $r_scope, 'global' ); ?>>Todos los Productos (Global)</option>
+																<option value="category" <?php selected( $r_scope, 'category' ); ?>>Categorías de Productos</option>
+																<option value="product" <?php selected( $r_scope, 'product' ); ?>>Productos Específicos</option>
+															</select>
+														</div>
+
+														<div class="wpat-scope-category-wrap" style="<?php echo ( 'category' === $r_scope ) ? '' : 'display:none;'; ?>">
+															<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 2px;">Seleccionar Categorías:</label>
+															<select name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][categories][]" multiple style="height: 65px; font-size: 11px; min-width: 200px;">
+																<?php
+																if ( ! empty( $product_cats ) && ! is_wp_error( $product_cats ) ) {
+																	foreach ( $product_cats as $cat ) {
+																		$selected = in_array( (int) $cat->term_id, $r_categories, true ) ? 'selected' : '';
+																		echo '<option value="' . esc_attr( $cat->term_id ) . '" ' . $selected . '>' . esc_html( $cat->name ) . '</option>';
+																	}
+																} else {
+																	echo '<option value="" disabled>No hay categorías registradas</option>';
+																}
+																?>
+															</select>
+														</div>
+
+														<div class="wpat-scope-product-wrap" style="<?php echo ( 'product' === $r_scope ) ? '' : 'display:none;'; ?>">
+															<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 2px;">IDs de Productos (separados por coma):</label>
+															<input type="text" name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][products]" value="<?php echo esc_attr( $r_products ); ?>" placeholder="Ej. 102, 105, 210" class="regular-text" style="font-size: 11px; width: 220px;" />
+														</div>
 													</div>
 
 													<!-- Lista de Campos dentro de la Regla -->
@@ -2807,6 +2846,7 @@ class WPAT_Admin {
 																$f_price       = esc_attr( isset( $f['price'] ) ? $f['price'] : '0' );
 																$f_required    = isset( $f['required'] ) && '1' === $f['required'] ? '1' : '0';
 																$f_placeholder = esc_attr( isset( $f['placeholder'] ) ? $f['placeholder'] : '' );
+																$f_default_val = esc_attr( isset( $f['default_val'] ) ? $f['default_val'] : '' );
 																$f_max_length  = esc_attr( isset( $f['max_length'] ) ? $f['max_length'] : '' );
 																$f_options     = esc_textarea( isset( $f['options'] ) ? $f['options'] : '' );
 																$f_swatches    = esc_textarea( isset( $f['swatches'] ) ? $f['swatches'] : '' );
@@ -2847,6 +2887,7 @@ class WPAT_Admin {
 																			Obligatorio
 																		</label>
 																		<input type="text" name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][placeholder]" value="<?php echo $f_placeholder; ?>" placeholder="Texto de ayuda o placeholder..." style="font-size: 11px; flex-grow: 1;" />
+																		<input type="text" name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][default_val]" value="<?php echo $f_default_val; ?>" placeholder="Opción por defecto (ej. Nombre opción / 1)" style="font-size: 11px; width: 220px;" title="Para Checkbox poner 1. Para Select/Radio/Swatch poner el Nombre exacto de la opción por defecto." />
 																	</div>
 
 																	<div class="wpat-extra-swatches-wrap" style="margin-top: 8px; <?php echo ( 'swatch' === $f_type ) ? '' : 'display:none;'; ?>">
@@ -2872,6 +2913,7 @@ class WPAT_Admin {
 										var addRuleBtn = document.getElementById('wpat_add_extra_rule_btn');
 										var rulesContainer = document.getElementById('wpat_extra_rules_container');
 										var noRulesMsg = document.getElementById('wpat_no_extra_rules_msg');
+										var catOptionsHtml = '<?php echo $cat_options_js; ?>';
 										if (!addRuleBtn || !rulesContainer) return;
 
 										addRuleBtn.addEventListener('click', function() {
@@ -2885,9 +2927,25 @@ class WPAT_Admin {
 													'</div>' +
 													'<button type="button" class="button button-link-delete wpat-remove-rule-btn" style="color: #ef4444;">Eliminar Grupo</button>' +
 												'</div>' +
-												'<div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px;">' +
-													'<label style="font-size: 12px; font-weight: 600;">Aplicar este grupo a:</label>' +
-													'<select name="wpat_settings[extra_options_rules][' + rIndex + '][scope]" class="wpat-rule-scope-select" style="height: 30px;"><option value="global">Todos los Productos (Global)</option></select>' +
+												'<div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px; flex-wrap: wrap;">' +
+													'<div style="display: flex; gap: 10px; align-items: center;">' +
+														'<label style="font-size: 12px; font-weight: 600;">Aplicar este grupo a:</label>' +
+														'<select name="wpat_settings[extra_options_rules][' + rIndex + '][scope]" class="wpat-rule-scope-select" style="height: 30px;">' +
+															'<option value="global">Todos los Productos (Global)</option>' +
+															'<option value="category">Categorías de Productos</option>' +
+															'<option value="product">Productos Específicos</option>' +
+														'</select>' +
+													'</div>' +
+													'<div class="wpat-scope-category-wrap" style="display:none;">' +
+														'<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 2px;">Seleccionar Categorías:</label>' +
+														'<select name="wpat_settings[extra_options_rules][' + rIndex + '][categories][]" multiple style="height: 65px; font-size: 11px; min-width: 200px;">' +
+															catOptionsHtml +
+														'</select>' +
+													'</div>' +
+													'<div class="wpat-scope-product-wrap" style="display:none;">' +
+														'<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 2px;">IDs de Productos (separados por coma):</label>' +
+														'<input type="text" name="wpat_settings[extra_options_rules][' + rIndex + '][products]" value="" placeholder="Ej. 102, 105, 210" class="regular-text" style="font-size: 11px; width: 220px;" />' +
+													'</div>' +
 												'</div>' +
 												'<div class="wpat-rule-fields-wrapper" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px;">' +
 													'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><span style="font-size: 12px; font-weight: 700; color: #475569;">Campos e Opciones de este Grupo:</span><button type="button" class="button button-small wpat-add-field-to-rule-btn" data-rule="' + rIndex + '">+ Añadir Campo</button></div>' +
@@ -2918,6 +2976,7 @@ class WPAT_Admin {
 													'<div style="display: flex; gap: 15px; margin-top: 8px; align-items: center;">' +
 														'<label style="font-weight: normal; font-size: 11px;"><input type="checkbox" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][required]" value="1" /> Obligatorio</label>' +
 														'<input type="text" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][placeholder]" value="" placeholder="Texto de ayuda o placeholder..." style="font-size: 11px; flex-grow: 1;" />' +
+														'<input type="text" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][default_val]" value="" placeholder="Opción por defecto (ej. Nombre opción / 1)" style="font-size: 11px; width: 220px;" title="Para Checkbox poner 1. Para Select/Radio/Swatch poner el Nombre exacto de la opción por defecto." />' +
 													'</div>' +
 													'<div class="wpat-extra-swatches-wrap" style="margin-top: 8px; display:none;">' +
 														'<label style="font-size: 10px; font-weight: 600; display: block;">Configuración de Colores (Formato por línea: Nombre | #HEX | Precio Opcional):</label>' +
@@ -2943,6 +3002,12 @@ class WPAT_Admin {
 
 												if (swatchWrap) swatchWrap.style.display = (e.target.value === 'swatch') ? 'block' : 'none';
 												if (optWrap) optWrap.style.display = (e.target.value === 'select' || e.target.value === 'radio') ? 'block' : 'none';
+											} else if (e.target && e.target.classList.contains('wpat-rule-scope-select')) {
+												var card = e.target.closest('.wpat-extra-rule-card');
+												var catWrap = card.querySelector('.wpat-scope-category-wrap');
+												var prodWrap = card.querySelector('.wpat-scope-product-wrap');
+												if (catWrap) catWrap.style.display = (e.target.value === 'category') ? 'block' : 'none';
+												if (prodWrap) prodWrap.style.display = (e.target.value === 'product') ? 'block' : 'none';
 											}
 										});
 									});

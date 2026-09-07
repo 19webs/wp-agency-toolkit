@@ -129,6 +129,7 @@ class WPAT_Woo_Extra_Options {
 				$required     = ! empty( $field['required'] ) && '1' === $field['required'];
 				$price        = ! empty( $field['price'] ) ? floatval( $field['price'] ) : 0;
 				$max_length   = ! empty( $field['max_length'] ) ? intval( $field['max_length'] ) : 0;
+				$default_val  = isset( $field['default_val'] ) ? trim( $field['default_val'] ) : '';
 
 				// Comprobar si las opciones tienen precios individuales por línea
 				$has_option_prices = false;
@@ -142,18 +143,18 @@ class WPAT_Woo_Extra_Options {
 				$price_html = ( ! $has_option_prices && $price > 0 ) ? ' <span class="wpat-extra-price" style="color: #2563eb; font-weight: 600;">(+' . wc_price( $price ) . ')</span>' : '';
 				$req_html   = $required ? ' <span class="required" style="color:#ef4444;">*</span>' : '';
 
-				echo '<div class="wpat-extra-field-group" style="margin-bottom: 14px;">';
+				echo '<div class="wpat-extra-field-group" data-type="' . esc_attr( $type ) . '" data-base-price="' . esc_attr( $price ) . '" style="margin-bottom: 14px;">';
 				echo '<label for="' . esc_attr( $field_id ) . '" style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13.5px;">' . $label . $price_html . $req_html . '</label>';
 
 				if ( 'text' === $type ) {
 					$max_attr = $max_length > 0 ? ' maxlength="' . $max_length . '"' : '';
-					echo '<input type="text" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '" class="wpat-extra-input" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;" placeholder="' . esc_attr( ! empty( $field['placeholder'] ) ? $field['placeholder'] : '' ) . '"' . $max_attr . ' />';
+					echo '<input type="text" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '" value="' . esc_attr( $default_val ) . '" class="wpat-extra-input" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;" placeholder="' . esc_attr( ! empty( $field['placeholder'] ) ? $field['placeholder'] : '' ) . '"' . $max_attr . ' />';
 					if ( $max_length > 0 ) {
 						echo '<small style="display:block; color:#64748b; margin-top:2px;">Máximo ' . $max_length . ' caracteres</small>';
 					}
 				} elseif ( 'textarea' === $type ) {
 					$max_attr = $max_length > 0 ? ' maxlength="' . $max_length . '"' : '';
-					echo '<textarea id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '" class="wpat-extra-input" rows="3" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;" placeholder="' . esc_attr( ! empty( $field['placeholder'] ) ? $field['placeholder'] : '' ) . '"' . $max_attr . '></textarea>';
+					echo '<textarea id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '" class="wpat-extra-input" rows="3" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;" placeholder="' . esc_attr( ! empty( $field['placeholder'] ) ? $field['placeholder'] : '' ) . '"' . $max_attr . '>' . esc_textarea( $default_val ) . '</textarea>';
 				} elseif ( 'select' === $type ) {
 					$options = ! empty( $field['options'] ) ? preg_split( '/\r\n|\r|\n/', $field['options'] ) : array();
 					echo '<select id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '" class="wpat-extra-input" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">';
@@ -169,15 +170,32 @@ class WPAT_Woo_Extra_Options {
 								$opt_disp .= ' (+' . wc_price( $opt_price ) . ')';
 							}
 							$value_attr = $opt_name . '|' . $opt_price;
-							echo '<option value="' . esc_attr( $value_attr ) . '">' . esc_html( wp_strip_all_tags( $opt_disp ) ) . '</option>';
+							$is_def     = ( ! empty( $default_val ) && ( strcasecmp( $default_val, $opt_name ) === 0 || strcasecmp( $default_val, $opt ) === 0 ) );
+							$sel_attr   = $is_def ? ' selected="selected"' : '';
+							echo '<option value="' . esc_attr( $value_attr ) . '"' . $sel_attr . '>' . esc_html( wp_strip_all_tags( $opt_disp ) ) . '</option>';
 						}
 					}
 					echo '</select>';
 				} elseif ( 'swatch' === $type ) {
 					// Muestrario de Color (Color Swatches)
 					$swatches = ! empty( $field['swatches'] ) ? preg_split( '/\r\n|\r|\n/', $field['swatches'] ) : array();
+					$initial_val = '';
+					$initial_lbl = '';
+
+					// Determinar si hay swatch por defecto
+					foreach ( $swatches as $sw_check ) {
+						$parts_c = explode( '|', trim( $sw_check ) );
+						$c_name  = isset( $parts_c[0] ) ? trim( $parts_c[0] ) : '';
+						$c_p     = isset( $parts_c[2] ) ? floatval( trim( $parts_c[2] ) ) : $price;
+						if ( ! empty( $c_name ) && ! empty( $default_val ) && ( strcasecmp( $default_val, $c_name ) === 0 || strcasecmp( $default_val, trim( $sw_check ) ) === 0 ) ) {
+							$initial_val = $c_name . '|' . $c_p;
+							$initial_lbl = 'Seleccionado: ' . $c_name . ( $c_p > 0 ? ' (+' . number_format( $c_p, 2, ',', '.' ) . ' €)' : '' );
+							break;
+						}
+					}
+
 					echo '<div class="wpat-swatch-container" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px;">';
-					echo '<input type="hidden" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '" value="" />';
+					echo '<input type="hidden" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '" value="' . esc_attr( $initial_val ) . '" class="wpat-extra-input" />';
 
 					foreach ( $swatches as $s_idx => $sw ) {
 						$parts      = explode( '|', trim( $sw ) );
@@ -189,13 +207,16 @@ class WPAT_Woo_Extra_Options {
 							continue;
 						}
 
-						$val_attr = $color_name . '|' . $color_price;
+						$val_attr   = $color_name . '|' . $color_price;
 						$title_text = $color_name . ( $color_price > 0 ? ' (+' . wc_price( $color_price ) . ')' : '' );
+						$is_def     = ( ! empty( $default_val ) && ( strcasecmp( $default_val, $color_name ) === 0 || strcasecmp( $default_val, trim( $sw ) ) === 0 ) );
+						$sel_style  = $is_def ? 'box-shadow: 0 0 0 2.5px #2563eb; transform: scale(1.12);' : 'box-shadow: 0 0 0 1px #cbd5e1;';
+						$sel_class  = $is_def ? ' selected' : '';
 
-						echo '<button type="button" class="wpat-swatch-btn" data-target="' . esc_attr( $field_id ) . '" data-value="' . esc_attr( $val_attr ) . '" data-name="' . esc_attr( $color_name ) . '" data-price="' . esc_attr( $color_price ) . '" title="' . esc_attr( wp_strip_all_tags( $title_text ) ) . '" style="width: 34px; height: 34px; border-radius: 50%; background-color: ' . esc_attr( $color_hex ) . '; border: 2px solid #ffffff; box-shadow: 0 0 0 1px #cbd5e1; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; padding:0; outline:none;"></button>';
+						echo '<button type="button" class="wpat-swatch-btn' . esc_attr( $sel_class ) . '" data-target="' . esc_attr( $field_id ) . '" data-value="' . esc_attr( $val_attr ) . '" data-name="' . esc_attr( $color_name ) . '" data-price="' . esc_attr( $color_price ) . '" title="' . esc_attr( wp_strip_all_tags( $title_text ) ) . '" style="width: 34px; height: 34px; border-radius: 50%; background-color: ' . esc_attr( $color_hex ) . '; border: 2px solid #ffffff; ' . esc_attr( $sel_style ) . ' cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; padding:0; outline:none;"></button>';
 					}
 					echo '</div>';
-					echo '<span class="wpat-swatch-selected-label" id="' . esc_attr( $field_id ) . '_label" style="font-size: 12px; font-weight: 600; color: #334155; margin-top: 6px; display: block; min-height: 18px;"></span>';
+					echo '<span class="wpat-swatch-selected-label" id="' . esc_attr( $field_id ) . '_label" style="font-size: 12px; font-weight: 600; color: #334155; margin-top: 6px; display: block; min-height: 18px;">' . esc_html( $initial_lbl ) . '</span>';
 				} elseif ( 'radio' === $type ) {
 					$options = ! empty( $field['options'] ) ? preg_split( '/\r\n|\r|\n/', $field['options'] ) : array();
 					echo '<div class="wpat-extra-radio-group" style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">';
@@ -211,16 +232,21 @@ class WPAT_Woo_Extra_Options {
 							}
 							$value_attr = $opt_name . '|' . $opt_price;
 							$radio_id   = $field_id . '_' . $r_idx;
+							$is_def     = ( ! empty( $default_val ) && ( strcasecmp( $default_val, $opt_name ) === 0 || strcasecmp( $default_val, $opt ) === 0 ) );
+							$chk_attr   = $is_def ? ' checked="checked"' : '';
 
 							echo '<label for="' . esc_attr( $radio_id ) . '" style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">';
-							echo '<input type="radio" id="' . esc_attr( $radio_id ) . '" name="' . esc_attr( $field_id ) . '" value="' . esc_attr( $value_attr ) . '" /> ' . wp_kses_post( $opt_disp );
+							echo '<input type="radio" id="' . esc_attr( $radio_id ) . '" name="' . esc_attr( $field_id ) . '" value="' . esc_attr( $value_attr ) . '" class="wpat-extra-input"' . $chk_attr . ' /> ' . wp_kses_post( $opt_disp );
 							echo '</label>';
 						}
 					}
 					echo '</div>';
 				} elseif ( 'checkbox' === $type ) {
+					$is_def   = ( '1' === $default_val || strcasecmp( $default_val, 'true' ) === 0 || strcasecmp( $default_val, 'si' ) === 0 || strcasecmp( $default_val, 'sí' ) === 0 );
+					$chk_attr = $is_def ? ' checked="checked"' : '';
+
 					echo '<label style="font-weight: normal; cursor: pointer;">';
-					echo '<input type="checkbox" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '" value="1" /> ' . esc_html( ! empty( $field['placeholder'] ) ? $field['placeholder'] : 'Activar esta opción' );
+					echo '<input type="checkbox" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '" value="1" class="wpat-extra-input"' . $chk_attr . ' /> ' . esc_html( ! empty( $field['placeholder'] ) ? $field['placeholder'] : 'Activar esta opción' );
 					echo '</label>';
 				}
 
@@ -228,13 +254,88 @@ class WPAT_Woo_Extra_Options {
 			}
 		}
 
+		// Bloque de Total Dinámico en Vivo
+		$base_prod_price = floatval( $product->get_price() );
+		echo '<div class="wpat-live-price-box" style="margin-top: 18px; padding: 12px 16px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">';
+		echo '<span style="font-weight: 600; color: #0369a1; font-size: 14px;">Precio Total Estimado:</span>';
+		echo '<span id="wpat-live-total-amount" style="font-weight: 700; color: #0284c7; font-size: 18px;" data-base-price="' . esc_attr( $base_prod_price ) . '">' . wc_price( $base_prod_price ) . '</span>';
 		echo '</div>';
 
-		// Script para interactividad de Swatches
+		echo '</div>';
+
+		// Script para interactividad de Swatches y Cálculo de Total en Vivo
 		?>
 		<script>
 		document.addEventListener('DOMContentLoaded', function() {
-			var swatchBtns = document.querySelectorAll('.wpat-swatch-btn');
+			var wrapper = document.querySelector('.wpat-extra-options-wrapper');
+			if (!wrapper) return;
+
+			var liveTotalEl = document.getElementById('wpat-live-total-amount');
+			var basePrice = liveTotalEl ? parseFloat(liveTotalEl.getAttribute('data-base-price') || 0) : 0;
+
+			function updateLiveTotal() {
+				if (!liveTotalEl) return;
+				var extraSum = 0;
+
+				var groups = wrapper.querySelectorAll('.wpat-extra-field-group');
+				groups.forEach(function(group) {
+					var type = group.getAttribute('data-type');
+					var groupBasePrice = parseFloat(group.getAttribute('data-base-price') || 0);
+
+					if (type === 'select') {
+						var select = group.querySelector('select');
+						if (select && select.value) {
+							if (select.value.indexOf('|') !== -1) {
+								var p = parseFloat(select.value.split('|')[1]);
+								if (!isNaN(p)) extraSum += p;
+							} else if (groupBasePrice > 0) {
+								extraSum += groupBasePrice;
+							}
+						}
+					} else if (type === 'radio') {
+						var checkedRadio = group.querySelector('input[type="radio"]:checked');
+						if (checkedRadio && checkedRadio.value) {
+							if (checkedRadio.value.indexOf('|') !== -1) {
+								var p = parseFloat(checkedRadio.value.split('|')[1]);
+								if (!isNaN(p)) extraSum += p;
+							} else if (groupBasePrice > 0) {
+								extraSum += groupBasePrice;
+							}
+						}
+					} else if (type === 'swatch') {
+						var hidden = group.querySelector('input[type="hidden"]');
+						if (hidden && hidden.value) {
+							if (hidden.value.indexOf('|') !== -1) {
+								var p = parseFloat(hidden.value.split('|')[1]);
+								if (!isNaN(p)) extraSum += p;
+							} else if (groupBasePrice > 0) {
+								extraSum += groupBasePrice;
+							}
+						}
+					} else if (type === 'checkbox') {
+						var chk = group.querySelector('input[type="checkbox"]');
+						if (chk && chk.checked && groupBasePrice > 0) {
+							extraSum += groupBasePrice;
+						}
+					} else if (type === 'text' || type === 'textarea') {
+						var input = group.querySelector('input[type="text"], textarea');
+						if (input && input.value.trim() !== '' && groupBasePrice > 0) {
+							extraSum += groupBasePrice;
+						}
+					}
+				});
+
+				var total = basePrice + extraSum;
+				// Formatear precio de forma aproximada y rápida para live preview
+				liveTotalEl.textContent = total.toFixed(2).replace('.', ',') + ' €';
+			}
+
+			// Escuchar eventos en todo el formulario de opciones extra
+			wrapper.addEventListener('change', updateLiveTotal);
+			wrapper.addEventListener('input', updateLiveTotal);
+
+			// Interacción de Swatches
+			var swatchBtns = wrapper.querySelectorAll('.wpat-swatch-btn');
 			swatchBtns.forEach(function(btn) {
 				btn.addEventListener('click', function() {
 					var targetId = this.getAttribute('data-target');
@@ -249,27 +350,32 @@ class WPAT_Woo_Extra_Options {
 						container.querySelectorAll('.wpat-swatch-btn').forEach(function(b) {
 							b.style.boxShadow = '0 0 0 1px #cbd5e1';
 							b.style.transform = 'scale(1)';
+							b.classList.remove('selected');
 						});
 					}
 
 					if (hiddenInput && hiddenInput.value === valAttr) {
-						// Deseleccionar si ya estaba marcado
 						hiddenInput.value = '';
 						if (labelSpan) labelSpan.textContent = '';
 					} else {
 						if (hiddenInput) hiddenInput.value = valAttr;
 						this.style.boxShadow = '0 0 0 2.5px #2563eb';
 						this.style.transform = 'scale(1.12)';
+						this.classList.add('selected');
 						if (labelSpan) {
 							var labelText = 'Seleccionado: ' + colorName;
 							if (priceVal > 0) {
-								labelText += ' (+' + priceVal.toFixed(2) + ' €)';
+								labelText += ' (+' + priceVal.toFixed(2).replace('.', ',') + ' €)';
 							}
 							labelSpan.textContent = labelText;
 						}
 					}
+					updateLiveTotal();
 				});
 			});
+
+			// Inicializar precio al cargar
+			updateLiveTotal();
 		});
 		</script>
 		<?php

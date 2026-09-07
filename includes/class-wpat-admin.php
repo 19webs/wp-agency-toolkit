@@ -817,6 +817,16 @@ class WPAT_Admin {
 		}
 		$new_settings['extra_options_rules'] = $rules_clean;
 
+		// 15. Sanitizar Facturas PDF y Albaranes Automáticos (WooCommerce)
+		$new_settings['woo-pdf-invoices']     = isset( $input_settings['woo-pdf-invoices'] ) && '1' === $input_settings['woo-pdf-invoices'] ? '1' : '0';
+		$new_settings['pdf_invoices_enabled'] = isset( $input_settings['pdf_invoices_enabled'] ) && '1' === $input_settings['pdf_invoices_enabled'] ? '1' : '0';
+		$new_settings['pdf_company_name']     = isset( $input_settings['pdf_company_name'] ) ? sanitize_text_field( $input_settings['pdf_company_name'] ) : get_bloginfo( 'name' );
+		$new_settings['pdf_company_nif']      = isset( $input_settings['pdf_company_nif'] ) ? sanitize_text_field( $input_settings['pdf_company_nif'] ) : '';
+		$new_settings['pdf_company_address']  = isset( $input_settings['pdf_company_address'] ) ? sanitize_textarea_field( $input_settings['pdf_company_address'] ) : '';
+		$new_settings['pdf_company_footer']   = isset( $input_settings['pdf_company_footer'] ) ? sanitize_textarea_field( $input_settings['pdf_company_footer'] ) : '';
+		$new_settings['pdf_invoice_prefix']   = isset( $input_settings['pdf_invoice_prefix'] ) ? sanitize_text_field( $input_settings['pdf_invoice_prefix'] ) : 'FACT-' . date( 'Y' ) . '-';
+		$new_settings['pdf_invoice_next_num'] = isset( $input_settings['pdf_invoice_next_num'] ) ? max( 1, absint( $input_settings['pdf_invoice_next_num'] ) ) : 1;
+
 		// Guardar en la base de datos
 		update_option( 'wpat_settings', $new_settings );
 
@@ -1055,6 +1065,7 @@ class WPAT_Admin {
 			'accessibility',
 			'woo-checkout-editor',
 			'woo-extra-options',
+			'woo-pdf-invoices',
 		);
 
 		if ( ! in_array( $module_id, $modules, true ) ) {
@@ -2901,6 +2912,69 @@ class WPAT_Admin {
 										});
 									});
 									</script>
+
+									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
+										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
+									</div>
+								</div>
+							</div>
+
+							<!-- Módulo: Facturas PDF y Albaranes Automáticos -->
+							<div class="wpat-module-card" style="margin-top: 20px;">
+								<div class="wpat-module-header">
+									<div class="wpat-module-info">
+										<h3>Facturas PDF y Albaranes Automáticos (WooCommerce)</h3>
+										<p>Genera facturas en PDF y albaranes de entrega ultra-ligeros (motor FPDF) enviados como adjuntos en emails y descargables desde WP Admin y Mi Cuenta.</p>
+									</div>
+									<?php $this->render_module_toggle( 'woo-pdf-invoices', $settings, true ); ?>
+								</div>
+								<div class="wpat-module-body" style="display: none;">
+									<div class="wpat-field-group">
+										<label style="font-weight: 600;">
+											<input type="checkbox" name="wpat_settings[pdf_invoices_enabled]" value="1" <?php checked( isset( $settings['pdf_invoices_enabled'] ) ? $settings['pdf_invoices_enabled'] : '0', '1' ); ?>>
+											Activar Generación de Facturas PDF y Albaranes Automáticos
+										</label>
+									</div>
+
+									<!-- Datos de Empresa -->
+									<div class="wpat-field-group" style="margin-top: 15px; background: #f8fafc; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 6px;">
+										<h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700;">🏢 Datos Fiscales de la Empresa (Cabecera del PDF)</h4>
+										<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
+											<div>
+												<label for="wpat_pdf_company_name" style="display:block; margin-bottom:5px; font-weight:600; font-size:12px;">Nombre Comercial / Razón Social</label>
+												<input type="text" name="wpat_settings[pdf_company_name]" id="wpat_pdf_company_name" value="<?php echo esc_attr( isset( $settings['pdf_company_name'] ) ? $settings['pdf_company_name'] : get_bloginfo( 'name' ) ); ?>" class="regular-text" style="width: 100%;" />
+											</div>
+											<div>
+												<label for="wpat_pdf_company_nif" style="display:block; margin-bottom:5px; font-weight:600; font-size:12px;">NIF / CIF de la Empresa</label>
+												<input type="text" name="wpat_settings[pdf_company_nif]" id="wpat_pdf_company_nif" value="<?php echo esc_attr( isset( $settings['pdf_company_nif'] ) ? $settings['pdf_company_nif'] : '' ); ?>" class="regular-text" placeholder="Ej. B12345678" style="width: 100%;" />
+											</div>
+										</div>
+
+										<div style="margin-bottom: 10px;">
+											<label for="wpat_pdf_company_address" style="display:block; margin-bottom:5px; font-weight:600; font-size:12px;">Dirección Completa</label>
+											<textarea name="wpat_settings[pdf_company_address]" id="wpat_pdf_company_address" rows="2" style="width: 100%; font-size:12px;" placeholder="Calle Ejemplo, 123, 28001 Madrid"><?php echo esc_textarea( isset( $settings['pdf_company_address'] ) ? $settings['pdf_company_address'] : '' ); ?></textarea>
+										</div>
+
+										<div>
+											<label for="wpat_pdf_company_footer" style="display:block; margin-bottom:5px; font-weight:600; font-size:12px;">Nota de Pie de Página en la Factura</label>
+											<input type="text" name="wpat_settings[pdf_company_footer]" id="wpat_pdf_company_footer" value="<?php echo esc_attr( isset( $settings['pdf_company_footer'] ) ? $settings['pdf_company_footer'] : 'Gracias por su compra.' ); ?>" class="regular-text" style="width: 100%;" />
+										</div>
+									</div>
+
+									<!-- Serie Numérica -->
+									<div class="wpat-field-group" style="margin-top: 15px;">
+										<h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700;">🔢 Serie Numérica de Facturación</h4>
+										<div style="display: flex; gap: 20px; flex-wrap: wrap;">
+											<div>
+												<label for="wpat_pdf_invoice_prefix" style="display:block; margin-bottom:5px; font-weight:600; font-size:12px;">Prefijo de Serie</label>
+												<input type="text" name="wpat_settings[pdf_invoice_prefix]" id="wpat_pdf_invoice_prefix" value="<?php echo esc_attr( isset( $settings['pdf_invoice_prefix'] ) ? $settings['pdf_invoice_prefix'] : 'FACT-' . date( 'Y' ) . '-' ); ?>" class="regular-text" style="height: 32px;" />
+											</div>
+											<div>
+												<label for="wpat_pdf_invoice_next_num" style="display:block; margin-bottom:5px; font-weight:600; font-size:12px;">Siguiente Número Correlativo</label>
+												<input type="number" min="1" name="wpat_settings[pdf_invoice_next_num]" id="wpat_pdf_invoice_next_num" value="<?php echo esc_attr( isset( $settings['pdf_invoice_next_num'] ) ? $settings['pdf_invoice_next_num'] : '1' ); ?>" class="small-text" style="height: 32px; text-align: center;" />
+											</div>
+										</div>
+									</div>
 
 									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
 										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />

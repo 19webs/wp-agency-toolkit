@@ -41,43 +41,54 @@ class WPAT_Conflict_Detector {
 	public static function get_conflict_rules() {
 		return array(
 			'code-snippets/code-snippets.php' => array(
-				'name'        => 'Code Snippets',
-				'reason'      => 'WP Agency Toolkit incluye un módulo nativo de Snippets PHP de alto rendimiento. Mantener ambos plugins activos puede provocar colisiones de código y ralentización.',
-				'action_link' => admin_url( 'plugins.php' ),
+				'name'             => 'Code Snippets',
+				'reason_active'    => 'Code Snippets está actualmente activo. WP Agency Toolkit incluye su propio ejecutor nativo de Snippets. Mantener ambos activos puede provocar llamadas duplicadas y errores de redeterminación de funciones.',
+				'reason_installed' => 'Code Snippets está instalado en el servidor (aunque desactivado). Si algún snippet o código personalizado referencia funciones propias de Code Snippets (como code_snippets()), WordPress lanzará un error crítico al no encontrarlas. Se recomienda eliminar el plugin si usas la suite nativa.',
+				'action_link'      => admin_url( 'plugins.php' ),
 			),
 			'insert-headers-and-footers/ihaf.php' => array(
-				'name'        => 'WPCode (Insert Headers and Footers)',
-				'reason'      => 'WP Agency Toolkit integra nativamente la inyección de scripts en cabecera y pie de página en el panel de Integraciones.',
-				'action_link' => admin_url( 'plugins.php' ),
+				'name'             => 'WPCode (Insert Headers and Footers)',
+				'reason_active'    => 'WPCode está activo. WP Agency Toolkit integra inyección nativa de scripts en cabecera y pie de página en el panel de Integraciones.',
+				'reason_installed' => 'WPCode está instalado. Desinstálalo si ya utilizas las herramientas de inyección de scripts de WP Agency Toolkit para mantener el sitio limpio.',
+				'action_link'      => admin_url( 'plugins.php' ),
 			),
 			'duplicate-post/duplicate-post.php' => array(
-				'name'        => 'Yoast Duplicate Post',
-				'reason'      => 'WP Agency Toolkit cuenta con un duplicador nativo de entradas y páginas sin sobrecarga.',
-				'action_link' => admin_url( 'plugins.php' ),
+				'name'             => 'Yoast Duplicate Post',
+				'reason_active'    => 'Yoast Duplicate Post está activo. WP Agency Toolkit incluye un duplicador nativo ultraligero de entradas y páginas.',
+				'reason_installed' => 'Yoast Duplicate Post está instalado en el servidor. Puedes desinstalarlo de forma segura ya que dispones del duplicador nativo de la suite.',
+				'action_link'      => admin_url( 'plugins.php' ),
 			),
 			'duplicate-page/duplicatepage.php' => array(
-				'name'        => 'Duplicate Page',
-				'reason'      => 'WP Agency Toolkit cuenta con un duplicador nativo de entradas y páginas sin sobrecarga.',
-				'action_link' => admin_url( 'plugins.php' ),
+				'name'             => 'Duplicate Page',
+				'reason_active'    => 'Duplicate Page está activo. WP Agency Toolkit incluye un duplicador nativo ultraligero de entradas y páginas.',
+				'reason_installed' => 'Duplicate Page está instalado en el servidor. Se recomienda desinstalarlo para liberar espacio y reducir sobrecarga.',
+				'action_link'      => admin_url( 'plugins.php' ),
 			),
 		);
 	}
 
 	/**
-	 * Obtiene los conflictos activos actualmente en la instalación.
+	 * Obtiene los conflictos activos e instalados en la instalación.
 	 *
 	 * @return array
 	 */
 	public static function get_active_conflicts() {
-		if ( ! function_exists( 'is_plugin_active' ) ) {
-			include_once ABSPATH . 'wp-admin/includes/plugin.php';
+		$active_plugins = (array) get_option( 'active_plugins', array() );
+		if ( is_multisite() ) {
+			$active_sitewide = (array) get_site_option( 'active_sitewide_plugins', array() );
+			$active_plugins  = array_merge( $active_plugins, array_keys( $active_sitewide ) );
 		}
 
 		$rules     = self::get_conflict_rules();
 		$conflicts = array();
 
 		foreach ( $rules as $plugin_file => $data ) {
-			if ( is_plugin_active( $plugin_file ) ) {
+			$is_active    = in_array( $plugin_file, $active_plugins, true );
+			$is_installed = file_exists( WP_PLUGIN_DIR . '/' . $plugin_file );
+
+			if ( $is_active || $is_installed ) {
+				$data['status'] = $is_active ? 'active' : 'installed';
+				$data['reason'] = $is_active ? $data['reason_active'] : $data['reason_installed'];
 				$conflicts[ $plugin_file ] = $data;
 			}
 		}
@@ -86,7 +97,7 @@ class WPAT_Conflict_Detector {
 	}
 
 	/**
-	 * Muestra avisos globales en el panel de administración cuando se detectan plugins conflictivos.
+	 * Muestra avisos globales en el panel de administración únicamente cuando hay plugins conflictivos ACTIVOS.
 	 */
 	public function display_conflict_notices() {
 		if ( ! current_user_can( 'activate_plugins' ) ) {
@@ -99,7 +110,11 @@ class WPAT_Conflict_Detector {
 		}
 
 		foreach ( $conflicts as $plugin_file => $info ) {
-			// Permite descartar el aviso usando transientes o sesiones simples de WP si se desea
+			// Notificación superior emergente únicamente si el plugin conflictivo está ACTIVO
+			if ( 'active' !== $info['status'] ) {
+				continue;
+			}
+
 			$dismiss_key = 'wpat_dismiss_conflict_' . md5( $plugin_file );
 			if ( get_transient( $dismiss_key ) ) {
 				continue;
@@ -122,3 +137,4 @@ class WPAT_Conflict_Detector {
 		}
 	}
 }
+

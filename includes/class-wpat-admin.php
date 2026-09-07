@@ -1284,11 +1284,22 @@ class WPAT_Admin {
 					<h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700; color: #b45309; display: flex; align-items: center; gap: 8px;">
 						⚠️ Conflictos o Duplicidades Detectadas (<?php echo count( $active_conflicts ); ?>)
 					</h4>
-					<?php foreach ( $active_conflicts as $plugin_file => $data ) : ?>
+					<?php foreach ( $active_conflicts as $plugin_file => $data ) : 
+						$is_active = ( isset( $data['status'] ) && 'active' === $data['status'] );
+						$badge_bg  = $is_active ? '#ef4444' : '#f59e0b';
+						$badge_lbl = $is_active ? 'PLUGIN ACTIVO' : 'INSTALADO (INACTIVO)';
+					?>
 						<div style="background: #ffffff; border: 1px solid #fef3c7; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
-							<strong style="color: #92400e; font-size: 13px;"><?php echo esc_html( $data['name'] ); ?></strong>
-							<p style="margin: 4px 0 8px 0; font-size: 12.5px; color: #4b5563;"><?php echo esc_html( $data['reason'] ); ?></p>
-							<a href="<?php echo esc_url( admin_url( 'plugins.php' ) ); ?>" class="button button-small button-secondary">Desactivar / Gestionar Plugin</a>
+							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+								<strong style="color: #92400e; font-size: 13.5px;"><?php echo esc_html( $data['name'] ); ?></strong>
+								<span style="background: <?php echo esc_attr( $badge_bg ); ?>; color: #ffffff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; text-transform: uppercase;">
+									<?php echo esc_html( $badge_lbl ); ?>
+								</span>
+							</div>
+							<p style="margin: 4px 0 8px 0; font-size: 12.5px; color: #4b5563; line-height: 1.5;"><?php echo esc_html( $data['reason'] ); ?></p>
+							<a href="<?php echo esc_url( admin_url( 'plugins.php' ) ); ?>" class="button button-small button-secondary">
+								<?php echo $is_active ? 'Desactivar / Gestionar Plugin' : 'Eliminar / Gestionar Plugin'; ?>
+							</a>
 						</div>
 					<?php endforeach; ?>
 				</div>

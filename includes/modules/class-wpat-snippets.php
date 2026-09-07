@@ -106,12 +106,8 @@ class WPAT_Snippets {
 				}
 
 				// Limpiar etiquetas de apertura/cierre de PHP si el usuario las colocó
-				if ( 0 === strpos( $php_code, '<?php' ) ) {
-					$php_code = substr( $php_code, 5 );
-				}
-				if ( '?>' === substr( $php_code, -2 ) ) {
-					$php_code = substr( $php_code, 0, -2 );
-				}
+				$php_code = preg_replace( '/^\s*<\?(php)?/i', '', $php_code );
+				$php_code = preg_replace( '/\?>\s*$/', '', $php_code );
 
 				$php_code = trim( $php_code );
 

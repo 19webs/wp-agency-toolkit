@@ -196,7 +196,7 @@ class WPAT_Accessibility {
 				font-weight: 500 !important;
 				color: #334155 !important;
 				cursor: pointer !important;
-				transition: background 0.15s ease, color 0.15s ease !important;
+				transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease !important;
 				margin: 0 !important;
 				outline: none !important;
 				box-sizing: border-box !important;
@@ -231,15 +231,43 @@ class WPAT_Accessibility {
 				margin: 4px 0 !important;
 			}
 
-			/* Reglas CSS para Zoom de Texto */
-			html.wpat-a11y-zoom-1 body *:not(#wpat-a11y-menu *):not(#wpat-a11y-btn *) {
-				font-size: 112% !important;
+			/* Reglas CSS para Zoom de Texto (+4px por nivel hasta 10 niveles) */
+			html[data-wpat-zoom] h1,
+			html[data-wpat-zoom] h2,
+			html[data-wpat-zoom] h3,
+			html[data-wpat-zoom] h4,
+			html[data-wpat-zoom] h5,
+			html[data-wpat-zoom] h6,
+			html[data-wpat-zoom] p,
+			html[data-wpat-zoom] li,
+			html[data-wpat-zoom] blockquote,
+			html[data-wpat-zoom] label,
+			html[data-wpat-zoom] td,
+			html[data-wpat-zoom] th,
+			html[data-wpat-zoom] input,
+			html[data-wpat-zoom] button,
+			html[data-wpat-zoom] textarea {
+				font-size: calc(1em + var(--wpat-zoom-add, 0px)) !important;
 			}
-			html.wpat-a11y-zoom-2 body *:not(#wpat-a11y-menu *):not(#wpat-a11y-btn *) {
-				font-size: 125% !important;
+			html[data-wpat-zoom] p *,
+			html[data-wpat-zoom] h1 *,
+			html[data-wpat-zoom] h2 *,
+			html[data-wpat-zoom] h3 *,
+			html[data-wpat-zoom] h4 *,
+			html[data-wpat-zoom] h5 *,
+			html[data-wpat-zoom] h6 *,
+			html[data-wpat-zoom] li *,
+			html[data-wpat-zoom] td *,
+			html[data-wpat-zoom] th * {
+				font-size: inherit !important;
 			}
-			html.wpat-a11y-zoom-3 body *:not(#wpat-a11y-menu *):not(#wpat-a11y-btn *) {
-				font-size: 138% !important;
+
+			/* Evitar que el zoom afecte a la barra de accesibilidad */
+			#wpat-a11y-btn,
+			#wpat-a11y-btn *,
+			#wpat-a11y-menu,
+			#wpat-a11y-menu * {
+				font-size: initial;
 			}
 
 			/* Reglas CSS dinámicas aplicables al documento */
@@ -304,13 +332,13 @@ class WPAT_Accessibility {
 						<span class="wpat-a11y-icon">
 							<svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/><path d="M12 10h-2v2H9v-2H7V9h2V7h1v2h2v1z"/></svg>
 						</span>
-						Aumentar texto
+						<span class="wpat-a11y-label">Aumentar texto</span>
 					</button>
-					<button type="button" class="wpat-a11y-item" data-action="zoom-out">
+					<button type="button" class="wpat-a11y-item" data-action="zoom-out" style="opacity: 0.4; cursor: default;">
 						<span class="wpat-a11y-icon">
 							<svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7V9z"/></svg>
 						</span>
-						Disminuir texto
+						<span class="wpat-a11y-label">Disminuir texto</span>
 					</button>
 				<?php endif; ?>
 
@@ -319,7 +347,7 @@ class WPAT_Accessibility {
 						<span class="wpat-a11y-icon">
 							<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14v12c3.31 0 6-2.69 6-6s-2.69-6-6-6z"/></svg>
 						</span>
-						Escala de grises
+						<span class="wpat-a11y-label">Escala de grises</span>
 					</button>
 				<?php endif; ?>
 
@@ -328,7 +356,7 @@ class WPAT_Accessibility {
 						<span class="wpat-a11y-icon">
 							<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18V4c4.41 0 8 3.59 8 8s-3.59 8-8 8z"/></svg>
 						</span>
-						Alto contraste
+						<span class="wpat-a11y-label">Alto contraste</span>
 					</button>
 				<?php endif; ?>
 
@@ -337,7 +365,7 @@ class WPAT_Accessibility {
 						<span class="wpat-a11y-icon">
 							<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
 						</span>
-						Contraste negativo
+						<span class="wpat-a11y-label">Contraste negativo</span>
 					</button>
 				<?php endif; ?>
 
@@ -346,7 +374,7 @@ class WPAT_Accessibility {
 						<span class="wpat-a11y-icon">
 							<svg viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-3.3l-.85-.6C7.8 11.16 7 9.88 7 8.5 7 5.74 9.24 3.5 12 3.5s5 2.24 5 5c0 1.38-.8 2.66-2.15 3.6z"/></svg>
 						</span>
-						Fondo claro
+						<span class="wpat-a11y-label">Fondo claro</span>
 					</button>
 				<?php endif; ?>
 
@@ -355,7 +383,7 @@ class WPAT_Accessibility {
 						<span class="wpat-a11y-icon">
 							<svg viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
 						</span>
-						Subrayar enlaces
+						<span class="wpat-a11y-label">Subrayar enlaces</span>
 					</button>
 				<?php endif; ?>
 
@@ -364,7 +392,7 @@ class WPAT_Accessibility {
 						<span class="wpat-a11y-icon">
 							<svg viewBox="0 0 24 24"><path d="M9.93 13.5h4.14L12 7.98zM20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4.05 16.5l-1.14-3H9.17l-1.12 3H5.96l5.11-13h1.86l5.11 13h-2.09z"/></svg>
 						</span>
-						Fuente legible
+						<span class="wpat-a11y-label">Fuente legible</span>
 					</button>
 				<?php endif; ?>
 
@@ -374,7 +402,7 @@ class WPAT_Accessibility {
 					<span class="wpat-a11y-icon">
 						<svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
 					</span>
-					Restablecer
+					<span class="wpat-a11y-label">Restablecer</span>
 				</button>
 			</div>
 		</div>
@@ -387,25 +415,67 @@ class WPAT_Accessibility {
 			var closeBtn = document.getElementById('wpat-a11y-close-btn');
 			if (!btn || !menu) return;
 
-			var zoomIndex = 0;
+			var zoomLevel = 0; // 0 (normal), 1 (+4px), ..., 10 (+40px)
+			var maxZoomLevel = 10;
 
 			function applyZoom() {
-				document.documentElement.classList.remove('wpat-a11y-zoom-1', 'wpat-a11y-zoom-2', 'wpat-a11y-zoom-3');
 				var zoomInBtn = menu.querySelector('[data-action="zoom-in"]');
+				var zoomOutBtn = menu.querySelector('[data-action="zoom-out"]');
+				var zoomInLabel = zoomInBtn ? zoomInBtn.querySelector('.wpat-a11y-label') : null;
+				var zoomOutLabel = zoomOutBtn ? zoomOutBtn.querySelector('.wpat-a11y-label') : null;
 
-				if (zoomIndex > 0) {
-					document.documentElement.classList.add('wpat-a11y-zoom-' + zoomIndex);
+				if (zoomLevel > 0) {
+					document.documentElement.setAttribute('data-wpat-zoom', zoomLevel);
+					document.documentElement.style.setProperty('--wpat-zoom-add', (zoomLevel * 4) + 'px');
+					
 					if (zoomInBtn) zoomInBtn.classList.add('wpat-active');
+					if (zoomOutBtn) {
+						zoomOutBtn.style.opacity = '1';
+						zoomOutBtn.style.cursor = 'pointer';
+					}
+
+					if (zoomInLabel) {
+						if (zoomLevel >= maxZoomLevel) {
+							zoomInLabel.textContent = 'Aumentar texto (+40px Máx)';
+							if (zoomInBtn) {
+								zoomInBtn.style.opacity = '0.6';
+								zoomInBtn.style.cursor = 'not-allowed';
+							}
+						} else {
+							zoomInLabel.textContent = 'Aumentar texto (+' + (zoomLevel * 4) + 'px)';
+							if (zoomInBtn) {
+								zoomInBtn.style.opacity = '1';
+								zoomInBtn.style.cursor = 'pointer';
+							}
+						}
+					}
+					if (zoomOutLabel) {
+						zoomOutLabel.textContent = 'Disminuir texto';
+					}
 				} else {
-					if (zoomInBtn) zoomInBtn.classList.remove('wpat-active');
+					document.documentElement.removeAttribute('data-wpat-zoom');
+					document.documentElement.style.removeProperty('--wpat-zoom-add');
+					
+					if (zoomInBtn) {
+						zoomInBtn.classList.remove('wpat-active');
+						zoomInBtn.style.opacity = '1';
+						zoomInBtn.style.cursor = 'pointer';
+					}
+					if (zoomOutBtn) {
+						zoomOutBtn.classList.remove('wpat-active');
+						zoomOutBtn.style.opacity = '0.4';
+						zoomOutBtn.style.cursor = 'default';
+					}
+					if (zoomInLabel) zoomInLabel.textContent = 'Aumentar texto';
+					if (zoomOutLabel) zoomOutLabel.textContent = 'Disminuir texto';
 				}
 			}
 
 			// Cargar estado guardado en sessionStorage
 			try {
 				var savedState = JSON.parse(sessionStorage.getItem('wpat_a11y_state') || '{}');
-				if (typeof savedState.zoomIndex === 'number') {
-					zoomIndex = savedState.zoomIndex;
+				if (typeof savedState.zoomLevel === 'number') {
+					zoomLevel = savedState.zoomLevel;
 					applyZoom();
 				}
 				if (savedState.classes && Array.isArray(savedState.classes)) {
@@ -428,7 +498,7 @@ class WPAT_Accessibility {
 				});
 				try {
 					sessionStorage.setItem('wpat_a11y_state', JSON.stringify({
-						zoomIndex: zoomIndex,
+						zoomLevel: zoomLevel,
 						classes: activeClasses
 					}));
 				} catch(e) {}
@@ -463,21 +533,17 @@ class WPAT_Accessibility {
 				var action = targetBtn.getAttribute('data-action');
 
 				if (action === 'zoom-in') {
-					if (zoomIndex < 3) {
-						zoomIndex++;
-					} else {
-						zoomIndex = 0; // Alternar si llega al máximo
+					if (zoomLevel < maxZoomLevel) {
+						zoomLevel++;
+						applyZoom();
+						saveState();
 					}
-					applyZoom();
-					saveState();
 				} else if (action === 'zoom-out') {
-					if (zoomIndex > 0) {
-						zoomIndex--;
-					} else {
-						zoomIndex = 0;
+					if (zoomLevel > 0) {
+						zoomLevel--;
+						applyZoom();
+						saveState();
 					}
-					applyZoom();
-					saveState();
 				} else if (action === 'toggle-class') {
 					var cls = targetBtn.getAttribute('data-target');
 					if (cls) {
@@ -490,7 +556,7 @@ class WPAT_Accessibility {
 						saveState();
 					}
 				} else if (action === 'reset') {
-					zoomIndex = 0;
+					zoomLevel = 0;
 					applyZoom();
 					var items = menu.querySelectorAll('[data-target]');
 					items.forEach(function(item) {

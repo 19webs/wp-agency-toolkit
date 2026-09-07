@@ -187,6 +187,28 @@ class WPAT_Woo_Extra_Options {
 					}
 					echo '</div>';
 					echo '<span class="wpat-swatch-selected-label" id="' . esc_attr( $field_id ) . '_label" style="font-size: 12px; font-weight: 600; color: #334155; margin-top: 6px; display: block; min-height: 18px;"></span>';
+				} elseif ( 'radio' === $type ) {
+					$options = ! empty( $field['options'] ) ? preg_split( '/\r\n|\r|\n/', $field['options'] ) : array();
+					echo '<div class="wpat-extra-radio-group" style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">';
+					foreach ( $options as $r_idx => $opt ) {
+						$opt = trim( $opt );
+						if ( ! empty( $opt ) ) {
+							$parts      = explode( '|', $opt );
+							$opt_name   = trim( $parts[0] );
+							$opt_price  = isset( $parts[1] ) ? floatval( trim( $parts[1] ) ) : $price;
+							$opt_disp   = $opt_name;
+							if ( $opt_price > 0 ) {
+								$opt_disp .= ' (+' . wc_price( $opt_price ) . ')';
+							}
+							$value_attr = $opt_name . ( $opt_price > 0 ? '|' . $opt_price : '' );
+							$radio_id   = $field_id . '_' . $r_idx;
+
+							echo '<label for="' . esc_attr( $radio_id ) . '" style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">';
+							echo '<input type="radio" id="' . esc_attr( $radio_id ) . '" name="' . esc_attr( $field_id ) . '" value="' . esc_attr( $value_attr ) . '" /> ' . wp_kses_post( $opt_disp );
+							echo '</label>';
+						}
+					}
+					echo '</div>';
 				} elseif ( 'checkbox' === $type ) {
 					echo '<label style="font-weight: normal; cursor: pointer;">';
 					echo '<input type="checkbox" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '" value="1" /> ' . esc_html( ! empty( $field['placeholder'] ) ? $field['placeholder'] : 'Activar esta opción' );

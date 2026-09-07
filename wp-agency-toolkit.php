@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     3.6.1
+ * Version:     3.7.0
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '3.6.1' );
+define( 'WPAT_VERSION', '3.7.0' );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -147,6 +147,10 @@ class WPAT_Main {
 		'woo-extra-options' => array(
 			'file'  => 'includes/modules/class-wpat-woo-extra-options.php',
 			'class' => 'WPAT_Woo_Extra_Options',
+		),
+		'woo-variation-swatches' => array(
+			'file'  => 'includes/modules/class-wpat-woo-variation-swatches.php',
+			'class' => 'WPAT_Woo_Variation_Swatches',
 		),
 		'woo-pdf-invoices' => array(
 			'file'  => 'includes/modules/class-wpat-woo-pdf-invoices.php',
@@ -348,6 +352,12 @@ class WPAT_Main {
 			'woo-extra-options'               => '0',
 			'extra_options_enabled'           => '0',
 			'extra_options_rules'             => array(),
+
+			// Opciones de Swatches de Variación de Producto (WooCommerce)
+			'woo-variation-swatches'          => '0',
+			'variation_swatches_enabled'      => '0',
+			'variation_swatches_shape'        => 'round',
+			'variation_swatches_colors'       => '',
 
 			// Opciones de Facturas PDF y Albaranes Automáticos (WooCommerce)
 			'woo-pdf-invoices'                => '0',

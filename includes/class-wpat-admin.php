@@ -767,7 +767,7 @@ class WPAT_Admin {
 					$custom_fields_clean[] = array(
 						'key'         => $key,
 						'label'       => sanitize_text_field( $cf['label'] ),
-						'type'        => isset( $cf['type'] ) && in_array( $cf['type'], array( 'text', 'select', 'checkbox', 'textarea', 'date' ), true ) ? $cf['type'] : 'text',
+						'type'        => isset( $cf['type'] ) && in_array( $cf['type'], array( 'text', 'select', 'radio', 'checkbox', 'textarea', 'date' ), true ) ? $cf['type'] : 'text',
 						'placeholder' => isset( $cf['placeholder'] ) ? sanitize_text_field( $cf['placeholder'] ) : '',
 						'required'    => isset( $cf['required'] ) && '1' === $cf['required'] ? '1' : '0',
 						'section'     => isset( $cf['section'] ) && in_array( $cf['section'], array( 'billing', 'shipping', 'order' ), true ) ? $cf['section'] : 'billing',
@@ -794,7 +794,7 @@ class WPAT_Admin {
 							if ( ! empty( $f['label'] ) ) {
 								$fields_clean[] = array(
 									'label'       => sanitize_text_field( $f['label'] ),
-									'type'        => isset( $f['type'] ) && in_array( $f['type'], array( 'text', 'textarea', 'select', 'swatch', 'checkbox' ), true ) ? $f['type'] : 'text',
+									'type'        => isset( $f['type'] ) && in_array( $f['type'], array( 'text', 'textarea', 'select', 'radio', 'swatch', 'checkbox' ), true ) ? $f['type'] : 'text',
 									'price'       => isset( $f['price'] ) ? floatval( $f['price'] ) : 0,
 									'required'    => isset( $f['required'] ) && '1' === $f['required'] ? '1' : '0',
 									'placeholder' => isset( $f['placeholder'] ) ? sanitize_text_field( $f['placeholder'] ) : '',
@@ -818,6 +818,12 @@ class WPAT_Admin {
 			}
 		}
 		$new_settings['extra_options_rules'] = $rules_clean;
+
+		// 15. Sanitizar Swatches de Variación de Producto (WooCommerce)
+		$new_settings['woo-variation-swatches']    = isset( $input_settings['woo-variation-swatches'] ) && '1' === $input_settings['woo-variation-swatches'] ? '1' : '0';
+		$new_settings['variation_swatches_enabled'] = isset( $input_settings['variation_swatches_enabled'] ) && '1' === $input_settings['variation_swatches_enabled'] ? '1' : '0';
+		$new_settings['variation_swatches_shape']   = isset( $input_settings['variation_swatches_shape'] ) && in_array( $input_settings['variation_swatches_shape'], array( 'round', 'square' ), true ) ? $input_settings['variation_swatches_shape'] : 'round';
+		$new_settings['variation_swatches_colors']  = isset( $input_settings['variation_swatches_colors'] ) ? sanitize_textarea_field( $input_settings['variation_swatches_colors'] ) : '';
 
 		// 15. Sanitizar Facturas PDF y Albaranes Automáticos (WooCommerce)
 		$new_settings['woo-pdf-invoices']     = isset( $input_settings['woo-pdf-invoices'] ) && '1' === $input_settings['woo-pdf-invoices'] ? '1' : '0';
@@ -2624,6 +2630,7 @@ class WPAT_Admin {
 															<select name="wpat_settings[checkout_custom_fields][<?php echo $index; ?>][type]" class="wpat-field-type-select" style="width: 100%;">
 																<option value="text" <?php selected( $f_type, 'text' ); ?>>Texto Corto</option>
 																<option value="select" <?php selected( $f_type, 'select' ); ?>>Desplegable (Select)</option>
+																<option value="radio" <?php selected( $f_type, 'radio' ); ?>>Radio (Botones de Opción)</option>
 																<option value="textarea" <?php selected( $f_type, 'textarea' ); ?>>Área de Texto</option>
 																<option value="checkbox" <?php selected( $f_type, 'checkbox' ); ?>>Casilla (Checkbox)</option>
 																<option value="date" <?php selected( $f_type, 'date' ); ?>>Fecha (Calendario)</option>
@@ -2659,8 +2666,8 @@ class WPAT_Admin {
 														<input type="text" name="wpat_settings[checkout_custom_fields][<?php echo $index; ?>][placeholder]" value="<?php echo $f_placeholder; ?>" placeholder="Placeholder o texto de ayuda..." style="font-size: 12px; flex-grow: 1;" />
 													</div>
 
-													<div class="wpat-options-field-wrap" style="margin-top: 10px; <?php echo ( 'select' === $f_type ) ? '' : 'display:none;'; ?>">
-														<label style="font-size: 11px; display: block; font-weight: 600;">Opciones del Desplegable (Una opción por línea):</label>
+													<div class="wpat-options-field-wrap" style="margin-top: 10px; <?php echo ( 'select' === $f_type || 'radio' === $f_type ) ? '' : 'display:none;'; ?>">
+														<label style="font-size: 11px; display: block; font-weight: 600;">Opciones (Una opción por línea):</label>
 														<textarea name="wpat_settings[checkout_custom_fields][<?php echo $index; ?>][options]" rows="2" style="width: 100%; font-size: 12px;" placeholder="Mañana (09:00 - 14:00)&#10;Tarde (16:00 - 20:00)"><?php echo $f_options; ?></textarea>
 													</div>
 												</div>
@@ -2682,7 +2689,7 @@ class WPAT_Admin {
 												'<div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr auto; gap: 10px; align-items: center;">' +
 													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Nombre del Campo (Etiqueta)</label><input type="text" name="wpat_settings[checkout_custom_fields][' + index + '][label]" value="" class="regular-text" placeholder="Ej. Horario de Preferencia" required style="width: 100%;" /></div>' +
 													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Identificador Único (Key)</label><input type="text" name="wpat_settings[checkout_custom_fields][' + index + '][key]" value="" class="regular-text" placeholder="ej. horario_entrega" style="width: 100%;" /></div>' +
-													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Tipo de Campo</label><select name="wpat_settings[checkout_custom_fields][' + index + '][type]" class="wpat-field-type-select" style="width: 100%;"><option value="text">Texto Corto</option><option value="select">Desplegable (Select)</option><option value="textarea">Área de Texto</option><option value="checkbox">Casilla (Checkbox)</option><option value="date">Fecha (Calendario)</option></select></div>' +
+													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Tipo de Campo</label><select name="wpat_settings[checkout_custom_fields][' + index + '][type]" class="wpat-field-type-select" style="width: 100%;"><option value="text">Texto Corto</option><option value="select">Desplegable (Select)</option><option value="radio">Radio (Botones de Opción)</option><option value="textarea">Área de Texto</option><option value="checkbox">Casilla (Checkbox)</option><option value="date">Fecha (Calendario)</option></select></div>' +
 													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Sección</label><select name="wpat_settings[checkout_custom_fields][' + index + '][section]" style="width: 100%;"><option value="billing">Facturación</option><option value="shipping">Envío</option><option value="order">Notas Adicionales</option></select></div>' +
 													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Posición</label><select name="wpat_settings[checkout_custom_fields][' + index + '][position]" style="width: 100%;"><option value="after_names">Después de Apellidos</option><option value="after_company">Después de Empresa</option><option value="after_address">Después de Dirección</option><option value="end_of_section">Al final de Sección</option></select></div>' +
 													'<div style="text-align: right; padding-top: 15px;"><button type="button" class="button button-link-delete wpat-remove-field-btn" style="color: #ef4444;">Eliminar</button></div>' +
@@ -2692,7 +2699,7 @@ class WPAT_Admin {
 													'<input type="text" name="wpat_settings[checkout_custom_fields][' + index + '][placeholder]" value="" placeholder="Placeholder o texto de ayuda..." style="font-size: 12px; flex-grow: 1;" />' +
 												'</div>' +
 												'<div class="wpat-options-field-wrap" style="margin-top: 10px; display:none;">' +
-													'<label style="font-size: 11px; display: block; font-weight: 600;">Opciones del Desplegable (Una opción por línea):</label>' +
+													'<label style="font-size: 11px; display: block; font-weight: 600;">Opciones (Una opción por línea):</label>' +
 													'<textarea name="wpat_settings[checkout_custom_fields][' + index + '][options]" rows="2" style="width: 100%; font-size: 12px;" placeholder="Mañana (09:00 - 14:00)\nTarde (16:00 - 20:00)"></textarea>' +
 												'</div>' +
 											'</div>';
@@ -2704,7 +2711,7 @@ class WPAT_Admin {
 												var row = e.target.closest('.wpat-custom-field-row');
 												var optWrap = row.querySelector('.wpat-options-field-wrap');
 												if (optWrap) {
-													optWrap.style.display = (e.target.value === 'select') ? 'block' : 'none';
+													optWrap.style.display = (e.target.value === 'select' || e.target.value === 'radio') ? 'block' : 'none';
 												}
 											}
 										});
@@ -2816,6 +2823,7 @@ class WPAT_Admin {
 																				<option value="text" <?php selected( $f_type, 'text' ); ?>>Texto Corto</option>
 																				<option value="textarea" <?php selected( $f_type, 'textarea' ); ?>>Área de Texto</option>
 																				<option value="select" <?php selected( $f_type, 'select' ); ?>>Desplegable (Select)</option>
+																				<option value="radio" <?php selected( $f_type, 'radio' ); ?>>Radio (Botones de Opción)</option>
 																				<option value="swatch" <?php selected( $f_type, 'swatch' ); ?>>Muestrario de Color (Swatch)</option>
 																				<option value="checkbox" <?php selected( $f_type, 'checkbox' ); ?>>Casilla (Checkbox)</option>
 																			</select>
@@ -2846,8 +2854,8 @@ class WPAT_Admin {
 																		<textarea name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][swatches]" rows="2" style="width: 100%; font-size: 11px;" placeholder="Azul Real | #2563eb | 0&#10;Oro Metalizado | #ffd700 | 5.00"><?php echo $f_swatches; ?></textarea>
 																	</div>
 
-																	<div class="wpat-extra-options-wrap" style="margin-top: 8px; <?php echo ( 'select' === $f_type ) ? '' : 'display:none;'; ?>">
-																		<label style="font-size: 10px; font-weight: 600; display: block;">Opciones del Desplegable (Formato por línea: Nombre | Precio Opcional):</label>
+																	<div class="wpat-extra-options-wrap" style="margin-top: 8px; <?php echo ( 'select' === $f_type || 'radio' === $f_type ) ? '' : 'display:none;'; ?>">
+																		<label style="font-size: 10px; font-weight: 600; display: block;">Opciones de Desplegable o Radio (Formato por línea: Nombre | Precio Opcional):</label>
 																		<textarea name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][options]" rows="2" style="width: 100%; font-size: 11px;" placeholder="Cena Sí | 15.00&#10;Cena No | 0"><?php echo $f_options; ?></textarea>
 																	</div>
 																</div>
@@ -2902,7 +2910,7 @@ class WPAT_Admin {
 												var fHtml = '<div class="wpat-field-item-row" style="background: #ffffff; border: 1px solid #cbd5e1; padding: 10px 12px; border-radius: 6px; margin-bottom: 8px;">' +
 													'<div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr auto; gap: 10px; align-items: center;">' +
 														'<div><label style="font-size: 10px; font-weight: 600; display: block;">Etiqueta / Nombre</label><input type="text" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][label]" value="" placeholder="Ej. Texto de Grabado" class="regular-text" style="width: 100%;" required /></div>' +
-														'<div><label style="font-size: 10px; font-weight: 600; display: block;">Tipo de Opción</label><select name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][type]" class="wpat-extra-type-select" style="width: 100%;"><option value="text">Texto Corto</option><option value="textarea">Área de Texto</option><option value="select">Desplegable (Select)</option><option value="swatch">Muestrario de Color (Swatch)</option><option value="checkbox">Casilla (Checkbox)</option></select></div>' +
+														'<div><label style="font-size: 10px; font-weight: 600; display: block;">Tipo de Opción</label><select name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][type]" class="wpat-extra-type-select" style="width: 100%;"><option value="text">Texto Corto</option><option value="textarea">Área de Texto</option><option value="select">Desplegable (Select)</option><option value="radio">Radio (Botones de Opción)</option><option value="swatch">Muestrario de Color (Swatch)</option><option value="checkbox">Casilla (Checkbox)</option></select></div>' +
 														'<div><label style="font-size: 10px; font-weight: 600; display: block;">Precio Extra (€)</label><input type="number" step="0.01" min="0" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][price]" value="0.00" placeholder="0.00" style="width: 100%;" /></div>' +
 														'<div><label style="font-size: 10px; font-weight: 600; display: block;">Máx Caracteres</label><input type="number" min="0" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][max_length]" value="" placeholder="Sin límite" style="width: 100%;" /></div>' +
 														'<div style="text-align: right; padding-top: 12px;"><button type="button" class="button button-link-delete wpat-remove-field-item-btn" style="color: #ef4444;">Eliminar</button></div>' +
@@ -2916,7 +2924,7 @@ class WPAT_Admin {
 														'<textarea name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][swatches]" rows="2" style="width: 100%; font-size: 11px;" placeholder="Azul Real | #2563eb | 0\nOro Metalizado | #ffd700 | 5.00"></textarea>' +
 													'</div>' +
 													'<div class="wpat-extra-options-wrap" style="margin-top: 8px; display:none;">' +
-														'<label style="font-size: 10px; font-weight: 600; display: block;">Opciones del Desplegable (Formato por línea: Nombre | Precio Opcional):</label>' +
+														'<label style="font-size: 10px; font-weight: 600; display: block;">Opciones de Desplegable o Radio (Formato por línea: Nombre | Precio Opcional):</label>' +
 														'<textarea name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][options]" rows="2" style="width: 100%; font-size: 11px;" placeholder="Cena Sí | 15.00\nCena No | 0"></textarea>' +
 													'</div>' +
 												'</div>';
@@ -2934,11 +2942,50 @@ class WPAT_Admin {
 												var optWrap = fRow.querySelector('.wpat-extra-options-wrap');
 
 												if (swatchWrap) swatchWrap.style.display = (e.target.value === 'swatch') ? 'block' : 'none';
-												if (optWrap) optWrap.style.display = (e.target.value === 'select') ? 'block' : 'none';
+												if (optWrap) optWrap.style.display = (e.target.value === 'select' || e.target.value === 'radio') ? 'block' : 'none';
 											}
 										});
 									});
 									</script>
+
+									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
+										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
+									</div>
+								</div>
+							</div>
+
+							<!-- Módulo: Swatches de Variación de Producto (WooCommerce) -->
+							<div class="wpat-module-card" style="margin-top: 20px;">
+								<div class="wpat-module-header">
+									<div class="wpat-module-info">
+										<h3>Swatches de Variación de Producto (WooCommerce)</h3>
+										<p>Reemplaza los aburridos desplegables nativos de variaciones (Talla, Color, Textura) por atractivos botones de color circulares/cuadrados o botones estilo etiqueta (Pills).</p>
+									</div>
+									<?php $this->render_module_toggle( 'woo-variation-swatches', $settings, true ); ?>
+								</div>
+								<div class="wpat-module-body" style="display: none;">
+									<div class="wpat-field-group">
+										<label style="font-weight: 600;">
+											<input type="checkbox" name="wpat_settings[variation_swatches_enabled]" value="1" <?php checked( isset( $settings['variation_swatches_enabled'] ) ? $settings['variation_swatches_enabled'] : '0', '1' ); ?>>
+											Activar Swatches de Variación en Productos Variables
+										</label>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px;">
+										<label style="font-weight: 600; display: block; margin-bottom: 5px;">Forma de los Botones Swatch:</label>
+										<?php $sw_shape = isset( $settings['variation_swatches_shape'] ) ? $settings['variation_swatches_shape'] : 'round'; ?>
+										<select name="wpat_settings[variation_swatches_shape]" style="height: 32px; min-width: 200px;">
+											<option value="round" <?php selected( $sw_shape, 'round' ); ?>>Circular (Redondeado)</option>
+											<option value="square" <?php selected( $sw_shape, 'square' ); ?>>Cuadrado (Esquinas Suaves)</option>
+										</select>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px;">
+										<label style="font-weight: 600; display: block; margin-bottom: 5px;">Mapa Personalizado de Colores (Nombre del Color | Código #HEX):</label>
+										<p class="description" style="margin-bottom: 8px;">El sistema detecta automáticamente los colores estándar en español e inglés (Rojo, Azul, Negro, Blanco, Verde, etc.). Puedes añadir mapeos adicionales a continuación:</p>
+										<?php $sw_colors = isset( $settings['variation_swatches_colors'] ) ? esc_textarea( $settings['variation_swatches_colors'] ) : ''; ?>
+										<textarea name="wpat_settings[variation_swatches_colors]" rows="4" style="width: 100%; font-family: monospace; font-size: 12px;" placeholder="Rojo Pasión | #ef4444&#10;Azul Marino | #1e3a8a&#10;Verde Oliva | #556b2f"><?php echo $sw_colors; ?></textarea>
+									</div>
 
 									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
 										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />

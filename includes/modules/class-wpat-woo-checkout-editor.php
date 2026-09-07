@@ -140,9 +140,9 @@ class WPAT_Woo_Checkout_Editor {
 				// woocommerce_form_field requiere type text con custom_attributes para HTML5 datepicker
 				$field_data['type']              = 'text';
 				$field_data['custom_attributes'] = array( 'type' => 'date' );
-			} elseif ( 'select' === $field_type ) {
-				$field_data['type'] = 'select';
-				$opts_arr           = array( '' => __( '-- Seleccionar --', 'wp-agency-toolkit' ) );
+			} elseif ( 'select' === $field_type || 'radio' === $field_type ) {
+				$field_data['type'] = ( 'radio' === $field_type ) ? 'radio' : 'select';
+				$opts_arr           = ( 'select' === $field_type ) ? array( '' => __( '-- Seleccionar --', 'wp-agency-toolkit' ) ) : array();
 				if ( ! empty( $cf['options'] ) ) {
 					$lines = preg_split( '/\r\n|\r|\n/', $cf['options'] );
 					foreach ( $lines as $line ) {

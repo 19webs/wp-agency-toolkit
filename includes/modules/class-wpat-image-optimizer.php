@@ -53,9 +53,14 @@ class WPAT_Image_Optimizer {
 		}
 
 		$file_path = $upload['file'];
-		$mime_type = $upload['type'];
+		$mime_type = isset( $upload['type'] ) ? $upload['type'] : '';
+		$ext       = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
 
-		// Módulos válidos a procesar (saltar SVG, PDF, WebP ya subido, etc.)
+		// Omitir de inmediato si la imagen ya es WebP o no es un formato imprimible convertible
+		if ( 'image/webp' === $mime_type || 'webp' === $ext ) {
+			return $upload;
+		}
+
 		$allowed_types = array( 'image/jpeg', 'image/png', 'image/gif' );
 		if ( ! in_array( $mime_type, $allowed_types, true ) ) {
 			return $upload;
@@ -95,22 +100,18 @@ class WPAT_Image_Optimizer {
 		$filename  = $path_info['filename'];
 		$webp_path = $directory . '/' . $filename . '.webp';
 
-		// Evitar colisiones de nombres si el .webp ya existe
-		if ( file_exists( $webp_path ) ) {
-			$suffix = 1;
-			while ( file_exists( $directory . '/' . $filename . '-' . $suffix . '.webp' ) ) {
-				$suffix++;
-			}
-			$webp_path = $directory . '/' . $filename . '-' . $suffix . '.webp';
-			$filename  = $filename . '-' . $suffix;
+		// Guardar el nuevo archivo WebP (si no existía ya)
+		if ( file_exists( $webp_path ) && filesize( $webp_path ) > 0 ) {
+			$saved = true;
+		} else {
+			$saved = $editor->save( $webp_path, 'image/webp' );
 		}
-
-		// Guardar el nuevo archivo WebP
-		$saved = $editor->save( $webp_path, 'image/webp' );
 
 		if ( ! is_wp_error( $saved ) ) {
 			// Eliminar físicamente la imagen original (JPEG, PNG, GIF) pesada
-			@unlink( $file_path );
+			if ( file_exists( $file_path ) && $file_path !== $webp_path ) {
+				@unlink( $file_path );
+			}
 
 			// Actualizar el array del upload para que WordPress procese la imagen .webp
 			$upload['file'] = $webp_path;
@@ -138,7 +139,7 @@ class WPAT_Image_Optimizer {
 
 		global $wpdb;
 
-		$min_size = isset( $_POST['min_size'] ) ? (int) $_POST['min_size'] : 0;
+		$min_size   = isset( $_POST['min_size'] ) ? (int) $_POST['min_size'] : 0;
 		$date_start = isset( $_POST['date_start'] ) ? sanitize_text_field( $_POST['date_start'] ) : '';
 
 		$date_query = "";
@@ -160,20 +161,29 @@ class WPAT_Image_Optimizer {
 			{$date_query}
 		";
 
-		$ids = array_map( 'intval', $wpdb->get_col( $query ) );
+		$ids          = array_map( 'intval', $wpdb->get_col( $query ) );
 		$matching_ids = array();
-		$total_bytes = 0;
+		$total_bytes  = 0;
 
 		foreach ( $ids as $id ) {
 			$file_path = get_attached_file( $id );
 			if ( $file_path && file_exists( $file_path ) ) {
+				$mime_type = get_post_mime_type( $id );
+				$ext       = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+
+				// Si la imagen ya es de tipo WebP o su extensión es .webp, marcarla como optimizada y omitirla
+				if ( 'image/webp' === $mime_type || 'webp' === $ext ) {
+					update_post_meta( $id, '_wpat_optimized', '1' );
+					continue;
+				}
+
 				$size_bytes = filesize( $file_path );
-				$size_kb = $size_bytes / 1024;
+				$size_kb    = $size_bytes / 1024;
 				if ( $min_size > 0 && $size_kb < $min_size ) {
 					continue;
 				}
 				$matching_ids[] = $id;
-				$total_bytes += $size_bytes;
+				$total_bytes   += $size_bytes;
 			}
 		}
 
@@ -224,6 +234,43 @@ class WPAT_Image_Optimizer {
 				continue;
 			}
 
+			$mime_type = get_post_mime_type( $id );
+			$ext       = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+
+			// Si la imagen ya es de tipo WebP o su extensión es .webp, omitir reconversión y marcar como optimizada
+			if ( 'image/webp' === $mime_type || 'webp' === $ext ) {
+				update_post_meta( $id, '_wpat_optimized', '1' );
+				$processed_count++;
+				$logs[] = "Omitida: Imagen ID {$id} ya se encuentra en formato WebP.";
+				continue;
+			}
+
+			$directory = pathinfo( $file_path, PATHINFO_DIRNAME );
+			$filename  = pathinfo( $file_path, PATHINFO_FILENAME );
+			$webp_path = $directory . '/' . $filename . '.webp';
+
+			// Si la versión .webp YA existe previamente en el servidor (ej: convertida antes), reutilizarla en lugar de crear 'filename-1.webp'
+			if ( file_exists( $webp_path ) && filesize( $webp_path ) > 0 ) {
+				if ( file_exists( $file_path ) && $file_path !== $webp_path ) {
+					@unlink( $file_path );
+				}
+				update_attached_file( $id, $webp_path );
+				$wpdb->update(
+					$wpdb->posts,
+					array( 'post_mime_type' => 'image/webp' ),
+					array( 'ID' => $id )
+				);
+
+				require_once ABSPATH . 'wp-admin/includes/image.php';
+				$new_metadata = wp_generate_attachment_metadata( $id, $webp_path );
+				wp_update_attachment_metadata( $id, $new_metadata );
+
+				update_post_meta( $id, '_wpat_optimized', '1' );
+				$processed_count++;
+				$logs[] = "Reutilizada: ID {$id} -> Se detectó '" . $filename . ".webp' existente y se actualizó el adjunto sin reconvertir.";
+				continue;
+			}
+
 			// Intentar inicializar editor
 			$editor = wp_get_image_editor( $file_path );
 			if ( is_wp_error( $editor ) ) {
@@ -244,23 +291,9 @@ class WPAT_Image_Optimizer {
 				$was_resized = true;
 			}
 
-			$directory = pathinfo( $file_path, PATHINFO_DIRNAME );
-			$filename  = pathinfo( $file_path, PATHINFO_FILENAME );
-
 			// Verificar si se puede codificar a WebP
 			if ( $editor->supports_mime_type( 'image/webp' ) ) {
 				$editor->set_quality( 82 );
-				$webp_path = $directory . '/' . $filename . '.webp';
-
-				// Evitar colisiones de nombres
-				if ( file_exists( $webp_path ) ) {
-					$suffix = 1;
-					while ( file_exists( $directory . '/' . $filename . '-' . $suffix . '.webp' ) ) {
-						$suffix++;
-					}
-					$webp_path = $directory . '/' . $filename . '-' . $suffix . '.webp';
-					$filename  = $filename . '-' . $suffix;
-				}
 
 				// Guardar WebP
 				$saved = $editor->save( $webp_path, 'image/webp' );
@@ -278,7 +311,9 @@ class WPAT_Image_Optimizer {
 					}
 
 					// Eliminar imagen original
-					@unlink( $file_path );
+					if ( file_exists( $file_path ) && $file_path !== $webp_path ) {
+						@unlink( $file_path );
+					}
 
 					// Actualizar ruta adjunta y tipo mime en DB
 					update_attached_file( $id, $webp_path );

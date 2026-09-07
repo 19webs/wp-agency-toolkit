@@ -1,5 +1,7 @@
 # Set console output encoding to UTF-8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+try { chcp 65001 >$null } catch {}
 
 # ==============================================================================
 # CONFIGURACIÓN DE PUBLIT.IO API Y REPOSITORIOS DE PLUGINS
@@ -89,18 +91,16 @@ function Upload-ToPublitio {
     Write-Host "[INFO] Conectando con Publit.io API (Carpeta PLUGINSWP)..." -ForegroundColor Yellow
     $authQuery = Get-PublitioAuthQuery -key $apiKey -secret $apiSecret
     
-    # 1. Buscar si ya existe el archivo en Publit.io
+    # 1. Buscar si ya existe el archivo específicamente DENTRO de la carpeta PLUGINSWP (folder_id=N7qWPRvX)
     $listUrl = "https://api.publit.io/v1/files/list?$authQuery"
     $existingFileId = $null
-    $existingFileUrl = $null
     
     try {
         $listRes = Invoke-RestMethod -Uri $listUrl -Method Get
         if ($listRes.files) {
             foreach ($f in $listRes.files) {
-                if ($f.title -eq $zipName -or $f.public_id -eq $publicId -or $f.public_id -eq $zipName) {
+                if ($f.folder_id -eq $folderId -and ($f.title -eq $zipName -or $f.public_id -eq $publicId -or $f.public_id -eq $zipName)) {
                     $existingFileId = $f.id
-                    $existingFileUrl = $f.url_preview
                     break
                 }
             }
@@ -112,11 +112,11 @@ function Upload-ToPublitio {
     $authQueryNew = Get-PublitioAuthQuery -key $apiKey -secret $apiSecret
     
     if ($existingFileId) {
-        Write-Host "[INFO] Reemplazando archivo existente en carpeta PLUGINSWP (ID: $existingFileId)..." -ForegroundColor Yellow
+        Write-Host "[INFO] Reemplazando archivo existente dentro de la carpeta PLUGINSWP (ID: $existingFileId)..." -ForegroundColor Yellow
         $uploadUrl = "https://api.publit.io/v1/files/$existingFileId/replace?$authQueryNew"
         $curlOutput = & curl.exe -s -X POST "$uploadUrl" -F "file=@$zipPath"
     } else {
-        Write-Host "[INFO] Subiendo nuevo archivo a carpeta PLUGINSWP..." -ForegroundColor Yellow
+        Write-Host "[INFO] Subiendo nuevo archivo directamente a la carpeta PLUGINSWP..." -ForegroundColor Yellow
         $uploadUrl = "https://api.publit.io/v1/files/create?$authQueryNew"
         $curlOutput = & curl.exe -s -X POST "$uploadUrl" -F "file=@$zipPath" -F "public_id=$publicId" -F "title=$zipName" -F "folder=$folderId"
     }
@@ -201,15 +201,15 @@ function Publish-SinglePlugin {
     Compress-Archive -Path $filesToZip.FullName -DestinationPath $zipPath -Force
     Write-Host "[OK] Paquete $zipName creado." -ForegroundColor Green
 
-    # 4. Git Push & Tags (Force push seguro para evitar rechazo de git)
+    # 4. Git Push & Tags (Force push seguro para evitar rechazos)
     Write-Host "[INFO] Actualizando repositorio GitHub..." -ForegroundColor Yellow
     if (-not (Test-Path ".git")) {
         git init
         git branch -M main
     }
     git add .
-    git commit -m "Versión v$version"
-    git push -f origin main
+    git commit -m "Versión v$version" 2>$null
+    git push -f origin main 2>$null
 
     git tag -d "v$version" 2>$null
     git push origin ":refs/tags/v$version" 2>$null

@@ -966,6 +966,9 @@ class WPAT_Admin {
 			'bot-blocker',
 			'integrations',
 			'initial-setup',
+			'whatsapp',
+			'reading-progress',
+			'conflict-detector',
 		);
 
 		if ( ! in_array( $module_id, $modules, true ) ) {

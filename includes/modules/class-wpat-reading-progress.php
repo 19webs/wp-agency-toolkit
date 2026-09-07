@@ -31,7 +31,7 @@ class WPAT_Reading_Progress {
 	 */
 	private function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
-		add_filter( 'the_content', array( $this, 'prepend_reading_time' ), 10 );
+		add_filter( 'the_content', array( $this, 'prepend_reading_time' ), 5 );
 		add_shortcode( 'tiempo_lectura', array( $this, 'reading_time_shortcode' ) );
 		add_shortcode( 'wpat_reading_time', array( $this, 'reading_time_shortcode' ) );
 	}
@@ -40,7 +40,7 @@ class WPAT_Reading_Progress {
 	 * Carga el CSS/JS ultra-ligero para la barra de lectura en entradas.
 	 */
 	public function enqueue_frontend_assets() {
-		if ( ! is_single() || is_admin() ) {
+		if ( ! is_singular( 'post' ) || is_admin() ) {
 			return;
 		}
 
@@ -128,7 +128,11 @@ class WPAT_Reading_Progress {
 	 * @return string
 	 */
 	public function prepend_reading_time( $content ) {
-		if ( ! is_single() || is_admin() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+		if ( ! is_singular( 'post' ) || is_admin() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+			return $content;
+		}
+
+		if ( ! is_main_query() || ! in_the_loop() ) {
 			return $content;
 		}
 

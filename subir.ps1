@@ -19,6 +19,7 @@ $plugins = @{
         ZipName   = "wp-agency-toolkit.zip"
         PublicId  = "wp-agency-toolkit"
         ConstName = "WPAT_VERSION"
+        Slug      = "wp-agency-toolkit"
     }
     "2" = @{
         Name      = "PrestaWoo"
@@ -27,6 +28,7 @@ $plugins = @{
         ZipName   = "prestawoo.zip"
         PublicId  = "prestawoo"
         ConstName = "PRESTAWOO_VERSION"
+        Slug      = "prestawoo"
     }
     "3" = @{
         Name      = "WP Docu Signer Pro"
@@ -35,6 +37,7 @@ $plugins = @{
         ZipName   = "wp-docu-signer-pro.zip"
         PublicId  = "wp-docu-signer-pro"
         ConstName = "WP_DOC_SIGNER_VERSION"
+        Slug      = "wp-docu-signer-pro"
     }
     "4" = @{
         Name      = "WP Autocontent"
@@ -43,6 +46,7 @@ $plugins = @{
         ZipName   = "wp-autocontent.zip"
         PublicId  = "wp-autocontent"
         ConstName = "WP_AUTOCONTENT_VERSION"
+        Slug      = "wp-autocontent"
     }
 }
 
@@ -80,6 +84,55 @@ function Get-SuggestedNextVersion {
         return $parts -join '.'
     }
     return "$version.1"
+}
+
+function New-PluginZipPackage {
+    param(
+        [string]$folderPath,
+        [string]$zipPath,
+        [string]$slug
+    )
+
+    if (Test-Path $zipPath) {
+        Remove-Item $zipPath -Force
+    }
+
+    Add-Type -AssemblyName System.IO.Compression
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+    $zipStream = [System.IO.File]::Open($zipPath, [System.IO.FileMode]::Create)
+    $archive   = New-Object System.IO.Compression.ZipArchive($zipStream, [System.IO.Compression.ZipArchiveMode]::Create)
+
+    $sourceDir   = Get-Item $folderPath
+    $allFiles    = Get-ChildItem -Path $folderPath -Recurse
+    $excludeList = @(".git", ".vscode", "subir.bat", "subir.ps1", "subir-plugins.bat", "subir-plugins.ps1", (Split-Path $zipPath -Leaf))
+
+    foreach ($item in $allFiles) {
+        $relPath = $item.FullName.Substring($sourceDir.FullName.Length).TrimStart('\', '/')
+        
+        $skip = $false
+        foreach ($ex in $excludeList) {
+            if ($relPath -eq $ex -or $relPath.StartsWith("$ex\") -or $relPath.StartsWith("$ex/")) {
+                $skip = $true
+                break
+            }
+        }
+        if ($skip) { continue }
+
+        if (-not $item.PSIsContainer) {
+            $cleanRel = $relPath.Replace('\', '/')
+            $entryName = "$slug/$cleanRel"
+            $entry = $archive.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::Optimal)
+            $entryStream = $entry.Open()
+            $fileStream  = [System.IO.File]::OpenRead($item.FullName)
+            $fileStream.CopyTo($entryStream)
+            $fileStream.Close()
+            $entryStream.Close()
+        }
+    }
+
+    $archive.Dispose()
+    $zipStream.Close()
 }
 
 function Upload-ToPublitio {
@@ -151,6 +204,7 @@ function Publish-SinglePlugin {
     $phpFile  = Join-Path $folder $pConfig.PhpFile
     $zipName  = $pConfig.ZipName
     $publicId = $pConfig.PublicId
+    $slug     = $pConfig.Slug
     $zipPath  = Join-Path $folder $zipName
 
     Write-Host ""
@@ -193,13 +247,9 @@ function Publish-SinglePlugin {
     [System.IO.File]::WriteAllText((Get-Item $phpFile).FullName, $raw, (New-Object System.Text.UTF8Encoding $false))
     Write-Host "[OK] Versión v$version guardada en la cabecera PHP." -ForegroundColor Green
 
-    # 3. Crear paquete ZIP limpio
-    Write-Host "[INFO] Generando paquete comprimido $zipName..." -ForegroundColor Yellow
-    if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
-
-    $excludeList = @(".git", ".vscode", "subir.bat", "subir.ps1", "subir-plugins.bat", "subir-plugins.ps1", $zipName)
-    $filesToZip = Get-ChildItem -Path $folder | Where-Object { $excludeList -notcontains $_.Name }
-    Compress-Archive -Path $filesToZip.FullName -DestinationPath $zipPath -Force
+    # 3. Crear paquete ZIP limpio compatible con Linux y WordPress (rutas / y carpeta raíz slug/)
+    Write-Host "[INFO] Generando paquete comprimido Linux/WordPress compatible: $zipName..." -ForegroundColor Yellow
+    New-PluginZipPackage -folderPath $folder -zipPath $zipPath -slug $slug
     Write-Host "[OK] Paquete $zipName generado correctamente." -ForegroundColor Green
 
     # 4. Actualizar GitHub (Push silencioso y limpio)

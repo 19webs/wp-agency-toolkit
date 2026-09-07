@@ -716,6 +716,10 @@ class WPAT_Admin {
 			$new_settings['google_search_console_code'] = '';
 		}
 		$new_settings['google_analytics_id']          = isset( $input_settings['google_analytics_id'] ) ? sanitize_text_field( $input_settings['google_analytics_id'] ) : '';
+		$new_settings['google_drive_token']           = isset( $input_settings['google_drive_token'] ) ? sanitize_text_field( $input_settings['google_drive_token'] ) : '';
+		$new_settings['google_drive_folder']          = isset( $input_settings['google_drive_folder'] ) ? sanitize_text_field( $input_settings['google_drive_folder'] ) : '';
+		$new_settings['dropbox_token']                = isset( $input_settings['dropbox_token'] ) ? sanitize_text_field( $input_settings['dropbox_token'] ) : '';
+		$new_settings['onedrive_token']               = isset( $input_settings['onedrive_token'] ) ? sanitize_text_field( $input_settings['onedrive_token'] ) : '';
 
 		// 9. Sanitizar WhatsApp
 		$new_settings['whatsapp']          = isset( $input_settings['whatsapp'] ) && '1' === $input_settings['whatsapp'] ? '1' : '0';
@@ -794,7 +798,7 @@ class WPAT_Admin {
 							if ( ! empty( $f['label'] ) ) {
 								$fields_clean[] = array(
 									'label'       => sanitize_text_field( $f['label'] ),
-									'type'        => isset( $f['type'] ) && in_array( $f['type'], array( 'text', 'textarea', 'select', 'radio', 'swatch', 'checkbox' ), true ) ? $f['type'] : 'text',
+									'type'        => isset( $f['type'] ) && in_array( $f['type'], array( 'text', 'textarea', 'select', 'radio', 'swatch', 'checkbox', 'file' ), true ) ? $f['type'] : 'text',
 									'price'       => isset( $f['price'] ) ? floatval( $f['price'] ) : 0,
 									'required'    => isset( $f['required'] ) && '1' === $f['required'] ? '1' : '0',
 									'placeholder' => isset( $f['placeholder'] ) ? sanitize_text_field( $f['placeholder'] ) : '',
@@ -2866,6 +2870,7 @@ class WPAT_Admin {
 																				<option value="radio" <?php selected( $f_type, 'radio' ); ?>>Radio (Botones de Opción)</option>
 																				<option value="swatch" <?php selected( $f_type, 'swatch' ); ?>>Muestrario de Color (Swatch)</option>
 																				<option value="checkbox" <?php selected( $f_type, 'checkbox' ); ?>>Casilla (Checkbox)</option>
+																				<option value="file" <?php selected( $f_type, 'file' ); ?>>Subida de Archivo (File)</option>
 																			</select>
 																		</div>
 																		<div class="wpat-field-price-wrap" style="<?php echo in_array( $f_type, array( 'select', 'radio', 'swatch' ), true ) ? 'opacity: 0.4; pointer-events: none;' : ''; ?>">
@@ -2891,8 +2896,14 @@ class WPAT_Admin {
 																	</div>
 
 																	<div class="wpat-extra-swatches-wrap" style="margin-top: 8px; <?php echo ( 'swatch' === $f_type ) ? '' : 'display:none;'; ?>">
-																		<label style="font-size: 10px; font-weight: 600; display: block;">Configuración de Colores (Formato por línea: Nombre | #HEX | Precio Opcional):</label>
-																		<textarea name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][swatches]" rows="2" style="width: 100%; font-size: 11px;" placeholder="Azul Real | #2563eb | 0&#10;Oro Metalizado | #ffd700 | 5.00"><?php echo $f_swatches; ?></textarea>
+																		<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+																			<label style="font-size: 10px; font-weight: 600; margin: 0;">Configuración de Colores (Formato: Nombre | #HEX u opción por nombre como 'Azul' | Precio):</label>
+																			<div style="display: flex; align-items: center; gap: 5px;">
+																				<span style="font-size: 10px; color: #64748b;">🎨 Añadir color visualmente:</span>
+																				<input type="color" class="wpat-swatch-picker-tool" value="#2563eb" title="Haz clic para seleccionar un color visualmente e insertarlo en la lista" style="cursor: pointer; width: 22px; height: 22px; padding: 0; border: 1px solid #cbd5e1; border-radius: 4px; vertical-align: middle;" />
+																			</div>
+																		</div>
+																		<textarea name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][fields][<?php echo $f_idx; ?>][swatches]" class="wpat-swatches-textarea" rows="2" style="width: 100%; font-size: 11px;" placeholder="Azul Real | #2563eb | 0&#10;Rojo | 5.00&#10;Oro Metalizado | #ffd700 | 5.00"><?php echo $f_swatches; ?></textarea>
 																	</div>
 
 																	<div class="wpat-extra-options-wrap" style="margin-top: 8px; <?php echo ( 'select' === $f_type || 'radio' === $f_type ) ? '' : 'display:none;'; ?>">
@@ -2968,7 +2979,7 @@ class WPAT_Admin {
 												var fHtml = '<div class="wpat-field-item-row" style="background: #ffffff; border: 1px solid #cbd5e1; padding: 10px 12px; border-radius: 6px; margin-bottom: 8px;">' +
 													'<div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr auto; gap: 10px; align-items: center;">' +
 														'<div><label style="font-size: 10px; font-weight: 600; display: block;">Etiqueta / Nombre</label><input type="text" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][label]" value="" placeholder="Ej. Texto de Grabado" class="regular-text" style="width: 100%;" required /></div>' +
-														'<div><label style="font-size: 10px; font-weight: 600; display: block;">Tipo de Opción</label><select name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][type]" class="wpat-extra-type-select" style="width: 100%;"><option value="text">Texto Corto</option><option value="textarea">Área de Texto</option><option value="select">Desplegable (Select)</option><option value="radio">Radio (Botones de Opción)</option><option value="swatch">Muestrario de Color (Swatch)</option><option value="checkbox">Casilla (Checkbox)</option></select></div>' +
+														'<div><label style="font-size: 10px; font-weight: 600; display: block;">Tipo de Opción</label><select name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][type]" class="wpat-extra-type-select" style="width: 100%;"><option value="text">Texto Corto</option><option value="textarea">Área de Texto</option><option value="select">Desplegable (Select)</option><option value="radio">Radio (Botones de Opción)</option><option value="swatch">Muestrario de Color (Swatch)</option><option value="checkbox">Casilla (Checkbox)</option><option value="file">Subida de Archivo (File)</option></select></div>' +
 														'<div class="wpat-field-price-wrap"><label style="font-size: 10px; font-weight: 600; display: block;">Precio Extra (€)</label><input type="number" step="0.01" min="0" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][price]" value="0.00" placeholder="0.00" style="width: 100%;" /></div>' +
 														'<div><label style="font-size: 10px; font-weight: 600; display: block;">Máx Caracteres</label><input type="number" min="0" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][max_length]" value="" placeholder="Sin límite" style="width: 100%;" /></div>' +
 														'<div style="text-align: right; padding-top: 12px;"><button type="button" class="button button-link-delete wpat-remove-field-item-btn" style="color: #ef4444;">Eliminar</button></div>' +
@@ -2979,8 +2990,8 @@ class WPAT_Admin {
 														'<input type="text" name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][default_val]" value="" placeholder="Opción por defecto (ej. Nombre opción / 1)" style="font-size: 11px; width: 220px;" title="Para Checkbox poner 1. Para Select/Radio/Swatch poner el Nombre exacto de la opción por defecto." />' +
 													'</div>' +
 													'<div class="wpat-extra-swatches-wrap" style="margin-top: 8px; display:none;">' +
-														'<label style="font-size: 10px; font-weight: 600; display: block;">Configuración de Colores (Formato por línea: Nombre | #HEX | Precio Opcional):</label>' +
-														'<textarea name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][swatches]" rows="2" style="width: 100%; font-size: 11px;" placeholder="Azul Real | #2563eb | 0\nOro Metalizado | #ffd700 | 5.00"></textarea>' +
+														'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;"><label style="font-size: 10px; font-weight: 600; margin: 0;">Configuración de Colores (Formato: Nombre | #HEX u opción por nombre como \'Azul\' | Precio):</label><div style="display: flex; align-items: center; gap: 5px;"><span style="font-size: 10px; color: #64748b;">🎨 Añadir color visualmente:</span><input type="color" class="wpat-swatch-picker-tool" value="#2563eb" title="Haz clic para seleccionar un color visualmente e insertarlo en la lista" style="cursor: pointer; width: 22px; height: 22px; padding: 0; border: 1px solid #cbd5e1; border-radius: 4px; vertical-align: middle;" /></div></div>' +
+														'<textarea name="wpat_settings[extra_options_rules][' + rIndex + '][fields][' + fIndex + '][swatches]" class="wpat-swatches-textarea" rows="2" style="width: 100%; font-size: 11px;" placeholder="Azul Real | #2563eb | 0\nRojo | 5.00\nOro Metalizado | #ffd700 | 5.00"></textarea>' +
 													'</div>' +
 													'<div class="wpat-extra-options-wrap" style="margin-top: 8px; display:none;">' +
 														'<label style="font-size: 10px; font-weight: 600; display: block;">Opciones de Desplegable o Radio (Formato por línea: Nombre | Precio Opcional):</label>' +
@@ -3015,6 +3026,19 @@ class WPAT_Admin {
 												var prodWrap = card.querySelector('.wpat-scope-product-wrap');
 												if (catWrap) catWrap.style.display = (e.target.value === 'category') ? 'block' : 'none';
 												if (prodWrap) prodWrap.style.display = (e.target.value === 'product') ? 'block' : 'none';
+											}
+										});
+
+										rulesContainer.addEventListener('input', function(e) {
+											if (e.target && e.target.classList.contains('wpat-swatch-picker-tool')) {
+												var fRow = e.target.closest('.wpat-field-item-row');
+												var txtArea = fRow ? fRow.querySelector('.wpat-swatches-textarea') : null;
+												if (txtArea) {
+													var hex = e.target.value;
+													var currentText = txtArea.value.trim();
+													var newLine = 'Color ' + hex.toUpperCase() + ' | ' + hex + ' | 0';
+													txtArea.value = currentText ? currentText + '\n' + newLine : newLine;
+												}
 											}
 										});
 									});
@@ -3919,6 +3943,107 @@ class WPAT_Admin {
 										<a href="<?php echo esc_url( 'https://pagespeed.web.dev/analysis?url=' . urlencode( home_url( '/' ) ) ); ?>" target="_blank" rel="noopener noreferrer" class="button button-primary" style="height: 32px; display: inline-flex; align-items: center; gap: 5px;">
 											<span class="dashicons dashicons-performance" style="font-size: 16px; width: 16px; height: 16px; margin: 0;"></span> Analizar Velocidad del Sitio
 										</a>
+									</div>
+								</div>
+							</div>
+
+							<!-- Tarjeta: Almacenamiento en Google Drive -->
+							<div class="wpat-module-card" style="margin-top: 20px;">
+								<div class="wpat-module-header" style="cursor: pointer; border-bottom: none;">
+									<div class="wpat-module-info" style="width: 100%;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+											<h3 style="margin: 0; font-size: 15px;">Google Drive Storage</h3>
+											<div style="display: flex; align-items: center; gap: 10px;">
+												<?php if ( ! empty( $settings['google_drive_token'] ) ) : ?>
+													<span class="wpat-status-indicator" style="background: #e0f2fe; color: #0369a1; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+														<span style="width: 6px; height: 6px; background: #0369a1; border-radius: 50%;"></span> Listo
+													</span>
+												<?php else : ?>
+													<span class="wpat-status-indicator" style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
+													</span>
+												<?php endif; ?>
+												<span class="wpat-collapse-btn collapsed" title="Colapsar/Desplegar ajustes">
+													<span class="dashicons dashicons-arrow-up-alt2"></span>
+												</span>
+											</div>
+										</div>
+										<p style="margin: 0 0 4px 0; color: #64748b; font-size: 13px;">Sincroniza y sube automáticamente los archivos cargados por los clientes en los campos de producto extra directamente a tu cuenta de Google Drive.</p>
+									</div>
+								</div>
+								<div class="wpat-module-body" style="display: none; padding: 15px 20px 20px 20px;">
+									<div class="wpat-field-group">
+										<label for="wpat_google_drive_token" style="display:block; font-weight:600; margin-bottom:5px;">Token de Acceso (OAuth Bearer Token / API Key)</label>
+										<input type="text" name="wpat_settings[google_drive_token]" id="wpat_google_drive_token" value="<?php echo esc_attr( isset( $settings['google_drive_token'] ) ? $settings['google_drive_token'] : '' ); ?>" class="large-text" placeholder="ya29.a0... / Token OAuth2 Google Drive API" style="width:100%; margin:0 0 10px 0;" />
+									</div>
+									<div class="wpat-field-group">
+										<label for="wpat_google_drive_folder" style="display:block; font-weight:600; margin-bottom:5px;">ID de Carpeta Destino (Opcional)</label>
+										<input type="text" name="wpat_settings[google_drive_folder]" id="wpat_google_drive_folder" value="<?php echo esc_attr( isset( $settings['google_drive_folder'] ) ? $settings['google_drive_folder'] : '' ); ?>" class="regular-text" placeholder="Ej: 1A2b3C4d5E6f7G8h9I0J" style="width:100%; margin:0;" />
+										<p class="description" style="margin-top:4px;">Dejar en blanco para guardar en la raíz de Google Drive o indica el ID de la carpeta de tu unidad.</p>
+									</div>
+								</div>
+							</div>
+
+							<!-- Tarjeta: Almacenamiento en Dropbox -->
+							<div class="wpat-module-card" style="margin-top: 20px;">
+								<div class="wpat-module-header" style="cursor: pointer; border-bottom: none;">
+									<div class="wpat-module-info" style="width: 100%;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+											<h3 style="margin: 0; font-size: 15px;">Dropbox Storage</h3>
+											<div style="display: flex; align-items: center; gap: 10px;">
+												<?php if ( ! empty( $settings['dropbox_token'] ) ) : ?>
+													<span class="wpat-status-indicator" style="background: #e0f2fe; color: #0369a1; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+														<span style="width: 6px; height: 6px; background: #0369a1; border-radius: 50%;"></span> Listo
+													</span>
+												<?php else : ?>
+													<span class="wpat-status-indicator" style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
+													</span>
+												<?php endif; ?>
+												<span class="wpat-collapse-btn collapsed" title="Colapsar/Desplegar ajustes">
+													<span class="dashicons dashicons-arrow-up-alt2"></span>
+												</span>
+											</div>
+										</div>
+										<p style="margin: 0 0 4px 0; color: #64748b; font-size: 13px;">Almacena copias de seguridad de las imágenes, PDFs y archivos adjuntos por los compradores en tu cuenta de Dropbox.</p>
+									</div>
+								</div>
+								<div class="wpat-module-body" style="display: none; padding: 15px 20px 20px 20px;">
+									<div class="wpat-field-group">
+										<label for="wpat_dropbox_token" style="display:block; font-weight:600; margin-bottom:5px;">Token de Acceso Personal de Dropbox (OAuth Access Token)</label>
+										<input type="text" name="wpat_settings[dropbox_token]" id="wpat_dropbox_token" value="<?php echo esc_attr( isset( $settings['dropbox_token'] ) ? $settings['dropbox_token'] : '' ); ?>" class="large-text" placeholder="sl.B... / Generated Access Token de Dropbox Developer Console" style="width:100%; margin:0;" />
+									</div>
+								</div>
+							</div>
+
+							<!-- Tarjeta: Almacenamiento en Microsoft OneDrive -->
+							<div class="wpat-module-card" style="margin-top: 20px;">
+								<div class="wpat-module-header" style="cursor: pointer; border-bottom: none;">
+									<div class="wpat-module-info" style="width: 100%;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+											<h3 style="margin: 0; font-size: 15px;">Microsoft OneDrive Storage</h3>
+											<div style="display: flex; align-items: center; gap: 10px;">
+												<?php if ( ! empty( $settings['onedrive_token'] ) ) : ?>
+													<span class="wpat-status-indicator" style="background: #e0f2fe; color: #0369a1; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+														<span style="width: 6px; height: 6px; background: #0369a1; border-radius: 50%;"></span> Listo
+													</span>
+												<?php else : ?>
+													<span class="wpat-status-indicator" style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
+													</span>
+												<?php endif; ?>
+												<span class="wpat-collapse-btn collapsed" title="Colapsar/Desplegar ajustes">
+													<span class="dashicons dashicons-arrow-up-alt2"></span>
+												</span>
+											</div>
+										</div>
+										<p style="margin: 0 0 4px 0; color: #64748b; font-size: 13px;">Envía los archivos recibidos durante el proceso de compra directamente a tu almacenamiento en la nube de Microsoft OneDrive.</p>
+									</div>
+								</div>
+								<div class="wpat-module-body" style="display: none; padding: 15px 20px 20px 20px;">
+									<div class="wpat-field-group">
+										<label for="wpat_onedrive_token" style="display:block; font-weight:600; margin-bottom:5px;">Token de Acceso Microsoft Graph (OneDrive Access Token)</label>
+										<input type="text" name="wpat_settings[onedrive_token]" id="wpat_onedrive_token" value="<?php echo esc_attr( isset( $settings['onedrive_token'] ) ? $settings['onedrive_token'] : '' ); ?>" class="large-text" placeholder="EwB... / Token OAuth Microsoft Graph API" style="width:100%; margin:0;" />
 									</div>
 								</div>
 							</div>

@@ -47,6 +47,69 @@ class WPAT_Woo_Extra_Options {
 
 		// Validar campos obligatorios al añadir al carrito
 		add_filter( 'woocommerce_add_to_cart_validation', array( $this, 'validate_extra_fields' ), 10, 3 );
+
+		// Añadir enctype multipart al formulario de producto para soporte de subida de archivos
+		add_action( 'woocommerce_before_add_to_cart_form', array( $this, 'add_multipart_to_form' ) );
+	}
+
+	/**
+	 * Asegura que el formulario de añadir al carrito soporte subida de archivos.
+	 */
+	public function add_multipart_to_form() {
+		echo '<script>document.addEventListener("DOMContentLoaded", function() { var form = document.querySelector("form.cart"); if(form) form.setAttribute("enctype", "multipart/form-data"); });</script>';
+	}
+
+	/**
+	 * Mapea nombres comunes de color en español e inglés a su valor Hexadecimal.
+	 *
+	 * @param string $raw_color Nombre de color o código hex.
+	 * @param string $default_hex Color por defecto si no coincide.
+	 * @return string Código Hex.
+	 */
+	public static function parse_color_hex( $raw_color, $default_hex = '#2563eb' ) {
+		$color = strtolower( trim( $raw_color ) );
+		if ( empty( $color ) ) {
+			return $default_hex;
+		}
+
+		if ( preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $color ) ) {
+			return $color;
+		}
+
+		$map = array(
+			'rojo'     => '#ef4444',
+			'red'      => '#ef4444',
+			'azul'     => '#2563eb',
+			'blue'     => '#2563eb',
+			'verde'    => '#22c55e',
+			'green'    => '#22c55e',
+			'negro'    => '#0f172a',
+			'black'    => '#0f172a',
+			'blanco'   => '#ffffff',
+			'white'    => '#ffffff',
+			'amarillo' => '#eab308',
+			'yellow'   => '#eab308',
+			'naranja'  => '#f97316',
+			'orange'   => '#f97316',
+			'rosa'     => '#ec4899',
+			'pink'     => '#ec4899',
+			'gris'     => '#64748b',
+			'gray'     => '#64748b',
+			'morado'   => '#a855f7',
+			'purple'   => '#a855f7',
+			'violeta'  => '#8b5cf6',
+			'oro'      => '#ffd700',
+			'gold'     => '#ffd700',
+			'plata'    => '#c0c0c0',
+			'silver'   => '#c0c0c0',
+			'marrón'   => '#78350f',
+			'marron'   => '#78350f',
+			'brown'    => '#78350f',
+			'cyan'     => '#06b6d4',
+			'turquesa' => '#14b8a6',
+		);
+
+		return isset( $map[ $color ] ) ? $map[ $color ] : $default_hex;
 	}
 
 	/**
@@ -198,15 +261,16 @@ class WPAT_Woo_Extra_Options {
 					echo '<input type="hidden" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '" value="' . esc_attr( $initial_val ) . '" class="wpat-extra-input" />';
 
 					foreach ( $swatches as $s_idx => $sw ) {
-						$parts      = explode( '|', trim( $sw ) );
-						$color_name = isset( $parts[0] ) ? trim( $parts[0] ) : '';
-						$color_hex  = isset( $parts[1] ) ? trim( $parts[1] ) : '#2563eb';
-						$color_price= isset( $parts[2] ) ? floatval( trim( $parts[2] ) ) : $price;
+						$parts       = explode( '|', trim( $sw ) );
+						$color_name  = isset( $parts[0] ) ? trim( $parts[0] ) : '';
+						$raw_hex     = isset( $parts[1] ) ? trim( $parts[1] ) : '';
+						$color_price = isset( $parts[2] ) ? floatval( trim( $parts[2] ) ) : ( ( isset( $parts[1] ) && is_numeric( trim( $parts[1] ) ) ) ? floatval( trim( $parts[1] ) ) : $price );
 
 						if ( empty( $color_name ) ) {
 							continue;
 						}
 
+						$color_hex  = self::parse_color_hex( ! empty( $raw_hex ) && ! is_numeric( $raw_hex ) ? $raw_hex : $color_name );
 						$val_attr   = $color_name . '|' . $color_price;
 						$title_text = $color_name . ( $color_price > 0 ? ' (+' . wc_price( $color_price ) . ')' : '' );
 						$is_def     = ( ! empty( $default_val ) && ( strcasecmp( $default_val, $color_name ) === 0 || strcasecmp( $default_val, trim( $sw ) ) === 0 ) );
@@ -248,6 +312,9 @@ class WPAT_Woo_Extra_Options {
 					echo '<label style="font-weight: normal; cursor: pointer;">';
 					echo '<input type="checkbox" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '" value="1" class="wpat-extra-input"' . $chk_attr . ' /> ' . esc_html( ! empty( $field['placeholder'] ) ? $field['placeholder'] : 'Activar esta opción' );
 					echo '</label>';
+				} elseif ( 'file' === $type ) {
+					echo '<input type="file" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '" class="wpat-extra-input" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" accept="image/*,.pdf,.zip" />';
+					echo '<small style="display:block; color:#64748b; margin-top:3px;">Formatos admitidos: imágenes (JPG, PNG), PDF, ZIP (Máx. 5 MB)</small>';
 				}
 
 				echo '</div>';
@@ -423,7 +490,36 @@ class WPAT_Woo_Extra_Options {
 				$field_id   = 'wpat_extra_' . $rule_idx . '_' . $f_idx;
 				$field_type = ! empty( $field['type'] ) ? $field['type'] : 'text';
 
-				if ( isset( $_POST[ $field_id ] ) && '' !== trim( wp_unslash( $_POST[ $field_id ] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+				if ( 'file' === $field_type ) {
+					if ( isset( $_FILES[ $field_id ] ) && ! empty( $_FILES[ $field_id ]['name'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+						$file_info  = $_FILES[ $field_id ]; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+						$base_price = ! empty( $field['price'] ) ? floatval( $field['price'] ) : 0;
+
+						require_once ABSPATH . 'wp-admin/includes/file.php';
+						require_once ABSPATH . 'wp-admin/includes/media.php';
+						require_once ABSPATH . 'wp-admin/includes/image.php';
+
+						$upload_overrides = array( 'test_form' => false );
+						$movefile         = wp_handle_upload( $file_info, $upload_overrides );
+
+						if ( $movefile && ! isset( $movefile['error'] ) ) {
+							$opt_label_display = basename( $movefile['file'] );
+							$file_url          = $movefile['url'];
+
+							// Sincronizar archivo con nubes configuradas (Google Drive, Dropbox, OneDrive)
+							if ( class_exists( 'WPAT_Integrations' ) ) {
+								WPAT_Integrations::get_instance()->sync_file_to_cloud( $movefile['file'], $opt_label_display );
+							}
+
+							$extra_options[] = array(
+								'label'    => sanitize_text_field( $field['label'] ),
+								'value'    => $opt_label_display,
+								'file_url' => $file_url,
+								'price'    => $base_price,
+							);
+						}
+					}
+				} elseif ( isset( $_POST[ $field_id ] ) && '' !== trim( wp_unslash( $_POST[ $field_id ] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
 					$raw_val    = sanitize_text_field( wp_unslash( $_POST[ $field_id ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 					$base_price = ! empty( $field['price'] ) ? floatval( $field['price'] ) : 0;
 
@@ -494,7 +590,12 @@ class WPAT_Woo_Extra_Options {
 	public function display_extra_options_in_cart( $item_data, $cart_item ) {
 		if ( ! empty( $cart_item['wpat_extra_options'] ) && is_array( $cart_item['wpat_extra_options'] ) ) {
 			foreach ( $cart_item['wpat_extra_options'] as $opt ) {
-				$val_display = esc_html( $opt['value'] );
+				if ( ! empty( $opt['file_url'] ) ) {
+					$val_display = '<a href="' . esc_url( $opt['file_url'] ) . '" target="_blank" rel="noopener noreferrer" style="text-decoration:underline; font-weight:600;">' . esc_html( $opt['value'] ) . '</a>';
+				} else {
+					$val_display = esc_html( $opt['value'] );
+				}
+
 				if ( ! empty( $opt['price'] ) && $opt['price'] > 0 ) {
 					$val_display .= ' (+' . wc_price( $opt['price'] ) . ')';
 				}
@@ -514,7 +615,7 @@ class WPAT_Woo_Extra_Options {
 	public function add_extra_options_to_order_items( $item, $cart_item_key, $values, $order ) {
 		if ( ! empty( $values['wpat_extra_options'] ) && is_array( $values['wpat_extra_options'] ) ) {
 			foreach ( $values['wpat_extra_options'] as $opt ) {
-				$meta_value = $opt['value'];
+				$meta_value = ! empty( $opt['file_url'] ) ? $opt['file_url'] : $opt['value'];
 				if ( ! empty( $opt['price'] ) && $opt['price'] > 0 ) {
 					$meta_value .= ' (+' . wc_price( $opt['price'] ) . ')';
 				}

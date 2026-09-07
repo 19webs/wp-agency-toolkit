@@ -603,6 +603,7 @@ class WPAT_Admin {
 			'whatsapp',
 			'reading-progress',
 			'conflict-detector',
+			'accessibility',
 		);
 
 		foreach ( $modules as $module_id ) {
@@ -734,6 +735,19 @@ class WPAT_Admin {
 
 		// 11. Sanitizar Detector de Incompatibilidades
 		$new_settings['conflict-detector'] = isset( $input_settings['conflict-detector'] ) && '1' === $input_settings['conflict-detector'] ? '1' : '0';
+
+		// 12. Sanitizar Herramientas de Accesibilidad
+		$new_settings['accessibility']                   = isset( $input_settings['accessibility'] ) && '1' === $input_settings['accessibility'] ? '1' : '0';
+		$new_settings['accessibility_enabled']           = isset( $input_settings['accessibility_enabled'] ) && '1' === $input_settings['accessibility_enabled'] ? '1' : '0';
+		$new_settings['accessibility_position']          = isset( $input_settings['accessibility_position'] ) && in_array( $input_settings['accessibility_position'], array( 'bottom-left', 'bottom-right', 'top-left', 'top-right' ), true ) ? $input_settings['accessibility_position'] : 'bottom-left';
+		$new_settings['accessibility_bg_color']          = isset( $input_settings['accessibility_bg_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['accessibility_bg_color'] ) ? $input_settings['accessibility_bg_color'] : '#2563eb';
+		$new_settings['accessibility_text_zoom']         = isset( $input_settings['accessibility_text_zoom'] ) && '1' === $input_settings['accessibility_text_zoom'] ? '1' : '0';
+		$new_settings['accessibility_grayscale']         = isset( $input_settings['accessibility_grayscale'] ) && '1' === $input_settings['accessibility_grayscale'] ? '1' : '0';
+		$new_settings['accessibility_high_contrast']     = isset( $input_settings['accessibility_high_contrast'] ) && '1' === $input_settings['accessibility_high_contrast'] ? '1' : '0';
+		$new_settings['accessibility_negative_contrast'] = isset( $input_settings['accessibility_negative_contrast'] ) && '1' === $input_settings['accessibility_negative_contrast'] ? '1' : '0';
+		$new_settings['accessibility_light_bg']          = isset( $input_settings['accessibility_light_bg'] ) && '1' === $input_settings['accessibility_light_bg'] ? '1' : '0';
+		$new_settings['accessibility_underline_links']   = isset( $input_settings['accessibility_underline_links'] ) && '1' === $input_settings['accessibility_underline_links'] ? '1' : '0';
+		$new_settings['accessibility_readable_font']     = isset( $input_settings['accessibility_readable_font'] ) && '1' === $input_settings['accessibility_readable_font'] ? '1' : '0';
 
 		// Guardar en la base de datos
 		update_option( 'wpat_settings', $new_settings );
@@ -970,6 +984,7 @@ class WPAT_Admin {
 			'whatsapp',
 			'reading-progress',
 			'conflict-detector',
+			'accessibility',
 		);
 
 		if ( ! in_array( $module_id, $modules, true ) ) {
@@ -2575,6 +2590,79 @@ class WPAT_Admin {
 											Mostrar Tiempo Estimado de Lectura (Badge automático al inicio del artículo)
 										</label>
 										<p class="description" style="margin-top:6px;">Calcula automáticamente el tiempo necesario en base a 200 palabras/minuto e inserta una etiqueta estilizada (ej. <code>⏱️ Tiempo estimado de lectura: 3 min</code>) justo antes del contenido de la entrada. También puedes insertarlo manualmente en cualquier maquetador (Elementor, Divi, Gutenberg) mediante los shortcodes <code>[tiempo_lectura]</code> o <code>[wpat_reading_time]</code>.</p>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
+										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
+									</div>
+								</div>
+							</div>
+
+							<!-- Módulo: Herramientas de Accesibilidad Web -->
+							<div class="wpat-module-card" style="margin-top: 20px;">
+								<div class="wpat-module-header">
+									<div class="wpat-module-info">
+										<h3>Herramientas de Accesibilidad Web (Zero-Bloat)</h3>
+										<p>Añade un widget flotante ultra-ligero de accesibilidad (Aumentar texto, Escala de grises, Alto contraste, Fuente legible, etc.) sin cargar scripts ni librerías pesadas de terceros.</p>
+									</div>
+									<?php $this->render_module_toggle( 'accessibility', $settings, true ); ?>
+								</div>
+								<div class="wpat-module-body" style="display: none;">
+									<div class="wpat-field-group">
+										<label style="font-weight: 600;">
+											<input type="checkbox" name="wpat_settings[accessibility_enabled]" value="1" <?php checked( isset( $settings['accessibility_enabled'] ) ? $settings['accessibility_enabled'] : '0', '1' ); ?>>
+											Activar Widget Flotante de Accesibilidad en la Web
+										</label>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px; display: flex; gap: 25px; align-items: flex-start; flex-wrap: wrap;">
+										<div>
+											<label for="wpat_accessibility_position" style="display:block; margin-bottom:5px; font-weight:600;">Posición del Botón Flotante</label>
+											<select name="wpat_settings[accessibility_position]" id="wpat_accessibility_position" style="height: 32px;">
+												<option value="bottom-left" <?php selected( isset( $settings['accessibility_position'] ) ? $settings['accessibility_position'] : 'bottom-left', 'bottom-left' ); ?>>Inferior Izquierda (Recomendado)</option>
+												<option value="bottom-right" <?php selected( isset( $settings['accessibility_position'] ) ? $settings['accessibility_position'] : 'bottom-left', 'bottom-right' ); ?>>Inferior Derecha</option>
+												<option value="top-left" <?php selected( isset( $settings['accessibility_position'] ) ? $settings['accessibility_position'] : 'bottom-left', 'top-left' ); ?>>Superior Izquierda</option>
+												<option value="top-right" <?php selected( isset( $settings['accessibility_position'] ) ? $settings['accessibility_position'] : 'bottom-left', 'top-right' ); ?>>Superior Derecha</option>
+											</select>
+										</div>
+										<div>
+											<label for="wpat_accessibility_bg_color" style="display:block; margin-bottom:5px; font-weight:600;">Color del Icono Flotante</label>
+											<input type="text" name="wpat_settings[accessibility_bg_color]" id="wpat_accessibility_bg_color" value="<?php echo esc_attr( isset( $settings['accessibility_bg_color'] ) ? $settings['accessibility_bg_color'] : '#2563eb' ); ?>" class="wpat-color-picker" />
+										</div>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
+										<label style="font-weight: 600; display: block; margin-bottom: 10px;">Herramientas Activas en el Menú de Accesibilidad:</label>
+										<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;">
+											<label style="font-weight: normal;">
+												<input type="checkbox" name="wpat_settings[accessibility_text_zoom]" value="1" <?php checked( isset( $settings['accessibility_text_zoom'] ) ? $settings['accessibility_text_zoom'] : '1', '1' ); ?>>
+												🔍 Aumentar / Disminuir Texto
+											</label>
+											<label style="font-weight: normal;">
+												<input type="checkbox" name="wpat_settings[accessibility_grayscale]" value="1" <?php checked( isset( $settings['accessibility_grayscale'] ) ? $settings['accessibility_grayscale'] : '1', '1' ); ?>>
+												⏸️ Escala de Grises
+											</label>
+											<label style="font-weight: normal;">
+												<input type="checkbox" name="wpat_settings[accessibility_high_contrast]" value="1" <?php checked( isset( $settings['accessibility_high_contrast'] ) ? $settings['accessibility_high_contrast'] : '1', '1' ); ?>>
+												🌓 Alto Contraste
+											</label>
+											<label style="font-weight: normal;">
+												<input type="checkbox" name="wpat_settings[accessibility_negative_contrast]" value="1" <?php checked( isset( $settings['accessibility_negative_contrast'] ) ? $settings['accessibility_negative_contrast'] : '1', '1' ); ?>>
+												👁️ Contraste Negativo / Invertir
+											</label>
+											<label style="font-weight: normal;">
+												<input type="checkbox" name="wpat_settings[accessibility_light_bg]" value="1" <?php checked( isset( $settings['accessibility_light_bg'] ) ? $settings['accessibility_light_bg'] : '1', '1' ); ?>>
+												💡 Fondo Claro
+											</label>
+											<label style="font-weight: normal;">
+												<input type="checkbox" name="wpat_settings[accessibility_underline_links]" value="1" <?php checked( isset( $settings['accessibility_underline_links'] ) ? $settings['accessibility_underline_links'] : '1', '1' ); ?>>
+												🔗 Subrayar Enlaces
+											</label>
+											<label style="font-weight: normal;">
+												<input type="checkbox" name="wpat_settings[accessibility_readable_font]" value="1" <?php checked( isset( $settings['accessibility_readable_font'] ) ? $settings['accessibility_readable_font'] : '1', '1' ); ?>>
+												🅰️ Fuente Legible (Sans-Serif)
+											</label>
+										</div>
 									</div>
 
 									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">

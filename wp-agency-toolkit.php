@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     3.4.15
+ * Version:     3.4.16
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '3.4.15' );
+define( 'WPAT_VERSION', '3.4.16' );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -135,6 +135,10 @@ class WPAT_Main {
 		'conflict-detector' => array(
 			'file'  => 'includes/modules/class-wpat-conflict-detector.php',
 			'class' => 'WPAT_Conflict_Detector',
+		),
+		'accessibility' => array(
+			'file'  => 'includes/modules/class-wpat-accessibility.php',
+			'class' => 'WPAT_Accessibility',
 		),
 	);
 
@@ -304,6 +308,19 @@ class WPAT_Main {
 			'reading_bar_color'           => '#2563eb',
 			'reading_bar_height'          => '4',
 			'reading_time_enabled'        => '0',
+
+			// Opciones de Herramientas de Accesibilidad
+			'accessibility'                   => '0',
+			'accessibility_enabled'           => '0',
+			'accessibility_position'          => 'bottom-left',
+			'accessibility_bg_color'          => '#2563eb',
+			'accessibility_text_zoom'         => '1',
+			'accessibility_grayscale'         => '1',
+			'accessibility_high_contrast'     => '1',
+			'accessibility_negative_contrast' => '1',
+			'accessibility_light_bg'          => '1',
+			'accessibility_underline_links'   => '1',
+			'accessibility_readable_font'     => '1',
 
 			// Opciones de Detector de Incompatibilidades
 			'conflict-detector'           => '1',

@@ -1263,6 +1263,43 @@ class WPAT_Admin {
 	public function render_health_tab_content() {
 		$stats = $this->get_db_cleanup_stats();
 		?>
+		<!-- Tarjeta de Diagnóstico: Detector de Incompatibilidades y Salud de Plugins -->
+		<div class="wpat-module-card" style="margin-bottom: 25px; padding: 20px;">
+			<h3 style="margin-top:0; font-size:15px; font-weight:600; display:flex; align-items:center; gap:8px;">
+				<span class="dashicons dashicons-shield" style="color:var(--wpat-primary);"></span> Detector de Incompatibilidades y Salud de Plugins
+			</h3>
+			<p style="margin: 4px 0 15px 0; color: #64748b; font-size: 13px;">Supervisa activamente la instalación en busca de plugins de terceros que colisionen o dupliquen las funciones integradas en WP Agency Toolkit.</p>
+			<?php
+			if ( class_exists( 'WPAT_Conflict_Detector' ) ) {
+				$active_conflicts = WPAT_Conflict_Detector::get_active_conflicts();
+			} else {
+				$active_conflicts = array();
+			}
+			?>
+			<?php if ( ! empty( $active_conflicts ) ) : ?>
+				<div style="background: #fffbe6; border: 1px solid #ffe58f; border-radius: 8px; padding: 16px;">
+					<h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700; color: #b45309; display: flex; align-items: center; gap: 8px;">
+						⚠️ Conflictos o Duplicidades Detectadas (<?php echo count( $active_conflicts ); ?>)
+					</h4>
+					<?php foreach ( $active_conflicts as $plugin_file => $data ) : ?>
+						<div style="background: #ffffff; border: 1px solid #fef3c7; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+							<strong style="color: #92400e; font-size: 13px;"><?php echo esc_html( $data['name'] ); ?></strong>
+							<p style="margin: 4px 0 8px 0; font-size: 12.5px; color: #4b5563;"><?php echo esc_html( $data['reason'] ); ?></p>
+							<a href="<?php echo esc_url( admin_url( 'plugins.php' ) ); ?>" class="button button-small button-secondary">Desactivar / Gestionar Plugin</a>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			<?php else : ?>
+				<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; display: flex; align-items: center; gap: 12px;">
+					<span style="font-size: 24px;">✅</span>
+					<div>
+						<strong style="color: #166534; font-size: 14px; display: block;">No se han detectado conflictos de plugins</strong>
+						<span style="color: #374151; font-size: 12.5px;">Tu instalación está limpia y no hay plugins activos de terceros que colisionen con las funciones nativas de WP Agency Toolkit.</span>
+					</div>
+				</div>
+			<?php endif; ?>
+		</div>
+
 		<div class="wpat-health-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px;">
 			
 			<!-- PHP Info Card -->
@@ -2364,48 +2401,6 @@ class WPAT_Admin {
 								</div>
 							</div>
 
-							<!-- Módulo: Detector de Incompatibilidades y Salud de Plugins -->
-							<div class="wpat-module-card" style="margin-top: 20px;">
-								<div class="wpat-module-header">
-									<div class="wpat-module-info">
-										<h3>Detector de Incompatibilidades y Salud de Plugins</h3>
-										<p>Supervisa activamente la instalación en busca de plugins de terceros que colisionen o dupliquen las funciones integradas en WP Agency Toolkit.</p>
-									</div>
-									<?php $this->render_module_toggle( 'conflict-detector', $settings, false ); ?>
-								</div>
-								<div class="wpat-module-body" style="padding: 15px 20px 20px 20px;">
-									<?php
-									if ( class_exists( 'WPAT_Conflict_Detector' ) ) {
-										$active_conflicts = WPAT_Conflict_Detector::get_active_conflicts();
-									} else {
-										$active_conflicts = array();
-									}
-									?>
-									<?php if ( ! empty( $active_conflicts ) ) : ?>
-										<div style="background: #fffbe6; border: 1px solid #ffe58f; border-radius: 8px; padding: 16px; margin-bottom: 15px;">
-											<h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700; color: #b45309; display: flex; align-items: center; gap: 8px;">
-												⚠️ Conflictos o Duplicidades Detectadas (<?php echo count( $active_conflicts ); ?>)
-											</h4>
-											<?php foreach ( $active_conflicts as $plugin_file => $data ) : ?>
-												<div style="background: #ffffff; border: 1px solid #fef3c7; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
-													<strong style="color: #92400e; font-size: 13px;"><?php echo esc_html( $data['name'] ); ?></strong>
-													<p style="margin: 4px 0 8px 0; font-size: 12.5px; color: #4b5563;"><?php echo esc_html( $data['reason'] ); ?></p>
-													<a href="<?php echo esc_url( admin_url( 'plugins.php' ) ); ?>" class="button button-small button-secondary">Desactivar / Gestionar Plugin</a>
-												</div>
-											<?php endforeach; ?>
-										</div>
-									<?php else : ?>
-										<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; display: flex; align-items: center; gap: 12px;">
-											<span style="font-size: 24px;">✅</span>
-											<div>
-												<strong style="color: #166534; font-size: 14px; display: block;">No se han detectado conflictos de plugins</strong>
-												<span style="color: #374151; font-size: 12.5px;">Tu instalación está limpia y no hay plugins activos de terceros que colisionen con las funciones nativas de WP Agency Toolkit.</span>
-											</div>
-										</div>
-									<?php endif; ?>
-								</div>
-							</div>
-
 						</div>
 
 						<!-- PESTAÑA 3: RENDIMIENTO Y CÓDIGO -->
@@ -2527,6 +2522,42 @@ class WPAT_Admin {
 										<p>Desactiva los emojis integrados, remueve etiquetas meta innecesarias del <head> de WordPress y limita las revisiones por entrada a un máximo de 5.</p>
 									</div>
 									<?php $this->render_module_toggle( 'performance', $settings, false ); ?>
+								</div>
+							</div>
+
+							<!-- Módulo: Experiencia de Lectura & UX -->
+							<div class="wpat-module-card" style="margin-top: 20px;">
+								<div class="wpat-module-header">
+									<div class="wpat-module-info">
+										<h3>Experiencia de Lectura & UX en Entradas</h3>
+										<p>Muestra una barra superior de avance al hacer scroll y calcula automáticamente el tiempo estimado de lectura en las entradas (posts).</p>
+									</div>
+									<?php $this->render_module_toggle( 'reading-progress', $settings, true ); ?>
+								</div>
+								<div class="wpat-module-body" style="display: none;">
+									<div class="wpat-field-group">
+										<label>
+											<input type="checkbox" name="wpat_settings[reading_bar_enabled]" value="1" <?php checked( isset( $settings['reading_bar_enabled'] ) ? $settings['reading_bar_enabled'] : '0', '1' ); ?>>
+											Activar Barra de Progreso de Lectura Superior en Entradas (is_single)
+										</label>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px;">
+										<label for="wpat_reading_bar_color" style="display:block; margin-bottom:5px;">Color de la Barra de Lectura</label>
+										<input type="text" name="wpat_settings[reading_bar_color]" id="wpat_reading_bar_color" value="<?php echo esc_attr( isset( $settings['reading_bar_color'] ) ? $settings['reading_bar_color'] : '#2563eb' ); ?>" class="wpat-color-picker" />
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
+										<label>
+											<input type="checkbox" name="wpat_settings[reading_time_enabled]" value="1" <?php checked( isset( $settings['reading_time_enabled'] ) ? $settings['reading_time_enabled'] : '0', '1' ); ?>>
+											Mostrar Tiempo Estimado de Lectura (Badge automático antes del contenido de la entrada)
+										</label>
+										<p class="description">Calcula automáticamente la velocidad media de lectura (200 palabras/minuto). También puedes usar el shortcode <code>[tiempo_lectura]</code> en tus maquetadores o plantillas.</p>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
+										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
+									</div>
 								</div>
 							</div>
 
@@ -2766,42 +2797,6 @@ class WPAT_Admin {
 								</div>
 							</div>
 
-							<!-- Módulo: Experiencia de Lectura & UX -->
-							<div class="wpat-module-card" style="margin-top: 20px;">
-								<div class="wpat-module-header">
-									<div class="wpat-module-info">
-										<h3>Experiencia de Lectura & UX en Entradas</h3>
-										<p>Muestra una barra superior de avance al hacer scroll y calcula automáticamente el tiempo estimado de lectura en las entradas (posts).</p>
-									</div>
-									<?php $this->render_module_toggle( 'reading-progress', $settings, true ); ?>
-								</div>
-								<div class="wpat-module-body" style="display: none;">
-									<div class="wpat-field-group">
-										<label>
-											<input type="checkbox" name="wpat_settings[reading_bar_enabled]" value="1" <?php checked( isset( $settings['reading_bar_enabled'] ) ? $settings['reading_bar_enabled'] : '0', '1' ); ?>>
-											Activar Barra de Progreso de Lectura Superior en Entradas (is_single)
-										</label>
-									</div>
-
-									<div class="wpat-field-group" style="margin-top: 15px;">
-										<label for="wpat_reading_bar_color" style="display:block; margin-bottom:5px;">Color de la Barra de Lectura</label>
-										<input type="text" name="wpat_settings[reading_bar_color]" id="wpat_reading_bar_color" value="<?php echo esc_attr( isset( $settings['reading_bar_color'] ) ? $settings['reading_bar_color'] : '#2563eb' ); ?>" class="wpat-color-picker" />
-									</div>
-
-									<div class="wpat-field-group" style="margin-top: 15px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<label>
-											<input type="checkbox" name="wpat_settings[reading_time_enabled]" value="1" <?php checked( isset( $settings['reading_time_enabled'] ) ? $settings['reading_time_enabled'] : '0', '1' ); ?>>
-											Mostrar Tiempo Estimado de Lectura (Badge automático antes del contenido de la entrada)
-										</label>
-										<p class="description">Calcula automáticamente la velocidad media de lectura (200 palabras/minuto). También puedes usar el shortcode <code>[tiempo_lectura]</code> en tus maquetadores o plantillas.</p>
-									</div>
-
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
-								</div>
-							</div>
-
 						</div>
 
 						<!-- PESTAÑA: SEO -->
@@ -3013,31 +3008,36 @@ class WPAT_Admin {
 
 								$sc_connected = ! empty( $settings['google_search_console_code'] ) || $google_file_found;
 								?>
-								<div class="wpat-module-header" style="border-bottom: none;">
+								<div class="wpat-module-header" style="cursor: pointer; border-bottom: none;">
 									<div class="wpat-module-info" style="width: 100%;">
 										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
 											<h3 style="margin: 0; font-size: 15px;">Google Search Console</h3>
-											<?php if ( $sc_connected ) : ?>
-												<span class="wpat-status-indicator" style="background: #e6f4ea; color: #137333; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-													<span style="width: 6px; height: 6px; background: #137333; border-radius: 50%;"></span> 
-													<?php 
-													if ( $google_file_found ) {
-														echo 'Conectado (Archivo: ' . esc_html( $google_file_name ) . ')';
-													} else {
-														echo 'Conectado (Metaetiqueta)';
-													}
-													?>
+											<div style="display: flex; align-items: center; gap: 10px;">
+												<?php if ( $sc_connected ) : ?>
+													<span class="wpat-status-indicator" style="background: #e6f4ea; color: #137333; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+														<span style="width: 6px; height: 6px; background: #137333; border-radius: 50%;"></span> 
+														<?php 
+														if ( $google_file_found ) {
+															echo 'Conectado (Archivo: ' . esc_html( $google_file_name ) . ')';
+														} else {
+															echo 'Conectado (Metaetiqueta)';
+														}
+														?>
+													</span>
+												<?php else : ?>
+													<span class="wpat-status-indicator" style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
+													</span>
+												<?php endif; ?>
+												<span class="wpat-collapse-btn collapsed" title="Colapsar/Desplegar ajustes">
+													<span class="dashicons dashicons-arrow-up-alt2"></span>
 												</span>
-											<?php else : ?>
-												<span class="wpat-status-indicator" style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-													<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
-												</span>
-											<?php endif; ?>
+											</div>
 										</div>
-										<p style="margin: 0 0 12px 0; color: #64748b; font-size: 13px;">El plugin detecta automáticamente si has subido un archivo de verificación de Google (tipo <code>googleXXXX.html</code>) a la carpeta raíz de tu hosting, o si prefieres puedes pegar el código meta abajo. Puedes conseguir tu código en <a href="https://search.google.com/search-console/welcome" target="_blank" rel="noopener noreferrer" style="color: var(--wpat-primary); font-weight: 600; text-decoration: underline;">Google Search Console</a>.</p>
+										<p style="margin: 0 0 4px 0; color: #64748b; font-size: 13px;">El plugin detecta automáticamente si has subido un archivo de verificación de Google (tipo <code>googleXXXX.html</code>) a la carpeta raíz de tu hosting, o si prefieres puedes pegar el código meta abajo. Puedes conseguir tu código en <a href="https://search.google.com/search-console/welcome" target="_blank" rel="noopener noreferrer" style="color: var(--wpat-primary); font-weight: 600; text-decoration: underline;">Google Search Console</a>.</p>
 									</div>
 								</div>
-								<div class="wpat-module-body" style="padding: 0 20px 20px 20px;">
+								<div class="wpat-module-body" style="display: none; padding: 15px 20px 20px 20px;">
 									<div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
 										<div style="flex: 1; min-width: 300px;">
 											<input type="text" name="wpat_settings[google_search_console_code]" id="wpat_google_search_console_code" value="<?php echo esc_attr( $settings['google_search_console_code'] ); ?>" class="large-text" placeholder="Ej: <meta name=&quot;google-site-verification&quot; content=&quot;xyz123...&quot; />" style="width:100%; margin:0;" />
@@ -3051,24 +3051,29 @@ class WPAT_Admin {
 
 							<!-- Tarjeta: Google Analytics (GA4) -->
 							<div class="wpat-module-card" style="margin-top: 20px;">
-								<div class="wpat-module-header" style="border-bottom: none;">
+								<div class="wpat-module-header" style="cursor: pointer; border-bottom: none;">
 									<div class="wpat-module-info" style="width: 100%;">
 										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
 											<h3 style="margin: 0; font-size: 15px;">Google Analytics (GA4)</h3>
-											<?php if ( ! empty( $settings['google_analytics_id'] ) && preg_match( '/^G-[A-Z0-9]+$/i', trim( $settings['google_analytics_id'] ) ) ) : ?>
-												<span class="wpat-status-indicator" style="background: #e6f4ea; color: #137333; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-													<span style="width: 6px; height: 6px; background: #137333; border-radius: 50%;"></span> Conectado
+											<div style="display: flex; align-items: center; gap: 10px;">
+												<?php if ( ! empty( $settings['google_analytics_id'] ) && preg_match( '/^G-[A-Z0-9]+$/i', trim( $settings['google_analytics_id'] ) ) ) : ?>
+													<span class="wpat-status-indicator" style="background: #e6f4ea; color: #137333; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+														<span style="width: 6px; height: 6px; background: #137333; border-radius: 50%;"></span> Conectado
+													</span>
+												<?php else : ?>
+													<span class="wpat-status-indicator" style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
+													</span>
+												<?php endif; ?>
+												<span class="wpat-collapse-btn collapsed" title="Colapsar/Desplegar ajustes">
+													<span class="dashicons dashicons-arrow-up-alt2"></span>
 												</span>
-											<?php else : ?>
-												<span class="wpat-status-indicator" style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-													<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
-												</span>
-											<?php endif; ?>
+											</div>
 										</div>
-										<p style="margin: 0 0 12px 0; color: #64748b; font-size: 13px;">Introduce tu ID de medición de Google Analytics 4 (debe comenzar con <code>G-</code>). Puedes conseguir tu ID G-XXXX en la sección de flujos de datos de administración de <a href="https://analytics.google.com/analytics/web/#/admin" target="_blank" rel="noopener noreferrer" style="color: var(--wpat-primary); font-weight: 600; text-decoration: underline;">Google Analytics</a>.</p>
+										<p style="margin: 0 0 4px 0; color: #64748b; font-size: 13px;">Introduce tu ID de medición de Google Analytics 4 (debe comenzar con <code>G-</code>). Puedes conseguir tu ID G-XXXX en la sección de flujos de datos de administración de <a href="https://analytics.google.com/analytics/web/#/admin" target="_blank" rel="noopener noreferrer" style="color: var(--wpat-primary); font-weight: 600; text-decoration: underline;">Google Analytics</a>.</p>
 									</div>
 								</div>
-								<div class="wpat-module-body" style="padding: 0 20px 20px 20px;">
+								<div class="wpat-module-body" style="display: none; padding: 15px 20px 20px 20px;">
 									<div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
 										<div style="flex: 1; min-width: 300px;">
 											<input type="text" name="wpat_settings[google_analytics_id]" id="wpat_google_analytics_id" value="<?php echo esc_attr( $settings['google_analytics_id'] ); ?>" class="large-text" placeholder="Ej: G-XXXXXXXXXX" style="width:100%; margin:0;" />
@@ -3082,18 +3087,23 @@ class WPAT_Admin {
 
 							<!-- Tarjeta: Google PageSpeed Insights -->
 							<div class="wpat-module-card" style="margin-top: 20px;">
-								<div class="wpat-module-header" style="border-bottom: none;">
+								<div class="wpat-module-header" style="cursor: pointer; border-bottom: none;">
 									<div class="wpat-module-info" style="width: 100%;">
 										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
 											<h3 style="margin: 0; font-size: 15px;">Google PageSpeed Insights</h3>
-											<span class="wpat-status-indicator" style="background: #e0f2fe; color: #0369a1; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-												<span style="width: 6px; height: 6px; background: #0369a1; border-radius: 50%;"></span> Listo
-											</span>
+											<div style="display: flex; align-items: center; gap: 10px;">
+												<span class="wpat-status-indicator" style="background: #e0f2fe; color: #0369a1; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+													<span style="width: 6px; height: 6px; background: #0369a1; border-radius: 50%;"></span> Listo
+												</span>
+												<span class="wpat-collapse-btn collapsed" title="Colapsar/Desplegar ajustes">
+													<span class="dashicons dashicons-arrow-up-alt2"></span>
+												</span>
+											</div>
 										</div>
-										<p style="margin: 0 0 12px 0; color: #64748b; font-size: 13px;">Audita el rendimiento, la velocidad de carga real y la optimización móvil/escritorio del sitio web de forma externa y gratuita en Google PageSpeed.</p>
+										<p style="margin: 0 0 4px 0; color: #64748b; font-size: 13px;">Audita el rendimiento, la velocidad de carga real y la optimización móvil/escritorio del sitio web de forma externa y gratuita en Google PageSpeed.</p>
 									</div>
 								</div>
-								<div class="wpat-module-body" style="padding: 0 20px 20px 20px;">
+								<div class="wpat-module-body" style="display: none; padding: 15px 20px 20px 20px;">
 									<div>
 										<a href="<?php echo esc_url( 'https://pagespeed.web.dev/analysis?url=' . urlencode( home_url( '/' ) ) ); ?>" target="_blank" rel="noopener noreferrer" class="button button-primary" style="height: 32px; display: inline-flex; align-items: center; gap: 5px;">
 											<span class="dashicons dashicons-performance" style="font-size: 16px; width: 16px; height: 16px; margin: 0;"></span> Analizar Velocidad del Sitio

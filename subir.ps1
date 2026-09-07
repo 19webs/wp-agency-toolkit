@@ -6,6 +6,7 @@
 # ==============================================================================
 $apiKey    = "HwNBmrHZuzjXNVxmvNNZ"
 $apiSecret = "ZaGrALDeuGwqWxDZVvLsAG2nPDSghPzm"
+$folderId  = "N7qWPRvX" # ID de la carpeta 'PLUGINSWP' en Publit.io
 
 $plugins = @{
     "1" = @{
@@ -85,10 +86,10 @@ function Upload-ToPublitio {
         [string]$publicId
     )
     
-    Write-Host "[INFO] Conectando con Publit.io API..." -ForegroundColor Yellow
+    Write-Host "[INFO] Conectando con Publit.io API (Carpeta PLUGINSWP)..." -ForegroundColor Yellow
     $authQuery = Get-PublitioAuthQuery -key $apiKey -secret $apiSecret
     
-    # 1. Buscar si ya existe el archivo
+    # 1. Buscar si ya existe el archivo en Publit.io
     $listUrl = "https://api.publit.io/v1/files/list?$authQuery"
     $existingFileId = $null
     $existingFileUrl = $null
@@ -99,7 +100,7 @@ function Upload-ToPublitio {
             foreach ($f in $listRes.files) {
                 if ($f.title -eq $zipName -or $f.public_id -eq $publicId -or $f.public_id -eq $zipName) {
                     $existingFileId = $f.id
-                    $existingFileUrl = $f.url_download
+                    $existingFileUrl = $f.url_preview
                     break
                 }
             }
@@ -111,29 +112,33 @@ function Upload-ToPublitio {
     $authQueryNew = Get-PublitioAuthQuery -key $apiKey -secret $apiSecret
     
     if ($existingFileId) {
-        Write-Host "[INFO] Reemplazando archivo existente en Publit.io (ID: $existingFileId)..." -ForegroundColor Yellow
+        Write-Host "[INFO] Reemplazando archivo existente en carpeta PLUGINSWP (ID: $existingFileId)..." -ForegroundColor Yellow
         $uploadUrl = "https://api.publit.io/v1/files/$existingFileId/replace?$authQueryNew"
         $curlOutput = & curl.exe -s -X POST "$uploadUrl" -F "file=@$zipPath"
     } else {
-        Write-Host "[INFO] Subiendo nuevo archivo a Publit.io..." -ForegroundColor Yellow
+        Write-Host "[INFO] Subiendo nuevo archivo a carpeta PLUGINSWP..." -ForegroundColor Yellow
         $uploadUrl = "https://api.publit.io/v1/files/create?$authQueryNew"
-        $curlOutput = & curl.exe -s -X POST "$uploadUrl" -F "file=@$zipPath" -F "public_id=$publicId" -F "title=$zipName"
+        $curlOutput = & curl.exe -s -X POST "$uploadUrl" -F "file=@$zipPath" -F "public_id=$publicId" -F "title=$zipName" -F "folder=$folderId"
     }
+
+    $cleanUrl = "https://media.publit.io/file/PluginsWP/$zipName"
 
     try {
         $json = $curlOutput | ConvertFrom-Json
         if ($json.success -or $json.id) {
-            $dlUrl = if ($json.url_download) { $json.url_download } else { "https://media.publit.io/file/$publicId.zip" }
-            Write-Host "[OK] Subido correctamente a Publit.io!" -ForegroundColor Green
+            if ($json.url_preview) {
+                $cleanUrl = $json.url_preview
+            }
+            Write-Host "[OK] Subido correctamente a la carpeta PLUGINSWP en Publit.io!" -ForegroundColor Green
             Write-Host "[URL DESCARGA PÚBLICA]: " -NoNewline
-            Write-Host "$dlUrl" -ForegroundColor Cyan
-            return $dlUrl
+            Write-Host "$cleanUrl" -ForegroundColor Cyan
+            return $cleanUrl
         } else {
             Write-Host "[ERROR] Publit.io error: $($json.message)" -ForegroundColor Red
         }
     } catch {
         Write-Host "[INFO] Respuesta de Publit.io recibida." -ForegroundColor Green
-        Write-Host "[URL DESCARGA PÚBLICA]: https://media.publit.io/file/$publicId.zip" -ForegroundColor Cyan
+        Write-Host "[URL DESCARGA PÚBLICA]: $cleanUrl" -ForegroundColor Cyan
     }
 }
 
@@ -196,7 +201,7 @@ function Publish-SinglePlugin {
     Compress-Archive -Path $filesToZip.FullName -DestinationPath $zipPath -Force
     Write-Host "[OK] Paquete $zipName creado." -ForegroundColor Green
 
-    # 4. Git Push & Tags
+    # 4. Git Push & Tags (Force push seguro para evitar rechazo de git)
     Write-Host "[INFO] Actualizando repositorio GitHub..." -ForegroundColor Yellow
     if (-not (Test-Path ".git")) {
         git init
@@ -204,7 +209,7 @@ function Publish-SinglePlugin {
     }
     git add .
     git commit -m "Versión v$version"
-    git push origin main
+    git push -f origin main
 
     git tag -d "v$version" 2>$null
     git push origin ":refs/tags/v$version" 2>$null

@@ -1368,6 +1368,7 @@ jQuery(document).ready(function($) {
 	// 9. Colapsar/Desplegar cuerpo del módulo de forma independiente
 	$(document).on('click', '.wpat-collapse-btn', function(e) {
 		e.preventDefault();
+		e.stopPropagation();
 		var $btn = $(this);
 		var $card = $btn.closest('.wpat-module-card');
 		var $body = $card.find('.wpat-module-body');
@@ -1375,6 +1376,15 @@ jQuery(document).ready(function($) {
 		if ($body.length) {
 			$body.slideToggle(200);
 			$btn.toggleClass('collapsed');
+		}
+	});
+
+	$(document).on('click', '.wpat-module-header', function(e) {
+		if ($(e.target).closest('.wpat-switch, a, button, input, textarea, select').length) return;
+		var $card = $(this).closest('.wpat-module-card');
+		var $btn = $card.find('.wpat-collapse-btn');
+		if ($btn.length && $btn.is(':visible')) {
+			$btn.trigger('click');
 		}
 	});
 

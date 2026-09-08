@@ -183,7 +183,20 @@ class WPAT_Woo_Extra_Options {
 			return;
 		}
 
-		echo '<div class="wpat-extra-options-wrapper" style="margin-bottom: 20px; padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">';
+		echo '<style>
+		form.cart { flex-wrap: wrap !important; }
+		.wpat-extra-options-wrapper {
+			width: 100% !important;
+			max-width: 100% !important;
+			flex-basis: 100% !important;
+			flex-grow: 1 !important;
+			clear: both !important;
+			display: block !important;
+			box-sizing: border-box !important;
+			margin-bottom: 20px !important;
+		}
+		</style>';
+		echo '<div class="wpat-extra-options-wrapper" style="width: 100% !important; max-width: 100% !important; flex-basis: 100% !important; flex-grow: 1 !important; clear: both !important; display: block !important; box-sizing: border-box !important; margin-bottom: 20px !important; padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">';
 
 		foreach ( $rules as $rule_idx => $rule ) {
 			$fields = isset( $rule['fields'] ) && is_array( $rule['fields'] ) ? $rule['fields'] : array();

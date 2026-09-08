@@ -2850,9 +2850,13 @@ class WPAT_Admin {
 									</div>
 
 									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-											<label style="font-weight: 600; font-size: 14px;">Grupos de Reglas y Opciones:</label>
-											<button type="button" class="button button-secondary" id="wpat_add_extra_rule_btn">+ Añadir Nuevo Grupo de Opciones</button>
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 14px; border-radius: 8px;">
+											<div style="display: flex; gap: 8px; align-items: center; flex-grow: 1;">
+												<input type="text" id="wpat_rule_search_input" placeholder="🔍 Buscar grupo por título..." class="regular-text" style="font-size: 12px; height: 32px; max-width: 280px;" autocomplete="off" />
+												<button type="button" class="button button-small" id="wpat_expand_all_rules_btn" title="Expandir todos los grupos">🔽 Desplegar Todos</button>
+												<button type="button" class="button button-small" id="wpat_collapse_all_rules_btn" title="Plegar todos los grupos">🔼 Plegar Todos</button>
+											</div>
+											<button type="button" class="button button-primary" id="wpat_add_extra_rule_btn">+ Añadir Nuevo Grupo de Opciones</button>
 										</div>
 
 										<div id="wpat_extra_rules_container">
@@ -2882,18 +2886,42 @@ class WPAT_Admin {
 												$r_categories = isset( $rule['categories'] ) && is_array( $rule['categories'] ) ? array_map( 'intval', $rule['categories'] ) : array();
 												$r_products   = isset( $rule['products'] ) && is_array( $rule['products'] ) ? implode( ', ', $rule['products'] ) : ( isset( $rule['products'] ) ? esc_attr( $rule['products'] ) : '' );
 												$r_fields     = isset( $rule['fields'] ) && is_array( $rule['fields'] ) ? $rule['fields'] : array();
+
+												if ( 'category' === $r_scope ) {
+													$scope_badge = '🏷️ Categorías (' . count( $r_categories ) . ')';
+												} elseif ( 'product' === $r_scope ) {
+													$prod_count  = count( array_filter( array_map( 'trim', explode( ',', $r_products ) ) ) );
+													$scope_badge = '📦 Productos (' . $prod_count . ')';
+												} else {
+													$scope_badge = '🌐 Todos los Productos (Global)';
+												}
+												$field_count_badge = count( $r_fields ) . ' ' . ( count( $r_fields ) === 1 ? 'campo' : 'campos' );
 												?>
-												<div class="wpat-extra-rule-card" style="background: #ffffff; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-													<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 12px;">
-														<div style="display: flex; gap: 15px; align-items: center; flex-grow: 1;">
-															<input type="text" name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][title]" value="<?php echo $r_title; ?>" placeholder="Título del Grupo (ej. Opciones de Personalización)" class="regular-text" style="font-weight: 700; font-size: 14px;" required />
-															<label style="font-weight: normal; font-size: 12px; margin: 0;">
-																<input type="checkbox" name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][enabled]" value="1" <?php checked( $r_enabled, '1' ); ?> />
+												<div class="wpat-extra-rule-card" data-title="<?php echo esc_attr( strtolower( $r_title ) ); ?>" style="background: #ffffff; border: 1px solid var(--wpat-border); border-radius: 8px; margin-bottom: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+													<!-- Header Acordeón -->
+													<div class="wpat-rule-header-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; cursor: pointer; user-select: none;">
+														<div style="display: flex; gap: 12px; align-items: center; flex-grow: 1; min-width: 0;">
+															<span class="wpat-rule-toggle-icon" style="font-size: 11px; transition: transform 0.2s; color: #64748b;">▶</span>
+															<span class="wpat-rule-status-dot" style="width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; background: <?php echo '1' === $r_enabled ? '#10b981' : '#ef4444'; ?>;" title="<?php echo '1' === $r_enabled ? 'Grupo Activo' : 'Grupo Inactivo'; ?>"></span>
+															<span class="wpat-rule-header-title" style="font-weight: 700; font-size: 13.5px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;"><?php echo ! empty( $r_title ) ? $r_title : 'Grupo sin título'; ?></span>
+															<span class="wpat-rule-scope-badge" style="font-size: 11px; background: #e2e8f0; color: #475569; padding: 2px 8px; border-radius: 12px; font-weight: 600;"><?php echo esc_html( $scope_badge ); ?></span>
+															<span class="wpat-rule-fields-count-badge" style="font-size: 11px; background: #eff6ff; color: #2563eb; padding: 2px 8px; border-radius: 12px; font-weight: 600;"><?php echo esc_html( $field_count_badge ); ?></span>
+														</div>
+														<div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;" onclick="event.stopPropagation();">
+															<button type="button" class="button button-small wpat-toggle-rule-btn" style="font-size: 11px;">Desplegar 🔽</button>
+															<button type="button" class="button button-small button-link-delete wpat-remove-rule-btn" style="color: #ef4444; font-size: 11px;">Eliminar</button>
+														</div>
+													</div>
+
+													<!-- Body Acordeón (oculto por defecto) -->
+													<div class="wpat-rule-body-content" style="display: none; padding: 15px;">
+														<div style="display: flex; gap: 15px; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 12px;">
+															<input type="text" name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][title]" value="<?php echo $r_title; ?>" placeholder="Título del Grupo (ej. Opciones de Personalización)" class="regular-text wpat-rule-title-input" style="font-weight: 700; font-size: 14px; flex-grow: 1;" required />
+															<label style="font-weight: normal; font-size: 12px; margin: 0; white-space: nowrap;">
+																<input type="checkbox" name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][enabled]" value="1" class="wpat-rule-enabled-checkbox" <?php checked( $r_enabled, '1' ); ?> />
 																Grupo Activo
 															</label>
 														</div>
-														<button type="button" class="button button-link-delete wpat-remove-rule-btn" style="color: #ef4444;">Eliminar Grupo</button>
-													</div>
 
 													<div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px; flex-wrap: wrap;">
 														<div style="display: flex; gap: 10px; align-items: center;">
@@ -3023,7 +3051,8 @@ class WPAT_Admin {
 														</div>
 													</div>
 												</div>
-											<?php endforeach; ?>
+											</div>
+										<?php endforeach; ?>
 										</div>
 									</div>
 
@@ -3032,57 +3061,97 @@ class WPAT_Admin {
 										var addRuleBtn = document.getElementById('wpat_add_extra_rule_btn');
 										var rulesContainer = document.getElementById('wpat_extra_rules_container');
 										var noRulesMsg = document.getElementById('wpat_no_extra_rules_msg');
+										var searchInput = document.getElementById('wpat_rule_search_input');
+										var expandAllBtn = document.getElementById('wpat_expand_all_rules_btn');
+										var collapseAllBtn = document.getElementById('wpat_collapse_all_rules_btn');
 										var catOptionsHtml = '<?php echo $cat_options_js; ?>';
-										if (!addRuleBtn || !rulesContainer) return;
 
-										addRuleBtn.addEventListener('click', function() {
-											if (noRulesMsg) noRulesMsg.style.display = 'none';
-											var rIndex = rulesContainer.querySelectorAll('.wpat-extra-rule-card').length;
-											var html = '<div class="wpat-extra-rule-card" style="background: #ffffff; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 8px; margin-bottom: 15px;">' +
-												'<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 12px;">' +
-													'<div style="display: flex; gap: 15px; align-items: center; flex-grow: 1;">' +
-														'<input type="text" name="wpat_settings[extra_options_rules][' + rIndex + '][title]" value="" placeholder="Título del Grupo (ej. Opciones de Personalización)" class="regular-text" style="font-weight: 700; font-size: 14px;" required />' +
-														'<label style="font-weight: normal; font-size: 12px; margin: 0;"><input type="checkbox" name="wpat_settings[extra_options_rules][' + rIndex + '][enabled]" value="1" checked /> Grupo Activo</label>' +
-													'</div>' +
-													'<button type="button" class="button button-link-delete wpat-remove-rule-btn" style="color: #ef4444;">Eliminar Grupo</button>' +
-												'</div>' +
-												'<div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px; flex-wrap: wrap;">' +
-													'<div style="display: flex; gap: 10px; align-items: center;">' +
-														'<label style="font-size: 12px; font-weight: 600;">Aplicar este grupo a:</label>' +
-														'<select name="wpat_settings[extra_options_rules][' + rIndex + '][scope]" class="wpat-rule-scope-select" style="height: 30px;">' +
-															'<option value="global">Todos los Productos (Global)</option>' +
-															'<option value="category">Categorías de Productos</option>' +
-															'<option value="product">Productos Específicos</option>' +
-														'</select>' +
-													'</div>' +
-													'<div class="wpat-scope-category-wrap" style="display:none;">' +
-														'<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 2px;">Seleccionar Categorías:</label>' +
-														'<select name="wpat_settings[extra_options_rules][' + rIndex + '][categories][]" multiple style="height: 65px; font-size: 11px; min-width: 200px;">' +
-															catOptionsHtml +
-														'</select>' +
-													'</div>' +
-													'<div class="wpat-scope-product-wrap" style="position: relative; display:none;">' +
-														'<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 2px;">Buscar Productos (por Nombre, SKU o ID):</label>' +
-														'<div style="position: relative; display: inline-block;">' +
-															'<input type="text" class="wpat-product-search-input regular-text" placeholder="Buscar por Nombre, SKU o ID..." style="font-size: 11px; width: 250px;" autocomplete="off" />' +
-															'<div class="wpat-product-search-results" style="display:none; position: absolute; top: 100%; left: 0; right: 0; background: #ffffff; border: 1px solid #cbd5e1; max-height: 200px; overflow-y: auto; z-index: 9999; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 4px; font-size: 11px;"></div>' +
+										if (!rulesContainer) return;
+
+										// 1. Añadir nuevo grupo de reglas (Se abre desplegado para editar)
+										if (addRuleBtn) {
+											addRuleBtn.addEventListener('click', function() {
+												if (noRulesMsg) noRulesMsg.style.display = 'none';
+												var rIndex = rulesContainer.querySelectorAll('.wpat-extra-rule-card').length;
+												var html = '<div class="wpat-extra-rule-card" data-title="" style="background: #ffffff; border: 1px solid var(--wpat-border); border-radius: 8px; margin-bottom: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">' +
+													'<div class="wpat-rule-header-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; cursor: pointer; user-select: none;">' +
+														'<div style="display: flex; gap: 12px; align-items: center; flex-grow: 1; min-width: 0;">' +
+															'<span class="wpat-rule-toggle-icon" style="font-size: 11px; transform: rotate(90deg); transition: transform 0.2s; color: #64748b;">▶</span>' +
+															'<span class="wpat-rule-status-dot" style="width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; background: #10b981;" title="Grupo Activo"></span>' +
+															'<span class="wpat-rule-header-title" style="font-weight: 700; font-size: 13.5px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">Nuevo Grupo de Opciones</span>' +
+															'<span class="wpat-rule-scope-badge" style="font-size: 11px; background: #e2e8f0; color: #475569; padding: 2px 8px; border-radius: 12px; font-weight: 600;">🌐 Todos los Productos (Global)</span>' +
+															'<span class="wpat-rule-fields-count-badge" style="font-size: 11px; background: #eff6ff; color: #2563eb; padding: 2px 8px; border-radius: 12px; font-weight: 600;">0 campos</span>' +
 														'</div>' +
-														'<input type="hidden" name="wpat_settings[extra_options_rules][' + rIndex + '][products]" class="wpat-products-hidden-ids" value="" />' +
-														'<div class="wpat-selected-products-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; max-width: 380px;"></div>' +
+														'<div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;" onclick="event.stopPropagation();">' +
+															'<button type="button" class="button button-small wpat-toggle-rule-btn" style="font-size: 11px;">Plegar 🔼</button>' +
+															'<button type="button" class="button button-small button-link-delete wpat-remove-rule-btn" style="color: #ef4444; font-size: 11px;">Eliminar</button>' +
+														'</div>' +
 													'</div>' +
-												'</div>' +
-												'<div class="wpat-rule-fields-wrapper" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px;">' +
-													'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><span style="font-size: 12px; font-weight: 700; color: #475569;">Campos e Opciones de este Grupo:</span><button type="button" class="button button-small wpat-add-field-to-rule-btn" data-rule="' + rIndex + '">+ Añadir Campo</button></div>' +
-													'<div class="wpat-fields-list-container"></div>' +
-												'</div>' +
-											'</div>';
-											rulesContainer.insertAdjacentHTML('beforeend', html);
-										});
+													'<div class="wpat-rule-body-content" style="display: block; padding: 15px;">' +
+														'<div style="display: flex; gap: 15px; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 12px;">' +
+															'<input type="text" name="wpat_settings[extra_options_rules][' + rIndex + '][title]" value="" placeholder="Título del Grupo (ej. Opciones de Personalización)" class="regular-text wpat-rule-title-input" style="font-weight: 700; font-size: 14px; flex-grow: 1;" required />' +
+															'<label style="font-weight: normal; font-size: 12px; margin: 0; white-space: nowrap;"><input type="checkbox" name="wpat_settings[extra_options_rules][' + rIndex + '][enabled]" value="1" class="wpat-rule-enabled-checkbox" checked /> Grupo Activo</label>' +
+														'</div>' +
+														'<div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px; flex-wrap: wrap;">' +
+															'<div style="display: flex; gap: 10px; align-items: center;">' +
+																'<label style="font-size: 12px; font-weight: 600;">Aplicar este grupo a:</label>' +
+																'<select name="wpat_settings[extra_options_rules][' + rIndex + '][scope]" class="wpat-rule-scope-select" style="height: 30px;">' +
+																	'<option value="global">Todos los Productos (Global)</option>' +
+																	'<option value="category">Categorías de Productos</option>' +
+																	'<option value="product">Productos Específicos</option>' +
+																'</select>' +
+															'</div>' +
+															'<div class="wpat-scope-category-wrap" style="display:none;">' +
+																'<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 2px;">Seleccionar Categorías:</label>' +
+																'<select name="wpat_settings[extra_options_rules][' + rIndex + '][categories][]" multiple style="height: 65px; font-size: 11px; min-width: 200px;">' +
+																	catOptionsHtml +
+																'</select>' +
+															'</div>' +
+															'<div class="wpat-scope-product-wrap" style="position: relative; display:none;">' +
+																'<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 2px;">Buscar Productos (por Nombre, SKU o ID):</label>' +
+																'<div style="position: relative; display: inline-block;">' +
+																	'<input type="text" class="wpat-product-search-input regular-text" placeholder="Buscar por Nombre, SKU o ID..." style="font-size: 11px; width: 250px;" autocomplete="off" />' +
+																	'<div class="wpat-product-search-results" style="display:none; position: absolute; top: 100%; left: 0; right: 0; background: #ffffff; border: 1px solid #cbd5e1; max-height: 200px; overflow-y: auto; z-index: 9999; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 4px; font-size: 11px;"></div>' +
+																'</div>' +
+																'<input type="hidden" name="wpat_settings[extra_options_rules][' + rIndex + '][products]" class="wpat-products-hidden-ids" value="" />' +
+																'<div class="wpat-selected-products-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; max-width: 380px;"></div>' +
+															'</div>' +
+														'</div>' +
+														'<div class="wpat-rule-fields-wrapper" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px;">' +
+															'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><span style="font-size: 12px; font-weight: 700; color: #475569;">Campos e Opciones de este Grupo:</span><button type="button" class="button button-small wpat-add-field-to-rule-btn" data-rule="' + rIndex + '">+ Añadir Campo</button></div>' +
+															'<div class="wpat-fields-list-container"></div>' +
+														'</div>' +
+													'</div>' +
+												'</div>';
+												rulesContainer.insertAdjacentHTML('beforeend', html);
+											});
+										}
 
+										// 2. Control de Acordeón al hacer clic en la cabecera del grupo
 										rulesContainer.addEventListener('click', function(e) {
+											var header = e.target.closest('.wpat-rule-header-bar');
+											if (header) {
+												var card = header.closest('.wpat-extra-rule-card');
+												var body = card.querySelector('.wpat-rule-body-content');
+												var btn = header.querySelector('.wpat-toggle-rule-btn');
+												var icon = header.querySelector('.wpat-rule-toggle-icon');
+
+												if (body.style.display === 'none' || !body.style.display) {
+													body.style.display = 'block';
+													if (btn) btn.textContent = 'Plegar 🔼';
+													if (icon) icon.style.transform = 'rotate(90deg)';
+												} else {
+													body.style.display = 'none';
+													if (btn) btn.textContent = 'Desplegar 🔽';
+													if (icon) icon.style.transform = 'rotate(0deg)';
+												}
+											}
+
 											if (e.target && e.target.classList.contains('wpat-remove-rule-btn')) {
 												var card = e.target.closest('.wpat-extra-rule-card');
-												if (card) card.remove();
+												if (card && confirm('¿Estás seguro de que deseas eliminar este grupo de opciones?')) {
+													card.remove();
+												}
 											} else if (e.target && e.target.classList.contains('wpat-add-field-to-rule-btn')) {
 												var card = e.target.closest('.wpat-extra-rule-card');
 												var listContainer = card.querySelector('.wpat-fields-list-container');
@@ -3112,14 +3181,102 @@ class WPAT_Admin {
 													'</div>' +
 												'</div>';
 												listContainer.insertAdjacentHTML('beforeend', fHtml);
+
+												// Actualizar badge de conteo de campos en el header
+												var badge = card.querySelector('.wpat-rule-fields-count-badge');
+												if (badge) {
+													var count = listContainer.querySelectorAll('.wpat-field-item-row').length;
+													badge.textContent = count + (count === 1 ? ' campo' : ' campos');
+												}
 											} else if (e.target && e.target.classList.contains('wpat-remove-field-item-btn')) {
+												var card = e.target.closest('.wpat-extra-rule-card');
 												var fRow = e.target.closest('.wpat-field-item-row');
 												if (fRow) fRow.remove();
+												if (card) {
+													var badge = card.querySelector('.wpat-rule-fields-count-badge');
+													var listContainer = card.querySelector('.wpat-fields-list-container');
+													if (badge && listContainer) {
+														var count = listContainer.querySelectorAll('.wpat-field-item-row').length;
+														badge.textContent = count + (count === 1 ? ' campo' : ' campos');
+													}
+												}
+											}
+										});
+
+										// 3. Buscador en tiempo real de reglas por título
+										if (searchInput) {
+											searchInput.addEventListener('input', function() {
+												var term = this.value.toLowerCase().trim();
+												var cards = rulesContainer.querySelectorAll('.wpat-extra-rule-card');
+												cards.forEach(function(card) {
+													var titleInput = card.querySelector('.wpat-rule-title-input');
+													var title = titleInput ? titleInput.value.toLowerCase() : '';
+													if (!term || title.indexOf(term) !== -1) {
+														card.style.display = 'block';
+													} else {
+														card.style.display = 'none';
+													}
+												});
+											});
+										}
+
+										// 4. Desplegar Todos / Plegar Todos
+										if (expandAllBtn) {
+											expandAllBtn.addEventListener('click', function() {
+												rulesContainer.querySelectorAll('.wpat-extra-rule-card').forEach(function(card) {
+													var body = card.querySelector('.wpat-rule-body-content');
+													var btn = card.querySelector('.wpat-toggle-rule-btn');
+													var icon = card.querySelector('.wpat-rule-toggle-icon');
+													if (body) body.style.display = 'block';
+													if (btn) btn.textContent = 'Plegar 🔼';
+													if (icon) icon.style.transform = 'rotate(90deg)';
+												});
+											});
+										}
+
+										if (collapseAllBtn) {
+											collapseAllBtn.addEventListener('click', function() {
+												rulesContainer.querySelectorAll('.wpat-extra-rule-card').forEach(function(card) {
+													var body = card.querySelector('.wpat-rule-body-content');
+													var btn = card.querySelector('.wpat-toggle-rule-btn');
+													var icon = card.querySelector('.wpat-rule-toggle-icon');
+													if (body) body.style.display = 'none';
+													if (btn) btn.textContent = 'Desplegar 🔽';
+													if (icon) icon.style.transform = 'rotate(0deg)';
+												});
+											});
+										}
+
+										// 5. Actualización en tiempo real del título y estado en la barra de la cabecera
+										rulesContainer.addEventListener('input', function(e) {
+											if (e.target && e.target.classList.contains('wpat-rule-title-input')) {
+												var card = e.target.closest('.wpat-extra-rule-card');
+												var headerTitle = card ? card.querySelector('.wpat-rule-header-title') : null;
+												if (headerTitle) {
+													headerTitle.textContent = e.target.value.trim() || 'Grupo sin título';
+												}
+												if (card) card.setAttribute('data-title', e.target.value.toLowerCase().trim());
+											} else if (e.target && e.target.classList.contains('wpat-swatch-picker-tool')) {
+												var fRow = e.target.closest('.wpat-field-item-row');
+												var txtArea = fRow ? fRow.querySelector('.wpat-swatches-textarea') : null;
+												if (txtArea) {
+													var hex = e.target.value;
+													var currentText = txtArea.value.trim();
+													var newLine = 'Color ' + hex.toUpperCase() + ' | ' + hex + ' | 0';
+													txtArea.value = currentText ? currentText + '\n' + newLine : newLine;
+												}
 											}
 										});
 
 										rulesContainer.addEventListener('change', function(e) {
-											if (e.target && e.target.classList.contains('wpat-extra-type-select')) {
+											if (e.target && e.target.classList.contains('wpat-rule-enabled-checkbox')) {
+												var card = e.target.closest('.wpat-extra-rule-card');
+												var dot = card ? card.querySelector('.wpat-rule-status-dot') : null;
+												if (dot) {
+													dot.style.background = e.target.checked ? '#10b981' : '#ef4444';
+													dot.title = e.target.checked ? 'Grupo Activo' : 'Grupo Inactivo';
+												}
+											} else if (e.target && e.target.classList.contains('wpat-extra-type-select')) {
 												var fRow = e.target.closest('.wpat-field-item-row');
 												var swatchWrap = fRow.querySelector('.wpat-extra-swatches-wrap');
 												var optWrap = fRow.querySelector('.wpat-extra-options-wrap');
@@ -3137,20 +3294,15 @@ class WPAT_Admin {
 												var card = e.target.closest('.wpat-extra-rule-card');
 												var catWrap = card.querySelector('.wpat-scope-category-wrap');
 												var prodWrap = card.querySelector('.wpat-scope-product-wrap');
+												var scopeBadge = card.querySelector('.wpat-rule-scope-badge');
+
 												if (catWrap) catWrap.style.display = (e.target.value === 'category') ? 'block' : 'none';
 												if (prodWrap) prodWrap.style.display = (e.target.value === 'product') ? 'block' : 'none';
-											}
-										});
 
-										rulesContainer.addEventListener('input', function(e) {
-											if (e.target && e.target.classList.contains('wpat-swatch-picker-tool')) {
-												var fRow = e.target.closest('.wpat-field-item-row');
-												var txtArea = fRow ? fRow.querySelector('.wpat-swatches-textarea') : null;
-												if (txtArea) {
-													var hex = e.target.value;
-													var currentText = txtArea.value.trim();
-													var newLine = 'Color ' + hex.toUpperCase() + ' | ' + hex + ' | 0';
-													txtArea.value = currentText ? currentText + '\n' + newLine : newLine;
+												if (scopeBadge) {
+													if (e.target.value === 'category') scopeBadge.textContent = '🏷️ Categorías';
+													else if (e.target.value === 'product') scopeBadge.textContent = '📦 Productos';
+													else scopeBadge.textContent = '🌐 Todos los Productos (Global)';
 												}
 											}
 										});

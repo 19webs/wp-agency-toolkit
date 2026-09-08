@@ -53,6 +53,7 @@ class WPAT_Admin {
 		add_action( 'wp_ajax_wpat_seo_get_posts_to_fill', array( $this, 'ajax_seo_get_posts_to_fill' ) );
 		add_action( 'wp_ajax_wpat_seo_fill_posts_batch', array( $this, 'ajax_seo_fill_posts_batch' ) );
 		add_action( 'wp_ajax_wpat_force_update_check', array( $this, 'ajax_force_update_check' ) );
+		add_action( 'wp_ajax_wpat_search_products', array( $this, 'ajax_search_products' ) );
 	}
 
 	/**
@@ -856,6 +857,77 @@ class WPAT_Admin {
 			'tab'              => $active_tab,
 		), menu_page_url( 'wp-agency-toolkit', false ) ) );
 		exit;
+	}
+
+	/**
+	 * Búsqueda en vivo por AJAX de productos WooCommerce (para las reglas de campos extras).
+	 */
+	public function ajax_search_products() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Acceso denegado' ) );
+		}
+
+		$term = isset( $_GET['term'] ) ? sanitize_text_field( wp_unslash( $_GET['term'] ) ) : '';
+
+		if ( mb_strlen( trim( $term ) ) < 2 ) {
+			wp_send_json_success( array() );
+		}
+
+		$results   = array();
+		$found_ids = array();
+
+		// 1. Búsqueda por ID directo si es numérico
+		if ( is_numeric( $term ) ) {
+			$p_id = intval( $term );
+			$post = get_post( $p_id );
+			if ( $post && in_array( $post->post_type, array( 'product', 'product_variation' ), true ) ) {
+				$found_ids[] = $p_id;
+				$p_obj       = function_exists( 'wc_get_product' ) ? wc_get_product( $p_id ) : null;
+				$sku         = $p_obj ? $p_obj->get_sku() : '';
+				$results[]   = array(
+					'id'    => $p_id,
+					'title' => '#' . $p_id . ' - ' . get_the_title( $p_id ) . ( $sku ? ' (' . $sku . ')' : '' ),
+				);
+			}
+		}
+
+		// 2. Búsqueda por SKU
+		if ( function_exists( 'wc_get_product_id_by_sku' ) ) {
+			$sku_id = wc_get_product_id_by_sku( $term );
+			if ( $sku_id && ! in_array( $sku_id, $found_ids, true ) ) {
+				$found_ids[] = $sku_id;
+				$p_obj       = function_exists( 'wc_get_product' ) ? wc_get_product( $sku_id ) : null;
+				$sku         = $p_obj ? $p_obj->get_sku() : '';
+				$results[]   = array(
+					'id'    => $sku_id,
+					'title' => '#' . $sku_id . ' - ' . get_the_title( $sku_id ) . ( $sku ? ' (' . $sku . ')' : '' ),
+				);
+			}
+		}
+
+		// 3. Búsqueda por Nombre / Título
+		$args = array(
+			'post_type'      => array( 'product', 'product_variation' ),
+			'post_status'    => array( 'publish', 'draft' ),
+			'posts_per_page' => 15,
+			's'              => $term,
+			'post__not_in'   => $found_ids,
+		);
+
+		$query = new WP_Query( $args );
+
+		if ( $query->have_posts() ) {
+			foreach ( $query->posts as $post ) {
+				$p_obj     = function_exists( 'wc_get_product' ) ? wc_get_product( $post->ID ) : null;
+				$sku       = $p_obj ? $p_obj->get_sku() : '';
+				$results[] = array(
+					'id'    => $post->ID,
+					'title' => '#' . $post->ID . ' - ' . $post->post_title . ( $sku ? ' (' . $sku . ')' : '' ),
+				);
+			}
+		}
+
+		wp_send_json_success( $results );
 	}
 
 	/**
@@ -2831,9 +2903,26 @@ class WPAT_Admin {
 															</select>
 														</div>
 
-														<div class="wpat-scope-product-wrap" style="<?php echo ( 'product' === $r_scope ) ? '' : 'display:none;'; ?>">
-															<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 2px;">IDs de Productos (separados por coma):</label>
-															<input type="text" name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][products]" value="<?php echo esc_attr( $r_products ); ?>" placeholder="Ej. 102, 105, 210" class="regular-text" style="font-size: 11px; width: 220px;" />
+														<div class="wpat-scope-product-wrap" style="position: relative; <?php echo ( 'product' === $r_scope ) ? '' : 'display:none;'; ?>">
+															<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 2px;">Buscar Productos (por Nombre, SKU o ID):</label>
+															<div style="position: relative; display: inline-block;">
+																<input type="text" class="wpat-product-search-input regular-text" placeholder="Buscar por Nombre, SKU o ID..." style="font-size: 11px; width: 250px;" autocomplete="off" />
+																<div class="wpat-product-search-results" style="display:none; position: absolute; top: 100%; left: 0; right: 0; background: #ffffff; border: 1px solid #cbd5e1; max-height: 200px; overflow-y: auto; z-index: 9999; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 4px; font-size: 11px;"></div>
+															</div>
+															<input type="hidden" name="wpat_settings[extra_options_rules][<?php echo $r_idx; ?>][products]" class="wpat-products-hidden-ids" value="<?php echo esc_attr( $r_products ); ?>" />
+															<div class="wpat-selected-products-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; max-width: 380px;">
+																<?php
+																$prod_ids_arr = array_filter( array_map( 'trim', explode( ',', $r_products ) ) );
+																foreach ( $prod_ids_arr as $p_id ) {
+																	$p_id_int = intval( $p_id );
+																	if ( $p_id_int > 0 ) {
+																		$p_title = get_the_title( $p_id_int );
+																		$p_text  = ! empty( $p_title ) ? '#' . $p_id_int . ' - ' . $p_title : '#' . $p_id_int;
+																		echo '<span class="wpat-product-tag" data-id="' . $p_id_int . '" style="background: #e2e8f0; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 6px; font-size: 11px; display: inline-flex; align-items: center; gap: 6px;">' . esc_html( $p_text ) . ' <a href="#" class="wpat-remove-product-tag" style="color: #ef4444; text-decoration: none; font-weight: bold;">&times;</a></span>';
+																	}
+																}
+																?>
+															</div>
 														</div>
 													</div>
 
@@ -2954,9 +3043,14 @@ class WPAT_Admin {
 															catOptionsHtml +
 														'</select>' +
 													'</div>' +
-													'<div class="wpat-scope-product-wrap" style="display:none;">' +
-														'<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 2px;">IDs de Productos (separados por coma):</label>' +
-														'<input type="text" name="wpat_settings[extra_options_rules][' + rIndex + '][products]" value="" placeholder="Ej. 102, 105, 210" class="regular-text" style="font-size: 11px; width: 220px;" />' +
+													'<div class="wpat-scope-product-wrap" style="position: relative; display:none;">' +
+														'<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 2px;">Buscar Productos (por Nombre, SKU o ID):</label>' +
+														'<div style="position: relative; display: inline-block;">' +
+															'<input type="text" class="wpat-product-search-input regular-text" placeholder="Buscar por Nombre, SKU o ID..." style="font-size: 11px; width: 250px;" autocomplete="off" />' +
+															'<div class="wpat-product-search-results" style="display:none; position: absolute; top: 100%; left: 0; right: 0; background: #ffffff; border: 1px solid #cbd5e1; max-height: 200px; overflow-y: auto; z-index: 9999; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 4px; font-size: 11px;"></div>' +
+														'</div>' +
+														'<input type="hidden" name="wpat_settings[extra_options_rules][' + rIndex + '][products]" class="wpat-products-hidden-ids" value="" />' +
+														'<div class="wpat-selected-products-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; max-width: 380px;"></div>' +
 													'</div>' +
 												'</div>' +
 												'<div class="wpat-rule-fields-wrapper" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px;">' +

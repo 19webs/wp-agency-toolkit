@@ -3081,6 +3081,105 @@ jQuery(document).ready(function($) {
 		processNextBatch();
 	});
 
+	// 28. Buscador AJAX en vivo de Productos (Campos Extras WooCommerce)
+	var productSearchTimeout = null;
+
+	$(document).on('input', '.wpat-product-search-input', function() {
+		var $input = $(this);
+		var term = $input.val().trim();
+		var $wrap = $input.closest('.wpat-scope-product-wrap');
+		var $results = $wrap.find('.wpat-product-search-results');
+
+		clearTimeout(productSearchTimeout);
+
+		if (term.length < 2) {
+			$results.hide().empty();
+			return;
+		}
+
+		productSearchTimeout = setTimeout(function() {
+			$results.html('<div style="padding: 6px 10px; color: #64748b;">Buscando...</div>').show();
+
+			var nonce = $('#wpat_settings_nonce').val();
+
+			$.ajax({
+				url: ajaxurl,
+				type: 'GET',
+				data: {
+					action: 'wpat_search_products',
+					term: term,
+					nonce: nonce
+				},
+				success: function(response) {
+					if (response.success && response.data.length > 0) {
+						var html = '';
+						$.each(response.data, function(i, item) {
+							var safeTitle = $('<div>').text(item.title).html();
+							html += '<div class="wpat-product-search-item" data-id="' + item.id + '" data-title="' + safeTitle + '" style="padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.15s;">' + safeTitle + '</div>';
+						});
+						$results.html(html).show();
+					} else {
+						$results.html('<div style="padding: 6px 10px; color: #94a3b8;">No se encontraron productos</div>').show();
+					}
+				},
+				error: function() {
+					$results.html('<div style="padding: 6px 10px; color: #ef4444;">Error al buscar</div>').show();
+				}
+			});
+		}, 300);
+	});
+
+	$(document).on('mouseenter', '.wpat-product-search-item', function() {
+		$(this).css('background', '#f1f5f9');
+	}).on('mouseleave', '.wpat-product-search-item', function() {
+		$(this).css('background', '#ffffff');
+	});
+
+	$(document).on('click', '.wpat-product-search-item', function() {
+		var $item = $(this);
+		var id = String($item.data('id'));
+		var title = $item.data('title');
+		var $wrap = $item.closest('.wpat-scope-product-wrap');
+		var $hidden = $wrap.find('.wpat-products-hidden-ids');
+		var $tags = $wrap.find('.wpat-selected-products-tags');
+		var $input = $wrap.find('.wpat-product-search-input');
+		var $results = $wrap.find('.wpat-product-search-results');
+
+		var currentIds = $hidden.val() ? $hidden.val().split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
+
+		if (currentIds.indexOf(id) === -1) {
+			currentIds.push(id);
+			$hidden.val(currentIds.join(', '));
+
+			var tagHtml = '<span class="wpat-product-tag" data-id="' + id + '" style="background: #e2e8f0; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 6px; font-size: 11px; display: inline-flex; align-items: center; gap: 6px;">' +
+				title + ' <a href="#" class="wpat-remove-product-tag" style="color: #ef4444; text-decoration: none; font-weight: bold;">&times;</a></span>';
+			$tags.append(tagHtml);
+		}
+
+		$input.val('');
+		$results.hide().empty();
+	});
+
+	$(document).on('click', '.wpat-remove-product-tag', function(e) {
+		e.preventDefault();
+		var $tag = $(this).closest('.wpat-product-tag');
+		var id = String($tag.data('id'));
+		var $wrap = $tag.closest('.wpat-scope-product-wrap');
+		var $hidden = $wrap.find('.wpat-products-hidden-ids');
+
+		var currentIds = $hidden.val() ? $hidden.val().split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
+		currentIds = currentIds.filter(function(item) { return item !== id; });
+
+		$hidden.val(currentIds.join(', '));
+		$tag.remove();
+	});
+
+	$(document).on('click', function(e) {
+		if (!$(e.target).closest('.wpat-scope-product-wrap').length) {
+			$('.wpat-product-search-results').hide();
+		}
+	});
+
 });
 
 

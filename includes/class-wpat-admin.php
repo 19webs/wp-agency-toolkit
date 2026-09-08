@@ -1168,6 +1168,8 @@ class WPAT_Admin {
 			'woo-extra-options',
 			'woo-variation-swatches',
 			'woo-pdf-invoices',
+			'woo-live-search',
+			'woo-facets',
 		);
 
 		if ( ! in_array( $module_id, $modules, true ) ) {

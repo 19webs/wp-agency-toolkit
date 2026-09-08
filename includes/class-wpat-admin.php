@@ -1078,6 +1078,7 @@ class WPAT_Admin {
 			'accessibility',
 			'woo-checkout-editor',
 			'woo-extra-options',
+			'woo-variation-swatches',
 			'woo-pdf-invoices',
 		);
 

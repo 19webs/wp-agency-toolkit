@@ -587,9 +587,21 @@ class WPAT_Woo_Extra_Options {
 	/**
 	 * Asigna el precio recalculado (Precio Base + Opciones Extra) al objeto WC_Product del carrito.
 	 */
-	public function apply_custom_price_to_cart_item( $cart_item ) {
+	public function apply_custom_price_to_cart_item( &$cart_item ) {
 		if ( ! empty( $cart_item['wpat_extra_options'] ) && is_array( $cart_item['wpat_extra_options'] ) && isset( $cart_item['data'] ) && is_object( $cart_item['data'] ) ) {
+			$product = $cart_item['data'];
+
+			// Registrar e inmovilizar el precio base en la estructura del elemento del carrito
+			if ( ! isset( $cart_item['wpat_base_price'] ) || floatval( $cart_item['wpat_base_price'] ) <= 0 ) {
+				$cart_item['wpat_base_price'] = floatval( $product->get_price( 'edit' ) );
+				if ( $cart_item['wpat_base_price'] <= 0 ) {
+					$cart_item['wpat_base_price'] = floatval( $product->get_price() );
+				}
+			}
+
+			$base_price  = floatval( $cart_item['wpat_base_price'] );
 			$extra_price = 0;
+
 			foreach ( $cart_item['wpat_extra_options'] as $opt ) {
 				if ( isset( $opt['price'] ) && floatval( $opt['price'] ) > 0 ) {
 					$extra_price += floatval( $opt['price'] );
@@ -597,11 +609,6 @@ class WPAT_Woo_Extra_Options {
 			}
 
 			if ( $extra_price > 0 ) {
-				$product    = $cart_item['data'];
-				$base_price = isset( $cart_item['wpat_base_price'] ) && floatval( $cart_item['wpat_base_price'] ) > 0
-					? floatval( $cart_item['wpat_base_price'] )
-					: floatval( $product->get_price() );
-
 				$product->set_price( $base_price + $extra_price );
 			}
 		}

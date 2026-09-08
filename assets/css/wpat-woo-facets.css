@@ -1,0 +1,136 @@
+/**
+ * Estilos para el Filtro por Facetas AJAX de WooCommerce - WP Agency Toolkit
+ */
+
+.wpat-facets-wrapper {
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	padding: 18px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+	margin-bottom: 24px;
+	box-sizing: border-box;
+}
+
+.wpat-facets-main-title {
+	font-size: 16px;
+	font-weight: 700;
+	color: #0f172a;
+	margin: 0 0 16px 0;
+	padding-bottom: 10px;
+	border-bottom: 2px solid #f1f5f9;
+}
+
+.wpat-facet-group {
+	margin-bottom: 18px;
+}
+
+.wpat-facet-group:last-child {
+	margin-bottom: 0;
+}
+
+.wpat-facet-title {
+	display: block;
+	font-size: 13px;
+	font-weight: 600;
+	color: #334155;
+	margin-bottom: 8px;
+}
+
+.wpat-facet-select {
+	width: 100%;
+	padding: 8px 12px;
+	font-size: 13px;
+	border: 1px solid #cbd5e1;
+	border-radius: 6px;
+	background-color: #ffffff;
+	color: #1e293b;
+	outline: none;
+	transition: border-color 0.2s;
+}
+
+.wpat-facet-select:focus {
+	border-color: #2563eb;
+}
+
+.wpat-facet-price-range {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.wpat-facet-price-range input[type="number"] {
+	width: 100%;
+	padding: 6px 10px;
+	font-size: 13px;
+	border: 1px solid #cbd5e1;
+	border-radius: 6px;
+	outline: none;
+}
+
+.wpat-facet-checkbox-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	max-height: 200px;
+	overflow-y: auto;
+	padding-right: 4px;
+}
+
+.wpat-facet-checkbox-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	color: #475569;
+	cursor: pointer;
+	user-select: none;
+}
+
+.wpat-facet-checkbox-item input[type="checkbox"],
+.wpat-facet-checkbox-item input[type="radio"] {
+	cursor: pointer;
+	margin: 0;
+	accent-color: #2563eb;
+}
+
+.wpat-facet-label {
+	flex-grow: 1;
+}
+
+.wpat-facet-count {
+	font-size: 11px;
+	color: #94a3b8;
+}
+
+.wpat-facets-actions {
+	margin-top: 18px;
+	padding-top: 12px;
+	border-top: 1px solid #f1f5f9;
+}
+
+.wpat-reset-facets-btn {
+	width: 100%;
+	padding: 8px 12px;
+	font-size: 12px;
+	font-weight: 600;
+	color: #ef4444;
+	background: #fef2f2;
+	border: 1px solid #fecaca;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s;
+}
+
+.wpat-reset-facets-btn:hover {
+	background: #fee2e2;
+	border-color: #fca5a5;
+}
+
+/* Indicador de Carga en Grid de Productos */
+.wpat-products-loading {
+	opacity: 0.4;
+	pointer-events: none;
+	transition: opacity 0.2s;
+	position: relative;
+}

@@ -1,0 +1,207 @@
+/**
+ * Estilos para el Buscador AJAX en Vivo de WooCommerce - WP Agency Toolkit
+ */
+
+.wpat-live-search-wrapper {
+	position: relative;
+	width: 100%;
+	max-width: 500px;
+	box-sizing: border-box;
+}
+
+.wpat-live-search-form {
+	margin: 0;
+	padding: 0;
+	position: relative;
+}
+
+.wpat-live-search-input-wrap {
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+.wpat-live-search-field {
+	width: 100%;
+	padding: 10px 40px 10px 14px;
+	font-size: 14px;
+	border: 1px solid #cbd5e1;
+	border-radius: 6px;
+	background: #ffffff;
+	color: #1e293b;
+	outline: none;
+	transition: border-color 0.2s, box-shadow 0.2s;
+	box-sizing: border-box;
+}
+
+.wpat-live-search-field:focus {
+	border-color: #2563eb;
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.wpat-live-search-submit {
+	position: absolute;
+	right: 8px;
+	background: transparent;
+	border: none;
+	color: #64748b;
+	cursor: pointer;
+	padding: 6px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 4px;
+	transition: color 0.2s;
+}
+
+.wpat-live-search-submit:hover {
+	color: #2563eb;
+}
+
+.wpat-live-search-spinner {
+	position: absolute;
+	right: 36px;
+	width: 16px;
+	height: 16px;
+	border: 2px solid #cbd5e1;
+	border-top-color: #2563eb;
+	border-radius: 50%;
+	animation: wpat-spin 0.6s linear infinite;
+}
+
+@keyframes wpat-spin {
+	to { transform: rotate(360deg); }
+}
+
+/* Desplegable de Resultados */
+.wpat-live-search-dropdown {
+	position: absolute;
+	top: calc(100% + 4px);
+	left: 0;
+	right: 0;
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+	z-index: 99999;
+	max-height: 420px;
+	overflow-y: auto;
+	padding: 6px 0;
+}
+
+.wpat-live-search-item {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 10px 14px;
+	text-decoration: none;
+	color: #1e293b;
+	border-bottom: 1px solid #f1f5f9;
+	transition: background-color 0.15s;
+}
+
+.wpat-live-search-item:last-child {
+	border-bottom: none;
+}
+
+.wpat-live-search-item:hover,
+.wpat-live-search-item.active {
+	background-color: #f8fafc;
+}
+
+.wpat-live-search-thumb {
+	width: 44px;
+	height: 44px;
+	object-fit: cover;
+	border-radius: 6px;
+	border: 1px solid #e2e8f0;
+	flex-shrink: 0;
+}
+
+.wpat-live-search-info {
+	flex-grow: 1;
+	min-width: 0;
+}
+
+.wpat-live-search-title {
+	font-size: 13px;
+	font-weight: 600;
+	color: #0f172a;
+	margin: 0 0 2px 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.wpat-live-search-meta {
+	font-size: 11px;
+	color: #64748b;
+}
+
+.wpat-live-search-price-stock {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 2px;
+	flex-shrink: 0;
+}
+
+.wpat-live-search-price {
+	font-size: 13px;
+	font-weight: 700;
+	color: #2563eb;
+}
+
+.wpat-live-search-price del {
+	font-size: 11px;
+	color: #94a3b8;
+	font-weight: 400;
+	margin-right: 4px;
+}
+
+.wpat-live-search-price ins {
+	text-decoration: none;
+}
+
+.wpat-stock-badge {
+	font-size: 10px;
+	padding: 2px 6px;
+	border-radius: 4px;
+	font-weight: 600;
+	display: inline-block;
+}
+
+.wpat-stock-badge.in-stock {
+	background: #dcfce7;
+	color: #166534;
+}
+
+.wpat-stock-badge.out-of-stock {
+	background: #fee2e2;
+	color: #991b1b;
+}
+
+.wpat-live-search-no-results,
+.wpat-live-search-loading {
+	padding: 14px;
+	text-align: center;
+	font-size: 13px;
+	color: #64748b;
+}
+
+.wpat-live-search-view-all {
+	display: block;
+	padding: 10px;
+	text-align: center;
+	font-size: 12px;
+	font-weight: 600;
+	color: #2563eb;
+	background: #f1f5f9;
+	text-decoration: none;
+	border-top: 1px solid #e2e8f0;
+	transition: background 0.15s;
+}
+
+.wpat-live-search-view-all:hover {
+	background: #e2e8f0;
+}

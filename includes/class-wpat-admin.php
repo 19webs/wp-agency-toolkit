@@ -841,6 +841,22 @@ class WPAT_Admin {
 		$new_settings['pdf_invoice_prefix']   = isset( $input_settings['pdf_invoice_prefix'] ) ? sanitize_text_field( $input_settings['pdf_invoice_prefix'] ) : 'FACT-' . date( 'Y' ) . '-';
 		$new_settings['pdf_invoice_next_num'] = isset( $input_settings['pdf_invoice_next_num'] ) ? max( 1, absint( $input_settings['pdf_invoice_next_num'] ) ) : 1;
 
+		// 16. Sanitizar Buscador AJAX en Vivo de WooCommerce (Frontend)
+		$new_settings['woo-live-search']          = isset( $input_settings['woo-live-search'] ) && '1' === $input_settings['woo-live-search'] ? '1' : '0';
+		$new_settings['live_search_enabled']      = isset( $input_settings['live_search_enabled'] ) && '1' === $input_settings['live_search_enabled'] ? '1' : '0';
+		$new_settings['live_search_max_results']  = isset( $input_settings['live_search_max_results'] ) ? min( 8, max( 1, absint( $input_settings['live_search_max_results'] ) ) ) : 5;
+		$new_settings['live_search_show_thumb']   = isset( $input_settings['live_search_show_thumb'] ) && '1' === $input_settings['live_search_show_thumb'] ? '1' : '0';
+		$new_settings['live_search_show_price']   = isset( $input_settings['live_search_show_price'] ) && '1' === $input_settings['live_search_show_price'] ? '1' : '0';
+		$new_settings['live_search_show_stock']   = isset( $input_settings['live_search_show_stock'] ) && '1' === $input_settings['live_search_show_stock'] ? '1' : '0';
+		$new_settings['live_search_show_meta']    = isset( $input_settings['live_search_show_meta'] ) && in_array( $input_settings['live_search_show_meta'], array( 'sku', 'cat', 'both', 'none' ), true ) ? $input_settings['live_search_show_meta'] : 'sku';
+		$new_settings['live_search_auto_replace'] = isset( $input_settings['live_search_auto_replace'] ) && '1' === $input_settings['live_search_auto_replace'] ? '1' : '0';
+		$new_settings['live_search_placeholder']  = isset( $input_settings['live_search_placeholder'] ) ? sanitize_text_field( $input_settings['live_search_placeholder'] ) : 'Buscar productos por nombre, SKU o categoría...';
+
+		// 17. Sanitizar Filtro por Facetas AJAX de WooCommerce (Estilo FacetWP)
+		$new_settings['woo-facets']     = isset( $input_settings['woo-facets'] ) && '1' === $input_settings['woo-facets'] ? '1' : '0';
+		$new_settings['facets_enabled'] = isset( $input_settings['facets_enabled'] ) && '1' === $input_settings['facets_enabled'] ? '1' : '0';
+		$new_settings['facets_config']  = isset( $input_settings['facets_config'] ) && is_array( $input_settings['facets_config'] ) ? array_map( 'sanitize_key', $input_settings['facets_config'] ) : array( 'sort', 'price', 'category', 'stock', 'rating' );
+
 		// Guardar en la base de datos
 		update_option( 'wpat_settings', $new_settings );
 
@@ -3239,6 +3255,141 @@ class WPAT_Admin {
 												<input type="number" min="1" name="wpat_settings[pdf_invoice_next_num]" id="wpat_pdf_invoice_next_num" value="<?php echo esc_attr( isset( $settings['pdf_invoice_next_num'] ) ? $settings['pdf_invoice_next_num'] : '1' ); ?>" class="small-text" style="height: 32px; text-align: center;" />
 											</div>
 										</div>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
+										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
+									</div>
+								</div>
+							</div>
+
+							<!-- Módulo: Buscador AJAX en Vivo (WooCommerce Frontend) -->
+							<div class="wpat-module-card" style="margin-top: 20px;">
+								<div class="wpat-module-header">
+									<div class="wpat-module-info">
+										<h3>Buscador AJAX en Vivo para Frontend (WooCommerce)</h3>
+										<p>Añade una barra de búsqueda ultra-rápida con autocompletado en tiempo real en la tienda pública (shortcode <code>[wpat_product_search]</code> o reemplazo del buscador nativo).</p>
+									</div>
+									<?php $this->render_module_toggle( 'woo-live-search', $settings, true ); ?>
+								</div>
+								<div class="wpat-module-body" style="display: none;">
+									<div class="wpat-field-group">
+										<label style="font-weight: 600;">
+											<input type="checkbox" name="wpat_settings[live_search_enabled]" value="1" <?php checked( isset( $settings['live_search_enabled'] ) ? $settings['live_search_enabled'] : '0', '1' ); ?>>
+											Activar Buscador AJAX en Vivo en la Web Pública
+										</label>
+									</div>
+
+									<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+										<div class="wpat-field-group">
+											<label style="font-weight: 600; display: block; margin-bottom: 5px;">Máximo de Resultados Desplegables (Límite 1 a 8):</label>
+											<?php $max_r = isset( $settings['live_search_max_results'] ) ? intval( $settings['live_search_max_results'] ) : 5; ?>
+											<input type="number" min="1" max="8" name="wpat_settings[live_search_max_results]" value="<?php echo $max_r; ?>" style="width: 100px; height: 32px; text-align: center;" />
+											<p class="description">Fijado entre 1 y 8 para garantizar la máxima velocidad de respuesta.</p>
+										</div>
+
+										<div class="wpat-field-group">
+											<label style="font-weight: 600; display: block; margin-bottom: 5px;">Información Secundaria en Resultados:</label>
+											<?php $show_meta = isset( $settings['live_search_show_meta'] ) ? $settings['live_search_show_meta'] : 'sku'; ?>
+											<select name="wpat_settings[live_search_show_meta]" style="height: 32px; min-width: 220px;">
+												<option value="sku" <?php selected( $show_meta, 'sku' ); ?>>Mostrar SKU</option>
+												<option value="cat" <?php selected( $show_meta, 'cat' ); ?>>Mostrar Categoría</option>
+												<option value="both" <?php selected( $show_meta, 'both' ); ?>>Mostrar Ambos (SKU y Categoría)</option>
+												<option value="none" <?php selected( $show_meta, 'none' ); ?>>Ninguno</option>
+											</select>
+										</div>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px; background: #f8fafc; border: 1px solid var(--wpat-border); padding: 12px; border-radius: 6px;">
+										<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700;">👁️ Elementos a Mostrar en el Desplegable:</h4>
+										<div style="display: flex; gap: 20px; flex-wrap: wrap;">
+											<label style="font-size: 12px; font-weight: 600;">
+												<input type="checkbox" name="wpat_settings[live_search_show_thumb]" value="1" <?php checked( isset( $settings['live_search_show_thumb'] ) ? $settings['live_search_show_thumb'] : '1', '1' ); ?>>
+												Imagen / Thumbnail
+											</label>
+											<label style="font-size: 12px; font-weight: 600;">
+												<input type="checkbox" name="wpat_settings[live_search_show_price]" value="1" <?php checked( isset( $settings['live_search_show_price'] ) ? $settings['live_search_show_price'] : '1', '1' ); ?>>
+												Precio (con Oferta)
+											</label>
+											<label style="font-size: 12px; font-weight: 600;">
+												<input type="checkbox" name="wpat_settings[live_search_show_stock]" value="1" <?php checked( isset( $settings['live_search_show_stock'] ) ? $settings['live_search_show_stock'] : '1', '1' ); ?>>
+												Insignia de Stock
+											</label>
+										</div>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px;">
+										<label style="font-weight: 600;">
+											<input type="checkbox" name="wpat_settings[live_search_auto_replace]" value="1" <?php checked( isset( $settings['live_search_auto_replace'] ) ? $settings['live_search_auto_replace'] : '0', '1' ); ?>>
+											Reemplazar automáticamente el formulario de búsqueda por defecto de WooCommerce en la plantilla/tema
+										</label>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px;">
+										<label style="font-weight: 600; display: block; margin-bottom: 5px;">Uso mediante Shortcode:</label>
+										<code>[wpat_product_search placeholder="Buscar productos..."]</code>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
+										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
+									</div>
+								</div>
+							</div>
+
+							<!-- Módulo: Filtro por Facetas AJAX (WooCommerce) -->
+							<div class="wpat-module-card" style="margin-top: 20px;">
+								<div class="wpat-module-header">
+									<div class="wpat-module-info">
+										<h3>Filtro por Facetas AJAX para Productos (Estilo FacetWP)</h3>
+										<p>Permite a los usuarios filtrar productos instantáneamente por Precio, Atributos (Colores/Tallas), Categorías, Stock, Rating u Ordenación sin recargar la página (shortcode <code>[wpat_product_facets]</code>).</p>
+									</div>
+									<?php $this->render_module_toggle( 'woo-facets', $settings, true ); ?>
+								</div>
+								<div class="wpat-module-body" style="display: none;">
+									<div class="wpat-field-group">
+										<label style="font-weight: 600;">
+											<input type="checkbox" name="wpat_settings[facets_enabled]" value="1" <?php checked( isset( $settings['facets_enabled'] ) ? $settings['facets_enabled'] : '0', '1' ); ?>>
+											Activar Filtro por Facetas AJAX en la Tienda
+										</label>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px; background: #f8fafc; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 6px;">
+										<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700;">🎛️ Facetas a Habilitar en el Widget / Sidebar:</h4>
+										<?php
+										$facets_cfg = isset( $settings['facets_config'] ) && is_array( $settings['facets_config'] ) ? $settings['facets_config'] : array( 'sort', 'price', 'category', 'stock', 'rating' );
+										?>
+										<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+											<label style="font-size: 12px;">
+												<input type="checkbox" name="wpat_settings[facets_config][]" value="sort" <?php checked( in_array( 'sort', $facets_cfg, true ) ); ?>>
+												🔃 Selector de Ordenación
+											</label>
+											<label style="font-size: 12px;">
+												<input type="checkbox" name="wpat_settings[facets_config][]" value="price" <?php checked( in_array( 'price', $facets_cfg, true ) ); ?>>
+												💰 Rango de Precio (€)
+											</label>
+											<label style="font-size: 12px;">
+												<input type="checkbox" name="wpat_settings[facets_config][]" value="category" <?php checked( in_array( 'category', $facets_cfg, true ) ); ?>>
+												🏷️ Categorías de Producto
+											</label>
+											<label style="font-size: 12px;">
+												<input type="checkbox" name="wpat_settings[facets_config][]" value="attribute" <?php checked( in_array( 'attribute', $facets_cfg, true ) ); ?>>
+												🎨 Atributos (Color, Talla...)
+											</label>
+											<label style="font-size: 12px;">
+												<input type="checkbox" name="wpat_settings[facets_config][]" value="stock" <?php checked( in_array( 'stock', $facets_cfg, true ) ); ?>>
+												📦 Stock y En Oferta
+											</label>
+											<label style="font-size: 12px;">
+												<input type="checkbox" name="wpat_settings[facets_config][]" value="rating" <?php checked( in_array( 'rating', $facets_cfg, true ) ); ?>>
+												⭐️ Valoración (Estrellas)
+											</label>
+										</div>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px;">
+										<label style="font-weight: 600; display: block; margin-bottom: 5px;">Uso mediante Shortcode:</label>
+										<code>[wpat_product_facets title="Filtrar Productos"]</code>
+										<p class="description" style="margin-top: 4px;">Inserta este shortcode en la barra lateral (Sidebar) o plantilla de la tienda.</p>
 									</div>
 
 									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">

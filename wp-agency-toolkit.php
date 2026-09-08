@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     3.10.0
+ * Version:     3.11.0
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '3.10.0' );
+define( 'WPAT_VERSION', '3.11.0' );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -155,6 +155,14 @@ class WPAT_Main {
 		'woo-pdf-invoices' => array(
 			'file'  => 'includes/modules/class-wpat-woo-pdf-invoices.php',
 			'class' => 'WPAT_Woo_PDF_Invoices',
+		),
+		'woo-live-search' => array(
+			'file'  => 'includes/modules/class-wpat-woo-live-search.php',
+			'class' => 'WPAT_Woo_Live_Search',
+		),
+		'woo-facets' => array(
+			'file'  => 'includes/modules/class-wpat-woo-facets.php',
+			'class' => 'WPAT_Woo_Facets',
 		),
 	);
 
@@ -368,6 +376,22 @@ class WPAT_Main {
 			'pdf_company_footer'              => 'Gracias por su compra.',
 			'pdf_invoice_prefix'              => 'FACT-' . date( 'Y' ) . '-',
 			'pdf_invoice_next_num'            => '1',
+
+			// Opciones de Buscador AJAX en Vivo (WooCommerce)
+			'woo-live-search'                 => '0',
+			'live_search_enabled'             => '0',
+			'live_search_max_results'         => '5',
+			'live_search_show_thumb'          => '1',
+			'live_search_show_price'          => '1',
+			'live_search_show_stock'          => '1',
+			'live_search_show_meta'           => 'sku',
+			'live_search_auto_replace'        => '0',
+			'live_search_placeholder'         => 'Buscar productos por nombre, SKU o categoría...',
+
+			// Opciones de Filtro por Facetas AJAX (WooCommerce)
+			'woo-facets'                      => '0',
+			'facets_enabled'                  => '0',
+			'facets_config'                   => array( 'sort', 'price', 'category', 'stock', 'rating' ),
 
 			// Opciones de Detector de Incompatibilidades
 			'conflict-detector'           => '1',

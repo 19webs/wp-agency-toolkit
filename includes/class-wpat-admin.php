@@ -2737,11 +2737,11 @@ class WPAT_Admin {
 								</div>
 							</div>
 
-							<!-- Módulo: Opciones Extra y Swatches de Producto -->
+							<!-- Módulo: Campos extras en productos (Woocommerce) -->
 							<div class="wpat-module-card" style="margin-top: 20px;">
 								<div class="wpat-module-header">
 									<div class="wpat-module-info">
-										<h3>Opciones Extra y Swatches de Producto (WooCommerce)</h3>
+										<h3>Campos extras en productos (Woocommerce)</h3>
 										<p>Añade campos adicionales a los productos (grabados, papel regalo, muestrarios de color) con recargos de precio automáticos en el carrito y pedido.</p>
 									</div>
 									<?php $this->render_module_toggle( 'woo-extra-options', $settings, true ); ?>
@@ -2750,7 +2750,7 @@ class WPAT_Admin {
 									<div class="wpat-field-group">
 										<label style="font-weight: 600;">
 											<input type="checkbox" name="wpat_settings[extra_options_enabled]" value="1" <?php checked( isset( $settings['extra_options_enabled'] ) ? $settings['extra_options_enabled'] : '0', '1' ); ?>>
-											Activar Opciones Extra y Swatches en Productos
+											Activar Campos extras en productos
 										</label>
 										<div style="margin-top: 10px; padding: 10px 14px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; font-size: 12px; color: #0369a1;">
 											💡 <strong>Formato de Opciones Especiales:</strong><br/>

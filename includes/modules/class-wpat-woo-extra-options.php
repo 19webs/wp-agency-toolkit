@@ -1,6 +1,6 @@
 <?php
 /**
- * Módulo: Opciones Extra en Productos y Swatches (WooCommerce) - WP Agency Toolkit
+ * Módulo: Campos extras en productos (Woocommerce) - WP Agency Toolkit
  */
 
 defined( 'ABSPATH' ) || exit;

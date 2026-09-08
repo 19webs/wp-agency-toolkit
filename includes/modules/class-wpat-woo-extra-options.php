@@ -45,6 +45,14 @@ class WPAT_Woo_Extra_Options {
 		// Recalcular precio dinámico en el carrito (prioridad 99)
 		add_action( 'woocommerce_before_calculate_totals', array( $this, 'calculate_extra_option_prices' ), 99, 1 );
 
+		// Filtros universales de precio para el objeto WC_Product (prioridad 99)
+		add_filter( 'woocommerce_product_get_price', array( $this, 'filter_product_get_price' ), 99, 2 );
+		add_filter( 'woocommerce_product_variation_get_price', array( $this, 'filter_product_get_price' ), 99, 2 );
+
+		// Filtros de formato HTML de precio y subtotal en tablas de carrito
+		add_filter( 'woocommerce_cart_item_price', array( $this, 'filter_cart_item_price' ), 99, 3 );
+		add_filter( 'woocommerce_cart_item_subtotal', array( $this, 'filter_cart_item_subtotal' ), 99, 3 );
+
 		// Mostrar metadatos en el carrito y en el checkout
 		add_filter( 'woocommerce_get_item_data', array( $this, 'display_extra_options_in_cart' ), 10, 2 );
 
@@ -609,11 +617,66 @@ class WPAT_Woo_Extra_Options {
 			}
 
 			if ( $extra_price > 0 ) {
-				$product->set_price( $base_price + $extra_price );
+				$new_price = $base_price + $extra_price;
+
+				// Inyectar propiedades directas en el objeto WC_Product
+				$product->wpat_base_price  = $base_price;
+				$product->wpat_extra_price = $extra_price;
+				$product->set_price( $new_price );
 			}
 		}
 
 		return $cart_item;
+	}
+
+	/**
+	 * Intercepta get_price() del producto si tiene un precio extra calculado.
+	 */
+	public function filter_product_get_price( $price, $product ) {
+		if ( is_object( $product ) && isset( $product->wpat_extra_price ) && floatval( $product->wpat_extra_price ) > 0 ) {
+			$base = isset( $product->wpat_base_price ) ? floatval( $product->wpat_base_price ) : floatval( $price );
+			return $base + floatval( $product->wpat_extra_price );
+		}
+		return $price;
+	}
+
+	/**
+	 * Asegura que el formato HTML de precio en la tabla del carrito muestre el precio recalculado.
+	 */
+	public function filter_cart_item_price( $price_html, $cart_item, $cart_item_key ) {
+		if ( ! empty( $cart_item['wpat_extra_options'] ) && is_array( $cart_item['wpat_extra_options'] ) && isset( $cart_item['data'] ) && is_object( $cart_item['data'] ) ) {
+			$extra_price = 0;
+			foreach ( $cart_item['wpat_extra_options'] as $opt ) {
+				if ( isset( $opt['price'] ) && floatval( $opt['price'] ) > 0 ) {
+					$extra_price += floatval( $opt['price'] );
+				}
+			}
+			if ( $extra_price > 0 ) {
+				$base_price = isset( $cart_item['wpat_base_price'] ) && floatval( $cart_item['wpat_base_price'] ) > 0 ? floatval( $cart_item['wpat_base_price'] ) : floatval( $cart_item['data']->get_price() );
+				return wc_price( $base_price + $extra_price );
+			}
+		}
+		return $price_html;
+	}
+
+	/**
+	 * Asegura que el formato HTML de subtotal en la tabla del carrito muestre el subtotal recalculado.
+	 */
+	public function filter_cart_item_subtotal( $subtotal_html, $cart_item, $cart_item_key ) {
+		if ( ! empty( $cart_item['wpat_extra_options'] ) && is_array( $cart_item['wpat_extra_options'] ) && isset( $cart_item['data'] ) && is_object( $cart_item['data'] ) ) {
+			$extra_price = 0;
+			foreach ( $cart_item['wpat_extra_options'] as $opt ) {
+				if ( isset( $opt['price'] ) && floatval( $opt['price'] ) > 0 ) {
+					$extra_price += floatval( $opt['price'] );
+				}
+			}
+			if ( $extra_price > 0 ) {
+				$base_price = isset( $cart_item['wpat_base_price'] ) && floatval( $cart_item['wpat_base_price'] ) > 0 ? floatval( $cart_item['wpat_base_price'] ) : floatval( $cart_item['data']->get_price() );
+				$quantity   = isset( $cart_item['quantity'] ) ? intval( $cart_item['quantity'] ) : 1;
+				return wc_price( ( $base_price + $extra_price ) * $quantity );
+			}
+		}
+		return $subtotal_html;
 	}
 
 	/**

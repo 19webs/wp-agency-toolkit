@@ -36,7 +36,13 @@ class WPAT_Woo_Extra_Options {
 		// Guardar datos de opciones en el elemento del carrito
 		add_filter( 'woocommerce_add_cart_item_data', array( $this, 'add_cart_item_data' ), 10, 3 );
 
-		// Ajustar precio dinámico en el carrito (prioridad 99)
+		// Restaurar metadatos desde la sesión y asignar precio dinámico en cada petición
+		add_filter( 'woocommerce_get_cart_item_from_session', array( $this, 'get_cart_item_from_session' ), 10, 2 );
+
+		// Asignar precio dinámico inmediatamente al añadir al carrito
+		add_filter( 'woocommerce_add_cart_item', array( $this, 'add_cart_item' ), 10, 1 );
+
+		// Recalcular precio dinámico en el carrito (prioridad 99)
 		add_action( 'woocommerce_before_calculate_totals', array( $this, 'calculate_extra_option_prices' ), 99, 1 );
 
 		// Mostrar metadatos en el carrito y en el checkout
@@ -550,7 +556,7 @@ class WPAT_Woo_Extra_Options {
 			$target_id = $variation_id ? $variation_id : $product_id;
 			$prod_obj  = wc_get_product( $target_id );
 			if ( $prod_obj ) {
-				$cart_item_data['wpat_base_price'] = floatval( $prod_obj->get_price( 'edit' ) );
+				$cart_item_data['wpat_base_price'] = floatval( $prod_obj->get_price() );
 			}
 		}
 
@@ -558,29 +564,69 @@ class WPAT_Woo_Extra_Options {
 	}
 
 	/**
-	 * Calcula el precio dinámico sumando el coste de las opciones extra.
+	 * Restaura los metadatos de opciones extra desde la sesión de WooCommerce.
+	 */
+	public function get_cart_item_from_session( $cart_item, $values ) {
+		if ( isset( $values['wpat_extra_options'] ) ) {
+			$cart_item['wpat_extra_options'] = $values['wpat_extra_options'];
+		}
+		if ( isset( $values['wpat_base_price'] ) ) {
+			$cart_item['wpat_base_price'] = $values['wpat_base_price'];
+		}
+
+		return $this->apply_custom_price_to_cart_item( $cart_item );
+	}
+
+	/**
+	 * Aplica el precio personalizado cuando el elemento es añadido al carrito.
+	 */
+	public function add_cart_item( $cart_item ) {
+		return $this->apply_custom_price_to_cart_item( $cart_item );
+	}
+
+	/**
+	 * Asigna el precio recalculado (Precio Base + Opciones Extra) al objeto WC_Product del carrito.
+	 */
+	public function apply_custom_price_to_cart_item( $cart_item ) {
+		if ( ! empty( $cart_item['wpat_extra_options'] ) && is_array( $cart_item['wpat_extra_options'] ) && isset( $cart_item['data'] ) && is_object( $cart_item['data'] ) ) {
+			$extra_price = 0;
+			foreach ( $cart_item['wpat_extra_options'] as $opt ) {
+				if ( isset( $opt['price'] ) && floatval( $opt['price'] ) > 0 ) {
+					$extra_price += floatval( $opt['price'] );
+				}
+			}
+
+			if ( $extra_price > 0 ) {
+				$product    = $cart_item['data'];
+				$base_price = isset( $cart_item['wpat_base_price'] ) && floatval( $cart_item['wpat_base_price'] ) > 0
+					? floatval( $cart_item['wpat_base_price'] )
+					: floatval( $product->get_price() );
+
+				$product->set_price( $base_price + $extra_price );
+			}
+		}
+
+		return $cart_item;
+	}
+
+	/**
+	 * Recalcula el precio dinámico antes de calcular los totales del carrito.
 	 */
 	public function calculate_extra_option_prices( $cart ) {
 		if ( is_admin() && ! wp_doing_ajax() && ! ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
 			return;
 		}
 
+		if ( ! is_object( $cart ) || ! method_exists( $cart, 'get_cart' ) ) {
+			$cart = WC()->cart;
+		}
+
+		if ( ! $cart || ! method_exists( $cart, 'get_cart' ) ) {
+			return;
+		}
+
 		foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
-			if ( ! empty( $cart_item['wpat_extra_options'] ) && is_array( $cart_item['wpat_extra_options'] ) ) {
-				$extra_price = 0;
-				foreach ( $cart_item['wpat_extra_options'] as $opt ) {
-					if ( isset( $opt['price'] ) && floatval( $opt['price'] ) > 0 ) {
-						$extra_price += floatval( $opt['price'] );
-					}
-				}
-
-				if ( $extra_price > 0 ) {
-					$product = $cart_item['data'];
-
-					$base_price = isset( $cart_item['wpat_base_price'] ) && floatval( $cart_item['wpat_base_price'] ) > 0 ? floatval( $cart_item['wpat_base_price'] ) : floatval( $product->get_price( 'edit' ) );
-					$product->set_price( $base_price + $extra_price );
-				}
-			}
+			$this->apply_custom_price_to_cart_item( $cart_item );
 		}
 	}
 

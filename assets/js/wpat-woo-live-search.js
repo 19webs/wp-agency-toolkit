@@ -44,7 +44,7 @@ jQuery(document).ready(function($) {
 							}
 
 							html += '<div class="wpat-live-search-info">';
-							html += '<h4 class="wpat-live-search-title">' + item.title + '</h4>';
+							html += '<div class="wpat-live-search-title">' + item.title + '</div>';
 							if (item.meta_text) {
 								html += '<span class="wpat-live-search-meta">' + item.meta_text + '</span>';
 							}

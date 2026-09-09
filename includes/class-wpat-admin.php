@@ -5741,3 +5741,4 @@ class WPAT_Admin {
 		) );
 	}
 }
+}

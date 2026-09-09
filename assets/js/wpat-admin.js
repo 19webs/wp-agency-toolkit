@@ -95,6 +95,9 @@ jQuery(document).ready(function($) {
 
 	// Función central para aplicar filtrado por Categoría
 	function applyCategoryFilter(cat) {
+		if (!cat || cat === 'undefined' || cat === 'null') {
+			cat = 'all';
+		}
 		$('.wpat-cat-item, .wpat-cat-pill').removeClass('active');
 		$('.wpat-cat-item[data-cat="' + cat + '"], .wpat-cat-pill[data-cat="' + cat + '"]').addClass('active');
 		$('#wpat_mobile_cat_select').val(cat);
@@ -120,22 +123,28 @@ jQuery(document).ready(function($) {
 	}
 
 	// Clics en la Navegación Vertical o Pills
-	$(document).on('click', '.wpat-cat-item, .wpat-cat-pill', function() {
+	$(document).on('click', '.wpat-cat-item[data-cat], .wpat-cat-pill[data-cat]', function() {
 		var cat = $(this).data('cat');
-		applyCategoryFilter(cat);
+		if (cat) {
+			applyCategoryFilter(cat);
+		}
 	});
 
 	// Cambio en el Selector Desplegable Móvil
 	$(document).on('change', '#wpat_mobile_cat_select', function() {
 		var cat = $(this).val();
-		applyCategoryFilter(cat);
+		if (cat) {
+			applyCategoryFilter(cat);
+		}
 	});
 
 	// Restaurar Categoría Activa al Cargar la Página
 	var urlParams = new URLSearchParams(window.location.search);
 	var savedCat = urlParams.get('cat') || localStorage.getItem('wpat_active_cat') || sessionStorage.getItem('wpat_active_cat');
-	if (savedCat) {
+	if (savedCat && savedCat !== 'undefined' && savedCat !== 'null') {
 		applyCategoryFilter(savedCat);
+	} else {
+		applyCategoryFilter('all');
 	}
 
 	// LÓGICA MODO CLARO / MODO OSCURO (DARK MODE)

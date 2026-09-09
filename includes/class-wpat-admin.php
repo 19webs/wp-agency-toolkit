@@ -2083,7 +2083,8 @@ class WPAT_Admin {
 												<span class="wpat-cat-label">⚙️ Sistema & Admin</span>
 												<span class="wpat-cat-badge">7</span>
 											</button>
-											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=tools' ) ); ?>" class="wpat-cat-item wpat-cat-link-item" style="text-decoration: none; margin-top: 6px; border-top: 1px dashed var(--wpat-border, #e2e8f0); padding-top: 8px; color: var(--wpat-primary, #2563eb);">
+											<div class="wpat-sidebar-divider"></div>
+											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=tools' ) ); ?>" class="wpat-cat-direct-link">
 												<span class="wpat-cat-label">🛠️ Salud & Limpieza BD</span>
 											</a>
 										</div>

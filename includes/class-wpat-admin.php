@@ -2111,11 +2111,11 @@ class WPAT_Admin {
 										<div class="wpat-cat-nav-list" style="display: flex; flex-direction: column; gap: 4px;">
 											<button type="button" class="wpat-cat-item active" data-cat="all">
 												<span class="wpat-cat-label">📌 Todos</span>
-												<span class="wpat-cat-badge">35</span>
+												<span class="wpat-cat-badge">34</span>
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="woocommerce">
 												<span class="wpat-cat-label">🛍️ WooCommerce</span>
-												<span class="wpat-cat-badge">10</span>
+												<span class="wpat-cat-badge">9</span>
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="security">
 												<span class="wpat-cat-label">🛡️ Seguridad</span>
@@ -2127,11 +2127,11 @@ class WPAT_Admin {
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="tools">
 												<span class="wpat-cat-label">🛠️ Herramientas</span>
-												<span class="wpat-cat-badge">7</span>
+												<span class="wpat-cat-badge">6</span>
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="system">
 												<span class="wpat-cat-label">⚙️ Sistema & Admin</span>
-												<span class="wpat-cat-badge">6</span>
+												<span class="wpat-cat-badge">7</span>
 											</button>
 										</div>
 									</aside>
@@ -2140,12 +2140,12 @@ class WPAT_Admin {
 									<div class="wpat-mobile-cat-container" style="display: none; width: 100%; margin-bottom: 15px;">
 										<label for="wpat_mobile_cat_select" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 6px;">Categoría:</label>
 										<select id="wpat_mobile_cat_select" style="width: 100%; height: 38px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 0 12px; font-weight: 600; font-size: 13px; background: #fff;">
-											<option value="all">📌 Todos (35)</option>
-											<option value="woocommerce">🛍️ WooCommerce (10)</option>
+											<option value="all">📌 Todos (34)</option>
+											<option value="woocommerce">🛍️ WooCommerce (9)</option>
 											<option value="security">🛡️ Seguridad (6)</option>
 											<option value="performance">⚡ Rendimiento & SEO (6)</option>
-											<option value="tools">🛠️ Herramientas (7)</option>
-											<option value="system">⚙️ Sistema & Admin (6)</option>
+											<option value="tools">🛠️ Herramientas (6)</option>
+											<option value="system">⚙️ Sistema & Admin (7)</option>
 										</select>
 									</div>
 
@@ -2180,9 +2180,9 @@ class WPAT_Admin {
 	/**
 	 * Renderiza el grid completo de 35 tarjetas de módulos en el Centro de Módulos.
 	 */
-	public function render_all_modules_grid_cards( $settings ) {
+		public function render_all_modules_grid_cards( $settings ) {
 		$modules_data = array(
-			// WOOCOMMERCE (10)
+			// WOOCOMMERCE (9)
 			array(
 				'id'          => 'woo-extra-options',
 				'title'       => 'Campos Extras & Swatches',
@@ -2241,35 +2241,38 @@ class WPAT_Admin {
 			array(
 				'id'          => 'woo-dni',
 				'title'       => 'Campo DNI / CIF',
-				'badge'       => 'Configuración',
+				'badge'       => 'Automático',
 				'badge_class' => 'tweak',
 				'desc'        => 'Inyecta un campo obligatorio de DNI/CIF en los datos de facturación de WooCommerce.',
 				'cat_class'   => 'cat-woocommerce cat-woo',
 				'icon'        => '🆔',
 				'icon_bg'     => 'woo',
-				'keywords'    => 'dni cif nif woocommerce checkout'
+				'keywords'    => 'dni cif nif woocommerce checkout',
+				'has_settings'=> false
 			),
 			array(
 				'id'          => 'woo-catalog',
 				'title'       => 'Modo Catálogo',
-				'badge'       => 'Configuración',
+				'badge'       => 'Automático',
 				'badge_class' => 'tweak',
 				'desc'        => 'Desactiva la compra de productos, ocultando precios o los botones de añadir al carrito.',
 				'cat_class'   => 'cat-woocommerce cat-woo',
 				'icon'        => '🏷️',
 				'icon_bg'     => 'woo',
-				'keywords'    => 'modo catalogo ocultar precios carrito'
+				'keywords'    => 'modo catalogo ocultar precios carrito',
+				'has_settings'=> false
 			),
 			array(
 				'id'          => 'woo-zoom',
 				'title'       => 'Zoom en Galería',
-				'badge'       => 'Configuración',
+				'badge'       => 'Automático',
 				'badge_class' => 'tweak',
 				'desc'        => 'Desactiva de forma independiente funciones de la galería como Zoom, Lightbox o Slider.',
 				'cat_class'   => 'cat-woocommerce cat-woo',
 				'icon'        => '🔎',
 				'icon_bg'     => 'woo',
-				'keywords'    => 'zoom galeria lightbox slider productos'
+				'keywords'    => 'zoom galeria lightbox slider productos',
+				'has_settings'=> false
 			),
 			array(
 				'id'          => 'woo-variation-swatches',
@@ -2283,7 +2286,7 @@ class WPAT_Admin {
 				'keywords'    => 'swatches variacion colores botones producto'
 			),
 
-			// SEGURIDAD & ACCESO (7)
+			// SEGURIDAD & ACCESO (6)
 			array(
 				'id'          => 'login-customizer',
 				'title'       => 'Personalizador del Login',
@@ -2350,30 +2353,8 @@ class WPAT_Admin {
 				'icon_bg'     => 'sec',
 				'keywords'    => 'ssl https contenido mixto redireccion 301'
 			),
-			array(
-				'id'          => 'hide_admin_bar',
-				'title'       => 'Restringir Barra & Acceso Admin',
-				'badge'       => 'Configuración',
-				'badge_class' => 'tweak',
-				'desc'        => 'Oculta la barra superior negra de WordPress y bloquea el acceso a wp-admin a clientes/suscriptores.',
-				'cat_class'   => 'cat-system cat-admin',
-				'icon'        => '🚫',
-				'icon_bg'     => 'sec',
-				'keywords'    => 'restringir barra admin wp-admin acceso clientes'
-			),
 
-			// RENDIMIENTO & CÓDIGO (4)
-			array(
-				'id'          => 'snippets',
-				'title'       => 'Snippets de Código',
-				'badge'       => 'Subpágina',
-				'badge_class' => 'subpage',
-				'desc'        => 'Gestor ligero de fragmentos PHP, CSS y JS sin editar functions.php con ejecución segura.',
-				'cat_class'   => 'cat-tools',
-				'icon'        => '💻',
-				'icon_bg'     => 'perf',
-				'keywords'    => 'snippets codigo php css js fragmentos'
-			),
+			// RENDIMIENTO & SEO (6)
 			array(
 				'id'          => 'performance',
 				'title'       => 'Optimización de Rendimiento',
@@ -2397,19 +2378,6 @@ class WPAT_Admin {
 				'keywords'    => 'deshabilitar comentarios trackbacks spam'
 			),
 			array(
-				'id'          => 'duplicator',
-				'title'       => 'Duplicador Entradas/Páginas',
-				'badge'       => 'Automático',
-				'badge_class' => 'tweak',
-				'desc'        => 'Duplica entradas, páginas o CPTs con 1-clic conservando la estructura y campos personalizados.',
-				'cat_class'   => 'cat-tools',
-				'icon'        => '📋',
-				'icon_bg'     => 'perf',
-				'keywords'    => 'duplicar clonar entradas paginas cpts'
-			),
-
-			// OPTIMIZACIÓN DE MEDIOS (2)
-			array(
 				'id'          => 'image-optimizer',
 				'title'       => 'Optimización Medios & WebP',
 				'badge'       => 'Configuración',
@@ -2429,36 +2397,9 @@ class WPAT_Admin {
 				'cat_class'   => 'cat-performance cat-perf',
 				'icon'        => '📐',
 				'icon_bg'     => 'perf',
-				'keywords'    => 'svg vectorial biblioteca medios soporte'
+				'keywords'    => 'svg vectorial biblioteca medios soporte',
+				'has_settings'=> false
 			),
-
-			// IMPORTADOR DE KITS (1)
-			array(
-				'id'          => 'envato-importer',
-				'title'       => 'Importador Kits Template',
-				'badge'       => 'Configuración',
-				'badge_class' => 'tweak',
-				'desc'        => 'Importador masivo de kits de maquetación de Envato Elements y plantillas listas para Elementor.',
-				'cat_class'   => 'cat-system cat-admin',
-				'icon'        => '📥',
-				'icon_bg'     => 'admin',
-				'keywords'    => 'importador kits plantillas envato elementor'
-			),
-
-			// CONFIGURACIÓN SMTP (1)
-			array(
-				'id'          => 'smtp',
-				'title'       => 'Servidor SMTP',
-				'badge'       => 'Configuración',
-				'badge_class' => 'tweak',
-				'desc'        => 'Servicio seguro de envío de correo SMTP con soporte TLS/SSL y comprobación de envío.',
-				'cat_class'   => 'cat-system cat-admin',
-				'icon'        => '📧',
-				'icon_bg'     => 'admin',
-				'keywords'    => 'smtp correo envio email servidor tls ssl'
-			),
-
-			// OPTIMIZACIÓN SEO (1)
 			array(
 				'id'          => 'seo',
 				'title'       => 'Optimización SEO Integrada',
@@ -2470,8 +2411,64 @@ class WPAT_Admin {
 				'icon_bg'     => 'perf',
 				'keywords'    => 'seo optimizacion meta titulos auditoria alt'
 			),
+			array(
+				'id'          => 'reading-progress',
+				'title'       => 'Progreso de Lectura',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Muestra una barra de progreso superior animada al hacer scroll en artículos del blog.',
+				'cat_class'   => 'cat-performance cat-perf',
+				'icon'        => '📏',
+				'icon_bg'     => 'perf',
+				'keywords'    => 'barra progreso lectura scroll blog'
+			),
 
-			// INTEGRACIONES (2)
+			// HERRAMIENTAS (6)
+			array(
+				'id'          => 'snippets',
+				'title'       => 'Snippets de Código',
+				'badge'       => 'Subpágina',
+				'badge_class' => 'subpage',
+				'desc'        => 'Gestor ligero de fragmentos PHP, CSS y JS sin editar functions.php con ejecución segura.',
+				'cat_class'   => 'cat-tools',
+				'icon'        => '💻',
+				'icon_bg'     => 'perf',
+				'keywords'    => 'snippets codigo php css js fragmentos'
+			),
+			array(
+				'id'          => 'duplicator',
+				'title'       => 'Duplicador Entradas/Páginas',
+				'badge'       => 'Automático',
+				'badge_class' => 'tweak',
+				'desc'        => 'Duplica entradas, páginas o CPTs con 1-clic conservando la estructura y campos personalizados.',
+				'cat_class'   => 'cat-tools',
+				'icon'        => '📋',
+				'icon_bg'     => 'perf',
+				'keywords'    => 'duplicar clonar entradas paginas cpts',
+				'has_settings'=> false
+			),
+			array(
+				'id'          => 'post-csv-importer',
+				'title'       => 'Exportar / Importar CSV & JSON',
+				'badge'       => 'Herramienta',
+				'badge_class' => 'tweak',
+				'desc'        => 'Respalda o migra contenidos completos en JSON o edita páginas/entradas en masa vía CSV.',
+				'cat_class'   => 'cat-tools',
+				'icon'        => '📊',
+				'icon_bg'     => 'admin',
+				'keywords'    => 'exportador importador csv json respaldo migracion'
+			),
+			array(
+				'id'          => 'accessibility',
+				'title'       => 'Accesibilidad Web',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Botón flotante de accesibilidad para ajustar tamaño de letra, contraste y modo de lectura.',
+				'cat_class'   => 'cat-tools',
+				'icon'        => '♿',
+				'icon_bg'     => 'perf',
+				'keywords'    => 'accesibilidad fuente contraste lectura boton flotante'
+			),
 			array(
 				'id'          => 'integrations',
 				'title'       => 'Integraciones & Scripts',
@@ -2495,7 +2492,7 @@ class WPAT_Admin {
 				'keywords'    => 'whatsapp boton flotante contacto chat'
 			),
 
-			// CONFIGURACIÓN INICIAL (3)
+			// SISTEMA & ADMIN (7)
 			array(
 				'id'          => 'initial-setup',
 				'title'       => 'Configuración Inicial Sitio',
@@ -2521,99 +2518,97 @@ class WPAT_Admin {
 			array(
 				'id'          => 'silent-skin',
 				'title'       => 'Ocultar Huella WPAT',
-				'badge'       => 'Configuración',
+				'badge'       => 'Automático',
 				'badge_class' => 'tweak',
 				'desc'        => 'Modo Marca Blanca para agencias: oculta las menciones de WP Agency Toolkit a los clientes final.',
 				'cat_class'   => 'cat-system cat-admin',
 				'icon'        => '🎭',
 				'icon_bg'     => 'admin',
-				'keywords'    => 'marca blanca marca agencia huella silent skin'
-			),
-
-			// SALUD & HERRAMIENTAS (4)
-			array(
-				'id'          => 'post-csv-importer',
-				'title'       => 'Exportar / Importar CSV & JSON',
-				'badge'       => 'Herramienta',
-				'badge_class' => 'tweak',
-				'desc'        => 'Respalda o migra contenidos completos en JSON o edita páginas/entradas en masa vía CSV.',
-				'cat_class'   => 'cat-tools',
-				'icon'        => '📊',
-				'icon_bg'     => 'admin',
-				'keywords'    => 'exportador importador csv json respaldo migracion'
+				'keywords'    => 'marca blanca marca agencia huella silent skin',
+				'has_settings'=> false
 			),
 			array(
-				'id'          => 'conflict-detector',
-				'title'       => 'Detector de Conflictos',
-				'badge'       => 'Herramienta',
-				'badge_class' => 'tweak',
-				'desc'        => 'Diagnostica incompatibilidades entre plugins, errores PHP fatales y conflictos de JS.',
-				'cat_class'   => 'cat-tools',
-				'icon'        => '🩺',
-				'icon_bg'     => 'admin',
-				'keywords'    => 'detector conflictos plugins errores php diagnostico'
-			),
-			array(
-				'id'          => 'accessibility',
-				'title'       => 'Accesibilidad Web',
+				'id'          => 'hide_admin_bar',
+				'title'       => 'Restringir Barra & Acceso Admin',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
-				'desc'        => 'Botón flotante de accesibilidad para ajustar tamaño de letra, contraste y modo de lectura.',
-				'cat_class'   => 'cat-tools',
-				'icon'        => '♿',
-				'icon_bg'     => 'perf',
-				'keywords'    => 'accesibilidad fuente contraste lectura boton flotante'
+				'desc'        => 'Oculta la barra superior negra de WordPress y bloquea el acceso a wp-admin a clientes/suscriptores.',
+				'cat_class'   => 'cat-system cat-admin',
+				'icon'        => '🚫',
+				'icon_bg'     => 'sec',
+				'keywords'    => 'restringir barra admin wp-admin acceso clientes'
 			),
 			array(
-				'id'          => 'reading-progress',
-				'title'       => 'Progreso de Lectura',
+				'id'          => 'smtp',
+				'title'       => 'Servidor SMTP',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
-				'desc'        => 'Muestra una barra de progreso superior animada al hacer scroll en artículos del blog.',
-				'cat_class'   => 'cat-performance cat-perf',
-				'icon'        => '📏',
-				'icon_bg'     => 'perf',
-				'keywords'    => 'barra progreso lectura scroll blog'
+				'desc'        => 'Servicio seguro de envío de correo SMTP con soporte TLS/SSL y comprobación de envío.',
+				'cat_class'   => 'cat-system cat-admin',
+				'icon'        => '📧',
+				'icon_bg'     => 'admin',
+				'keywords'    => 'smtp correo envio email servidor tls ssl'
+			),
+			array(
+				'id'          => 'envato-importer',
+				'title'       => 'Importador Kits Template',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Importador masivo de kits de maquetación de Envato Elements y plantillas listas para Elementor.',
+				'cat_class'   => 'cat-system cat-admin',
+				'icon'        => '📥',
+				'icon_bg'     => 'admin',
+				'keywords'    => 'importador kits plantillas envato elementor'
 			),
 			array(
 				'id'          => 'tools',
 				'title'       => 'Salud & Limpieza BD',
 				'badge'       => 'Herramienta',
 				'badge_class' => 'subpage',
-				'desc'        => 'Limpieza profunda de la base de datos, escaneo de imágenes huérfanas e informes del sistema.',
+				'desc'        => 'Limpieza profunda de la base de datos, detector de conflictos, escaneo de imágenes huérfanas e informes.',
 				'cat_class'   => 'cat-system cat-admin',
 				'icon'        => '🛠️',
 				'icon_bg'     => 'admin',
-				'keywords'    => 'salud herramientas base de datos imagenes no usadas'
+				'keywords'    => 'salud herramientas base de datos imagenes no usadas detector conflictos',
+				'always_active'=> true
 			),
 		);
 
 		foreach ( $modules_data as $mod ) {
 			$is_active = ( isset( $settings[ $mod['id'] ] ) && '1' === $settings[ $mod['id'] ] );
+			$has_settings = ! isset( $mod['has_settings'] ) || true === $mod['has_settings'];
+			$is_always_active = isset( $mod['always_active'] ) && true === $mod['always_active'];
 			?>
 			<div class="wpat-module-grid-card <?php echo esc_attr( $mod['cat_class'] ); ?>" data-name="<?php echo esc_attr( $mod['keywords'] ); ?>">
 				<div class="wpat-card-top">
 					<div class="wpat-card-icon-box <?php echo esc_attr( $mod['icon_bg'] ); ?>"><?php echo $mod['icon']; ?></div>
-					<label class="wpat-toggle-switch">
-						<input type="checkbox" class="wpat-ajax-toggle-module" data-module="<?php echo esc_attr( $mod['id'] ); ?>" <?php checked( $is_active ); ?>>
-						<span class="wpat-toggle-slider"></span>
-					</label>
+					<?php if ( $is_always_active ) : ?>
+						<span class="wpat-badge" style="background: #e2e8f0; color: #475569; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 12px;">Siempre Activo</span>
+					<?php else : ?>
+						<label class="wpat-toggle-switch">
+							<input type="checkbox" class="wpat-ajax-toggle-module" data-module="<?php echo esc_attr( $mod['id'] ); ?>" <?php checked( $is_active ); ?>>
+							<span class="wpat-toggle-slider"></span>
+						</label>
+					<?php endif; ?>
 				</div>
 				<div class="wpat-card-content">
 					<h3><?php echo esc_html( $mod['title'] ); ?> <span class="wpat-badge-<?php echo esc_attr( $mod['badge_class'] ); ?>"><?php echo esc_html( $mod['badge'] ); ?></span></h3>
 					<p><?php echo esc_html( $mod['desc'] ); ?></p>
 				</div>
 				<div class="wpat-card-bottom">
-					<span class="wpat-module-status-indicator <?php echo $is_active ? 'active' : ''; ?>">
-						<span class="dot"></span> <span class="text"><?php echo $is_active ? 'Activo' : 'Inactivo'; ?></span>
+					<span class="wpat-module-status-indicator <?php echo ( $is_always_active || $is_active ) ? 'active' : ''; ?>">
+						<span class="dot"></span> <span class="text"><?php echo ( $is_always_active || $is_active ) ? 'Activo' : 'Inactivo'; ?></span>
 					</span>
-					<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'wp-agency-toolkit', 'mod' => $mod['id'], 'cat' => isset( $_GET['cat'] ) ? sanitize_key( $_GET['cat'] ) : '' ), admin_url( 'admin.php' ) ) ); ?>" class="wpat-card-action-btn primary <?php echo $is_active ? '' : 'disabled'; ?>">
-						Ajustes ⚙️
-					</a>
+					<?php if ( $has_settings ) : ?>
+						<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'wp-agency-toolkit', 'mod' => $mod['id'], 'cat' => isset( $_GET['cat'] ) ? sanitize_key( $_GET['cat'] ) : '' ), admin_url( 'admin.php' ) ) ); ?>" class="wpat-card-action-btn primary <?php echo ( $is_always_active || $is_active ) ? '' : 'disabled'; ?>">
+							<?php echo ( $mod['id'] === 'tools' ) ? 'Herramientas ⚙️' : 'Ajustes ⚙️'; ?>
+						</a>
+					<?php endif; ?>
 				</div>
 			</div>
 			<?php
 		}
+	}
 	}
 
 	/**
@@ -2622,7 +2617,119 @@ class WPAT_Admin {
 		/**
 	 * Renderiza únicamente la vista aislada / standalone de un módulo individual.
 	 */
-		public function render_single_module_standalone_view( $mod_id, $settings ) {
+		
+	/**
+	 * Renderiza el contenido del Importador de Kits de Envato.
+	 */
+	public function render_tab_kits_content( $settings ) {
+		if ( ! class_exists( 'WPAT_Envato_Importer' ) ) {
+			require_once WPAT_PATH . 'includes/modules/class-wpat-envato-importer.php';
+		}
+		$importer = WPAT_Envato_Importer::get_instance();
+		$kits     = $importer->get_kits_with_plugin_status();
+		?>
+		<div class="wpat-module-card" style="margin-bottom: 25px;">
+			<div class="wpat-module-header">
+				<div class="wpat-module-info">
+					<h3>Importador de Template Kits (Envato & Elementor)</h3>
+					<p>Sube un paquete ZIP de un Template Kit de Envato Elements u otra fuente compatible para importar sus plantillas directamente a Elementor.</p>
+				</div>
+				<?php $this->render_module_toggle( 'envato-importer', $settings, true ); ?>
+			</div>
+			<div class="wpat-module-body" style="display: block; padding: 20px;">
+				<div class="wpat-kit-upload-box" style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 25px; text-align: center; margin-bottom: 25px;">
+					<span class="dashicons dashicons-upload" style="font-size: 36px; width: 36px; height: 36px; color: #64748b; margin-bottom: 10px; display: inline-block;"></span>
+					<h4 style="margin: 0 0 5px 0; font-size: 15px; font-weight: 600;">Subir Nuevo Kit de Plantillas (Archivo ZIP)</h4>
+					<p style="margin: 0 0 15px 0; color: #64748b; font-size: 13px;">Selecciona el archivo .zip descargado directamente de Envato Elements.</p>
+					<form id="wpat_envato_upload_form" style="display: inline-flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center;">
+						<?php wp_nonce_field( 'wpat_envato_importer_nonce', 'wpat_envato_nonce' ); ?>
+						<input type="file" name="kit_zip" id="wpat_kit_zip_input" accept=".zip" style="font-size: 13px;" required />
+						<button type="submit" class="button button-primary" id="wpat_upload_kit_btn">Subir y Procesar Kit</button>
+					</form>
+					<div id="wpat_kit_upload_status" style="margin-top: 12px; font-size: 13px; font-weight: 600; display: none;"></div>
+				</div>
+
+				<h4 style="margin: 0 0 15px 0; font-size: 16px; font-weight: 700;">Kits de Plantillas Instalados</h4>
+				<?php if ( ! empty( $kits ) ) : ?>
+					<div class="wpat-kits-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+						<?php foreach ( $kits as $slug => $kit ) : ?>
+							<div class="wpat-kit-card" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+								<?php if ( ! empty( $kit['thumbnail'] ) ) : ?>
+									<img src="<?php echo esc_url( $kit['thumbnail'] ); ?>" alt="<?php echo esc_attr( $kit['title'] ); ?>" style="width: 100%; height: 160px; object-fit: cover;" />
+								<?php endif; ?>
+								<div style="padding: 15px;">
+									<h4 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 700;"><?php echo esc_html( $kit['title'] ); ?></h4>
+									<p style="margin: 0 0 12px 0; font-size: 12px; color: #64748b;">
+										<strong>Plantillas incluidas:</strong> <?php echo count( isset( $kit['templates'] ) ? $kit['templates'] : array() ); ?>
+									</p>
+
+									<?php if ( ! empty( $kit['required_plugins'] ) ) : ?>
+										<div style="margin-bottom: 12px; font-size: 11px; background: #f8fafc; padding: 8px 10px; border-radius: 4px; border: 1px solid #e2e8f0;">
+											<strong>Requisitos:</strong>
+											<ul style="margin: 4px 0 0 15px; padding: 0; list-style-type: disc;">
+												<?php foreach ( $kit['required_plugins'] as $req ) : ?>
+													<li style="color: <?php echo ! empty( $req['active'] ) ? '#16a34a' : '#dc2626'; ?>;">
+														<?php echo esc_html( $req['name'] ); ?> 
+														(<?php echo ! empty( $req['active'] ) ? 'Activo' : ( ! empty( $req['installed'] ) ? 'Instalado (Inactivo)' : 'No Instalado' ); ?>)
+													</li>
+												<?php endforeach; ?>
+											</ul>
+										</div>
+									<?php endif; ?>
+
+									<button type="button" class="button button-link-delete wpat-delete-kit-btn" data-slug="<?php echo esc_attr( $slug ); ?>" style="color: #ef4444; text-decoration: none;">Eliminar Kit</button>
+								</div>
+							</div>
+						<?php endforeach; ?>
+					</div>
+				<?php else : ?>
+					<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; text-align: center; border-radius: 6px; color: #64748b;">
+						No hay kits de plantillas subidos actualmente. Sube un archivo .zip para comenzar.
+					</div>
+				<?php endif; ?>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Renderiza el contenido de Importación/Exportación CSV & JSON.
+	 */
+	public function render_tab_tools_content( $settings ) {
+		if ( ! class_exists( 'WPAT_Post_CSV_Importer' ) ) {
+			require_once WPAT_PATH . 'includes/modules/class-wpat-post-csv-importer.php';
+		}
+		?>
+		<div class="wpat-module-card" style="margin-bottom: 25px;">
+			<div class="wpat-module-header">
+				<div class="wpat-module-info">
+					<h3>Exportar e Importar Entradas/Páginas (CSV & JSON)</h3>
+					<p>Exporta entradas, páginas o CPTs a un archivo CSV editable en Excel/Google Sheets, o importa contenidos masivamente con imágenes destacadas y taxonomías.</p>
+				</div>
+				<?php $this->render_module_toggle( 'post-csv-importer', $settings, true ); ?>
+			</div>
+			<div class="wpat-module-body" style="display: block; padding: 20px;">
+				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+					<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px;">
+						<h4 style="margin: 0 0 8px 0; font-size: 15px; font-weight: 700;">📤 Exportar Contenidos</h4>
+						<p style="margin: 0 0 15px 0; font-size: 13px; color: #64748b;">Descarga todas las entradas o páginas del sitio en un archivo CSV estructurado.</p>
+						<a href="<?php echo esc_url( admin_url( 'admin-ajax.php?action=wpat_csv_export_posts' ) ); ?>" class="button button-secondary">Descargar CSV de Entradas</a>
+						<a href="<?php echo esc_url( admin_url( 'admin-ajax.php?action=wpat_csv_download_sample' ) ); ?>" class="button button-link" style="margin-left: 10px;">Plantilla de Ejemplo CSV</a>
+					</div>
+					<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px;">
+						<h4 style="margin: 0 0 8px 0; font-size: 15px; font-weight: 700;">📥 Importación Masiva en Lote</h4>
+						<p style="margin: 0 0 15px 0; font-size: 13px; color: #64748b;">Sube un archivo CSV formateado para crear o actualizar publicaciones automáticamente.</p>
+						<input type="file" id="wpat_csv_import_file" accept=".csv" style="margin-bottom: 10px; display: block;" />
+						<button type="button" class="button button-primary" id="wpat_start_csv_import_btn">Iniciar Importación CSV</button>
+						<div id="wpat_csv_import_status" style="margin-top: 10px; font-size: 13px; display: none;"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	public function render_single_module_standalone_view( $mod_id, $settings ) {
 		echo '<input type="hidden" name="wpat_saving_module" value="' . esc_attr( $mod_id ) . '" />';
 		echo '<style>.wpat-module-body { display: block !important; } .wpat-collapse-btn { display: none !important; }</style>';
 

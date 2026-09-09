@@ -80,11 +80,23 @@ jQuery(document).ready(function($) {
 		});
 	});
 
-	// Filtrado por Categorías en Centro de Módulos
+	// Filtrado por Categorías en Centro de Módulos con Persistencia
 	$(document).on('click', '.wpat-cat-pill', function() {
 		$('.wpat-cat-pill').removeClass('active');
 		$(this).addClass('active');
 		var cat = $(this).data('cat');
+
+		localStorage.setItem('wpat_active_cat', cat);
+		sessionStorage.setItem('wpat_active_cat', cat);
+
+		// Actualizar parámetro cat en los enlaces de Ajustes de las tarjetas
+		$('.wpat-card-action-btn').each(function() {
+			var href = $(this).attr('href');
+			if (href) {
+				href = href.replace(/&cat=[^&]*/g, '') + '&cat=' + encodeURIComponent(cat);
+				$(this).attr('href', href);
+			}
+		});
 
 		$('.wpat-module-grid-card').each(function() {
 			if (cat === 'all' || $(this).hasClass('cat-' + cat) || $(this).hasClass(cat)) {
@@ -94,6 +106,13 @@ jQuery(document).ready(function($) {
 			}
 		});
 	});
+
+	// Restaurar Categoría Activa al Cargar la Página
+	var urlParams = new URLSearchParams(window.location.search);
+	var savedCat = urlParams.get('cat') || localStorage.getItem('wpat_active_cat') || sessionStorage.getItem('wpat_active_cat');
+	if (savedCat && $('.wpat-cat-pill[data-cat="' + savedCat + '"]').length) {
+		$('.wpat-cat-pill[data-cat="' + savedCat + '"]').trigger('click');
+	}
 
 	// Buscador en Vivo en Centro de Módulos
 	$(document).on('keyup input', '#wpat_modules_search_input', function() {

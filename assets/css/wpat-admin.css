@@ -752,3 +752,7 @@ textarea.code {
 
 
 
+
+
+/* Ocultar botones de colapso chevron */
+.wpat-collapse-btn { display: none !important; }

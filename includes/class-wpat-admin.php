@@ -1247,6 +1247,10 @@ class WPAT_Admin {
 			'woo-pdf-invoices',
 			'woo-live-search',
 			'woo-facets',
+			'post-csv-importer',
+			'anti-spam',
+			'silent-skin',
+			'tools',
 		);
 
 		if ( ! in_array( $module_id, $modules, true ) ) {
@@ -1990,7 +1994,7 @@ class WPAT_Admin {
 
 				<?php if ( $is_single_module_view ) : ?>
 					<div class="wpat-back-bar" style="margin: 15px 0 20px 0; display: flex; align-items: center; justify-content: space-between; background: #fff; padding: 12px 20px; border-radius: 8px; border: 1px solid #dcdcde; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit' ) ); ?>" class="button button-secondary" style="background: #f6f7f7; border-color: #cbd5e1; color: #1e293b; font-weight: 700; border-radius: 6px; height: 34px; line-height: 32px; padding: 0 16px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
+						<a href="<?php echo esc_url( add_query_arg( array( 'cat' => isset( $_GET['cat'] ) ? sanitize_key( $_GET['cat'] ) : '' ), admin_url( 'admin.php?page=wp-agency-toolkit' ) ) ); ?>" class="button button-secondary" style="background: #f6f7f7; border-color: #cbd5e1; color: #1e293b; font-weight: 700; border-radius: 6px; height: 34px; line-height: 32px; padding: 0 16px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
 							<span class="dashicons dashicons-arrow-left-alt" style="font-size: 16px; width: 16px; height: 16px; margin: 0; line-height: 1;"></span> Volver al Centro de Módulos
 						</a>
 						<button type="submit" class="button button-primary" style="background: #2271b1; border-color: #135e96; font-weight: 700; height: 34px; line-height: 32px; padding: 0 20px; border-radius: 6px;">
@@ -2477,7 +2481,7 @@ class WPAT_Admin {
 					<span class="wpat-module-status-indicator <?php echo $is_active ? 'active' : ''; ?>">
 						<span class="dot"></span> <span class="text"><?php echo $is_active ? 'Activo' : 'Inactivo'; ?></span>
 					</span>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=' . $mod['id'] ) ); ?>" class="wpat-card-action-btn primary <?php echo $is_active ? '' : 'disabled'; ?>">
+					<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'wp-agency-toolkit', 'mod' => $mod['id'], 'cat' => isset( $_GET['cat'] ) ? sanitize_key( $_GET['cat'] ) : '' ), admin_url( 'admin.php' ) ) ); ?>" class="wpat-card-action-btn primary <?php echo $is_active ? '' : 'disabled'; ?>">
 						Ajustes ⚙️
 					</a>
 				</div>
@@ -2492,8 +2496,8 @@ class WPAT_Admin {
 		/**
 	 * Renderiza únicamente la vista aislada / standalone de un módulo individual.
 	 */
-	public function render_single_module_standalone_view( $mod_id, $settings ) {
-		echo '<style>.wpat-module-body { display: block !important; }</style>';
+		public function render_single_module_standalone_view( $mod_id, $settings ) {
+		echo '<style>.wpat-module-body { display: block !important; } .wpat-collapse-btn { display: none !important; }</style>';
 
 		switch ( $mod_id ) {
 			case 'login-customizer':
@@ -2683,6 +2687,10 @@ class WPAT_Admin {
 										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
 									</div>
 								</div>
+							</div>
+
+							<!-- Módulo: Bloqueador de Bots por 404 -->
+							
 				<?php
 				break;
 			case 'bot-blocker':
@@ -4813,8 +4821,7 @@ class WPAT_Admin {
 														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
 													</span>
 												<?php endif; ?>
-												<span class="wpat-collapse-btn collapsed" title="Colapsar/Desplegar ajustes">
-													<span class="dashicons dashicons-arrow-up-alt2"></span>
+												
 												</span>
 											</div>
 										</div>
@@ -4849,8 +4856,7 @@ class WPAT_Admin {
 														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
 													</span>
 												<?php endif; ?>
-												<span class="wpat-collapse-btn collapsed" title="Colapsar/Desplegar ajustes">
-													<span class="dashicons dashicons-arrow-up-alt2"></span>
+												
 												</span>
 											</div>
 										</div>
@@ -4879,8 +4885,7 @@ class WPAT_Admin {
 												<span class="wpat-status-indicator" style="background: #e0f2fe; color: #0369a1; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
 													<span style="width: 6px; height: 6px; background: #0369a1; border-radius: 50%;"></span> Listo
 												</span>
-												<span class="wpat-collapse-btn collapsed" title="Colapsar/Desplegar ajustes">
-													<span class="dashicons dashicons-arrow-up-alt2"></span>
+												
 												</span>
 											</div>
 										</div>
@@ -4912,8 +4917,7 @@ class WPAT_Admin {
 														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
 													</span>
 												<?php endif; ?>
-												<span class="wpat-collapse-btn collapsed" title="Colapsar/Desplegar ajustes">
-													<span class="dashicons dashicons-arrow-up-alt2"></span>
+												
 												</span>
 											</div>
 										</div>
@@ -4949,8 +4953,7 @@ class WPAT_Admin {
 														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
 													</span>
 												<?php endif; ?>
-												<span class="wpat-collapse-btn collapsed" title="Colapsar/Desplegar ajustes">
-													<span class="dashicons dashicons-arrow-up-alt2"></span>
+												
 												</span>
 											</div>
 										</div>
@@ -4981,8 +4984,7 @@ class WPAT_Admin {
 														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
 													</span>
 												<?php endif; ?>
-												<span class="wpat-collapse-btn collapsed" title="Colapsar/Desplegar ajustes">
-													<span class="dashicons dashicons-arrow-up-alt2"></span>
+												
 												</span>
 											</div>
 										</div>
@@ -5058,6 +5060,172 @@ class WPAT_Admin {
 							</div>
 						</div>
 				<?php
+				break;
+			case 'initial-setup':
+				?>
+<div id="tab-initial-setup" class="wpat-tab-panel <?php echo ( $active_tab === 'tab-initial-setup' ) ? 'active' : ''; ?>">
+							<h2>Asistente de Configuración Inicial</h2>
+							<p class="section-desc">Puesta a punto y limpieza rápida para nuevas instalaciones de WordPress. Selecciona las acciones que deseas realizar y ejecútalas en un solo paso.</p>
+
+							<div class="wpat-module-card" style="padding: 20px;">
+								<h3 style="margin-top: 0; font-size: 15px; border-bottom: 1px solid var(--wpat-border); padding-bottom: 12px; margin-bottom: 15px;">Acciones de Puesta a Punto</h3>
+
+								<!-- Limpieza de contenido -->
+								<div class="wpat-field-group" style="margin-bottom: 20px;">
+									<label style="font-weight: 600; display: block; margin-bottom: 8px;">1. Limpieza de Contenido por Defecto</label>
+									<div style="margin-left: 10px; display: flex; flex-direction: column; gap: 8px;">
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[delete_post]" value="1" class="wpat-init-action-checkbox" />
+											Eliminar entrada de ejemplo "Hola mundo"
+										</label>
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[delete_page]" value="1" class="wpat-init-action-checkbox" />
+											Eliminar "Página de ejemplo" (Sample Page)
+										</label>
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[delete_hello_dolly]" value="1" class="wpat-init-action-checkbox" />
+											Eliminar plugin por defecto "Hello Dolly"
+										</label>
+									</div>
+								</div>
+
+								<!-- Creación de páginas -->
+								<div class="wpat-field-group" style="margin-bottom: 20px; border-top: 1px dotted var(--wpat-border); padding-top: 15px;">
+									<label style="font-weight: 600; display: block; margin-bottom: 8px;">2. Crear Estructura de Páginas Básicas</label>
+									
+									<div style="display: flex; justify-content: space-between; align-items: center; margin: 0 0 12px 10px; flex-wrap: wrap; gap: 10px;">
+										<p class="description" style="margin: 0;">Marca las páginas individuales que deseas que el asistente cree automáticamente en tu sitio:</p>
+										<label style="font-weight: 600; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; padding: 4px 10px; border-radius: 4px; border: 1px solid var(--wpat-border); color: #475569;">
+											<input type="checkbox" name="wpat_init[create_pages]" id="wpat_init_create_pages" value="1" class="wpat-init-action-checkbox" style="margin: 0;" />
+											Seleccionar todo
+										</label>
+									</div>
+									<div style="margin-left: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid var(--wpat-border);">
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[pages_list][]" value="home" class="wpat-init-page-checkbox" />
+											Inicio (y establecer como Portada)
+										</label>
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[pages_list][]" value="about" class="wpat-init-page-checkbox" />
+											Quiénes somos
+										</label>
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[pages_list][]" value="services" class="wpat-init-page-checkbox" />
+											Servicios
+										</label>
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[pages_list][]" value="contact" class="wpat-init-page-checkbox" />
+											Contacto
+										</label>
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[pages_list][]" value="legal" class="wpat-init-page-checkbox" />
+											Aviso legal
+										</label>
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[pages_list][]" value="privacy" class="wpat-init-page-checkbox" />
+											Política de privacidad
+										</label>
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[pages_list][]" value="cookies" class="wpat-init-page-checkbox" />
+											Política de cookies
+										</label>
+									</div>
+
+									<div style="margin-top: 15px; margin-left: 10px;">
+										<label for="wpat_init_custom_pages" style="font-weight: 500; font-size: 13px; display: block; margin-bottom: 6px; color: #475569;">
+											Crear páginas personalizadas adicionales (separadas por comas):
+										</label>
+										<input type="text" name="wpat_init[custom_pages]" id="wpat_init_custom_pages" class="large-text" placeholder="Ej: Blog, Portfolio, Preguntas Frecuentes, Tienda" style="width: 100%; max-width: 600px; margin: 0; height: 32px;" />
+										<p class="description" style="margin-top: 4px;">Introduce los nombres de las páginas adicionales que quieras crear separándolos con comas.</p>
+									</div>
+								</div>
+
+								<!-- Temas y Plugins -->
+								<div class="wpat-field-group" style="margin-bottom: 20px; border-top: 1px dotted var(--wpat-border); padding-top: 15px;">
+									<label style="font-weight: 600; display: block; margin-bottom: 8px;">3. Temas y Plugins de Trabajo</label>
+									<div style="margin-left: 10px; display: flex; flex-direction: column; gap: 8px;">
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[clean_themes]" value="1" class="wpat-init-action-checkbox" />
+											Eliminar todos los temas inactivos (Conservar solo el tema activo actual)
+										</label>
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[install_hello]" value="1" class="wpat-init-action-checkbox" />
+											Instalar y activar tema oficial "Hello Elementor"
+										</label>
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[install_elementor]" value="1" class="wpat-init-action-checkbox" />
+											Instalar y activar plugin gratuito "Elementor"
+										</label>
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[install_translatepress]" value="1" class="wpat-init-action-checkbox" />
+											Instalar y activar plugin gratuito "TranslatePress"
+										</label>
+									</div>
+								</div>
+
+								<!-- Ajustes generales -->
+								<div class="wpat-field-group" style="margin-bottom: 20px; border-top: 1px dotted var(--wpat-border); padding-top: 15px;">
+									<label style="font-weight: 600; display: block; margin-bottom: 8px;">4. Optimización de Ajustes del Sistema</label>
+									<div style="margin-left: 10px; display: flex; flex-direction: column; gap: 8px;">
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[media_sizes]" value="1" class="wpat-init-action-checkbox" />
+											Optimizar tamaños de medios (Miniatura 300x300, Medio 800x800, Grande 1920x1080)
+										</label>
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[permalinks]" value="1" class="wpat-init-action-checkbox" />
+											Cambiar Enlaces Permanentes a "Nombre de la entrada" (postname)
+										</label>
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+											<input type="checkbox" name="wpat_init[discourage_indexing]" value="1" class="wpat-init-action-checkbox" />
+											Disuadir indexación a motores de búsqueda (Ajustes de Lectura)
+										</label>
+									</div>
+								</div>
+
+								<!-- Botón de ejecución -->
+								<div style="margin-top: 25px; border-top: 1px dashed var(--wpat-border); padding-top: 20px;">
+									<input type="submit" name="wpat_run_initial_setup" id="wpat_run_initial_setup_btn" class="button button-primary" value="Ejecutar Configuración Inicial" style="height: 38px; padding: 0 25px;" />
+								</div>
+
+							</div>
+						</div>
+
+						<!-- PESTAÑA 5: SALUD Y BASE DE DATOS -->
+						<div id="tab-health" class="wpat-tab-panel <?php echo ( $active_tab === 'tab-health' ) ? 'active' : ''; ?>">
+							<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+								<h2 style="margin:0;">Salud & Base de Datos</h2>
+								<button type="button" class="button" id="wpat_refresh_health_btn">
+									<span class="dashicons dashicons-update" style="vertical-align: middle; font-size:16px; width:16px; height:16px; margin-right:5px;"></span> Actualizar Datos
+								</button>
+							</div>
+							<p class="section-desc">Monitorea los límites clave del servidor PHP y limpia los residuos acumulados en tu base de datos de WordPress.</p>
+
+							<!-- Nonce para acciones de Base de Datos -->
+							<?php wp_nonce_field( 'wpat_cleanup_nonce_action', 'wpat_cleanup_ajax_nonce' ); ?>
+
+							<div id="wpat_health_content_wrapper">
+								<?php $this->render_health_tab_content(); ?>
+							</div>
+						</div>
+
+						<!-- PESTAÑA 6: IMPORTADOR DE KITS -->
+						<div id="tab-kits" class="wpat-tab-panel <?php echo ( $active_tab === 'tab-kits' ) ? 'active' : ''; ?>">
+							<h2>Importador de Kits de Plantillas (Envato)</h2>
+							<p class="section-desc">Sube tus archivos ZIP de kits de plantillas de Envato Elements para gestionarlos e importarlos en Elementor.</p>
+
+							<!-- Formulario de carga AJAX de ZIP -->
+							
+				<?php
+				break;
+			case 'kits':
+			case 'envato-importer':
+				$this->render_tab_kits_content( $settings );
+				break;
+			case 'post-csv-importer':
+				$this->render_tab_tools_content( $settings );
+				break;
+			case 'tools':
+				$this->render_health_tab_content();
 				break;
 			default:
 				echo '<div class="notice notice-info"><p>Módulo de configuración en preparación.</p></div>';

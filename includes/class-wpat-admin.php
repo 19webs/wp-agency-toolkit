@@ -1287,7 +1287,6 @@ class WPAT_Admin {
 			</tr>
 			<?php
 		}
-	}
 
 	/**
 	 * Guarda de forma aislada e instantánea el estado de un módulo general vía AJAX.
@@ -2609,15 +2608,7 @@ class WPAT_Admin {
 			<?php
 		}
 	}
-	}
 
-	/**
-	 * Renderiza únicamente la vista aislada / standalone de un módulo individual.
-	 */
-		/**
-	 * Renderiza únicamente la vista aislada / standalone de un módulo individual.
-	 */
-		
 	/**
 	 * Renderiza el contenido del Importador de Kits de Envato.
 	 */

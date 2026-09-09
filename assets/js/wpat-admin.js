@@ -23,12 +23,90 @@ jQuery(document).ready(function($) {
 		localStorage.setItem('wpat_active_tab', targetTab);
 	});
 	
-	// Restaurar pestaña activa guardada en localStorage (evitando dobles clics si PHP ya lo ha renderizado)
-	var activeTab = localStorage.getItem('wpat_active_tab');
-	var currentActiveInHtml = $('.wpat-tab-link.active').data('tab');
-	if (activeTab && $('#' + activeTab).length && activeTab !== currentActiveInHtml) {
-		$('.wpat-tab-link[data-tab="' + activeTab + '"]').click();
+	// Restaurar pestaña activa guardada en localStorage (solo si no se pasó tab por URL)
+	var urlParams = new URLSearchParams(window.location.search);
+	if (!urlParams.has('tab')) {
+		var activeTab = localStorage.getItem('wpat_active_tab');
+		var currentActiveInHtml = $('.wpat-tab-link.active').data('tab');
+		if (activeTab && $('#' + activeTab).length && activeTab !== currentActiveInHtml) {
+			$('.wpat-tab-link[data-tab="' + activeTab + '"]').click();
+		}
 	}
+
+	// 1.1 Centro de Módulos v4.0.0 (Buscador, Categorías y AJAX Toggle)
+	$(document).on('change', '.wpat-ajax-toggle-module', function() {
+		var $checkbox = $(this);
+		var moduleId  = $checkbox.data('module');
+		var isChecked = $checkbox.is(':checked');
+		var state     = isChecked ? '1' : '0';
+		var nonce     = $('#wpat_settings_nonce').val();
+		var $card     = $checkbox.closest('.wpat-module-grid-card');
+		var $status   = $card.find('.wpat-module-status-indicator');
+		var $btn      = $card.find('.wpat-card-action-btn.primary');
+
+		$card.css('opacity', '0.7');
+
+		$.ajax({
+			url: ajaxurl,
+			type: 'POST',
+			data: {
+				action: 'wpat_toggle_module',
+				security: nonce,
+				module_id: moduleId,
+				state: state
+			},
+			success: function(response) {
+				$card.css('opacity', '1');
+				if (response.success) {
+					if (isChecked) {
+						$status.addClass('active').find('.text').text('Activo');
+						$btn.removeClass('disabled');
+						showToast('Módulo activado', false);
+					} else {
+						$status.removeClass('active').find('.text').text('Inactivo');
+						$btn.addClass('disabled');
+						showToast('Módulo desactivado', 'deactivate');
+					}
+				} else {
+					$checkbox.prop('checked', !isChecked);
+					showToast('Error al actualizar módulo: ' + (response.data ? response.data.message : 'Error'), true);
+				}
+			},
+			error: function() {
+				$card.css('opacity', '1');
+				$checkbox.prop('checked', !isChecked);
+				showToast('Error de conexión al cambiar el módulo.', true);
+			}
+		});
+	});
+
+	// Filtrado por Categorías en Centro de Módulos
+	$(document).on('click', '.wpat-cat-pill', function() {
+		$('.wpat-cat-pill').removeClass('active');
+		$(this).addClass('active');
+		var cat = $(this).data('cat');
+
+		$('.wpat-module-grid-card').each(function() {
+			if (cat === 'all' || $(this).hasClass('cat-' + cat)) {
+				$(this).show();
+			} else {
+				$(this).hide();
+			}
+		});
+	});
+
+	// Buscador en Vivo en Centro de Módulos
+	$(document).on('keyup input', '#wpat_modules_search_input', function() {
+		var query = $(this).val().toLowerCase().trim();
+		$('.wpat-module-grid-card').each(function() {
+			var name = $(this).data('name') || '';
+			if (name.toLowerCase().indexOf(query) !== -1) {
+				$(this).show();
+			} else {
+				$(this).hide();
+			}
+		});
+	});
 
 	// Restaurar kit activo si estaba guardado en sessionStorage
 	var activeKitSlug = sessionStorage.getItem('wpat_active_kit_slug');

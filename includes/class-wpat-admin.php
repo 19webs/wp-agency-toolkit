@@ -60,14 +60,69 @@ class WPAT_Admin {
 	 * Añade el menú del plugin a la administración de WordPress.
 	 */
 	public function add_admin_menu() {
+		$icon = 'data:image/svg+xml;base64,' . base64_encode( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" fill="currentColor"><path d="M512.1 191l-8.2 14.3c-3 5.3-9.4 7.5-15.1 5.4-11.8-4.4-22.6-10.7-32.1-18.6-4.6-3.8-5.8-10.5-2.8-15.7l8.2-14.3c-6.9-8-12.3-17.3-15.9-27.4h-16.5c-6 0-11.2-4.3-12.2-10.3-2-12-2.1-24.6 0-37.1 1-6 6.2-10.4 12.2-10.4h16.5c3.6-10.1 9-19.4 15.9-27.4l-8.2-14.3c-3-5.2-1.9-11.9 2.8-15.7-9.5-7.9-20.4-14.2-32.1-18.6-5.7-2.1 12.1.1 15.1 5.4l8.2 14.3c10.5-1.9 21.2-1.9 31.7 0L552 6.3c3-5.3 9.4-7.5 15.1-5.4 11.8 4.4 22.6 10.7 32.1 18.6 4.6 3.8 5.8 10.5 2.8 15.7l-8.2 14.3c-6.9 8-12.3 17.3-15.9 27.4h16.5c6 0 11.2 4.3 12.2 10.3 2 12 2.1 24.6 0 37.1-1 6-6.2 10.4-12.2 10.4h-16.5c-3.6 10.1-9 19.4-15.9 27.4l8.2 14.3c3 5.2 1.9 11.9-2.8 15.7-9.5 7.9-20.4 14.2-32.1 18.6-5.7 2.1-12.1-.1-15.1-5.4l-8.2-14.3c-10.4 1.9-21.2 1.9-31.7 0zm-10.5-58.8c38.5 29.6 82.4-14.3 52.8-52.8-38.5-29.7-82.4 14.3-52.8 52.8zM386.3 286.1l33.7 16.8c10.1 5.8 14.5 18.1 10.5 29.1-8.9 24.2-26.4 46.4-42.6 65.8-7.4 8.9-20.2 11.1-30.3 5.3l-29.1-16.8c-16 13.7-34.6 24.6-54.9 31.7v33.6c0 11.6-8.3 21.6-19.7 23.6-24.6 4.2-50.4 4.4-75.9 0-11.5-2-20-11.9-20-23.6V418c-20.3-7.2-38.9-18-54.9-31.7L74 403c-10 5.8-22.9 3.6-30.3-5.3-16.2-19.4-33.3-41.6-42.2-65.7-4-10.9.4-23.2 10.5-29.1l33.3-16.8c-3.9-20.9-3.9-42.4 0-63.4L12 205.8c-10.1-5.8-14.6-18.1-10.5-29 8.9-24.2 26-46.4 42.2-65.8 7.4-8.9 20.2-11.1 30.3-5.3l29.1 16.8c16-13.7 34.6-24.6 54.9-31.7V57.1c0-11.5 8.2-21.5 19.6-23.5 24.6-4.2 50.5-4.4 76-.1 11.5 2 20 11.9 20 23.6v33.6c20.3 7.2 38.9 18 54.9 31.7l29.1-16.8c10-5.8 22.9-3.6 30.3 5.3 16.2 19.4 33.2 41.6 42.1 65.8 4 10.9.1 23.2-10 29.1l-33.7 16.8c3.9 21 3.9 42.5 0 63.5zm-117.6 21.1c59.2-77-28.7-164.9-105.7-105.7-59.2 77 28.7 164.9 105.7 105.7zm243.4 182.7l-8.2 14.3c-3 5.3-9.4 7.5-15.1 5.4-11.8-4.4-22.6-10.7-32.1-18.6-4.6-3.8-5.8-10.5-2.8-15.7l8.2-14.3c-6.9-8-12.3-17.3-15.9-27.4h-16.5c-6 0-11.2-4.3-12.2-10.3-2-12-2.1-24.6 0-37.1 1-6 6.2-10.4 12.2-10.4h16.5c3.6-10.1 9-19.4 15.9-27.4l-8.2-14.3c-3-5.2-1.9-11.9 2.8-15.7 9.5-7.9 20.4-14.2 32.1-18.6 5.7-2.1 12.1.1 15.1 5.4l8.2 14.3c10.5-1.9 21.2-1.9 31.7 0l8.2-14.3c3-5.3 9.4-7.5 15.1-5.4 11.8 4.4 22.6 10.7 32.1 18.6 4.6 3.8 5.8 10.5 2.8 15.7l-8.2 14.3c-6.9 8-12.3-17.3-15.9-27.4h16.5c6 0 11.2 4.3 12.2 10.3 2 12 2.1 24.6 0 37.1-1 6-6.2 10.4-12.2 10.4h-16.5c-3.6 10.1-9 19.4-15.9 27.4l8.2 14.3c3 5.2 1.9 11.9-2.8 15.7-9.5 7.9-20.4 14.2-32.1 18.6-5.7 2.1-12.1-.1-15.1-5.4l-8.2-14.3c-10.4 1.9-21.2 1.9-31.7 0zM501.6 431c38.5 29.6 82.4-14.3 52.8-52.8-38.5-29.6-82.4 14.3-52.8 52.8z" /></svg>' );
+
 		add_menu_page(
 			'WP Agency Toolkit',
 			'Agency Toolkit',
 			'manage_options',
 			'wp-agency-toolkit',
 			array( $this, 'render_admin_page' ),
-			'data:image/svg+xml;base64,' . base64_encode( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" fill="currentColor"><path d="M512.1 191l-8.2 14.3c-3 5.3-9.4 7.5-15.1 5.4-11.8-4.4-22.6-10.7-32.1-18.6-4.6-3.8-5.8-10.5-2.8-15.7l8.2-14.3c-6.9-8-12.3-17.3-15.9-27.4h-16.5c-6 0-11.2-4.3-12.2-10.3-2-12-2.1-24.6 0-37.1 1-6 6.2-10.4 12.2-10.4h16.5c3.6-10.1 9-19.4 15.9-27.4l-8.2-14.3c-3-5.2-1.9-11.9 2.8-15.7 9.5-7.9 20.4-14.2 32.1-18.6 5.7-2.1 12.1.1 15.1 5.4l8.2 14.3c10.5-1.9 21.2-1.9 31.7 0L552 6.3c3-5.3 9.4-7.5 15.1-5.4 11.8 4.4 22.6 10.7 32.1 18.6 4.6 3.8 5.8 10.5 2.8 15.7l-8.2 14.3c-6.9 8-12.3 17.3-15.9 27.4h16.5c6 0 11.2 4.3 12.2 10.3 2 12 2.1 24.6 0 37.1-1 6-6.2 10.4-12.2 10.4h-16.5c-3.6 10.1-9 19.4-15.9 27.4l8.2 14.3c3 5.2 1.9 11.9-2.8 15.7-9.5 7.9-20.4 14.2-32.1 18.6-5.7 2.1-12.1-.1-15.1-5.4l-8.2-14.3c-10.4 1.9-21.2 1.9-31.7 0zm-10.5-58.8c38.5 29.6 82.4-14.3 52.8-52.8-38.5-29.7-82.4 14.3-52.8 52.8zM386.3 286.1l33.7 16.8c10.1 5.8 14.5 18.1 10.5 29.1-8.9 24.2-26.4 46.4-42.6 65.8-7.4 8.9-20.2 11.1-30.3 5.3l-29.1-16.8c-16 13.7-34.6 24.6-54.9 31.7v33.6c0 11.6-8.3 21.6-19.7 23.6-24.6 4.2-50.4 4.4-75.9 0-11.5-2-20-11.9-20-23.6V418c-20.3-7.2-38.9-18-54.9-31.7L74 403c-10 5.8-22.9 3.6-30.3-5.3-16.2-19.4-33.3-41.6-42.2-65.7-4-10.9.4-23.2 10.5-29.1l33.3-16.8c-3.9-20.9-3.9-42.4 0-63.4L12 205.8c-10.1-5.8-14.6-18.1-10.5-29 8.9-24.2 26-46.4 42.2-65.8 7.4-8.9 20.2-11.1 30.3-5.3l29.1 16.8c16-13.7 34.6-24.6 54.9-31.7V57.1c0-11.5 8.2-21.5 19.6-23.5 24.6-4.2 50.5-4.4 76-.1 11.5 2 20 11.9 20 23.6v33.6c20.3 7.2 38.9 18 54.9 31.7l29.1-16.8c10-5.8 22.9-3.6 30.3 5.3 16.2 19.4 33.2 41.6 42.1 65.8 4 10.9.1 23.2-10 29.1l-33.7 16.8c3.9 21 3.9 42.5 0 63.5zm-117.6 21.1c59.2-77-28.7-164.9-105.7-105.7-59.2 77 28.7 164.9 105.7 105.7zm243.4 182.7l-8.2 14.3c-3 5.3-9.4 7.5-15.1 5.4-11.8-4.4-22.6-10.7-32.1-18.6-4.6-3.8-5.8-10.5-2.8-15.7l8.2-14.3c-6.9-8-12.3-17.3-15.9-27.4h-16.5c-6 0-11.2-4.3-12.2-10.3-2-12-2.1-24.6 0-37.1 1-6 6.2-10.4 12.2-10.4h16.5c3.6-10.1 9-19.4 15.9-27.4l-8.2-14.3c-3-5.2-1.9-11.9 2.8-15.7 9.5-7.9 20.4-14.2 32.1-18.6 5.7-2.1 12.1.1 15.1 5.4l8.2 14.3c10.5-1.9 21.2-1.9 31.7 0l8.2-14.3c3-5.3 9.4-7.5 15.1-5.4 11.8 4.4 22.6 10.7 32.1 18.6 4.6 3.8 5.8 10.5 2.8 15.7l-8.2 14.3c-6.9 8-12.3 17.3-15.9 27.4h16.5c6 0 11.2 4.3 12.2 10.3 2 12 2.1 24.6 0 37.1-1 6-6.2 10.4-12.2 10.4h-16.5c-3.6 10.1-9 19.4-15.9 27.4l8.2 14.3c3 5.2 1.9 11.9-2.8 15.7-9.5 7.9-20.4 14.2-32.1 18.6-5.7 2.1-12.1-.1-15.1-5.4l-8.2-14.3c-10.4 1.9-21.2 1.9-31.7 0zM501.6 431c38.5 29.6 82.4-14.3 52.8-52.8-38.5-29.6-82.4 14.3-52.8 52.8z" /></svg>' ),
+			$icon,
 			80
+		);
+
+		add_submenu_page(
+			'wp-agency-toolkit',
+			'Centro de Módulos',
+			'Centro de Módulos',
+			'manage_options',
+			'wp-agency-toolkit',
+			array( $this, 'render_admin_page' )
+		);
+
+		$settings = WPAT_Main::get_instance()->get_settings();
+
+		if ( isset( $settings['woo-extra-options'] ) && '1' === $settings['woo-extra-options'] ) {
+			add_submenu_page(
+				'wp-agency-toolkit',
+				'Campos Extras Woo',
+				'Campos Extras Woo',
+				'manage_options',
+				'wp-agency-toolkit&tab=tab-woo-extra-options',
+				array( $this, 'render_admin_page' )
+			);
+		}
+
+		if ( isset( $settings['snippets'] ) && '1' === $settings['snippets'] ) {
+			add_submenu_page(
+				'wp-agency-toolkit',
+				'Snippets de Código',
+				'Snippets de Código',
+				'manage_options',
+				'wp-agency-toolkit&tab=tab-snippets',
+				array( $this, 'render_admin_page' )
+			);
+		}
+
+		if ( isset( $settings['woo-pdf-invoices'] ) && '1' === $settings['woo-pdf-invoices'] ) {
+			add_submenu_page(
+				'wp-agency-toolkit',
+				'Facturación PDF',
+				'Facturación PDF',
+				'manage_options',
+				'wp-agency-toolkit&tab=tab-woo-pdf-invoices',
+				array( $this, 'render_admin_page' )
+			);
+		}
+
+		add_submenu_page(
+			'wp-agency-toolkit',
+			'Ajustes Generales',
+			'Ajustes Generales',
+			'manage_options',
+			'wp-agency-toolkit&tab=tab-security',
+			array( $this, 'render_admin_page' )
 		);
 	}
 
@@ -77,7 +132,7 @@ class WPAT_Admin {
 	 * @param string $hook Pestaña actual de la administración.
 	 */
 	public function enqueue_admin_assets( $hook ) {
-		if ( 'toplevel_page_wp-agency-toolkit' !== $hook ) {
+		if ( strpos( $hook, 'wp-agency-toolkit' ) === false && strpos( $hook, 'wpat' ) === false ) {
 			return;
 		}
 
@@ -1824,7 +1879,7 @@ class WPAT_Admin {
 		$this->render_admin_notices();
 		
 		// Determinar la pestaña activa
-		$active_tab = 'tab-security';
+		$active_tab = 'tab-modules';
 		if ( isset( $_GET['tab'] ) ) {
 			$active_tab = sanitize_key( $_GET['tab'] );
 		} elseif ( isset( $_POST['wpat_active_tab'] ) ) {
@@ -1902,6 +1957,9 @@ class WPAT_Admin {
 				<div class="wpat-container">
 					<!-- Pestañas de Navegación -->
 					<div class="wpat-tabs-nav">
+						<button type="button" class="wpat-tab-link <?php echo ( $active_tab === 'tab-modules' ) ? 'active' : ''; ?>" data-tab="tab-modules">
+							<span class="dashicons dashicons-grid-view"></span> Centro de Módulos
+						</button>
 						<button type="button" class="wpat-tab-link <?php echo ( $active_tab === 'tab-security' ) ? 'active' : ''; ?>" data-tab="tab-security">
 							<span class="dashicons dashicons-shield"></span> Seguridad & Acceso
 						</button>
@@ -1941,8 +1999,307 @@ class WPAT_Admin {
 					<!-- Contenido de las Pestañas -->
 					<div class="wpat-tabs-content">
 
-						<!-- PESTAÑA 1: SEGURIDAD Y ACCESO -->
-						<div id="tab-security" class="wpat-tab-panel <?php echo ( $active_tab === 'tab-security' ) ? 'active' : ''; ?>">
+						<!-- PESTAÑA PRINCIPAL: CENTRO DE MÓDULOS -->
+						<div id="tab-modules" class="wpat-tab-panel <?php echo ( $active_tab === 'tab-modules' ) ? 'active' : ''; ?>">
+							<div class="wpat-dashboard-toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;">
+								<div>
+									<h2 style="margin:0 0 4px 0; font-size:20px; font-weight:700;">Centro de Módulos & Herramientas</h2>
+									<p class="section-desc" style="margin:0; color:#646970;">Activa o desactiva utilidades de forma independiente para mantener tu sitio rápido y ligero.</p>
+								</div>
+								<div class="wpat-search-box" style="position: relative; min-width: 250px;">
+									<span class="dashicons dashicons-search" style="position: absolute; left: 10px; top: 8px; color: #94a3b8; font-size: 16px;"></span>
+									<input type="text" id="wpat_modules_search_input" placeholder="Buscar módulo..." style="padding-left: 32px; width: 100%; border-radius: 8px; border: 1px solid #cbd5e1; height: 34px; font-size: 13px;" />
+								</div>
+							</div>
+
+							<div class="wpat-cat-filters" style="display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; overflow-x: auto;">
+								<button type="button" class="wpat-cat-pill active" data-cat="all">Todos (12)</button>
+								<button type="button" class="wpat-cat-pill" data-cat="woo">WooCommerce (5)</button>
+								<button type="button" class="wpat-cat-pill" data-cat="admin">Administración (3)</button>
+								<button type="button" class="wpat-cat-pill" data-cat="perf">Rendimiento & SEO (2)</button>
+								<button type="button" class="wpat-cat-pill" data-cat="sec">Seguridad (2)</button>
+							</div>
+
+							<div class="wpat-modules-grid-container" id="wpat_modules_grid">
+								
+								<!-- Módulo 1: Campos Extras Woo -->
+								<div class="wpat-module-grid-card cat-woo" data-name="campos extras swatches woocommerce">
+									<div class="wpat-card-top">
+										<div class="wpat-card-icon-box woo">🛍️</div>
+										<label class="wpat-toggle-switch">
+											<input type="checkbox" class="wpat-ajax-toggle-module" data-module="woo-extra-options" <?php checked( isset( $settings['woo-extra-options'] ) && '1' === $settings['woo-extra-options'] ); ?>>
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+									<div class="wpat-card-content">
+										<h3>Campos Extras & Swatches <span class="wpat-badge-subpage">Subpágina</span></h3>
+										<p>Añade opciones personalizadas a productos (textos, selects, archivos) y convierte desplegables en botones de color.</p>
+									</div>
+									<div class="wpat-card-bottom">
+										<span class="wpat-module-status-indicator <?php echo ( isset( $settings['woo-extra-options'] ) && '1' === $settings['woo-extra-options'] ) ? 'active' : ''; ?>">
+											<span class="dot"></span> <span class="text"><?php echo ( isset( $settings['woo-extra-options'] ) && '1' === $settings['woo-extra-options'] ) ? 'Activo' : 'Inactivo'; ?></span>
+										</span>
+										<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&tab=tab-woo-extra-options' ) ); ?>" class="wpat-card-action-btn primary <?php echo ( isset( $settings['woo-extra-options'] ) && '1' === $settings['woo-extra-options'] ) ? '' : 'disabled'; ?>">
+											Ir a Pantalla ➔
+										</a>
+									</div>
+								</div>
+
+								<!-- Módulo 2: Snippets -->
+								<div class="wpat-module-grid-card cat-admin" data-name="snippets de codigo php css js">
+									<div class="wpat-card-top">
+										<div class="wpat-card-icon-box admin">💻</div>
+										<label class="wpat-toggle-switch">
+											<input type="checkbox" class="wpat-ajax-toggle-module" data-module="snippets" <?php checked( isset( $settings['snippets'] ) && '1' === $settings['snippets'] ); ?>>
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+									<div class="wpat-card-content">
+										<h3>Snippets de Código <span class="wpat-badge-subpage">Subpágina</span></h3>
+										<p>Gestor ligero de fragmentos PHP, CSS y JS sin editar `functions.php`. Ejecución condicional y segura.</p>
+									</div>
+									<div class="wpat-card-bottom">
+										<span class="wpat-module-status-indicator <?php echo ( isset( $settings['snippets'] ) && '1' === $settings['snippets'] ) ? 'active' : ''; ?>">
+											<span class="dot"></span> <span class="text"><?php echo ( isset( $settings['snippets'] ) && '1' === $settings['snippets'] ) ? 'Activo' : 'Inactivo'; ?></span>
+										</span>
+										<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&tab=tab-snippets' ) ); ?>" class="wpat-card-action-btn primary <?php echo ( isset( $settings['snippets'] ) && '1' === $settings['snippets'] ) ? '' : 'disabled'; ?>">
+											Ir a Pantalla ➔
+										</a>
+									</div>
+								</div>
+
+								<!-- Módulo 3: Facturas PDF -->
+								<div class="wpat-module-grid-card cat-woo" data-name="facturas pdf albaranes woocommerce">
+									<div class="wpat-card-top">
+										<div class="wpat-card-icon-box woo">📄</div>
+										<label class="wpat-toggle-switch">
+											<input type="checkbox" class="wpat-ajax-toggle-module" data-module="woo-pdf-invoices" <?php checked( isset( $settings['woo-pdf-invoices'] ) && '1' === $settings['woo-pdf-invoices'] ); ?>>
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+									<div class="wpat-card-content">
+										<h3>Facturación PDF <span class="wpat-badge-subpage">Subpágina</span></h3>
+										<p>Genera facturas y albaranes en PDF adjuntos automáticamente a los correos de pedido de WooCommerce.</p>
+									</div>
+									<div class="wpat-card-bottom">
+										<span class="wpat-module-status-indicator <?php echo ( isset( $settings['woo-pdf-invoices'] ) && '1' === $settings['woo-pdf-invoices'] ) ? 'active' : ''; ?>">
+											<span class="dot"></span> <span class="text"><?php echo ( isset( $settings['woo-pdf-invoices'] ) && '1' === $settings['woo-pdf-invoices'] ) ? 'Activo' : 'Inactivo'; ?></span>
+										</span>
+										<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&tab=tab-woo-pdf-invoices' ) ); ?>" class="wpat-card-action-btn primary <?php echo ( isset( $settings['woo-pdf-invoices'] ) && '1' === $settings['woo-pdf-invoices'] ) ? '' : 'disabled'; ?>">
+											Ir a Pantalla ➔
+										</a>
+									</div>
+								</div>
+
+								<!-- Módulo 4: Buscador Live -->
+								<div class="wpat-module-grid-card cat-woo" data-name="buscador live ajax woocommerce">
+									<div class="wpat-card-top">
+										<div class="wpat-card-icon-box woo">🔍</div>
+										<label class="wpat-toggle-switch">
+											<input type="checkbox" class="wpat-ajax-toggle-module" data-module="woo-live-search" <?php checked( isset( $settings['woo-live-search'] ) && '1' === $settings['woo-live-search'] ); ?>>
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+									<div class="wpat-card-content">
+										<h3>Buscador AJAX WooCommerce <span class="wpat-badge-tweak">Ajuste Rápido</span></h3>
+										<p>Reemplaza la búsqueda estándar por autocompletado ultra rápido por SKU, nombre e ID de producto.</p>
+									</div>
+									<div class="wpat-card-bottom">
+										<span class="wpat-module-status-indicator <?php echo ( isset( $settings['woo-live-search'] ) && '1' === $settings['woo-live-search'] ) ? 'active' : ''; ?>">
+											<span class="dot"></span> <span class="text"><?php echo ( isset( $settings['woo-live-search'] ) && '1' === $settings['woo-live-search'] ) ? 'Activo' : 'Inactivo'; ?></span>
+										</span>
+										<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&tab=tab-woocommerce' ) ); ?>" class="wpat-card-action-btn secondary">
+											Ajustes ⚙️
+										</a>
+									</div>
+								</div>
+
+								<!-- Módulo 5: Filtros Facetas -->
+								<div class="wpat-module-grid-card cat-woo" data-name="filtros facetas woocommerce facetwp">
+									<div class="wpat-card-top">
+										<div class="wpat-card-icon-box woo">⚡</div>
+										<label class="wpat-toggle-switch">
+											<input type="checkbox" class="wpat-ajax-toggle-module" data-module="woo-facets" <?php checked( isset( $settings['woo-facets'] ) && '1' === $settings['woo-facets'] ); ?>>
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+									<div class="wpat-card-content">
+										<h3>Filtros por Facetas <span class="wpat-badge-tweak">Ajuste Rápido</span></h3>
+										<p>Filtros ultrarrápidos para catálogo por precio, stock, categorías y atributos tipo FacetWP.</p>
+									</div>
+									<div class="wpat-card-bottom">
+										<span class="wpat-module-status-indicator <?php echo ( isset( $settings['woo-facets'] ) && '1' === $settings['woo-facets'] ) ? 'active' : ''; ?>">
+											<span class="dot"></span> <span class="text"><?php echo ( isset( $settings['woo-facets'] ) && '1' === $settings['woo-facets'] ) ? 'Activo' : 'Inactivo'; ?></span>
+										</span>
+										<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&tab=tab-woocommerce' ) ); ?>" class="wpat-card-action-btn secondary">
+											Ajustes ⚙️
+										</a>
+									</div>
+								</div>
+
+								<!-- Módulo 6: Login Customizer -->
+								<div class="wpat-module-grid-card cat-sec" data-name="login customizer personalizador inicio sesion">
+									<div class="wpat-card-top">
+										<div class="wpat-card-icon-box sec">🔐</div>
+										<label class="wpat-toggle-switch">
+											<input type="checkbox" class="wpat-ajax-toggle-module" data-module="login-customizer" <?php checked( isset( $settings['login-customizer'] ) && '1' === $settings['login-customizer'] ); ?>>
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+									<div class="wpat-card-content">
+										<h3>Personalizador de Login <span class="wpat-badge-tweak">Ajuste Rápido</span></h3>
+										<p>Personaliza la pantalla de inicio de sesión de WordPress con logo corporativo, colores y estilos custom.</p>
+									</div>
+									<div class="wpat-card-bottom">
+										<span class="wpat-module-status-indicator <?php echo ( isset( $settings['login-customizer'] ) && '1' === $settings['login-customizer'] ) ? 'active' : ''; ?>">
+											<span class="dot"></span> <span class="text"><?php echo ( isset( $settings['login-customizer'] ) && '1' === $settings['login-customizer'] ) ? 'Activo' : 'Inactivo'; ?></span>
+										</span>
+										<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&tab=tab-security' ) ); ?>" class="wpat-card-action-btn secondary">
+											Ajustes ⚙️
+										</a>
+									</div>
+								</div>
+
+								<!-- Módulo 7: Optimización de Medios -->
+								<div class="wpat-module-grid-card cat-perf" data-name="optimizacion imagenes webp conversion">
+									<div class="wpat-card-top">
+										<div class="wpat-card-icon-box perf">🖼️</div>
+										<label class="wpat-toggle-switch">
+											<input type="checkbox" class="wpat-ajax-toggle-module" data-module="image-optimizer" <?php checked( isset( $settings['image-optimizer'] ) && '1' === $settings['image-optimizer'] ); ?>>
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+									<div class="wpat-card-content">
+										<h3>Optimización de Medios & WebP <span class="wpat-badge-tweak">Ajuste Rápido</span></h3>
+										<p>Compresión en lote y conversión automática a WebP al subir imágenes a la biblioteca.</p>
+									</div>
+									<div class="wpat-card-bottom">
+										<span class="wpat-module-status-indicator <?php echo ( isset( $settings['image-optimizer'] ) && '1' === $settings['image-optimizer'] ) ? 'active' : ''; ?>">
+											<span class="dot"></span> <span class="text"><?php echo ( isset( $settings['image-optimizer'] ) && '1' === $settings['image-optimizer'] ) ? 'Activo' : 'Inactivo'; ?></span>
+										</span>
+										<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&tab=tab-media' ) ); ?>" class="wpat-card-action-btn secondary">
+											Ajustes ⚙️
+										</a>
+									</div>
+								</div>
+
+								<!-- Módulo 8: Security Hardening -->
+								<div class="wpat-module-grid-card cat-sec" data-name="seguridad hardening proteccion xmlrpc">
+									<div class="wpat-card-top">
+										<div class="wpat-card-icon-box sec">🛡️</div>
+										<label class="wpat-toggle-switch">
+											<input type="checkbox" class="wpat-ajax-toggle-module" data-module="security-hardening" <?php checked( isset( $settings['security-hardening'] ) && '1' === $settings['security-hardening'] ); ?>>
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+									<div class="wpat-card-content">
+										<h3>Fortalecimiento de Seguridad <span class="wpat-badge-tweak">Ajuste Rápido</span></h3>
+										<p>Desactiva XML-RPC, oculta la versión de WordPress y bloquea accesos directos no autorizados.</p>
+									</div>
+									<div class="wpat-card-bottom">
+										<span class="wpat-module-status-indicator <?php echo ( isset( $settings['security-hardening'] ) && '1' === $settings['security-hardening'] ) ? 'active' : ''; ?>">
+											<span class="dot"></span> <span class="text"><?php echo ( isset( $settings['security-hardening'] ) && '1' === $settings['security-hardening'] ) ? 'Activo' : 'Inactivo'; ?></span>
+										</span>
+										<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&tab=tab-security' ) ); ?>" class="wpat-card-action-btn secondary">
+											Ajustes ⚙️
+										</a>
+									</div>
+								</div>
+
+								<!-- Módulo 9: SEO Optimizer -->
+								<div class="wpat-module-grid-card cat-perf" data-name="seo meta titulos auditoria">
+									<div class="wpat-card-top">
+										<div class="wpat-card-icon-box perf">🚀</div>
+										<label class="wpat-toggle-switch">
+											<input type="checkbox" class="wpat-ajax-toggle-module" data-module="seo" <?php checked( isset( $settings['seo'] ) && '1' === $settings['seo'] ); ?>>
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+									<div class="wpat-card-content">
+										<h3>Optimización SEO Integrada <span class="wpat-badge-tweak">Ajuste Rápido</span></h3>
+										<p>Auditoría SEO on-page, generador de meta etiquetas y solución automática de imágenes sin ALT.</p>
+									</div>
+									<div class="wpat-card-bottom">
+										<span class="wpat-module-status-indicator <?php echo ( isset( $settings['seo'] ) && '1' === $settings['seo'] ) ? 'active' : ''; ?>">
+											<span class="dot"></span> <span class="text"><?php echo ( isset( $settings['seo'] ) && '1' === $settings['seo'] ) ? 'Activo' : 'Inactivo'; ?></span>
+										</span>
+										<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&tab=tab-seo' ) ); ?>" class="wpat-card-action-btn secondary">
+											Ajustes ⚙️
+										</a>
+									</div>
+								</div>
+
+								<!-- Módulo 10: Performance -->
+								<div class="wpat-module-grid-card cat-perf" data-name="rendimiento ejecucion scripts heartbeat">
+									<div class="wpat-card-top">
+										<div class="wpat-card-icon-box perf">⚡</div>
+										<label class="wpat-toggle-switch">
+											<input type="checkbox" class="wpat-ajax-toggle-module" data-module="performance" <?php checked( isset( $settings['performance'] ) && '1' === $settings['performance'] ); ?>>
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+									<div class="wpat-card-content">
+										<h3>Optimización de Rendimiento <span class="wpat-badge-tweak">Ajuste Rápido</span></h3>
+										<p>Limpieza de cabeceras WP, control de Heartbeat API y desactivación de emojis y embeds innecesarios.</p>
+									</div>
+									<div class="wpat-card-bottom">
+										<span class="wpat-module-status-indicator <?php echo ( isset( $settings['performance'] ) && '1' === $settings['performance'] ) ? 'active' : ''; ?>">
+											<span class="dot"></span> <span class="text"><?php echo ( isset( $settings['performance'] ) && '1' === $settings['performance'] ) ? 'Activo' : 'Inactivo'; ?></span>
+										</span>
+										<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&tab=tab-performance' ) ); ?>" class="wpat-card-action-btn secondary">
+											Ajustes ⚙️
+										</a>
+									</div>
+								</div>
+
+								<!-- Módulo 11: SMTP -->
+								<div class="wpat-module-grid-card cat-admin" data-name="smtp correo envio servidor">
+									<div class="wpat-card-top">
+										<div class="wpat-card-icon-box admin">📧</div>
+										<label class="wpat-toggle-switch">
+											<input type="checkbox" class="wpat-ajax-toggle-module" data-module="smtp" <?php checked( isset( $settings['smtp'] ) && '1' === $settings['smtp'] ); ?>>
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+									<div class="wpat-card-content">
+										<h3>Configuración Servidor SMTP <span class="wpat-badge-tweak">Ajuste Rápido</span></h3>
+										<p>Servicio seguro de envío de correo SMTP con soporte TLS/SSL y prueba de envío integrada.</p>
+									</div>
+									<div class="wpat-card-bottom">
+										<span class="wpat-module-status-indicator <?php echo ( isset( $settings['smtp'] ) && '1' === $settings['smtp'] ) ? 'active' : ''; ?>">
+											<span class="dot"></span> <span class="text"><?php echo ( isset( $settings['smtp'] ) && '1' === $settings['smtp'] ) ? 'Activo' : 'Inactivo'; ?></span>
+										</span>
+										<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&tab=tab-smtp' ) ); ?>" class="wpat-card-action-btn secondary">
+											Ajustes ⚙️
+										</a>
+									</div>
+								</div>
+
+								<!-- Módulo 12: Importador Envato -->
+								<div class="wpat-module-grid-card cat-admin" data-name="importador kits plantillas envato">
+									<div class="wpat-card-top">
+										<div class="wpat-card-icon-box admin">📥</div>
+										<label class="wpat-toggle-switch">
+											<input type="checkbox" class="wpat-ajax-toggle-module" data-module="envato-importer" <?php checked( isset( $settings['envato-importer'] ) && '1' === $settings['envato-importer'] ); ?>>
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+									<div class="wpat-card-content">
+										<h3>Importador de Kits Template <span class="wpat-badge-tweak">Ajuste Rápido</span></h3>
+										<p>Importador masivo de kits de maquetación y plantillas listos para usar en Elementor.</p>
+									</div>
+									<div class="wpat-card-bottom">
+										<span class="wpat-module-status-indicator <?php echo ( isset( $settings['envato-importer'] ) && '1' === $settings['envato-importer'] ) ? 'active' : ''; ?>">
+											<span class="dot"></span> <span class="text"><?php echo ( isset( $settings['envato-importer'] ) && '1' === $settings['envato-importer'] ) ? 'Activo' : 'Inactivo'; ?></span>
+										</span>
+										<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&tab=tab-kits' ) ); ?>" class="wpat-card-action-btn secondary">
+											Ajustes ⚙️
+										</a>
+									</div>
+								</div>
+
+							</div>
+						</div>
 							<h2>Seguridad & Acceso</h2>
 							<p class="section-desc">Gestiona el acceso al panel y fortalece la seguridad básica de tu sitio.</p>
 

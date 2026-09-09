@@ -189,8 +189,8 @@ jQuery(document).ready(function($) {
 		}, 150);
 	}
 	
-	// Helper para mostrar notificaciones flotantes (Toast)
-	function showToast(message, type) {
+		// Helper global para mostrar notificaciones flotantes (Toast)
+	window.showToast = function(message, type) {
 		$('.wpat-toast').remove(); // Evitar duplicados
 		var bg = '#10b981'; // Verde por defecto para éxito/activación
 		
@@ -200,30 +200,13 @@ jQuery(document).ready(function($) {
 			bg = '#ef4444'; // Rojo con la misma tonalidad moderna para desactivación
 		}
 
-		var $toast = $('<div class="wpat-toast" style="position: fixed; bottom: 20px; right: 20px; background: ' + bg + '; color: #fff; padding: 12px 20px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 999999; font-weight: 600; font-size: 13px; display: none;">' + message + '</div>');
+		var $toast = $('<div class="wpat-toast" style="position: fixed; top: 55px; right: 25px; background: ' + bg + '; color: #fff; padding: 12px 22px; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2); z-index: 999999; font-weight: 600; font-size: 13.5px; display: flex; align-items: center; gap: 8px;"><span style="font-size: 16px; font-weight: bold;">✓</span> ' + message + '</div>');
 		$('body').append($toast);
-		$toast.fadeIn(300).delay(2500).fadeOut(300, function() {
+		$toast.fadeIn(300).delay(2600).fadeOut(400, function() {
 			$(this).remove();
 		});
-	}
-
-	// 2. Mostrar/Ocultar Opciones de Módulo al cambiar el Switch + Auto-guardado AJAX
-	$('.wpat-switch input[type="checkbox"]').on('change', function() {
-		var $checkbox = $(this);
-		var $card = $checkbox.closest('.wpat-module-card');
-		var $body = $card.find('.wpat-module-body');
-		
-		// Animación visual
-		if ($body.length) {
-			var $collapseBtn = $card.find('.wpat-collapse-btn');
-			if ($checkbox.is(':checked')) {
-				$body.slideDown(250);
-				$collapseBtn.fadeIn(200).removeClass('collapsed');
-			} else {
-				$body.slideUp(250);
-				$collapseBtn.fadeOut(200).addClass('collapsed');
-			}
-		}
+	};
+	var showToast = window.showToast;
 
 		// Auto-guardar si es un conmutador principal de módulo (dentro de .wpat-module-header)
 		if ($checkbox.closest('.wpat-module-header').length) {

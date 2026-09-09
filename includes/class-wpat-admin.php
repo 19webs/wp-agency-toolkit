@@ -2083,6 +2083,9 @@ class WPAT_Admin {
 												<span class="wpat-cat-label">⚙️ Sistema & Admin</span>
 												<span class="wpat-cat-badge">7</span>
 											</button>
+											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=tools' ) ); ?>" class="wpat-cat-item wpat-cat-link-item" style="text-decoration: none; margin-top: 6px; border-top: 1px dashed var(--wpat-border, #e2e8f0); padding-top: 8px; color: var(--wpat-primary, #2563eb);">
+												<span class="wpat-cat-label">🛠️ Salud & Limpieza BD</span>
+											</a>
 										</div>
 									</aside>
 
@@ -2771,9 +2774,7 @@ class WPAT_Admin {
 										<input type="text" name="wpat_settings[admin_footer_text]" id="wpat_admin_footer_text" value="<?php echo esc_attr( isset( $settings['admin_footer_text'] ) ? $settings['admin_footer_text'] : '' ); ?>" class="regular-text" placeholder="Ej: Desarrollado por Mi Agencia" />
 										<p class="description">Reemplaza el texto predeterminado "Gracias por crear con WordPress." y oculta la versión en la esquina inferior derecha.</p>
 									</div>
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 				<?php
 				break;
@@ -2864,9 +2865,7 @@ class WPAT_Admin {
 										</div>
 									</div>
 									
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 							</div>
 
@@ -2981,9 +2980,7 @@ class WPAT_Admin {
 										</div>
 									</div>
 
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 				<?php
 				break;
@@ -3045,9 +3042,7 @@ class WPAT_Admin {
 										<p class="description">Si el contenido del formulario o comentario contiene cualquiera de estas palabras clave, el envío se rechazará.</p>
 									</div>
 
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 				<?php
 				break;
@@ -3097,9 +3092,7 @@ class WPAT_Admin {
 											Habilitar Captcha Matemático Simple en el Login
 										</label>
 									</div>
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 				<?php
 				break;
@@ -3122,9 +3115,7 @@ class WPAT_Admin {
 										</select>
 										<p class="description">Nota: La redirección por .htaccess es más veloz porque se ejecuta antes de cargar WordPress, pero solo funciona en servidores Apache o LiteSpeed. Si utilizas Nginx, mantén el método PHP.</p>
 									</div>
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 				<?php
 				break;
@@ -3160,9 +3151,7 @@ class WPAT_Admin {
 											Archivos Multimedia (Medios)
 										</label>
 									</div>
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 				<?php
 				break;
@@ -3234,9 +3223,7 @@ class WPAT_Admin {
 										</label>
 									</div>
 
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 
 								</div>
 							</div>
@@ -3321,9 +3308,7 @@ class WPAT_Admin {
 
 									</div>
 
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 				<?php
 				break;
@@ -3356,9 +3341,7 @@ class WPAT_Admin {
 											Desactivar Deslizador de Galería (Slider)
 										</label>
 									</div>
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 				<?php
 				break;
@@ -3563,9 +3546,7 @@ class WPAT_Admin {
 									});
 									</script>
 
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 				<?php
 				break;
@@ -4043,9 +4024,7 @@ class WPAT_Admin {
 									});
 									</script>
 
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 				<?php
 				break;
@@ -4078,9 +4057,7 @@ class WPAT_Admin {
 										<textarea name="wpat_settings[variation_swatches_colors]" rows="4" style="width: 100%; font-family: monospace; font-size: 12px;" placeholder="Rojo Pasión | #ef4444&#10;Azul Marino | #1e3a8a&#10;Verde Oliva | #556b2f"><?php echo $sw_colors; ?></textarea>
 									</div>
 
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 				<?php
 				break;
@@ -4137,9 +4114,7 @@ class WPAT_Admin {
 										</div>
 									</div>
 
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 				<?php
 				break;
@@ -4206,9 +4181,7 @@ class WPAT_Admin {
 										<code>[wpat_product_search placeholder="Buscar productos..."]</code>
 									</div>
 
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 				<?php
 				break;
@@ -4264,9 +4237,7 @@ class WPAT_Admin {
 										<p class="description" style="margin-top: 4px;">Inserta este shortcode en la barra lateral (Sidebar) o plantilla de la tienda.</p>
 									</div>
 
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 							</div>
 				<?php
@@ -4424,9 +4395,7 @@ class WPAT_Admin {
 										<p class="description" style="margin-top:6px;">Calcula automáticamente el tiempo necesario en base a 200 palabras/minuto e inserta una etiqueta estilizada (ej. <code>⏱️ Tiempo estimado de lectura: 3 min</code>) justo antes del contenido de la entrada. También puedes insertarlo manualmente en cualquier maquetador (Elementor, Divi, Gutenberg) mediante los shortcodes <code>[tiempo_lectura]</code> o <code>[wpat_reading_time]</code>.</p>
 									</div>
 
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 				<?php
 				break;
@@ -4497,9 +4466,7 @@ class WPAT_Admin {
 										</div>
 									</div>
 
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 							</div>
 				<?php
@@ -4701,9 +4668,7 @@ class WPAT_Admin {
 										</div>
 									</div>
 
-									<div class="wpat-field-group" style="margin-top: 25px; border-top: 1px solid var(--wpat-border); padding-top: 20px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary wpat-save-btn" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 							</div>
 
@@ -4770,9 +4735,7 @@ class WPAT_Admin {
 										</div>
 									</div>
 									
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 							</div>
 
@@ -5188,9 +5151,7 @@ class WPAT_Admin {
 										<p class="description">Escribe un agente por línea en formato: <code>Nombre | Teléfono | Cargo/Departamento</code>. Si se define, al pulsar el icono de WhatsApp se desplegará una lista emergente para elegir agente.</p>
 									</div>
 
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" />
-									</div>
+									
 								</div>
 							</div>
 

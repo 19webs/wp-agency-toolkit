@@ -2054,6 +2054,9 @@ class WPAT_Admin {
 							<button type="button" id="wpat_force_update_check_btn" class="button button-secondary" style="background:transparent; border-color:rgba(255,255,255,0.2); color:#fff; height:32px; line-height:30px; border-radius:4px; margin:0; cursor:pointer; font-weight:600; box-shadow:none; display: block; box-sizing: border-box;">
 								Comprobar versión
 							</button>
+							<button type="button" id="wpat_theme_toggle_btn" class="wpat-theme-toggle-btn" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; height:32px; line-height:30px; padding:0 12px; border-radius:4px; cursor:pointer; font-weight:600; font-size:12px; display:inline-flex; align-items:center; gap:6px; margin-left:8px;">
+								<span id="wpat_theme_icon">☀️</span> <span id="wpat_theme_label">Modo Oscuro</span>
+							</button>
 						<?php endif; ?>
 					</div>
 				</div>
@@ -2099,34 +2102,70 @@ class WPAT_Admin {
 						<?php else : ?>
 							<!-- CENTRO DE MÓDULOS (DASHBOARD GRID) -->
 							<div id="tab-modules" class="wpat-tab-panel active">
-								<div class="wpat-dashboard-toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;">
-									<div>
-										<h2 style="margin:0 0 4px 0; font-size:20px; font-weight:700;">Centro de Módulos & Herramientas</h2>
-										<p class="section-desc" style="margin:0; color:#646970;">Activa o desactiva utilidades de forma independiente para mantener tu sitio rápido y ligero.</p>
-									</div>
-									<div class="wpat-search-box" style="position: relative; min-width: 260px;">
-										<span class="dashicons dashicons-search" style="position: absolute; left: 10px; top: 9px; color: #94a3b8; font-size: 16px;"></span>
-										<input type="text" id="wpat_modules_search_input" placeholder="Buscar módulo..." style="padding-left: 32px; width: 100%; border-radius: 8px; border: 1px solid #cbd5e1; height: 34px; font-size: 13px;" />
-									</div>
-								</div>
+								<div class="wpat-layout-container" style="display: flex; gap: 20px; align-items: flex-start;">
+									<!-- COLUMNA VERTICAL NAVEGACIÓN (ESCRITORIO) -->
+									<aside class="wpat-cat-sidebar" style="width: 230px; flex-shrink: 0; background: var(--wpat-card-bg, #fff); border: 1px solid var(--wpat-border, #e2e8f0); border-radius: 12px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+										<div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; padding: 6px 10px 10px 10px; border-bottom: 1px solid var(--wpat-border, #e2e8f0); margin-bottom: 8px;">
+											Categorías
+										</div>
+										<div class="wpat-cat-nav-list" style="display: flex; flex-direction: column; gap: 4px;">
+											<button type="button" class="wpat-cat-item active" data-cat="all">
+												<span class="wpat-cat-label">📌 Todos</span>
+												<span class="wpat-cat-badge">35</span>
+											</button>
+											<button type="button" class="wpat-cat-item" data-cat="woocommerce">
+												<span class="wpat-cat-label">🛍️ WooCommerce</span>
+												<span class="wpat-cat-badge">10</span>
+											</button>
+											<button type="button" class="wpat-cat-item" data-cat="security">
+												<span class="wpat-cat-label">🛡️ Seguridad</span>
+												<span class="wpat-cat-badge">6</span>
+											</button>
+											<button type="button" class="wpat-cat-item" data-cat="performance">
+												<span class="wpat-cat-label">⚡ Rendimiento & SEO</span>
+												<span class="wpat-cat-badge">6</span>
+											</button>
+											<button type="button" class="wpat-cat-item" data-cat="tools">
+												<span class="wpat-cat-label">🛠️ Herramientas</span>
+												<span class="wpat-cat-badge">7</span>
+											</button>
+											<button type="button" class="wpat-cat-item" data-cat="system">
+												<span class="wpat-cat-label">⚙️ Sistema & Admin</span>
+												<span class="wpat-cat-badge">6</span>
+											</button>
+										</div>
+									</aside>
 
-								<!-- FILTROS POR CATEGORÍAS (10 CATEGORÍAS COMPLETAS) -->
-								<div class="wpat-cat-filters" style="display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; overflow-x: auto; white-space: nowrap;">
-									<button type="button" class="wpat-cat-pill active" data-cat="all">Todos (35)</button>
-									<button type="button" class="wpat-cat-pill" data-cat="security">Seguridad & Acceso (7)</button>
-									<button type="button" class="wpat-cat-pill" data-cat="woocommerce">WooCommerce (10)</button>
-									<button type="button" class="wpat-cat-pill" data-cat="performance">Rendimiento & Código (6)</button>
-									<button type="button" class="wpat-cat-pill" data-cat="media">Optimización de Medios (2)</button>
-									<button type="button" class="wpat-cat-pill" data-cat="kits">Importador de Kits (1)</button>
-									<button type="button" class="wpat-cat-pill" data-cat="smtp">Configuración SMTP (1)</button>
-									<button type="button" class="wpat-cat-pill" data-cat="seo">Optimización SEO (1)</button>
-									<button type="button" class="wpat-cat-pill" data-cat="integrations">Integraciones (2)</button>
-									<button type="button" class="wpat-cat-pill" data-cat="initial">Configuración Inicial (3)</button>
-									<button type="button" class="wpat-cat-pill" data-cat="tools">Salud & Herramientas (2)</button>
-								</div>
+									<!-- SELECTOR DESPLEGABLE MÓVIL (< 768px) -->
+									<div class="wpat-mobile-cat-container" style="display: none; width: 100%; margin-bottom: 15px;">
+										<label for="wpat_mobile_cat_select" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 6px;">Categoría:</label>
+										<select id="wpat_mobile_cat_select" style="width: 100%; height: 38px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 0 12px; font-weight: 600; font-size: 13px; background: #fff;">
+											<option value="all">📌 Todos (35)</option>
+											<option value="woocommerce">🛍️ WooCommerce (10)</option>
+											<option value="security">🛡️ Seguridad (6)</option>
+											<option value="performance">⚡ Rendimiento & SEO (6)</option>
+											<option value="tools">🛠️ Herramientas (7)</option>
+											<option value="system">⚙️ Sistema & Admin (6)</option>
+										</select>
+									</div>
 
-								<div class="wpat-modules-grid-container" id="wpat_modules_grid">
-									<?php $this->render_all_modules_grid_cards( $settings ); ?>
+									<!-- ÁREA PRINCIPAL CON BUSCADOR Y GRID -->
+									<main class="wpat-main-content" style="flex: 1; min-width: 0;">
+										<div class="wpat-dashboard-toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap; background: var(--wpat-card-bg, #fff); border: 1px solid var(--wpat-border, #e2e8f0); padding: 14px 18px; border-radius: 12px;">
+											<div>
+												<h2 style="margin:0 0 4px 0; font-size:18px; font-weight:700;">Centro de Módulos & Herramientas</h2>
+												<p class="section-desc" style="margin:0; color:#646970; font-size:13px;">Activa o desactiva utilidades de forma independiente para mantener tu sitio rápido y ligero.</p>
+											</div>
+											<div class="wpat-search-box" style="position: relative; min-width: 240px;">
+												<span class="dashicons dashicons-search" style="position: absolute; left: 10px; top: 9px; color: #94a3b8; font-size: 16px;"></span>
+												<input type="text" id="wpat_modules_search_input" placeholder="Buscar módulo..." style="padding-left: 32px; width: 100%; border-radius: 8px; border: 1px solid #cbd5e1; height: 34px; font-size: 13px;" />
+											</div>
+										</div>
+
+										<div class="wpat-modules-grid-container" id="wpat_modules_grid">
+											<?php $this->render_all_modules_grid_cards( $settings ); ?>
+										</div>
+									</main>
 								</div>
 							</div>
 						<?php endif; ?>
@@ -2317,7 +2356,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Oculta la barra superior negra de WordPress y bloquea el acceso a wp-admin a clientes/suscriptores.',
-				'cat_class'   => 'cat-security cat-sec',
+				'cat_class'   => 'cat-system cat-admin',
 				'icon'        => '🚫',
 				'icon_bg'     => 'sec',
 				'keywords'    => 'restringir barra admin wp-admin acceso clientes'
@@ -2330,7 +2369,7 @@ class WPAT_Admin {
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
 				'desc'        => 'Gestor ligero de fragmentos PHP, CSS y JS sin editar functions.php con ejecución segura.',
-				'cat_class'   => 'cat-performance cat-perf cat-admin',
+				'cat_class'   => 'cat-tools',
 				'icon'        => '💻',
 				'icon_bg'     => 'perf',
 				'keywords'    => 'snippets codigo php css js fragmentos'
@@ -2363,7 +2402,7 @@ class WPAT_Admin {
 				'badge'       => 'Automático',
 				'badge_class' => 'tweak',
 				'desc'        => 'Duplica entradas, páginas o CPTs con 1-clic conservando la estructura y campos personalizados.',
-				'cat_class'   => 'cat-performance cat-perf',
+				'cat_class'   => 'cat-tools',
 				'icon'        => '📋',
 				'icon_bg'     => 'perf',
 				'keywords'    => 'duplicar clonar entradas paginas cpts'
@@ -2376,7 +2415,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Compresión en lote y conversión automática a formato WebP de nueva generación al subir imágenes.',
-				'cat_class'   => 'cat-media cat-perf',
+				'cat_class'   => 'cat-performance cat-perf',
 				'icon'        => '🖼️',
 				'icon_bg'     => 'perf',
 				'keywords'    => 'optimizacion imagenes webp compresion biblioteca'
@@ -2387,7 +2426,7 @@ class WPAT_Admin {
 				'badge'       => 'Automático',
 				'badge_class' => 'tweak',
 				'desc'        => 'Permite la subida segura de archivos vectoriales SVG a la biblioteca multimedia con sanitización.',
-				'cat_class'   => 'cat-media',
+				'cat_class'   => 'cat-performance cat-perf',
 				'icon'        => '📐',
 				'icon_bg'     => 'perf',
 				'keywords'    => 'svg vectorial biblioteca medios soporte'
@@ -2400,7 +2439,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Importador masivo de kits de maquetación de Envato Elements y plantillas listas para Elementor.',
-				'cat_class'   => 'cat-kits cat-admin',
+				'cat_class'   => 'cat-system cat-admin',
 				'icon'        => '📥',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'importador kits plantillas envato elementor'
@@ -2413,7 +2452,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Servicio seguro de envío de correo SMTP con soporte TLS/SSL y comprobación de envío.',
-				'cat_class'   => 'cat-smtp cat-admin',
+				'cat_class'   => 'cat-system cat-admin',
 				'icon'        => '📧',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'smtp correo envio email servidor tls ssl'
@@ -2426,7 +2465,7 @@ class WPAT_Admin {
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
 				'desc'        => 'Auditoría SEO on-page, generador de meta etiquetas y solución automática de imágenes sin ALT.',
-				'cat_class'   => 'cat-seo cat-perf',
+				'cat_class'   => 'cat-performance cat-perf',
 				'icon'        => '🚀',
 				'icon_bg'     => 'perf',
 				'keywords'    => 'seo optimizacion meta titulos auditoria alt'
@@ -2439,7 +2478,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Inyecta código de Google Analytics, Tag Manager, Facebook Pixel y scripts en Head/Body sin plugins.',
-				'cat_class'   => 'cat-integrations cat-admin',
+				'cat_class'   => 'cat-tools',
 				'icon'        => '🔗',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'integraciones analytics tag manager pixel scripts head body'
@@ -2450,7 +2489,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Añade un botón flotante directo de contacto por WhatsApp en la esquina de tu sitio web.',
-				'cat_class'   => 'cat-integrations',
+				'cat_class'   => 'cat-tools',
 				'icon'        => '💬',
 				'icon_bg'     => 'woo',
 				'keywords'    => 'whatsapp boton flotante contacto chat'
@@ -2463,7 +2502,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Configura rápidamente zona horaria, enlaces permanentes, página de inicio y limpieza inicial.',
-				'cat_class'   => 'cat-initial cat-admin',
+				'cat_class'   => 'cat-system cat-admin',
 				'icon'        => '⚙️',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'configuracion inicial sitio permalinks zona horaria'
@@ -2474,7 +2513,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Sustituye el Escritorio estándar por un panel de control limpio con accesos rápidos y estadísticas.',
-				'cat_class'   => 'cat-initial cat-admin',
+				'cat_class'   => 'cat-system cat-admin',
 				'icon'        => '📊',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'escritorio personalizado limpiador widgets soporte'
@@ -2485,7 +2524,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Modo Marca Blanca para agencias: oculta las menciones de WP Agency Toolkit a los clientes final.',
-				'cat_class'   => 'cat-initial cat-admin',
+				'cat_class'   => 'cat-system cat-admin',
 				'icon'        => '🎭',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'marca blanca marca agencia huella silent skin'
@@ -2498,7 +2537,7 @@ class WPAT_Admin {
 				'badge'       => 'Herramienta',
 				'badge_class' => 'tweak',
 				'desc'        => 'Respalda o migra contenidos completos en JSON o edita páginas/entradas en masa vía CSV.',
-				'cat_class'   => 'cat-tools cat-admin',
+				'cat_class'   => 'cat-tools',
 				'icon'        => '📊',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'exportador importador csv json respaldo migracion'
@@ -2520,7 +2559,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Botón flotante de accesibilidad para ajustar tamaño de letra, contraste y modo de lectura.',
-				'cat_class'   => 'cat-performance cat-perf',
+				'cat_class'   => 'cat-tools',
 				'icon'        => '♿',
 				'icon_bg'     => 'perf',
 				'keywords'    => 'accesibilidad fuente contraste lectura boton flotante'
@@ -2542,7 +2581,7 @@ class WPAT_Admin {
 				'badge'       => 'Herramienta',
 				'badge_class' => 'subpage',
 				'desc'        => 'Limpieza profunda de la base de datos, escaneo de imágenes huérfanas e informes del sistema.',
-				'cat_class'   => 'cat-tools cat-admin',
+				'cat_class'   => 'cat-system cat-admin',
 				'icon'        => '🛠️',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'salud herramientas base de datos imagenes no usadas'

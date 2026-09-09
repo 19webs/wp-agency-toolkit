@@ -756,3 +756,134 @@ textarea.code {
 
 /* Ocultar botones de colapso chevron */
 .wpat-collapse-btn { display: none !important; }
+
+
+/* ==============================================================================
+ * NUEVOS ESTILOS: SIDEBAR VERTICAL, ADAPTACIÓN MÓVIL Y MODO OSCURO (v4.0.6)
+ * ============================================================================== */
+
+/* Estilos de los ítems del sidebar vertical */
+.wpat-cat-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	padding: 9px 12px;
+	border-radius: 8px;
+	border: none;
+	background: transparent;
+	color: var(--wpat-text, #2c3338);
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	text-align: left;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.wpat-cat-item:hover {
+	background: rgba(34, 113, 177, 0.06);
+	color: #2271b1;
+}
+
+.wpat-cat-item.active {
+	background: #2271b1 !important;
+	color: #ffffff !important;
+	font-weight: 600;
+}
+
+.wpat-cat-badge {
+	font-size: 11px;
+	font-weight: 600;
+	background: #e2e8f0;
+	color: #475569;
+	padding: 2px 7px;
+	border-radius: 12px;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.wpat-cat-item.active .wpat-cat-badge {
+	background: rgba(255, 255, 255, 0.25);
+	color: #ffffff;
+}
+
+/* Responsividad Móvil (< 768px) */
+@media (max-width: 768px) {
+	.wpat-layout-container {
+		flex-direction: column !important;
+	}
+	.wpat-cat-sidebar {
+		display: none !important;
+	}
+	.wpat-mobile-cat-container {
+		display: block !important;
+	}
+}
+
+/* ==============================================================================
+ * MODO OSCURO (DARK MODE)
+ * ============================================================================== */
+body.wpat-dark-mode,
+.wpat-admin-wrapper.wpat-dark-mode {
+	--wpat-bg-card: #1e293b;
+	--wpat-border: #334155;
+	--wpat-text: #f8fafc;
+	--wpat-text-light: #94a3b8;
+}
+
+.wpat-dark-mode .wpat-container,
+.wpat-dark-mode .wpat-tabs-content,
+.wpat-dark-mode .wpat-cat-sidebar,
+.wpat-dark-mode .wpat-dashboard-toolbar,
+.wpat-dark-mode .wpat-module-grid-card,
+.wpat-dark-mode .wpat-module-card,
+.wpat-dark-mode .wpat-back-bar {
+	background-color: #1e293b !important;
+	border-color: #334155 !important;
+	color: #f8fafc !important;
+}
+
+.wpat-dark-mode h1,
+.wpat-dark-mode h2,
+.wpat-dark-mode h3,
+.wpat-dark-mode h4,
+.wpat-dark-mode strong {
+	color: #f8fafc !important;
+}
+
+.wpat-dark-mode p,
+.wpat-dark-mode .description,
+.wpat-dark-mode .section-desc {
+	color: #94a3b8 !important;
+}
+
+.wpat-dark-mode input[type="text"],
+.wpat-dark-mode input[type="number"],
+.wpat-dark-mode select,
+.wpat-dark-mode textarea {
+	background-color: #0f172a !important;
+	border-color: #334155 !important;
+	color: #f8fafc !important;
+}
+
+.wpat-dark-mode .wpat-cat-item {
+	color: #cbd5e1;
+}
+
+.wpat-dark-mode .wpat-cat-item:hover {
+	background: #334155;
+	color: #38bdf8;
+}
+
+.wpat-dark-mode .wpat-cat-item.active {
+	background: #2563eb !important;
+	color: #ffffff !important;
+}
+
+.wpat-dark-mode .wpat-cat-badge {
+	background: #334155;
+	color: #94a3b8;
+}
+
+.wpat-dark-mode .wpat-card-bottom {
+	border-top-color: #334155 !important;
+}

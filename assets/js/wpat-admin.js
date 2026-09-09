@@ -80,16 +80,15 @@ jQuery(document).ready(function($) {
 		});
 	});
 
-	// Filtrado por Categorías en Centro de Módulos con Persistencia
-	$(document).on('click', '.wpat-cat-pill', function() {
-		$('.wpat-cat-pill').removeClass('active');
-		$(this).addClass('active');
-		var cat = $(this).data('cat');
+	// Función central para aplicar filtrado por Categoría
+	function applyCategoryFilter(cat) {
+		$('.wpat-cat-item, .wpat-cat-pill').removeClass('active');
+		$('.wpat-cat-item[data-cat="' + cat + '"], .wpat-cat-pill[data-cat="' + cat + '"]').addClass('active');
+		$('#wpat_mobile_cat_select').val(cat);
 
 		localStorage.setItem('wpat_active_cat', cat);
 		sessionStorage.setItem('wpat_active_cat', cat);
 
-		// Actualizar parámetro cat en los enlaces de Ajustes de las tarjetas
 		$('.wpat-card-action-btn').each(function() {
 			var href = $(this).attr('href');
 			if (href) {
@@ -105,13 +104,52 @@ jQuery(document).ready(function($) {
 				$(this).hide();
 			}
 		});
+	}
+
+	// Clics en la Navegación Vertical o Pills
+	$(document).on('click', '.wpat-cat-item, .wpat-cat-pill', function() {
+		var cat = $(this).data('cat');
+		applyCategoryFilter(cat);
+	});
+
+	// Cambio en el Selector Desplegable Móvil
+	$(document).on('change', '#wpat_mobile_cat_select', function() {
+		var cat = $(this).val();
+		applyCategoryFilter(cat);
 	});
 
 	// Restaurar Categoría Activa al Cargar la Página
 	var urlParams = new URLSearchParams(window.location.search);
 	var savedCat = urlParams.get('cat') || localStorage.getItem('wpat_active_cat') || sessionStorage.getItem('wpat_active_cat');
-	if (savedCat && $('.wpat-cat-pill[data-cat="' + savedCat + '"]').length) {
-		$('.wpat-cat-pill[data-cat="' + savedCat + '"]').trigger('click');
+	if (savedCat) {
+		applyCategoryFilter(savedCat);
+	}
+
+	// LÓGICA MODO CLARO / MODO OSCURO (DARK MODE)
+	function applyThemeMode(theme) {
+		if (theme === 'dark') {
+			$('body, .wpat-admin-wrapper').addClass('wpat-dark-mode');
+			$('#wpat_theme_icon').text('🌙');
+			$('#wpat_theme_label').text('Modo Claro');
+			localStorage.setItem('wpat_theme_mode', 'dark');
+		} else {
+			$('body, .wpat-admin-wrapper').removeClass('wpat-dark-mode');
+			$('#wpat_theme_icon').text('☀️');
+			$('#wpat_theme_label').text('Modo Oscuro');
+			localStorage.setItem('wpat_theme_mode', 'light');
+		}
+	}
+
+	$(document).on('click', '#wpat_theme_toggle_btn', function() {
+		var currentTheme = localStorage.getItem('wpat_theme_mode') === 'dark' ? 'dark' : 'light';
+		var newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+		applyThemeMode(newTheme);
+	});
+
+	// Restaurar Tema Guardado al Cargar
+	var savedTheme = localStorage.getItem('wpat_theme_mode');
+	if (savedTheme === 'dark') {
+		applyThemeMode('dark');
 	}
 
 	// Buscador en Vivo en Centro de Módulos

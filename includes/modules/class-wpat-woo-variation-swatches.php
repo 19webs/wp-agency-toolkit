@@ -110,7 +110,7 @@ class WPAT_Woo_Variation_Swatches {
 		}
 
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['woo-variation-swatches'] ) || empty( $settings['variation_swatches_enabled'] ) ) {
+		if ( empty( $settings['woo-variation-swatches'] ) && empty( $settings['variation_swatches_enabled'] ) ) {
 			return;
 		}
 
@@ -138,7 +138,7 @@ class WPAT_Woo_Variation_Swatches {
 	 */
 	public function render_variation_swatches( $html, $args ) {
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['woo-variation-swatches'] ) || empty( $settings['variation_swatches_enabled'] ) ) {
+		if ( empty( $settings['woo-variation-swatches'] ) && empty( $settings['variation_swatches_enabled'] ) ) {
 			return $html;
 		}
 

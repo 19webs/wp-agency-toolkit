@@ -55,7 +55,7 @@ class WPAT_Woo_PDF_Invoices {
 	 */
 	public function auto_generate_invoice_number( $order_id ) {
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['woo-pdf-invoices'] ) || empty( $settings['pdf_invoices_enabled'] ) ) {
+		if ( empty( $settings['woo-pdf-invoices'] ) && empty( $settings['pdf_invoices_enabled'] ) ) {
 			return;
 		}
 
@@ -91,7 +91,7 @@ class WPAT_Woo_PDF_Invoices {
 		}
 
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['woo-pdf-invoices'] ) || empty( $settings['pdf_invoices_enabled'] ) ) {
+		if ( empty( $settings['woo-pdf-invoices'] ) && empty( $settings['pdf_invoices_enabled'] ) ) {
 			return $attachments;
 		}
 
@@ -117,7 +117,7 @@ class WPAT_Woo_PDF_Invoices {
 	 */
 	public function add_admin_order_download_buttons( $order ) {
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['woo-pdf-invoices'] ) || empty( $settings['pdf_invoices_enabled'] ) ) {
+		if ( empty( $settings['woo-pdf-invoices'] ) && empty( $settings['pdf_invoices_enabled'] ) ) {
 			return;
 		}
 
@@ -146,7 +146,7 @@ class WPAT_Woo_PDF_Invoices {
 	 */
 	public function add_my_account_download_button( $actions, $order ) {
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['woo-pdf-invoices'] ) || empty( $settings['pdf_invoices_enabled'] ) ) {
+		if ( empty( $settings['woo-pdf-invoices'] ) && empty( $settings['pdf_invoices_enabled'] ) ) {
 			return $actions;
 		}
 

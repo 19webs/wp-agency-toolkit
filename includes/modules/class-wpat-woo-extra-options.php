@@ -134,7 +134,7 @@ class WPAT_Woo_Extra_Options {
 	 */
 	public function get_applicable_rules( $product_id ) {
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['woo-extra-options'] ) || empty( $settings['extra_options_enabled'] ) ) {
+		if ( empty( $settings['woo-extra-options'] ) && empty( $settings['extra_options_enabled'] ) ) {
 			return array();
 		}
 

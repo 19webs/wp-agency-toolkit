@@ -44,7 +44,7 @@ class WPAT_WhatsApp {
 		$settings = WPAT_Main::get_instance()->get_settings();
 
 		// Verificar si el botón está activado
-		if ( empty( $settings['whatsapp_enabled'] ) ) {
+		if ( empty( $settings['whatsapp'] ) && empty( $settings['whatsapp_enabled'] ) ) {
 			return;
 		}
 

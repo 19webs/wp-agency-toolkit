@@ -801,7 +801,7 @@ class WPAT_Admin {
 
 		// 9. Sanitizar WhatsApp
 		$new_settings['whatsapp']          = isset( $input_settings['whatsapp'] ) && '1' === $input_settings['whatsapp'] ? '1' : '0';
-		$new_settings['whatsapp_enabled']  = isset( $input_settings['whatsapp_enabled'] ) && '1' === $input_settings['whatsapp_enabled'] ? '1' : '0';
+		$new_settings['whatsapp_enabled']  = $new_settings['whatsapp'];
 		$new_settings['whatsapp_phone']    = isset( $input_settings['whatsapp_phone'] ) ? sanitize_text_field( $input_settings['whatsapp_phone'] ) : '';
 		$new_settings['whatsapp_message']  = isset( $input_settings['whatsapp_message'] ) ? sanitize_text_field( $input_settings['whatsapp_message'] ) : '¡Hola! Quisiera más información.';
 		$new_settings['whatsapp_position'] = isset( $input_settings['whatsapp_position'] ) && in_array( $input_settings['whatsapp_position'], array( 'bottom-right', 'bottom-left' ), true ) ? $input_settings['whatsapp_position'] : 'bottom-right';
@@ -810,7 +810,7 @@ class WPAT_Admin {
 
 		// 10. Sanitizar Barra y Tiempo de Lectura
 		$new_settings['reading-progress']     = isset( $input_settings['reading-progress'] ) && '1' === $input_settings['reading-progress'] ? '1' : '0';
-		$new_settings['reading_bar_enabled']  = isset( $input_settings['reading_bar_enabled'] ) && '1' === $input_settings['reading_bar_enabled'] ? '1' : '0';
+		$new_settings['reading_bar_enabled']  = $new_settings['reading-progress'];
 		$new_settings['reading_bar_color']    = isset( $input_settings['reading_bar_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['reading_bar_color'] ) ? $input_settings['reading_bar_color'] : '#2563eb';
 		$new_settings['reading_bar_height']   = isset( $input_settings['reading_bar_height'] ) ? max( 1, min( 30, absint( $input_settings['reading_bar_height'] ) ) ) : 4;
 		$new_settings['reading_time_enabled'] = isset( $input_settings['reading_time_enabled'] ) && '1' === $input_settings['reading_time_enabled'] ? '1' : '0';
@@ -820,7 +820,7 @@ class WPAT_Admin {
 
 		// 12. Sanitizar Herramientas de Accesibilidad
 		$new_settings['accessibility']                   = isset( $input_settings['accessibility'] ) && '1' === $input_settings['accessibility'] ? '1' : '0';
-		$new_settings['accessibility_enabled']           = isset( $input_settings['accessibility_enabled'] ) && '1' === $input_settings['accessibility_enabled'] ? '1' : '0';
+		$new_settings['accessibility_enabled']           = $new_settings['accessibility'];
 		$new_settings['accessibility_position']          = isset( $input_settings['accessibility_position'] ) && in_array( $input_settings['accessibility_position'], array( 'bottom-left', 'bottom-right', 'top-left', 'top-right' ), true ) ? $input_settings['accessibility_position'] : 'bottom-left';
 		$new_settings['accessibility_offset_y']          = isset( $input_settings['accessibility_offset_y'] ) ? max( 0, min( 500, absint( $input_settings['accessibility_offset_y'] ) ) ) : 25;
 		$new_settings['accessibility_bg_color']          = isset( $input_settings['accessibility_bg_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['accessibility_bg_color'] ) ? $input_settings['accessibility_bg_color'] : '#2563eb';
@@ -834,7 +834,7 @@ class WPAT_Admin {
 
 		// 13. Sanitizar Editor de Campos de Checkout (WooCommerce)
 		$new_settings['woo-checkout-editor']      = isset( $input_settings['woo-checkout-editor'] ) && '1' === $input_settings['woo-checkout-editor'] ? '1' : '0';
-		$new_settings['checkout_editor_enabled']  = isset( $input_settings['checkout_editor_enabled'] ) && '1' === $input_settings['checkout_editor_enabled'] ? '1' : '0';
+		$new_settings['checkout_editor_enabled']  = $new_settings['woo-checkout-editor'];
 		$new_settings['checkout_nif_enabled']     = isset( $input_settings['checkout_nif_enabled'] ) && '1' === $input_settings['checkout_nif_enabled'] ? '1' : '0';
 		$new_settings['checkout_nif_required']    = isset( $input_settings['checkout_nif_required'] ) && '1' === $input_settings['checkout_nif_required'] ? '1' : '0';
 		$new_settings['checkout_nif_position']    = isset( $input_settings['checkout_nif_position'] ) && in_array( $input_settings['checkout_nif_position'], array( 'after_names', 'after_company', 'at_end' ), true ) ? $input_settings['checkout_nif_position'] : 'after_names';
@@ -1997,7 +1997,7 @@ class WPAT_Admin {
 						<a href="<?php echo esc_url( add_query_arg( array( 'cat' => isset( $_GET['cat'] ) ? sanitize_key( $_GET['cat'] ) : '' ), admin_url( 'admin.php?page=wp-agency-toolkit' ) ) ); ?>" class="button button-secondary" style="background: #f6f7f7; border-color: #cbd5e1; color: #1e293b; font-weight: 700; border-radius: 6px; height: 34px; line-height: 32px; padding: 0 16px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
 							<span class="dashicons dashicons-arrow-left-alt" style="font-size: 16px; width: 16px; height: 16px; margin: 0; line-height: 1;"></span> Volver al Centro de Módulos
 						</a>
-						<button type="submit" class="button button-primary" style="background: #2271b1; border-color: #135e96; font-weight: 700; height: 34px; line-height: 32px; padding: 0 20px; border-radius: 6px;">
+						<button type="submit" name="wpat_save_settings" value="1" class="button button-primary" style="background: #2271b1; border-color: #135e96; font-weight: 700; height: 34px; line-height: 32px; padding: 0 20px; border-radius: 6px;">
 							Guardar Cambios
 						</button>
 					</div>
@@ -3192,12 +3192,7 @@ class WPAT_Admin {
 									<?php $this->render_module_toggle( 'woo-checkout-editor', $settings, true ); ?>
 								</div>
 								<div class="wpat-module-body" style="display: block;">
-									<div class="wpat-field-group">
-										<label style="font-weight: 600;">
-											<input type="checkbox" name="wpat_settings[checkout_editor_enabled]" value="1" <?php checked( isset( $settings['checkout_editor_enabled'] ) ? $settings['checkout_editor_enabled'] : '0', '1' ); ?>>
-											Activar Editor de Campos de Checkout
-										</label>
-									</div>
+									
 
 									<!-- NIF / CIF -->
 									<div class="wpat-field-group" style="margin-top: 15px; background: #f8fafc; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 6px;">
@@ -3404,16 +3399,7 @@ class WPAT_Admin {
 									<?php $this->render_module_toggle( 'woo-extra-options', $settings, true ); ?>
 								</div>
 								<div class="wpat-module-body" style="display: block;">
-									<div class="wpat-field-group">
-										<label style="font-weight: 600;">
-											<input type="checkbox" name="wpat_settings[extra_options_enabled]" value="1" <?php checked( isset( $settings['extra_options_enabled'] ) ? $settings['extra_options_enabled'] : '0', '1' ); ?>>
-											Activar Campos extras en productos
-										</label>
-										<div style="margin-top: 10px; padding: 10px 14px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; font-size: 12px; color: #0369a1;">
-											💡 <strong>Formato de Opciones Especiales:</strong><br/>
-											• <strong>Desplegable (Select):</strong> <code>Nombre de Opción | Precio</code> (Ej: <code>Cena Sí | 15.00</code> ó <code>Cena No | 0</code>).<br/>
-											• <strong>Muestrario de Color (Swatch):</strong> <code>Nombre del Color | #HEX | Precio</code> (Ej: <code>Azul Real | #2563eb | 0</code> ó <code>Oro Metalizado | #ffd700 | 5.00</code>).
-										</div>
+									
 									</div>
 
 									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
@@ -3893,12 +3879,7 @@ class WPAT_Admin {
 									<?php $this->render_module_toggle( 'woo-variation-swatches', $settings, true ); ?>
 								</div>
 								<div class="wpat-module-body" style="display: block;">
-									<div class="wpat-field-group">
-										<label style="font-weight: 600;">
-											<input type="checkbox" name="wpat_settings[variation_swatches_enabled]" value="1" <?php checked( isset( $settings['variation_swatches_enabled'] ) ? $settings['variation_swatches_enabled'] : '0', '1' ); ?>>
-											Activar Swatches de Variación en Productos Variables
-										</label>
-									</div>
+									
 
 									<div class="wpat-field-group" style="margin-top: 15px;">
 										<label style="font-weight: 600; display: block; margin-bottom: 5px;">Forma de los Botones Swatch:</label>
@@ -3933,12 +3914,7 @@ class WPAT_Admin {
 									<?php $this->render_module_toggle( 'woo-pdf-invoices', $settings, true ); ?>
 								</div>
 								<div class="wpat-module-body" style="display: block;">
-									<div class="wpat-field-group">
-										<label style="font-weight: 600;">
-											<input type="checkbox" name="wpat_settings[pdf_invoices_enabled]" value="1" <?php checked( isset( $settings['pdf_invoices_enabled'] ) ? $settings['pdf_invoices_enabled'] : '0', '1' ); ?>>
-											Activar Generación de Facturas PDF y Albaranes Automáticos
-										</label>
-									</div>
+									
 
 									<!-- Datos de Empresa -->
 									<div class="wpat-field-group" style="margin-top: 15px; background: #f8fafc; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 6px;">
@@ -3997,12 +3973,7 @@ class WPAT_Admin {
 									<?php $this->render_module_toggle( 'woo-live-search', $settings, true ); ?>
 								</div>
 								<div class="wpat-module-body" style="display: block;">
-									<div class="wpat-field-group">
-										<label style="font-weight: 600;">
-											<input type="checkbox" name="wpat_settings[live_search_enabled]" value="1" <?php checked( isset( $settings['live_search_enabled'] ) ? $settings['live_search_enabled'] : '0', '1' ); ?>>
-											Activar Buscador AJAX en Vivo en la Web Pública
-										</label>
-									</div>
+									
 
 									<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
 										<div class="wpat-field-group">
@@ -4071,12 +4042,7 @@ class WPAT_Admin {
 									<?php $this->render_module_toggle( 'woo-facets', $settings, true ); ?>
 								</div>
 								<div class="wpat-module-body" style="display: block;">
-									<div class="wpat-field-group">
-										<label style="font-weight: 600;">
-											<input type="checkbox" name="wpat_settings[facets_enabled]" value="1" <?php checked( isset( $settings['facets_enabled'] ) ? $settings['facets_enabled'] : '0', '1' ); ?>>
-											Activar Filtro por Facetas AJAX en la Tienda
-										</label>
-									</div>
+									
 
 									<div class="wpat-field-group" style="margin-top: 15px; background: #f8fafc; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 6px;">
 										<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700;">🎛️ Facetas a Habilitar en el Widget / Sidebar:</h4>
@@ -4255,12 +4221,7 @@ class WPAT_Admin {
 									<?php $this->render_module_toggle( 'reading-progress', $settings, true ); ?>
 								</div>
 								<div class="wpat-module-body" style="display: block;">
-									<div class="wpat-field-group">
-										<label style="font-weight: 600;">
-											<input type="checkbox" name="wpat_settings[reading_bar_enabled]" value="1" <?php checked( isset( $settings['reading_bar_enabled'] ) ? $settings['reading_bar_enabled'] : '0', '1' ); ?>>
-											Activar Barra de Progreso de Lectura Superior en Entradas (is_single)
-										</label>
-									</div>
+									
 
 									<div class="wpat-field-group" style="margin-top: 15px; display: flex; gap: 25px; align-items: flex-start; flex-wrap: wrap;">
 										<div>
@@ -4299,12 +4260,7 @@ class WPAT_Admin {
 									<?php $this->render_module_toggle( 'accessibility', $settings, true ); ?>
 								</div>
 								<div class="wpat-module-body" style="display: block;">
-									<div class="wpat-field-group">
-										<label style="font-weight: 600;">
-											<input type="checkbox" name="wpat_settings[accessibility_enabled]" value="1" <?php checked( isset( $settings['accessibility_enabled'] ) ? $settings['accessibility_enabled'] : '0', '1' ); ?>>
-											Activar Widget Flotante de Accesibilidad en la Web
-										</label>
-									</div>
+									
 
 									<div class="wpat-field-group" style="margin-top: 15px; display: flex; gap: 25px; align-items: flex-start; flex-wrap: wrap;">
 										<div>
@@ -5017,12 +4973,7 @@ class WPAT_Admin {
 									<?php $this->render_module_toggle( 'whatsapp', $settings, true ); ?>
 								</div>
 								<div class="wpat-module-body" style="display: block;">
-									<div class="wpat-field-group">
-										<label>
-											<input type="checkbox" name="wpat_settings[whatsapp_enabled]" value="1" <?php checked( isset( $settings['whatsapp_enabled'] ) ? $settings['whatsapp_enabled'] : '0', '1' ); ?>>
-											Activar botón flotante de WhatsApp en la web
-										</label>
-									</div>
+									
 
 									<div class="wpat-field-group" style="margin-top: 15px;">
 										<label for="wpat_whatsapp_phone">Número de Teléfono Principal (con prefijo de país)</label>

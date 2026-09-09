@@ -32,7 +32,7 @@ class WPAT_Woo_Live_Search {
 	private function __construct() {
 		$settings = WPAT_Main::get_instance()->get_settings();
 
-		if ( empty( $settings['woo-live-search'] ) || empty( $settings['live_search_enabled'] ) ) {
+		if ( empty( $settings['woo-live-search'] ) && empty( $settings['live_search_enabled'] ) ) {
 			return;
 		}
 

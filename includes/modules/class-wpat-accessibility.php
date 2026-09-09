@@ -44,7 +44,7 @@ class WPAT_Accessibility {
 		$settings = WPAT_Main::get_instance()->get_settings();
 
 		// Verificar que el módulo y la opción flotante estén activados
-		if ( empty( $settings['accessibility'] ) || empty( $settings['accessibility_enabled'] ) ) {
+		if ( empty( $settings['accessibility'] ) && empty( $settings['accessibility_enabled'] ) ) {
 			return;
 		}
 

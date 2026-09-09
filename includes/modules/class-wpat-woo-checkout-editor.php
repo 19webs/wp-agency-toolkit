@@ -62,7 +62,7 @@ class WPAT_Woo_Checkout_Editor {
 		}
 
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['woo-checkout-editor'] ) || empty( $settings['checkout_editor_enabled'] ) ) {
+		if ( empty( $settings['woo-checkout-editor'] ) && empty( $settings['checkout_editor_enabled'] ) ) {
 			return $fields;
 		}
 
@@ -177,7 +177,7 @@ class WPAT_Woo_Checkout_Editor {
 	 */
 	public function validate_custom_checkout_fields() {
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['woo-checkout-editor'] ) || empty( $settings['checkout_editor_enabled'] ) ) {
+		if ( empty( $settings['woo-checkout-editor'] ) && empty( $settings['checkout_editor_enabled'] ) ) {
 			return;
 		}
 
@@ -209,7 +209,7 @@ class WPAT_Woo_Checkout_Editor {
 	 */
 	public function save_custom_checkout_fields( $order_id, $posted ) {
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['woo-checkout-editor'] ) || empty( $settings['checkout_editor_enabled'] ) ) {
+		if ( empty( $settings['woo-checkout-editor'] ) && empty( $settings['checkout_editor_enabled'] ) ) {
 			return;
 		}
 
@@ -245,7 +245,7 @@ class WPAT_Woo_Checkout_Editor {
 	 */
 	public function display_fields_in_emails( $fields, $sent_to_admin, $order ) {
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['woo-checkout-editor'] ) || empty( $settings['checkout_editor_enabled'] ) ) {
+		if ( empty( $settings['woo-checkout-editor'] ) && empty( $settings['checkout_editor_enabled'] ) ) {
 			return $fields;
 		}
 
@@ -288,7 +288,7 @@ class WPAT_Woo_Checkout_Editor {
 	 */
 	public function display_fields_in_admin_billing( $order ) {
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['woo-checkout-editor'] ) || empty( $settings['checkout_editor_enabled'] ) ) {
+		if ( empty( $settings['woo-checkout-editor'] ) && empty( $settings['checkout_editor_enabled'] ) ) {
 			return;
 		}
 
@@ -321,7 +321,7 @@ class WPAT_Woo_Checkout_Editor {
 	 */
 	public function display_fields_in_admin_shipping( $order ) {
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['woo-checkout-editor'] ) || empty( $settings['checkout_editor_enabled'] ) ) {
+		if ( empty( $settings['woo-checkout-editor'] ) && empty( $settings['checkout_editor_enabled'] ) ) {
 			return;
 		}
 
@@ -350,7 +350,7 @@ class WPAT_Woo_Checkout_Editor {
 	 */
 	public function expose_fields_in_rest_api( $response, $order, $request ) {
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['woo-checkout-editor'] ) || empty( $settings['checkout_editor_enabled'] ) ) {
+		if ( empty( $settings['woo-checkout-editor'] ) && empty( $settings['checkout_editor_enabled'] ) ) {
 			return $response;
 		}
 

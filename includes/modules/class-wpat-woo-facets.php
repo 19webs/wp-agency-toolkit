@@ -32,7 +32,7 @@ class WPAT_Woo_Facets {
 	private function __construct() {
 		$settings = WPAT_Main::get_instance()->get_settings();
 
-		if ( empty( $settings['woo-facets'] ) || empty( $settings['facets_enabled'] ) ) {
+		if ( empty( $settings['woo-facets'] ) && empty( $settings['facets_enabled'] ) ) {
 			return;
 		}
 

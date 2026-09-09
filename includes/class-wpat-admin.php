@@ -651,12 +651,15 @@ class WPAT_Admin {
 		}
 
 		$current_settings = WPAT_Main::get_instance()->get_settings();
-		$input_settings   = isset( $_POST['wpat_settings'] ) ? $_POST['wpat_settings'] : array();
+		$input_settings   = isset( $_POST['wpat_settings'] ) ? (array) $_POST['wpat_settings'] : array();
 
-		$new_settings = array();
+		// Detectar si la petición proviene de la vista independiente de un módulo específico
+		$saving_module = isset( $_POST['wpat_saving_module'] ) ? sanitize_key( $_POST['wpat_saving_module'] ) : ( isset( $_GET['mod'] ) ? sanitize_key( $_GET['mod'] ) : '' );
 
-		// 1. Sanitizar Módulos ON/OFF (1 o 0)
-		$modules = array(
+		// Preservar todos los ajustes existentes para evitar borrar datos de otros módulos
+		$new_settings = $current_settings;
+
+		$all_modules = array(
 			'login-customizer',
 			'hide-login',
 			'ssl-fixer',
@@ -682,262 +685,346 @@ class WPAT_Admin {
 			'reading-progress',
 			'conflict-detector',
 			'accessibility',
+			'woo-checkout-editor',
+			'woo-extra-options',
+			'woo-variation-swatches',
+			'woo-pdf-invoices',
+			'woo-live-search',
+			'woo-facets',
+			'post-csv-importer',
+			'anti-spam',
+			'silent-skin',
+			'tools',
 		);
 
-		foreach ( $modules as $module_id ) {
-			$new_settings[ $module_id ] = isset( $input_settings[ $module_id ] ) && '1' === $input_settings[ $module_id ] ? '1' : '0';
-		}
-
-		// 2. Sanitizar Login Customizer / Marca Blanca
-		$new_settings['login_style']             = isset( $input_settings['login_style'] ) && in_array( $input_settings['login_style'], array( 'default', 'modern' ), true ) ? $input_settings['login_style'] : 'default';
-		$new_settings['login_logo']              = isset( $input_settings['login_logo'] ) ? esc_url_raw( $input_settings['login_logo'] ) : '';
-		$new_settings['login_bg_image']          = isset( $input_settings['login_bg_image'] ) ? esc_url_raw( $input_settings['login_bg_image'] ) : '';
-		$new_settings['login_bg_type']           = isset( $input_settings['login_bg_type'] ) && in_array( $input_settings['login_bg_type'], array( 'image', 'color' ), true ) ? $input_settings['login_bg_type'] : 'image';
-		$new_settings['login_bg_color']          = isset( $input_settings['login_bg_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['login_bg_color'] ) ? $input_settings['login_bg_color'] : '#f0f0f0';
-		$new_settings['login_accent_color']      = isset( $input_settings['login_accent_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['login_accent_color'] ) ? $input_settings['login_accent_color'] : '#2563eb';
-		$new_settings['login_hide_languages']    = isset( $input_settings['login_hide_languages'] ) && '1' === $input_settings['login_hide_languages'] ? '1' : '0';
-		$new_settings['login_footer_text']       = isset( $input_settings['login_footer_text'] ) ? sanitize_text_field( $input_settings['login_footer_text'] ) : '';
-		$new_settings['admin_footer_text']       = isset( $input_settings['admin_footer_text'] ) ? sanitize_text_field( $input_settings['admin_footer_text'] ) : '';
-		$new_settings['hide_admin_bar']          = isset( $input_settings['hide_admin_bar'] ) && '1' === $input_settings['hide_admin_bar'] ? '1' : '0';
-		$new_settings['dashboard_cleaner']       = isset( $input_settings['dashboard_cleaner'] ) && '1' === $input_settings['dashboard_cleaner'] ? '1' : '0';
-		$new_settings['dashboard_welcome_title'] = isset( $input_settings['dashboard_welcome_title'] ) ? sanitize_text_field( $input_settings['dashboard_welcome_title'] ) : 'Soporte y Gestión';
-		$new_settings['dashboard_welcome_text']  = isset( $input_settings['dashboard_welcome_text'] ) ? sanitize_textarea_field( $input_settings['dashboard_welcome_text'] ) : '';
-		$new_settings['dashboard_support_email'] = isset( $input_settings['dashboard_support_email'] ) ? sanitize_email( $input_settings['dashboard_support_email'] ) : '';
-
-		// Sanitizar visibilidad de tarjetas del Escritorio
-		$dashboard_cards = array( 'seo', 'pages', 'posts', 'plugins', 'themes', 'users', 'db', 'tools', 'smtp', 'jet', 'woo', 'media' );
-		foreach ( $dashboard_cards as $card_key ) {
-			$opt_key = 'db_card_' . $card_key;
-			$new_settings[ $opt_key ] = isset( $input_settings[ $opt_key ] ) && '1' === $input_settings[ $opt_key ] ? '1' : '0';
-		}
-
-		// Sanitizar Bloqueador de Bots
-		$new_settings['bot_blocker']           = isset( $input_settings['bot_blocker'] ) && '1' === $input_settings['bot_blocker'] ? '1' : '0';
-		$new_settings['bot_blocker_limit']     = isset( $input_settings['bot_blocker_limit'] ) ? max( 1, absint( $input_settings['bot_blocker_limit'] ) ) : 15;
-		$new_settings['bot_blocker_timeframe'] = isset( $input_settings['bot_blocker_timeframe'] ) ? max( 10, absint( $input_settings['bot_blocker_timeframe'] ) ) : 300;
-		$new_settings['bot_blocker_duration']  = isset( $input_settings['bot_blocker_duration'] ) ? max( 1, absint( $input_settings['bot_blocker_duration'] ) ) : 24;
-		
-		$whitelist_raw = isset( $input_settings['bot_blocker_whitelist'] ) ? sanitize_text_field( $input_settings['bot_blocker_whitelist'] ) : '';
-		$ips = array_filter( array_map( 'trim', explode( ',', $whitelist_raw ) ) );
-		$valid_ips = array();
-		foreach ( $ips as $ip ) {
-			if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
-				$valid_ips[] = $ip;
+		// Actualizar estado ON/OFF del módulo o de todos si es el guardado global
+		if ( ! empty( $saving_module ) ) {
+			if ( in_array( $saving_module, $all_modules, true ) ) {
+				$new_settings[ $saving_module ] = isset( $input_settings[ $saving_module ] ) && '1' === $input_settings[ $saving_module ] ? '1' : '0';
+			}
+		} else {
+			foreach ( $all_modules as $m_id ) {
+				if ( isset( $input_settings[ $m_id ] ) ) {
+					$new_settings[ $m_id ] = '1' === $input_settings[ $m_id ] ? '1' : '0';
+				}
 			}
 		}
-		$new_settings['bot_blocker_whitelist'] = implode( ', ', $valid_ips );
+
+		// 1. Sanitizar Login Customizer / Marca Blanca
+		if ( empty( $saving_module ) || in_array( $saving_module, array( 'login-customizer', 'dashboard_cleaner', 'hide_admin_bar' ), true ) ) {
+			$new_settings['login_style']             = isset( $input_settings['login_style'] ) && in_array( $input_settings['login_style'], array( 'default', 'modern' ), true ) ? $input_settings['login_style'] : 'default';
+			$new_settings['login_logo']              = isset( $input_settings['login_logo'] ) ? esc_url_raw( $input_settings['login_logo'] ) : '';
+			$new_settings['login_bg_image']          = isset( $input_settings['login_bg_image'] ) ? esc_url_raw( $input_settings['login_bg_image'] ) : '';
+			$new_settings['login_bg_type']           = isset( $input_settings['login_bg_type'] ) && in_array( $input_settings['login_bg_type'], array( 'image', 'color' ), true ) ? $input_settings['login_bg_type'] : 'image';
+			$new_settings['login_bg_color']          = isset( $input_settings['login_bg_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['login_bg_color'] ) ? $input_settings['login_bg_color'] : '#f0f0f0';
+			$new_settings['login_accent_color']      = isset( $input_settings['login_accent_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['login_accent_color'] ) ? $input_settings['login_accent_color'] : '#2563eb';
+			$new_settings['login_hide_languages']    = isset( $input_settings['login_hide_languages'] ) && '1' === $input_settings['login_hide_languages'] ? '1' : '0';
+			$new_settings['login_footer_text']       = isset( $input_settings['login_footer_text'] ) ? sanitize_text_field( $input_settings['login_footer_text'] ) : '';
+			$new_settings['admin_footer_text']       = isset( $input_settings['admin_footer_text'] ) ? sanitize_text_field( $input_settings['admin_footer_text'] ) : '';
+			$new_settings['hide_admin_bar']          = isset( $input_settings['hide_admin_bar'] ) && '1' === $input_settings['hide_admin_bar'] ? '1' : '0';
+			$new_settings['dashboard_cleaner']       = isset( $input_settings['dashboard_cleaner'] ) && '1' === $input_settings['dashboard_cleaner'] ? '1' : '0';
+			$new_settings['dashboard_welcome_title'] = isset( $input_settings['dashboard_welcome_title'] ) ? sanitize_text_field( $input_settings['dashboard_welcome_title'] ) : 'Soporte y Gestión';
+			$new_settings['dashboard_welcome_text']  = isset( $input_settings['dashboard_welcome_text'] ) ? sanitize_textarea_field( $input_settings['dashboard_welcome_text'] ) : '';
+			$new_settings['dashboard_support_email'] = isset( $input_settings['dashboard_support_email'] ) ? sanitize_email( $input_settings['dashboard_support_email'] ) : '';
+
+			$dashboard_cards = array( 'seo', 'pages', 'posts', 'plugins', 'themes', 'users', 'db', 'tools', 'smtp', 'jet', 'woo', 'media' );
+			foreach ( $dashboard_cards as $card_key ) {
+				$opt_key = 'db_card_' . $card_key;
+				$new_settings[ $opt_key ] = isset( $input_settings[ $opt_key ] ) && '1' === $input_settings[ $opt_key ] ? '1' : '0';
+			}
+		}
+
+		// 2. Sanitizar Bloqueador de Bots
+		if ( empty( $saving_module ) || 'bot-blocker' === $saving_module ) {
+			$new_settings['bot_blocker']           = isset( $input_settings['bot_blocker'] ) && '1' === $input_settings['bot_blocker'] ? '1' : '0';
+			$new_settings['bot_blocker_limit']     = isset( $input_settings['bot_blocker_limit'] ) ? max( 1, absint( $input_settings['bot_blocker_limit'] ) ) : 15;
+			$new_settings['bot_blocker_timeframe'] = isset( $input_settings['bot_blocker_timeframe'] ) ? max( 10, absint( $input_settings['bot_blocker_timeframe'] ) ) : 300;
+			$new_settings['bot_blocker_duration']  = isset( $input_settings['bot_blocker_duration'] ) ? max( 1, absint( $input_settings['bot_blocker_duration'] ) ) : 24;
+			
+			$whitelist_raw = isset( $input_settings['bot_blocker_whitelist'] ) ? sanitize_text_field( $input_settings['bot_blocker_whitelist'] ) : '';
+			$ips = array_filter( array_map( 'trim', explode( ',', $whitelist_raw ) ) );
+			$valid_ips = array();
+			foreach ( $ips as $ip ) {
+				if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+					$valid_ips[] = $ip;
+				}
+			}
+			$new_settings['bot_blocker_whitelist'] = implode( ', ', $valid_ips );
+		}
 
 		// 3. Sanitizar Hide Login
-		$new_settings['hide_login_slug']           = isset( $input_settings['hide_login_slug'] ) ? sanitize_title( $input_settings['hide_login_slug'] ) : 'acceso';
-		$new_settings['hide_login_redirect']       = isset( $input_settings['hide_login_redirect'] ) && in_array( $input_settings['hide_login_redirect'], array( 'home', '404' ), true ) ? $input_settings['hide_login_redirect'] : 'home';
-		$new_settings['hide_login_limit_attempts'] = isset( $input_settings['hide_login_limit_attempts'] ) && '1' === $input_settings['hide_login_limit_attempts'] ? '1' : '0';
-		$new_settings['hide_login_max_attempts']   = isset( $input_settings['hide_login_max_attempts'] ) ? absint( $input_settings['hide_login_max_attempts'] ) : 3;
-		$new_settings['hide_login_lockout']        = isset( $input_settings['hide_login_lockout'] ) ? absint( $input_settings['hide_login_lockout'] ) : 120;
-		$new_settings['hide_login_captcha']        = isset( $input_settings['hide_login_captcha'] ) && '1' === $input_settings['hide_login_captcha'] ? '1' : '0';
+		if ( empty( $saving_module ) || 'hide-login' === $saving_module ) {
+			$new_settings['hide_login_slug']           = isset( $input_settings['hide_login_slug'] ) ? sanitize_title( $input_settings['hide_login_slug'] ) : 'acceso';
+			$new_settings['hide_login_redirect']       = isset( $input_settings['hide_login_redirect'] ) && in_array( $input_settings['hide_login_redirect'], array( 'home', '404' ), true ) ? $input_settings['hide_login_redirect'] : 'home';
+			$new_settings['hide_login_limit_attempts'] = isset( $input_settings['hide_login_limit_attempts'] ) && '1' === $input_settings['hide_login_limit_attempts'] ? '1' : '0';
+			$new_settings['hide_login_max_attempts']   = isset( $input_settings['hide_login_max_attempts'] ) ? absint( $input_settings['hide_login_max_attempts'] ) : 3;
+			$new_settings['hide_login_lockout']        = isset( $input_settings['hide_login_lockout'] ) ? absint( $input_settings['hide_login_lockout'] ) : 120;
+			$new_settings['hide_login_captcha']        = isset( $input_settings['hide_login_captcha'] ) && '1' === $input_settings['hide_login_captcha'] ? '1' : '0';
+		}
 
-		// Sanitizar Deshabilitar Comentarios
-		$new_settings['disable_comments_global'] = isset( $input_settings['disable_comments_global'] ) && '1' === $input_settings['disable_comments_global'] ? '1' : '0';
-		$new_settings['disable_comments_posts']  = isset( $input_settings['disable_comments_posts'] ) && '1' === $input_settings['disable_comments_posts'] ? '1' : '0';
-		$new_settings['disable_comments_pages']  = isset( $input_settings['disable_comments_pages'] ) && '1' === $input_settings['disable_comments_pages'] ? '1' : '0';
-		$new_settings['disable_comments_media']  = isset( $input_settings['disable_comments_media'] ) && '1' === $input_settings['disable_comments_media'] ? '1' : '0';
+		// 4. Sanitizar Deshabilitar Comentarios
+		if ( empty( $saving_module ) || 'disable-comments' === $saving_module ) {
+			$new_settings['disable_comments_global'] = isset( $input_settings['disable_comments_global'] ) && '1' === $input_settings['disable_comments_global'] ? '1' : '0';
+			$new_settings['disable_comments_posts']  = isset( $input_settings['disable_comments_posts'] ) && '1' === $input_settings['disable_comments_posts'] ? '1' : '0';
+			$new_settings['disable_comments_pages']  = isset( $input_settings['disable_comments_pages'] ) && '1' === $input_settings['disable_comments_pages'] ? '1' : '0';
+			$new_settings['disable_comments_media']  = isset( $input_settings['disable_comments_media'] ) && '1' === $input_settings['disable_comments_media'] ? '1' : '0';
+		}
 
-		// 4. Sanitizar WooCommerce Catalog
-		$new_settings['woo_catalog_hide_price']  = isset( $input_settings['woo_catalog_hide_price'] ) && '1' === $input_settings['woo_catalog_hide_price'] ? '1' : '0';
-		$new_settings['woo_catalog_price_text']  = isset( $input_settings['woo_catalog_price_text'] ) ? sanitize_text_field( $input_settings['woo_catalog_price_text'] ) : '';
-		$new_settings['woo_catalog_hide_cart']   = isset( $input_settings['woo_catalog_hide_cart'] ) && '1' === $input_settings['woo_catalog_hide_cart'] ? '1' : '0';
-		$new_settings['woo_catalog_wa_enable']   = isset( $input_settings['woo_catalog_wa_enable'] ) && '1' === $input_settings['woo_catalog_wa_enable'] ? '1' : '0';
-		$new_settings['woo_catalog_wa_phone']    = isset( $input_settings['woo_catalog_wa_phone'] ) ? sanitize_text_field( $input_settings['woo_catalog_wa_phone'] ) : '';
-		$new_settings['woo_catalog_wa_message']  = isset( $input_settings['woo_catalog_wa_message'] ) ? sanitize_textarea_field( $input_settings['woo_catalog_wa_message'] ) : '';
-		$new_settings['woo_catalog_form_enable'] = isset( $input_settings['woo_catalog_form_enable'] ) && '1' === $input_settings['woo_catalog_form_enable'] ? '1' : '0';
-		$new_settings['woo_catalog_form_email']  = isset( $input_settings['woo_catalog_form_email'] ) ? sanitize_email( $input_settings['woo_catalog_form_email'] ) : '';
+		// 5. Sanitizar WooCommerce Catalog
+		if ( empty( $saving_module ) || 'woo-catalog' === $saving_module ) {
+			$new_settings['woo_catalog_hide_price']  = isset( $input_settings['woo_catalog_hide_price'] ) && '1' === $input_settings['woo_catalog_hide_price'] ? '1' : '0';
+			$new_settings['woo_catalog_price_text']  = isset( $input_settings['woo_catalog_price_text'] ) ? sanitize_text_field( $input_settings['woo_catalog_price_text'] ) : '';
+			$new_settings['woo_catalog_hide_cart']   = isset( $input_settings['woo_catalog_hide_cart'] ) && '1' === $input_settings['woo_catalog_hide_cart'] ? '1' : '0';
+			$new_settings['woo_catalog_wa_enable']   = isset( $input_settings['woo_catalog_wa_enable'] ) && '1' === $input_settings['woo_catalog_wa_enable'] ? '1' : '0';
+			$new_settings['woo_catalog_wa_phone']    = isset( $input_settings['woo_catalog_wa_phone'] ) ? sanitize_text_field( $input_settings['woo_catalog_wa_phone'] ) : '';
+			$new_settings['woo_catalog_wa_message']  = isset( $input_settings['woo_catalog_wa_message'] ) ? sanitize_textarea_field( $input_settings['woo_catalog_wa_message'] ) : '';
+			$new_settings['woo_catalog_form_enable'] = isset( $input_settings['woo_catalog_form_enable'] ) && '1' === $input_settings['woo_catalog_form_enable'] ? '1' : '0';
+			$new_settings['woo_catalog_form_email']  = isset( $input_settings['woo_catalog_form_email'] ) ? sanitize_email( $input_settings['woo_catalog_form_email'] ) : '';
+		}
 
-		// 5. Sanitizar WooCommerce Gallery Zoom
-		$new_settings['woo_zoom_disable_zoom']     = isset( $input_settings['woo_zoom_disable_zoom'] ) && '1' === $input_settings['woo_zoom_disable_zoom'] ? '1' : '0';
-		$new_settings['woo_zoom_disable_lightbox'] = isset( $input_settings['woo_zoom_disable_lightbox'] ) && '1' === $input_settings['woo_zoom_disable_lightbox'] ? '1' : '0';
-		$new_settings['woo_zoom_disable_slider']   = isset( $input_settings['woo_zoom_disable_slider'] ) && '1' === $input_settings['woo_zoom_disable_slider'] ? '1' : '0';
+		// 6. Sanitizar WooCommerce Gallery Zoom
+		if ( empty( $saving_module ) || 'woo-zoom' === $saving_module ) {
+			$new_settings['woo_zoom_disable_zoom']     = isset( $input_settings['woo_zoom_disable_zoom'] ) && '1' === $input_settings['woo_zoom_disable_zoom'] ? '1' : '0';
+			$new_settings['woo_zoom_disable_lightbox'] = isset( $input_settings['woo_zoom_disable_lightbox'] ) && '1' === $input_settings['woo_zoom_disable_lightbox'] ? '1' : '0';
+			$new_settings['woo_zoom_disable_slider']   = isset( $input_settings['woo_zoom_disable_slider'] ) && '1' === $input_settings['woo_zoom_disable_slider'] ? '1' : '0';
+		}
 
-		// 6. Sanitizar Fortalecimiento de Seguridad
-		$new_settings['sec_disable_file_edit']    = isset( $input_settings['sec_disable_file_edit'] ) && '1' === $input_settings['sec_disable_file_edit'] ? '1' : '0';
-		$new_settings['sec_block_uploads_php']    = isset( $input_settings['sec_block_uploads_php'] ) && '1' === $input_settings['sec_block_uploads_php'] ? '1' : '0';
-		$new_settings['sec_hide_wp_version']      = isset( $input_settings['sec_hide_wp_version'] ) && '1' === $input_settings['sec_hide_wp_version'] ? '1' : '0';
-		$new_settings['sec_generic_login_errors'] = isset( $input_settings['sec_generic_login_errors'] ) && '1' === $input_settings['sec_generic_login_errors'] ? '1' : '0';
-		$new_settings['sec_disable_indexes']      = isset( $input_settings['sec_disable_indexes'] ) && '1' === $input_settings['sec_disable_indexes'] ? '1' : '0';
-		$new_settings['sec_disable_user_enum']    = isset( $input_settings['sec_disable_user_enum'] ) && '1' === $input_settings['sec_disable_user_enum'] ? '1' : '0';
-		$new_settings['sec_disable_xmlrpc']       = isset( $input_settings['sec_disable_xmlrpc'] ) && '1' === $input_settings['sec_disable_xmlrpc'] ? '1' : '0';
-		$new_settings['sec_block_admin_user']     = isset( $input_settings['sec_block_admin_user'] ) && '1' === $input_settings['sec_block_admin_user'] ? '1' : '0';
+		// 7. Sanitizar Fortalecimiento de Seguridad
+		if ( empty( $saving_module ) || 'security-hardening' === $saving_module ) {
+			$new_settings['sec_disable_file_edit']    = isset( $input_settings['sec_disable_file_edit'] ) && '1' === $input_settings['sec_disable_file_edit'] ? '1' : '0';
+			$new_settings['sec_block_uploads_php']    = isset( $input_settings['sec_block_uploads_php'] ) && '1' === $input_settings['sec_block_uploads_php'] ? '1' : '0';
+			$new_settings['sec_hide_wp_version']      = isset( $input_settings['sec_hide_wp_version'] ) && '1' === $input_settings['sec_hide_wp_version'] ? '1' : '0';
+			$new_settings['sec_generic_login_errors'] = isset( $input_settings['sec_generic_login_errors'] ) && '1' === $input_settings['sec_generic_login_errors'] ? '1' : '0';
+			$new_settings['sec_disable_indexes']      = isset( $input_settings['sec_disable_indexes'] ) && '1' === $input_settings['sec_disable_indexes'] ? '1' : '0';
+			$new_settings['sec_disable_user_enum']    = isset( $input_settings['sec_disable_user_enum'] ) && '1' === $input_settings['sec_disable_user_enum'] ? '1' : '0';
+			$new_settings['sec_disable_xmlrpc']       = isset( $input_settings['sec_disable_xmlrpc'] ) && '1' === $input_settings['sec_disable_xmlrpc'] ? '1' : '0';
+			$new_settings['sec_block_admin_user']     = isset( $input_settings['sec_block_admin_user'] ) && '1' === $input_settings['sec_block_admin_user'] ? '1' : '0';
+		}
 
 		// Sanitizar redirección SSL
-		$new_settings['ssl_redirect_method'] = isset( $input_settings['ssl_redirect_method'] ) && in_array( $input_settings['ssl_redirect_method'], array( 'php', 'htaccess' ), true ) ? $input_settings['ssl_redirect_method'] : 'php';
-
-		// 7. Sanitizar SMTP
-		$new_settings['smtp']             = isset( $input_settings['smtp'] ) && '1' === $input_settings['smtp'] ? '1' : '0';
-		$new_settings['smtp_host']        = isset( $input_settings['smtp_host'] ) ? sanitize_text_field( $input_settings['smtp_host'] ) : '';
-		$new_settings['smtp_port']        = isset( $input_settings['smtp_port'] ) ? sanitize_text_field( $input_settings['smtp_port'] ) : '25';
-		$new_settings['smtp_secure']      = isset( $input_settings['smtp_secure'] ) && in_array( $input_settings['smtp_secure'], array( 'none', 'ssl', 'tls' ), true ) ? $input_settings['smtp_secure'] : 'none';
-		$new_settings['smtp_insecure']    = isset( $input_settings['smtp_insecure'] ) && '1' === $input_settings['smtp_insecure'] ? '1' : '0';
-		$new_settings['smtp_auth']        = isset( $input_settings['smtp_auth'] ) && '1' === $input_settings['smtp_auth'] ? '1' : '0';
-		$new_settings['smtp_username']    = isset( $input_settings['smtp_username'] ) ? sanitize_text_field( $input_settings['smtp_username'] ) : '';
-		$new_settings['smtp_password']    = isset( $input_settings['smtp_password'] ) ? sanitize_text_field( $input_settings['smtp_password'] ) : '';
-		$new_settings['smtp_from_email']  = isset( $input_settings['smtp_from_email'] ) ? sanitize_email( $input_settings['smtp_from_email'] ) : '';
-		$new_settings['smtp_from_name']   = isset( $input_settings['smtp_from_name'] ) ? sanitize_text_field( $input_settings['smtp_from_name'] ) : '';
-
-		// 8. Sanitizar Integraciones
-		$new_settings['integrations']                 = isset( $input_settings['integrations'] ) && '1' === $input_settings['integrations'] ? '1' : '0';
-		
-		$gsc_raw = isset( $input_settings['google_search_console_code'] ) ? trim( $input_settings['google_search_console_code'] ) : '';
-		if ( ! empty( $gsc_raw ) ) {
-			if ( preg_match( '/content=["\']([^"\']+)["\']/i', $gsc_raw, $matches ) ) {
-				$gsc_raw = $matches[1];
-			}
-			$new_settings['google_search_console_code'] = sanitize_text_field( $gsc_raw );
-		} else {
-			$new_settings['google_search_console_code'] = '';
+		if ( empty( $saving_module ) || 'ssl-fixer' === $saving_module ) {
+			$new_settings['ssl_redirect_method'] = isset( $input_settings['ssl_redirect_method'] ) && in_array( $input_settings['ssl_redirect_method'], array( 'php', 'htaccess' ), true ) ? $input_settings['ssl_redirect_method'] : 'php';
 		}
-		$new_settings['google_analytics_id']          = isset( $input_settings['google_analytics_id'] ) ? sanitize_text_field( $input_settings['google_analytics_id'] ) : '';
-		$new_settings['google_drive_token']           = isset( $input_settings['google_drive_token'] ) ? sanitize_text_field( $input_settings['google_drive_token'] ) : '';
-		$new_settings['google_drive_folder']          = isset( $input_settings['google_drive_folder'] ) ? sanitize_text_field( $input_settings['google_drive_folder'] ) : '';
-		$new_settings['dropbox_token']                = isset( $input_settings['dropbox_token'] ) ? sanitize_text_field( $input_settings['dropbox_token'] ) : '';
-		$new_settings['onedrive_token']               = isset( $input_settings['onedrive_token'] ) ? sanitize_text_field( $input_settings['onedrive_token'] ) : '';
 
-		// 9. Sanitizar WhatsApp
-		$new_settings['whatsapp']          = isset( $input_settings['whatsapp'] ) && '1' === $input_settings['whatsapp'] ? '1' : '0';
-		$new_settings['whatsapp_enabled']  = $new_settings['whatsapp'];
-		$new_settings['whatsapp_phone']    = isset( $input_settings['whatsapp_phone'] ) ? sanitize_text_field( $input_settings['whatsapp_phone'] ) : '';
-		$new_settings['whatsapp_message']  = isset( $input_settings['whatsapp_message'] ) ? sanitize_text_field( $input_settings['whatsapp_message'] ) : '¡Hola! Quisiera más información.';
-		$new_settings['whatsapp_position'] = isset( $input_settings['whatsapp_position'] ) && in_array( $input_settings['whatsapp_position'], array( 'bottom-right', 'bottom-left' ), true ) ? $input_settings['whatsapp_position'] : 'bottom-right';
-		$new_settings['whatsapp_tooltip']  = isset( $input_settings['whatsapp_tooltip'] ) ? sanitize_text_field( $input_settings['whatsapp_tooltip'] ) : '';
-		$new_settings['whatsapp_agents']   = isset( $input_settings['whatsapp_agents'] ) ? sanitize_textarea_field( $input_settings['whatsapp_agents'] ) : '';
+		// 8. Sanitizar SMTP
+		if ( empty( $saving_module ) || 'smtp' === $saving_module ) {
+			$new_settings['smtp']             = isset( $input_settings['smtp'] ) && '1' === $input_settings['smtp'] ? '1' : '0';
+			$new_settings['smtp_host']        = isset( $input_settings['smtp_host'] ) ? sanitize_text_field( $input_settings['smtp_host'] ) : '';
+			$new_settings['smtp_port']        = isset( $input_settings['smtp_port'] ) ? sanitize_text_field( $input_settings['smtp_port'] ) : '25';
+			$new_settings['smtp_secure']      = isset( $input_settings['smtp_secure'] ) && in_array( $input_settings['smtp_secure'], array( 'none', 'ssl', 'tls' ), true ) ? $input_settings['smtp_secure'] : 'none';
+			$new_settings['smtp_insecure']    = isset( $input_settings['smtp_insecure'] ) && '1' === $input_settings['smtp_insecure'] ? '1' : '0';
+			$new_settings['smtp_auth']        = isset( $input_settings['smtp_auth'] ) && '1' === $input_settings['smtp_auth'] ? '1' : '0';
+			$new_settings['smtp_username']    = isset( $input_settings['smtp_username'] ) ? sanitize_text_field( $input_settings['smtp_username'] ) : '';
+			$new_settings['smtp_password']    = isset( $input_settings['smtp_password'] ) ? sanitize_text_field( $input_settings['smtp_password'] ) : '';
+			$new_settings['smtp_from_email']  = isset( $input_settings['smtp_from_email'] ) ? sanitize_email( $input_settings['smtp_from_email'] ) : '';
+			$new_settings['smtp_from_name']   = isset( $input_settings['smtp_from_name'] ) ? sanitize_text_field( $input_settings['smtp_from_name'] ) : '';
+		}
 
-		// 10. Sanitizar Barra y Tiempo de Lectura
-		$new_settings['reading-progress']     = isset( $input_settings['reading-progress'] ) && '1' === $input_settings['reading-progress'] ? '1' : '0';
-		$new_settings['reading_bar_enabled']  = $new_settings['reading-progress'];
-		$new_settings['reading_bar_color']    = isset( $input_settings['reading_bar_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['reading_bar_color'] ) ? $input_settings['reading_bar_color'] : '#2563eb';
-		$new_settings['reading_bar_height']   = isset( $input_settings['reading_bar_height'] ) ? max( 1, min( 30, absint( $input_settings['reading_bar_height'] ) ) ) : 4;
-		$new_settings['reading_time_enabled'] = isset( $input_settings['reading_time_enabled'] ) && '1' === $input_settings['reading_time_enabled'] ? '1' : '0';
-
-		// 11. Sanitizar Detector de Incompatibilidades
-		$new_settings['conflict-detector'] = isset( $input_settings['conflict-detector'] ) && '1' === $input_settings['conflict-detector'] ? '1' : '0';
-
-		// 12. Sanitizar Herramientas de Accesibilidad
-		$new_settings['accessibility']                   = isset( $input_settings['accessibility'] ) && '1' === $input_settings['accessibility'] ? '1' : '0';
-		$new_settings['accessibility_enabled']           = $new_settings['accessibility'];
-		$new_settings['accessibility_position']          = isset( $input_settings['accessibility_position'] ) && in_array( $input_settings['accessibility_position'], array( 'bottom-left', 'bottom-right', 'top-left', 'top-right' ), true ) ? $input_settings['accessibility_position'] : 'bottom-left';
-		$new_settings['accessibility_offset_y']          = isset( $input_settings['accessibility_offset_y'] ) ? max( 0, min( 500, absint( $input_settings['accessibility_offset_y'] ) ) ) : 25;
-		$new_settings['accessibility_bg_color']          = isset( $input_settings['accessibility_bg_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['accessibility_bg_color'] ) ? $input_settings['accessibility_bg_color'] : '#2563eb';
-		$new_settings['accessibility_text_zoom']         = isset( $input_settings['accessibility_text_zoom'] ) && '1' === $input_settings['accessibility_text_zoom'] ? '1' : '0';
-		$new_settings['accessibility_grayscale']         = isset( $input_settings['accessibility_grayscale'] ) && '1' === $input_settings['accessibility_grayscale'] ? '1' : '0';
-		$new_settings['accessibility_high_contrast']     = isset( $input_settings['accessibility_high_contrast'] ) && '1' === $input_settings['accessibility_high_contrast'] ? '1' : '0';
-		$new_settings['accessibility_negative_contrast'] = isset( $input_settings['accessibility_negative_contrast'] ) && '1' === $input_settings['accessibility_negative_contrast'] ? '1' : '0';
-		$new_settings['accessibility_light_bg']          = isset( $input_settings['accessibility_light_bg'] ) && '1' === $input_settings['accessibility_light_bg'] ? '1' : '0';
-		$new_settings['accessibility_underline_links']   = isset( $input_settings['accessibility_underline_links'] ) && '1' === $input_settings['accessibility_underline_links'] ? '1' : '0';
-		$new_settings['accessibility_readable_font']     = isset( $input_settings['accessibility_readable_font'] ) && '1' === $input_settings['accessibility_readable_font'] ? '1' : '0';
-
-		// 13. Sanitizar Editor de Campos de Checkout (WooCommerce)
-		$new_settings['woo-checkout-editor']      = isset( $input_settings['woo-checkout-editor'] ) && '1' === $input_settings['woo-checkout-editor'] ? '1' : '0';
-		$new_settings['checkout_editor_enabled']  = $new_settings['woo-checkout-editor'];
-		$new_settings['checkout_nif_enabled']     = isset( $input_settings['checkout_nif_enabled'] ) && '1' === $input_settings['checkout_nif_enabled'] ? '1' : '0';
-		$new_settings['checkout_nif_required']    = isset( $input_settings['checkout_nif_required'] ) && '1' === $input_settings['checkout_nif_required'] ? '1' : '0';
-		$new_settings['checkout_nif_position']    = isset( $input_settings['checkout_nif_position'] ) && in_array( $input_settings['checkout_nif_position'], array( 'after_names', 'after_company', 'at_end' ), true ) ? $input_settings['checkout_nif_position'] : 'after_names';
-
-		$new_settings['checkout_disabled_fields'] = isset( $input_settings['checkout_disabled_fields'] ) && is_array( $input_settings['checkout_disabled_fields'] ) ? array_map( 'sanitize_key', $input_settings['checkout_disabled_fields'] ) : array();
-
-		$custom_fields_clean = array();
-		if ( isset( $input_settings['checkout_custom_fields'] ) && is_array( $input_settings['checkout_custom_fields'] ) ) {
-			foreach ( $input_settings['checkout_custom_fields'] as $cf ) {
-				if ( ! empty( $cf['label'] ) ) {
-					$key = ! empty( $cf['key'] ) ? sanitize_key( $cf['key'] ) : 'cf_' . substr( md5( $cf['label'] ), 0, 8 );
-					$custom_fields_clean[] = array(
-						'key'         => $key,
-						'label'       => sanitize_text_field( $cf['label'] ),
-						'type'        => isset( $cf['type'] ) && in_array( $cf['type'], array( 'text', 'select', 'radio', 'checkbox', 'textarea', 'date' ), true ) ? $cf['type'] : 'text',
-						'placeholder' => isset( $cf['placeholder'] ) ? sanitize_text_field( $cf['placeholder'] ) : '',
-						'required'    => isset( $cf['required'] ) && '1' === $cf['required'] ? '1' : '0',
-						'section'     => isset( $cf['section'] ) && in_array( $cf['section'], array( 'billing', 'shipping', 'order' ), true ) ? $cf['section'] : 'billing',
-						'position'    => isset( $cf['position'] ) && in_array( $cf['position'], array( 'after_names', 'after_company', 'after_address', 'end_of_section' ), true ) ? $cf['position'] : 'after_names',
-						'priority'    => isset( $cf['priority'] ) ? intval( $cf['priority'] ) : 100,
-						'options'     => isset( $cf['options'] ) ? sanitize_textarea_field( $cf['options'] ) : '',
-					);
+		// 9. Sanitizar Integraciones
+		if ( empty( $saving_module ) || 'integrations' === $saving_module ) {
+			$new_settings['integrations'] = isset( $input_settings['integrations'] ) && '1' === $input_settings['integrations'] ? '1' : '0';
+			
+			$gsc_raw = isset( $input_settings['google_search_console_code'] ) ? trim( $input_settings['google_search_console_code'] ) : '';
+			if ( ! empty( $gsc_raw ) ) {
+				if ( preg_match( '/content=["\']([^"\']+)["\']/i', $gsc_raw, $matches ) ) {
+					$gsc_raw = $matches[1];
 				}
+				$new_settings['google_search_console_code'] = sanitize_text_field( $gsc_raw );
+			} else if ( isset( $input_settings['google_search_console_code'] ) ) {
+				$new_settings['google_search_console_code'] = '';
+			}
+			if ( isset( $input_settings['google_analytics_id'] ) ) $new_settings['google_analytics_id'] = sanitize_text_field( $input_settings['google_analytics_id'] );
+			if ( isset( $input_settings['google_drive_token'] ) ) $new_settings['google_drive_token'] = sanitize_text_field( $input_settings['google_drive_token'] );
+			if ( isset( $input_settings['google_drive_folder'] ) ) $new_settings['google_drive_folder'] = sanitize_text_field( $input_settings['google_drive_folder'] );
+			if ( isset( $input_settings['dropbox_token'] ) ) $new_settings['dropbox_token'] = sanitize_text_field( $input_settings['dropbox_token'] );
+			if ( isset( $input_settings['onedrive_token'] ) ) $new_settings['onedrive_token'] = sanitize_text_field( $input_settings['onedrive_token'] );
+		}
+
+		// 10. Sanitizar WhatsApp
+		if ( empty( $saving_module ) || 'whatsapp' === $saving_module ) {
+			$new_settings['whatsapp']          = isset( $input_settings['whatsapp'] ) && '1' === $input_settings['whatsapp'] ? '1' : '0';
+			$new_settings['whatsapp_enabled']  = $new_settings['whatsapp'];
+			$new_settings['whatsapp_phone']    = isset( $input_settings['whatsapp_phone'] ) ? sanitize_text_field( $input_settings['whatsapp_phone'] ) : '';
+			$new_settings['whatsapp_message']  = isset( $input_settings['whatsapp_message'] ) ? sanitize_text_field( $input_settings['whatsapp_message'] ) : '¡Hola! Quisiera más información.';
+			$new_settings['whatsapp_position'] = isset( $input_settings['whatsapp_position'] ) && in_array( $input_settings['whatsapp_position'], array( 'bottom-right', 'bottom-left' ), true ) ? $input_settings['whatsapp_position'] : 'bottom-right';
+			$new_settings['whatsapp_tooltip']  = isset( $input_settings['whatsapp_tooltip'] ) ? sanitize_text_field( $input_settings['whatsapp_tooltip'] ) : '';
+			$new_settings['whatsapp_agents']   = isset( $input_settings['whatsapp_agents'] ) ? sanitize_textarea_field( $input_settings['whatsapp_agents'] ) : '';
+		}
+
+		// 11. Sanitizar Barra y Tiempo de Lectura
+		if ( empty( $saving_module ) || 'reading-progress' === $saving_module ) {
+			$new_settings['reading-progress']     = isset( $input_settings['reading-progress'] ) && '1' === $input_settings['reading-progress'] ? '1' : '0';
+			$new_settings['reading_bar_enabled']  = $new_settings['reading-progress'];
+			$new_settings['reading_bar_color']    = isset( $input_settings['reading_bar_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['reading_bar_color'] ) ? $input_settings['reading_bar_color'] : '#2563eb';
+			$new_settings['reading_bar_height']   = isset( $input_settings['reading_bar_height'] ) ? max( 1, min( 30, absint( $input_settings['reading_bar_height'] ) ) ) : 4;
+			$new_settings['reading_time_enabled'] = isset( $input_settings['reading_time_enabled'] ) && '1' === $input_settings['reading_time_enabled'] ? '1' : '0';
+		}
+
+		// 12. Sanitizar Detector de Incompatibilidades
+		if ( empty( $saving_module ) || 'conflict-detector' === $saving_module ) {
+			$new_settings['conflict-detector'] = isset( $input_settings['conflict-detector'] ) && '1' === $input_settings['conflict-detector'] ? '1' : '0';
+		}
+
+		// 13. Sanitizar Herramientas de Accesibilidad
+		if ( empty( $saving_module ) || 'accessibility' === $saving_module ) {
+			$new_settings['accessibility']                   = isset( $input_settings['accessibility'] ) && '1' === $input_settings['accessibility'] ? '1' : '0';
+			$new_settings['accessibility_enabled']           = $new_settings['accessibility'];
+			$new_settings['accessibility_position']          = isset( $input_settings['accessibility_position'] ) && in_array( $input_settings['accessibility_position'], array( 'bottom-left', 'bottom-right', 'top-left', 'top-right' ), true ) ? $input_settings['accessibility_position'] : 'bottom-left';
+			$new_settings['accessibility_offset_y']          = isset( $input_settings['accessibility_offset_y'] ) ? max( 0, min( 500, absint( $input_settings['accessibility_offset_y'] ) ) ) : 25;
+			$new_settings['accessibility_bg_color']          = isset( $input_settings['accessibility_bg_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['accessibility_bg_color'] ) ? $input_settings['accessibility_bg_color'] : '#2563eb';
+			$new_settings['accessibility_text_zoom']         = isset( $input_settings['accessibility_text_zoom'] ) && '1' === $input_settings['accessibility_text_zoom'] ? '1' : '0';
+			$new_settings['accessibility_grayscale']         = isset( $input_settings['accessibility_grayscale'] ) && '1' === $input_settings['accessibility_grayscale'] ? '1' : '0';
+			$new_settings['accessibility_high_contrast']     = isset( $input_settings['accessibility_high_contrast'] ) && '1' === $input_settings['accessibility_high_contrast'] ? '1' : '0';
+			$new_settings['accessibility_negative_contrast'] = isset( $input_settings['accessibility_negative_contrast'] ) && '1' === $input_settings['accessibility_negative_contrast'] ? '1' : '0';
+			$new_settings['accessibility_light_bg']          = isset( $input_settings['accessibility_light_bg'] ) && '1' === $input_settings['accessibility_light_bg'] ? '1' : '0';
+			$new_settings['accessibility_underline_links']   = isset( $input_settings['accessibility_underline_links'] ) && '1' === $input_settings['accessibility_underline_links'] ? '1' : '0';
+			$new_settings['accessibility_readable_font']     = isset( $input_settings['accessibility_readable_font'] ) && '1' === $input_settings['accessibility_readable_font'] ? '1' : '0';
+		}
+
+		// 14. Sanitizar Editor de Campos de Checkout (WooCommerce)
+		if ( empty( $saving_module ) || 'woo-checkout-editor' === $saving_module ) {
+			$new_settings['woo-checkout-editor']      = isset( $input_settings['woo-checkout-editor'] ) && '1' === $input_settings['woo-checkout-editor'] ? '1' : '0';
+			$new_settings['checkout_editor_enabled']  = $new_settings['woo-checkout-editor'];
+			$new_settings['checkout_nif_enabled']     = isset( $input_settings['checkout_nif_enabled'] ) && '1' === $input_settings['checkout_nif_enabled'] ? '1' : '0';
+			$new_settings['checkout_nif_required']    = isset( $input_settings['checkout_nif_required'] ) && '1' === $input_settings['checkout_nif_required'] ? '1' : '0';
+			$new_settings['checkout_nif_position']    = isset( $input_settings['checkout_nif_position'] ) && in_array( $input_settings['checkout_nif_position'], array( 'after_names', 'after_company', 'at_end' ), true ) ? $input_settings['checkout_nif_position'] : 'after_names';
+
+			if ( isset( $input_settings['checkout_disabled_fields'] ) ) {
+				$new_settings['checkout_disabled_fields'] = is_array( $input_settings['checkout_disabled_fields'] ) ? array_map( 'sanitize_key', $input_settings['checkout_disabled_fields'] ) : array();
+			}
+
+			if ( isset( $input_settings['checkout_custom_fields'] ) && is_array( $input_settings['checkout_custom_fields'] ) ) {
+				$custom_fields_clean = array();
+				foreach ( $input_settings['checkout_custom_fields'] as $cf ) {
+					if ( ! empty( $cf['label'] ) ) {
+						$key = ! empty( $cf['key'] ) ? sanitize_key( $cf['key'] ) : 'cf_' . substr( md5( $cf['label'] ), 0, 8 );
+						$custom_fields_clean[] = array(
+							'key'         => $key,
+							'label'       => sanitize_text_field( $cf['label'] ),
+							'type'        => isset( $cf['type'] ) && in_array( $cf['type'], array( 'text', 'select', 'radio', 'checkbox', 'textarea', 'date' ), true ) ? $cf['type'] : 'text',
+							'placeholder' => isset( $cf['placeholder'] ) ? sanitize_text_field( $cf['placeholder'] ) : '',
+							'required'    => isset( $cf['required'] ) && '1' === $cf['required'] ? '1' : '0',
+							'section'     => isset( $cf['section'] ) && in_array( $cf['section'], array( 'billing', 'shipping', 'order' ), true ) ? $cf['section'] : 'billing',
+							'position'    => isset( $cf['position'] ) && in_array( $cf['position'], array( 'after_names', 'after_company', 'after_address', 'end_of_section' ), true ) ? $cf['position'] : 'after_names',
+							'priority'    => isset( $cf['priority'] ) ? intval( $cf['priority'] ) : 100,
+							'options'     => isset( $cf['options'] ) ? sanitize_textarea_field( $cf['options'] ) : '',
+						);
+					}
+				}
+				$new_settings['checkout_custom_fields'] = $custom_fields_clean;
 			}
 		}
-		$new_settings['checkout_custom_fields'] = $custom_fields_clean;
 
-		// 14. Sanitizar Opciones Extra y Swatches de Producto (WooCommerce)
-		$new_settings['woo-extra-options']     = isset( $input_settings['woo-extra-options'] ) && '1' === $input_settings['woo-extra-options'] ? '1' : '0';
-		$new_settings['extra_options_enabled'] = isset( $input_settings['extra_options_enabled'] ) && '1' === $input_settings['extra_options_enabled'] ? '1' : '0';
+		// 15. Sanitizar Opciones Extra y Swatches de Producto (WooCommerce)
+		if ( empty( $saving_module ) || 'woo-extra-options' === $saving_module ) {
+			$new_settings['woo-extra-options']     = isset( $input_settings['woo-extra-options'] ) && '1' === $input_settings['woo-extra-options'] ? '1' : '0';
+			$new_settings['extra_options_enabled'] = $new_settings['woo-extra-options'];
 
-		$rules_clean = array();
-		if ( isset( $input_settings['extra_options_rules'] ) && is_array( $input_settings['extra_options_rules'] ) ) {
-			foreach ( $input_settings['extra_options_rules'] as $rule ) {
-				if ( ! empty( $rule['title'] ) ) {
-					$fields_clean = array();
-					if ( isset( $rule['fields'] ) && is_array( $rule['fields'] ) ) {
-						foreach ( $rule['fields'] as $f ) {
-							if ( ! empty( $f['label'] ) ) {
-								$fields_clean[] = array(
-									'label'       => sanitize_text_field( $f['label'] ),
-									'type'        => isset( $f['type'] ) && in_array( $f['type'], array( 'text', 'textarea', 'select', 'radio', 'swatch', 'checkbox', 'file' ), true ) ? $f['type'] : 'text',
-									'price'       => isset( $f['price'] ) ? floatval( $f['price'] ) : 0,
-									'required'    => isset( $f['required'] ) && '1' === $f['required'] ? '1' : '0',
-									'placeholder' => isset( $f['placeholder'] ) ? sanitize_text_field( $f['placeholder'] ) : '',
-									'default_val' => isset( $f['default_val'] ) ? sanitize_text_field( $f['default_val'] ) : '',
-									'max_length'  => isset( $f['max_length'] ) ? absint( $f['max_length'] ) : 0,
-									'options'     => isset( $f['options'] ) ? sanitize_textarea_field( $f['options'] ) : '',
-									'swatches'    => isset( $f['swatches'] ) ? sanitize_textarea_field( $f['swatches'] ) : '',
-								);
+			if ( isset( $input_settings['extra_options_rules'] ) && is_array( $input_settings['extra_options_rules'] ) ) {
+				$rules_clean = array();
+				foreach ( $input_settings['extra_options_rules'] as $rule ) {
+					if ( ! empty( $rule['title'] ) ) {
+						$fields_clean = array();
+						if ( isset( $rule['fields'] ) && is_array( $rule['fields'] ) ) {
+							foreach ( $rule['fields'] as $f ) {
+								if ( ! empty( $f['label'] ) ) {
+									$fields_clean[] = array(
+										'label'       => sanitize_text_field( $f['label'] ),
+										'type'        => isset( $f['type'] ) && in_array( $f['type'], array( 'text', 'textarea', 'select', 'radio', 'swatch', 'checkbox', 'file' ), true ) ? $f['type'] : 'text',
+										'price'       => isset( $f['price'] ) ? floatval( $f['price'] ) : 0,
+										'required'    => isset( $f['required'] ) && '1' === $f['required'] ? '1' : '0',
+										'placeholder' => isset( $f['placeholder'] ) ? sanitize_text_field( $f['placeholder'] ) : '',
+										'default_val' => isset( $f['default_val'] ) ? sanitize_text_field( $f['default_val'] ) : '',
+										'max_length'  => isset( $f['max_length'] ) ? absint( $f['max_length'] ) : 0,
+										'options'     => isset( $f['options'] ) ? sanitize_textarea_field( $f['options'] ) : '',
+										'swatches'    => isset( $f['swatches'] ) ? sanitize_textarea_field( $f['swatches'] ) : '',
+									);
+								}
 							}
 						}
-					}
 
-					$rules_clean[] = array(
-						'title'      => sanitize_text_field( $rule['title'] ),
-						'enabled'    => isset( $rule['enabled'] ) && '1' === $rule['enabled'] ? '1' : '0',
-						'scope'      => isset( $rule['scope'] ) && in_array( $rule['scope'], array( 'global', 'category', 'product' ), true ) ? $rule['scope'] : 'global',
-						'categories' => isset( $rule['categories'] ) && is_array( $rule['categories'] ) ? array_map( 'absint', $rule['categories'] ) : array(),
-						'products'   => isset( $rule['products'] ) ? ( is_array( $rule['products'] ) ? array_map( 'absint', $rule['products'] ) : array_filter( array_map( 'absint', explode( ',', $rule['products'] ) ) ) ) : array(),
-						'fields'     => $fields_clean,
-					);
+						$rules_clean[] = array(
+							'title'      => sanitize_text_field( $rule['title'] ),
+							'enabled'    => isset( $rule['enabled'] ) && '1' === $rule['enabled'] ? '1' : '0',
+							'scope'      => isset( $rule['scope'] ) && in_array( $rule['scope'], array( 'global', 'category', 'product' ), true ) ? $rule['scope'] : 'global',
+							'categories' => isset( $rule['categories'] ) && is_array( $rule['categories'] ) ? array_map( 'absint', $rule['categories'] ) : array(),
+							'products'   => isset( $rule['products'] ) ? ( is_array( $rule['products'] ) ? array_map( 'absint', $rule['products'] ) : array_filter( array_map( 'absint', explode( ',', $rule['products'] ) ) ) ) : array(),
+							'fields'     => $fields_clean,
+						);
+					}
 				}
+				$new_settings['extra_options_rules'] = $rules_clean;
 			}
 		}
-		$new_settings['extra_options_rules'] = $rules_clean;
 
-		// 15. Sanitizar Swatches de Variación de Producto (WooCommerce)
-		$new_settings['woo-variation-swatches']    = isset( $input_settings['woo-variation-swatches'] ) && '1' === $input_settings['woo-variation-swatches'] ? '1' : '0';
-		$new_settings['variation_swatches_enabled'] = isset( $input_settings['variation_swatches_enabled'] ) && '1' === $input_settings['variation_swatches_enabled'] ? '1' : '0';
-		$new_settings['variation_swatches_shape']   = isset( $input_settings['variation_swatches_shape'] ) && in_array( $input_settings['variation_swatches_shape'], array( 'round', 'square' ), true ) ? $input_settings['variation_swatches_shape'] : 'round';
-		$new_settings['variation_swatches_colors']  = isset( $input_settings['variation_swatches_colors'] ) ? sanitize_textarea_field( $input_settings['variation_swatches_colors'] ) : '';
+		// 16. Sanitizar Swatches de Variación de Producto (WooCommerce)
+		if ( empty( $saving_module ) || 'woo-variation-swatches' === $saving_module ) {
+			$new_settings['woo-variation-swatches']    = isset( $input_settings['woo-variation-swatches'] ) && '1' === $input_settings['woo-variation-swatches'] ? '1' : '0';
+			$new_settings['variation_swatches_enabled'] = $new_settings['woo-variation-swatches'];
+			$new_settings['variation_swatches_shape']   = isset( $input_settings['variation_swatches_shape'] ) && in_array( $input_settings['variation_swatches_shape'], array( 'round', 'square' ), true ) ? $input_settings['variation_swatches_shape'] : 'round';
+			$new_settings['variation_swatches_colors']  = isset( $input_settings['variation_swatches_colors'] ) ? sanitize_textarea_field( $input_settings['variation_swatches_colors'] ) : '';
+		}
 
-		// 15. Sanitizar Facturas PDF y Albaranes Automáticos (WooCommerce)
-		$new_settings['woo-pdf-invoices']     = isset( $input_settings['woo-pdf-invoices'] ) && '1' === $input_settings['woo-pdf-invoices'] ? '1' : '0';
-		$new_settings['pdf_invoices_enabled'] = isset( $input_settings['pdf_invoices_enabled'] ) && '1' === $input_settings['pdf_invoices_enabled'] ? '1' : '0';
-		$new_settings['pdf_company_name']     = isset( $input_settings['pdf_company_name'] ) ? sanitize_text_field( $input_settings['pdf_company_name'] ) : get_bloginfo( 'name' );
-		$new_settings['pdf_company_nif']      = isset( $input_settings['pdf_company_nif'] ) ? sanitize_text_field( $input_settings['pdf_company_nif'] ) : '';
-		$new_settings['pdf_company_address']  = isset( $input_settings['pdf_company_address'] ) ? sanitize_textarea_field( $input_settings['pdf_company_address'] ) : '';
-		$new_settings['pdf_company_footer']   = isset( $input_settings['pdf_company_footer'] ) ? sanitize_textarea_field( $input_settings['pdf_company_footer'] ) : '';
-		$new_settings['pdf_invoice_prefix']   = isset( $input_settings['pdf_invoice_prefix'] ) ? sanitize_text_field( $input_settings['pdf_invoice_prefix'] ) : 'FACT-' . date( 'Y' ) . '-';
-		$new_settings['pdf_invoice_next_num'] = isset( $input_settings['pdf_invoice_next_num'] ) ? max( 1, absint( $input_settings['pdf_invoice_next_num'] ) ) : 1;
+		// 17. Sanitizar Facturas PDF y Albaranes Automáticos (WooCommerce)
+		if ( empty( $saving_module ) || 'woo-pdf-invoices' === $saving_module ) {
+			$new_settings['woo-pdf-invoices']     = isset( $input_settings['woo-pdf-invoices'] ) && '1' === $input_settings['woo-pdf-invoices'] ? '1' : '0';
+			$new_settings['pdf_invoices_enabled'] = $new_settings['woo-pdf-invoices'];
+			$new_settings['pdf_company_name']     = isset( $input_settings['pdf_company_name'] ) ? sanitize_text_field( $input_settings['pdf_company_name'] ) : get_bloginfo( 'name' );
+			$new_settings['pdf_company_nif']      = isset( $input_settings['pdf_company_nif'] ) ? sanitize_text_field( $input_settings['pdf_company_nif'] ) : '';
+			$new_settings['pdf_company_address']  = isset( $input_settings['pdf_company_address'] ) ? sanitize_textarea_field( $input_settings['pdf_company_address'] ) : '';
+			$new_settings['pdf_company_footer']   = isset( $input_settings['pdf_company_footer'] ) ? sanitize_textarea_field( $input_settings['pdf_company_footer'] ) : '';
+			$new_settings['pdf_invoice_prefix']   = isset( $input_settings['pdf_invoice_prefix'] ) ? sanitize_text_field( $input_settings['pdf_invoice_prefix'] ) : 'FACT-' . date( 'Y' ) . '-';
+			$new_settings['pdf_invoice_next_num'] = isset( $input_settings['pdf_invoice_next_num'] ) ? max( 1, absint( $input_settings['pdf_invoice_next_num'] ) ) : 1;
+		}
 
-		// 16. Sanitizar Buscador AJAX en Vivo de WooCommerce (Frontend)
-		$new_settings['woo-live-search']          = isset( $input_settings['woo-live-search'] ) && '1' === $input_settings['woo-live-search'] ? '1' : '0';
-		$new_settings['live_search_enabled']      = isset( $input_settings['live_search_enabled'] ) && '1' === $input_settings['live_search_enabled'] ? '1' : '0';
-		$new_settings['live_search_max_results']  = isset( $input_settings['live_search_max_results'] ) ? min( 8, max( 1, absint( $input_settings['live_search_max_results'] ) ) ) : 5;
-		$new_settings['live_search_show_thumb']   = isset( $input_settings['live_search_show_thumb'] ) && '1' === $input_settings['live_search_show_thumb'] ? '1' : '0';
-		$new_settings['live_search_show_price']   = isset( $input_settings['live_search_show_price'] ) && '1' === $input_settings['live_search_show_price'] ? '1' : '0';
-		$new_settings['live_search_show_stock']   = isset( $input_settings['live_search_show_stock'] ) && '1' === $input_settings['live_search_show_stock'] ? '1' : '0';
-		$new_settings['live_search_show_meta']    = isset( $input_settings['live_search_show_meta'] ) && in_array( $input_settings['live_search_show_meta'], array( 'sku', 'cat', 'both', 'none' ), true ) ? $input_settings['live_search_show_meta'] : 'sku';
-		$new_settings['live_search_auto_replace'] = isset( $input_settings['live_search_auto_replace'] ) && '1' === $input_settings['live_search_auto_replace'] ? '1' : '0';
-		$new_settings['live_search_placeholder']  = isset( $input_settings['live_search_placeholder'] ) ? sanitize_text_field( $input_settings['live_search_placeholder'] ) : 'Buscar productos por nombre, SKU o categoría...';
+		// 18. Sanitizar Buscador AJAX en Vivo de WooCommerce (Frontend)
+		if ( empty( $saving_module ) || 'woo-live-search' === $saving_module ) {
+			$new_settings['woo-live-search']          = isset( $input_settings['woo-live-search'] ) && '1' === $input_settings['woo-live-search'] ? '1' : '0';
+			$new_settings['live_search_enabled']      = $new_settings['woo-live-search'];
+			$new_settings['live_search_max_results']  = isset( $input_settings['live_search_max_results'] ) ? min( 8, max( 1, absint( $input_settings['live_search_max_results'] ) ) ) : 5;
+			$new_settings['live_search_show_thumb']   = isset( $input_settings['live_search_show_thumb'] ) && '1' === $input_settings['live_search_show_thumb'] ? '1' : '0';
+			$new_settings['live_search_show_price']   = isset( $input_settings['live_search_show_price'] ) && '1' === $input_settings['live_search_show_price'] ? '1' : '0';
+			$new_settings['live_search_show_stock']   = isset( $input_settings['live_search_show_stock'] ) && '1' === $input_settings['live_search_show_stock'] ? '1' : '0';
+			$new_settings['live_search_show_meta']    = isset( $input_settings['live_search_show_meta'] ) && in_array( $input_settings['live_search_show_meta'], array( 'sku', 'cat', 'both', 'none' ), true ) ? $input_settings['live_search_show_meta'] : 'sku';
+			$new_settings['live_search_auto_replace'] = isset( $input_settings['live_search_auto_replace'] ) && '1' === $input_settings['live_search_auto_replace'] ? '1' : '0';
+			$new_settings['live_search_placeholder']  = isset( $input_settings['live_search_placeholder'] ) ? sanitize_text_field( $input_settings['live_search_placeholder'] ) : 'Buscar productos por nombre, SKU o categoría...';
+		}
 
-		// 17. Sanitizar Filtro por Facetas AJAX de WooCommerce (Estilo FacetWP)
-		$new_settings['woo-facets']     = isset( $input_settings['woo-facets'] ) && '1' === $input_settings['woo-facets'] ? '1' : '0';
-		$new_settings['facets_enabled'] = isset( $input_settings['facets_enabled'] ) && '1' === $input_settings['facets_enabled'] ? '1' : '0';
-		$new_settings['facets_config']  = isset( $input_settings['facets_config'] ) && is_array( $input_settings['facets_config'] ) ? array_map( 'sanitize_key', $input_settings['facets_config'] ) : array( 'sort', 'price', 'category', 'stock', 'rating' );
+		// 19. Sanitizar Filtro por Facetas AJAX de WooCommerce
+		if ( empty( $saving_module ) || 'woo-facets' === $saving_module ) {
+			$new_settings['woo-facets']     = isset( $input_settings['woo-facets'] ) && '1' === $input_settings['woo-facets'] ? '1' : '0';
+			$new_settings['facets_enabled'] = $new_settings['woo-facets'];
+			if ( isset( $input_settings['facets_config'] ) ) {
+				$new_settings['facets_config'] = is_array( $input_settings['facets_config'] ) ? array_map( 'sanitize_key', $input_settings['facets_config'] ) : array( 'sort', 'price', 'category', 'stock', 'rating' );
+			}
+		}
 
 		// Guardar en la base de datos
 		update_option( 'wpat_settings', $new_settings );
 
 		// Actualizar reglas del archivo .htaccess para SSL
+		require_once WPAT_PATH . 'includes/modules/class-wpat-ssl-fixer.php';
+		$ssl_active = isset( $new_settings['ssl-fixer'] ) && '1' === $new_settings['ssl-fixer'];
+		$method_htaccess = isset( $new_settings['ssl_redirect_method'] ) && 'htaccess' === $new_settings['ssl_redirect_method'];
+		WPAT_SSL_Fixer::update_htaccess_rules( $ssl_active && $method_htaccess );
+
+		// Redirigir de vuelta a la vista adecuada
+		if ( ! empty( $saving_module ) ) {
+			$redirect_url = add_query_arg( array(
+				'settings-updated' => 'true',
+				'mod'              => $saving_module,
+			), menu_page_url( 'wp-agency-toolkit', false ) );
+		} else {
+			$active_tab = isset( $_POST['wpat_active_tab'] ) ? sanitize_key( $_POST['wpat_active_tab'] ) : '';
+			$args = array( 'settings-updated' => 'true' );
+			if ( ! empty( $active_tab ) ) {
+				$args['tab'] = $active_tab;
+			}
+			$redirect_url = add_query_arg( $args, menu_page_url( 'wp-agency-toolkit', false ) );
+		}
+
+		wp_safe_redirect( $redirect_url );
+		exit;// Actualizar reglas del archivo .htaccess para SSL
 		require_once WPAT_PATH . 'includes/modules/class-wpat-ssl-fixer.php';
 		$ssl_active = isset( $new_settings['ssl-fixer'] ) && '1' === $new_settings['ssl-fixer'];
 		$method_htaccess = 'htaccess' === $new_settings['ssl_redirect_method'];
@@ -2497,6 +2584,7 @@ class WPAT_Admin {
 	 * Renderiza únicamente la vista aislada / standalone de un módulo individual.
 	 */
 		public function render_single_module_standalone_view( $mod_id, $settings ) {
+		echo '<input type="hidden" name="wpat_saving_module" value="' . esc_attr( $mod_id ) . '" />';
 		echo '<style>.wpat-module-body { display: block !important; } .wpat-collapse-btn { display: none !important; }</style>';
 
 		switch ( $mod_id ) {

@@ -63,7 +63,8 @@
 
 /* Contenedor principal con pestañas laterales o superiores */
 .wpat-container {
-	display: flex;
+	display: block;
+	width: 100%;
 	background: var(--wpat-bg-card);
 	border: 1px solid var(--wpat-border);
 	border-top: none;
@@ -72,59 +73,18 @@
 	min-height: 500px;
 }
 
-/* Navegación por pestañas lateral */
+/* Navegación por pestañas lateral desactivada en v4.0.0 */
 .wpat-tabs-nav {
-	width: 250px;
-	background: #f0f0f1;
-	border-right: 1px solid var(--wpat-border);
-	display: flex;
-	flex-direction: column;
-	border-radius: 0 0 0 8px;
-}
-
-.wpat-tab-link {
-	background: none;
-	border: none;
-	border-bottom: 1px solid var(--wpat-border);
-	color: var(--wpat-text);
-	padding: 16px 20px;
-	text-align: left;
-	font-size: 14px;
-	font-weight: 600;
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	transition: all 0.2s ease;
-	outline: none;
-}
-
-.wpat-tab-link span.dashicons {
-	color: var(--wpat-text-light);
-	transition: color 0.2s ease;
-}
-
-.wpat-tab-link:hover {
-	background: #e4e6e8;
-}
-
-.wpat-tab-link.active {
-	background: var(--wpat-bg-card);
-	color: var(--wpat-primary);
-	border-right: 3px solid var(--wpat-primary);
-	width: calc(100% + 1px); /* Cubre el borde derecho */
-}
-
-.wpat-tab-link.active span.dashicons {
-	color: var(--wpat-primary);
+	display: none !important;
 }
 
 /* Paneles de Contenido */
 .wpat-tabs-content {
-	flex: 1;
-	padding: 40px;
+	width: 100%;
+	padding: 30px;
 	background: var(--wpat-bg-card);
-	border-radius: 0 0 8px 0;
+	border-radius: 0 0 8px 8px;
+	box-sizing: border-box;
 }
 
 .wpat-tab-panel {

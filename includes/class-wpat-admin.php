@@ -60,7 +60,7 @@ class WPAT_Admin {
 	 * Añade el menú del plugin a la administración de WordPress.
 	 */
 	public function add_admin_menu() {
-		$icon = 'data:image/svg+xml;base64,' . base64_encode( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" fill="currentColor"><path d="M512.1 191l-8.2 14.3c-3 5.3-9.4 7.5-15.1 5.4-11.8-4.4-22.6-10.7-32.1-18.6-4.6-3.8-5.8-10.5-2.8-15.7l8.2-14.3c-6.9-8-12.3-17.3-15.9-27.4h-16.5c-6 0-11.2-4.3-12.2-10.3-2-12-2.1-24.6 0-37.1 1-6 6.2-10.4 12.2-10.4h16.5c3.6-10.1 9-19.4 15.9-27.4l-8.2-14.3c-3-5.2-1.9-11.9 2.8-15.7-9.5-7.9-20.4-14.2-32.1-18.6-5.7-2.1 12.1.1 15.1 5.4l8.2 14.3c10.5-1.9 21.2-1.9 31.7 0L552 6.3c3-5.3 9.4-7.5 15.1-5.4 11.8 4.4 22.6 10.7 32.1 18.6 4.6 3.8 5.8 10.5 2.8 15.7l-8.2 14.3c-6.9 8-12.3 17.3-15.9 27.4h16.5c6 0 11.2 4.3 12.2 10.3 2 12 2.1 24.6 0 37.1-1 6-6.2 10.4-12.2 10.4h-16.5c-3.6 10.1-9 19.4-15.9 27.4l8.2 14.3c3 5.2 1.9 11.9-2.8 15.7-9.5 7.9-20.4 14.2-32.1 18.6-5.7 2.1-12.1-.1-15.1-5.4l-8.2-14.3c-10.4 1.9-21.2 1.9-31.7 0zm-10.5-58.8c38.5 29.6 82.4-14.3 52.8-52.8-38.5-29.7-82.4 14.3-52.8 52.8zM386.3 286.1l33.7 16.8c10.1 5.8 14.5 18.1 10.5 29.1-8.9 24.2-26.4 46.4-42.6 65.8-7.4 8.9-20.2 11.1-30.3 5.3l-29.1-16.8c-16 13.7-34.6 24.6-54.9 31.7v33.6c0 11.6-8.3 21.6-19.7 23.6-24.6 4.2-50.4 4.4-75.9 0-11.5-2-20-11.9-20-23.6V418c-20.3-7.2-38.9-18-54.9-31.7L74 403c-10 5.8-22.9 3.6-30.3-5.3-16.2-19.4-33.3-41.6-42.2-65.7-4-10.9.4-23.2 10.5-29.1l33.3-16.8c-3.9-20.9-3.9-42.4 0-63.4L12 205.8c-10.1-5.8-14.6-18.1-10.5-29 8.9-24.2 26-46.4 42.2-65.8 7.4-8.9 20.2-11.1 30.3-5.3l29.1 16.8c16-13.7 34.6-24.6 54.9-31.7V57.1c0-11.5 8.2-21.5 19.6-23.5 24.6-4.2 50.5-4.4 76-.1 11.5 2 20 11.9 20 23.6v33.6c20.3 7.2 38.9 18 54.9 31.7l29.1-16.8c10-5.8 22.9-3.6 30.3 5.3 16.2 19.4 33.2 41.6 42.1 65.8 4 10.9.1 23.2-10 29.1l-33.7 16.8c3.9 21 3.9 42.5 0 63.5zm-117.6 21.1c59.2-77-28.7-164.9-105.7-105.7-59.2 77 28.7 164.9 105.7 105.7zm243.4 182.7l-8.2 14.3c-3 5.3-9.4 7.5-15.1 5.4-11.8-4.4-22.6-10.7-32.1-18.6-4.6-3.8-5.8-10.5-2.8-15.7l8.2-14.3c-6.9-8-12.3-17.3-15.9-27.4h-16.5c-6 0-11.2-4.3-12.2-10.3-2-12-2.1-24.6 0-37.1 1-6 6.2-10.4 12.2-10.4h16.5c3.6-10.1 9-19.4 15.9-27.4l-8.2-14.3c-3-5.2-1.9-11.9 2.8-15.7 9.5-7.9 20.4-14.2 32.1-18.6 5.7-2.1 12.1.1 15.1 5.4l8.2 14.3c10.5-1.9 21.2-1.9 31.7 0l8.2-14.3c3-5.3 9.4-7.5 15.1-5.4 11.8 4.4 22.6 10.7 32.1 18.6 4.6 3.8 5.8 10.5 2.8 15.7l-8.2 14.3c-6.9 8-12.3-17.3-15.9-27.4h16.5c6 0 11.2 4.3 12.2 10.3 2 12 2.1 24.6 0 37.1-1 6-6.2 10.4-12.2 10.4h-16.5c-3.6 10.1-9 19.4-15.9 27.4l8.2 14.3c3 5.2 1.9 11.9-2.8 15.7-9.5 7.9-20.4 14.2-32.1 18.6-5.7 2.1-12.1-.1-15.1-5.4l-8.2-14.3c-10.4 1.9-21.2 1.9-31.7 0zM501.6 431c38.5 29.6 82.4-14.3 52.8-52.8-38.5-29.6-82.4 14.3-52.8 52.8z" /></svg>' );
+		$icon = 'data:image/svg+xml;base64,' . base64_encode( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" fill="currentColor"><path d="M512.1 191l-8.2 14.3c-3 5.3-9.4 7.5-15.1 5.4-11.8-4.4-22.6-10.7-32.1-18.6-4.6-3.8-5.8-10.5-2.8-15.7l8.2-14.3c-6.9-8-12.3-17.3-15.9-27.4h-16.5c-6 0-11.2-4.3-12.2-10.3-2-12-2.1-24.6 0-37.1 1-6 6.2-10.4 12.2-10.4h16.5c3.6-10.1 9-19.4 15.9-27.4l-8.2-14.3c-3-5.2-1.9-11.9 2.8-15.7-9.5-7.9-20.4-14.2-32.1-18.6-5.7-2.1 12.1.1 15.1 5.4l8.2 14.3c10.5-1.9 21.2-1.9 31.7 0L552 6.3c3-5.3 9.4-7.5 15.1-5.4 11.8 4.4 22.6 10.7 32.1 18.6 4.6 3.8 5.8 10.5 2.8 15.7l-8.2 14.3c-6.9 8-12.3 17.3-15.9 27.4h16.5c6 0 11.2 4.3 12.2 10.3 2 12 2.1 24.6 0 37.1-1 6-6.2 10.4-12.2 10.4h-16.5c-3.6 10.1-9 19.4-15.9 27.4l8.2 14.3c3 5.2 1.9 11.9-2.8 15.7-9.5 7.9-20.4 14.2-32.1 18.6-5.7 2.1-12.1-.1-15.1-5.4l-8.2-14.3c-10.4 1.9-21.2 1.9-31.7 0zm-10.5-58.8c38.5 29.6 82.4-14.3 52.8-52.8-38.5-29.7-82.4 14.3-52.8 52.8zM386.3 286.1l33.7 16.8c10.1 5.8 14.5 18.1 10.5 29.1-8.9 24.2-26.4 46.4-42.6 65.8-7.4 8.9-20.2 11.1-30.3 5.3l-29.1-16.8c-16 13.7-34.6 24.6-54.9 31.7v33.6c0 11.6-8.3 21.6-19.7 23.6-24.6 4.2-50.4 4.4-75.9 0-11.5-2-20-11.9-20-23.6V418c-20.3-7.2-38.9-18-54.9-31.7L74 403c-10 5.8-22.9 3.6-30.3-5.3-16.2-19.4-33.3-41.6-42.2-65.7-4-10.9.4-23.2 10.5-29.1l33.3-16.8c-3.9-20.9-3.9-42.4 0-63.4L12 205.8c-10.1-5.8-14.6-18.1-10.5-29 8.9-24.2 26-46.4 42.2-65.8 7.4-8.9 20.2-11.1 30.3-5.3l29.1 16.8c16-13.7 34.6-24.6 54.9-31.7V57.1c0-11.5 8.2-21.5 19.6-23.5 24.6-4.2 50.5-4.4 76-.1 11.5 2 20 11.9 20 23.6v33.6c20.3 7.2 38.9 18 54.9 31.7l29.1-16.8c10-5.8 22.9-3.6 30.3 5.3 16.2 19.4 33.2 41.6 42.1 65.8 4 10.9.1 23.2-10 29.1l-33.7 16.8c3.9 21 3.9 42.5 0 63.5zm-117.6 21.1c59.2-77-28.7-164.9-105.7-105.7-59.2 77 28.7 164.9 105.7 105.7zm243.4 182.7l-8.2 14.3c-3 5.3-9.4 7.5-15.1 5.4-11.8-4.4-22.6-10.7-32.1-18.6-4.6-3.8-5.8-10.5-2.8-15.7l8.2-14.3c-6.9-8-12.3-17.3-15.9-27.4h-16.5c-6 0-11.2-4.3-12.2-10.3-2-12-2.1-24.6 0-37.1 1-6 6.2-10.4 12.2-10.4h16.5c3.6-10.1 9-19.4 15.9-27.4l-8.2-14.3c-3-5.2-1.9-11.9 2.8-15.7 9.5-7.9 20.4-14.2 32.1-18.6 5.7-2.1 12.1.1 15.1 5.4l8.2 14.3c10.5-1.9 21.2-1.9 31.7 0l8.2-14.3c3-5.3 9.4-7.5 15.1-5.4 11.8 4.4 22.6 10.7 32.1 18.6 4.6 3.8 5.8 10.5 2.8 15.7l-8.2 14.3c-6.9 8-12.3-17.3-15.9-27.4h16.5c6 0 11.2 4.3 12.2 10.3 2 12 2.1 24.6 0 37.1-1 6-6.2 10.4-12.2 10.4h-16.5c-3.6 10.1-9 19.4-15.9 27.4l8.2 14.3c3.6 5.2 1.9 11.9-2.8 15.7-9.5 7.9-20.4 14.2-32.1 18.6-5.7 2.1-12.1-.1-15.1-5.4l-8.2-14.3c-10.4 1.9-21.2 1.9-31.7 0zM501.6 431c38.5 29.6 82.4-14.3 52.8-52.8-38.5-29.6-82.4 14.3-52.8 52.8z" /></svg>' );
 
 		add_menu_page(
 			'WP Agency Toolkit',
@@ -89,7 +89,7 @@ class WPAT_Admin {
 				'Campos Extras Woo',
 				'Campos Extras Woo',
 				'manage_options',
-				'wp-agency-toolkit&tab=tab-woo-extra-options',
+				'wpat-woo-extra-options',
 				array( $this, 'render_admin_page' )
 			);
 		}
@@ -100,7 +100,7 @@ class WPAT_Admin {
 				'Snippets de Código',
 				'Snippets de Código',
 				'manage_options',
-				'wp-agency-toolkit&tab=tab-snippets',
+				'wpat-snippets',
 				array( $this, 'render_admin_page' )
 			);
 		}
@@ -111,17 +111,39 @@ class WPAT_Admin {
 				'Facturación PDF',
 				'Facturación PDF',
 				'manage_options',
-				'wp-agency-toolkit&tab=tab-woo-pdf-invoices',
+				'wpat-woo-pdf-invoices',
+				array( $this, 'render_admin_page' )
+			);
+		}
+
+		if ( isset( $settings['login-customizer'] ) && '1' === $settings['login-customizer'] ) {
+			add_submenu_page(
+				'wp-agency-toolkit',
+				'Personalizador Login',
+				'Personalizador Login',
+				'manage_options',
+				'wpat-login-customizer',
+				array( $this, 'render_admin_page' )
+			);
+		}
+
+		if ( isset( $settings['seo'] ) && '1' === $settings['seo'] ) {
+			add_submenu_page(
+				'wp-agency-toolkit',
+				'Optimización SEO',
+				'Optimización SEO',
+				'manage_options',
+				'wpat-seo',
 				array( $this, 'render_admin_page' )
 			);
 		}
 
 		add_submenu_page(
 			'wp-agency-toolkit',
-			'Ajustes Generales',
-			'Ajustes Generales',
+			'Salud & Herramientas',
+			'Salud & Herramientas',
 			'manage_options',
-			'wp-agency-toolkit&tab=tab-security',
+			'wpat-tools',
 			array( $this, 'render_admin_page' )
 		);
 	}
@@ -1954,48 +1976,18 @@ class WPAT_Admin {
 				}
 				?>
 
-				<div class="wpat-container">
-					<!-- Pestañas de Navegación -->
-					<div class="wpat-tabs-nav">
-						<button type="button" class="wpat-tab-link <?php echo ( $active_tab === 'tab-modules' ) ? 'active' : ''; ?>" data-tab="tab-modules">
-							<span class="dashicons dashicons-grid-view"></span> Centro de Módulos
+				<?php if ( 'tab-modules' !== $active_tab ) : ?>
+					<div class="wpat-back-bar" style="margin: 15px 0 20px 0; display: flex; align-items: center; justify-content: space-between; background: #fff; padding: 12px 20px; border-radius: 8px; border: 1px solid #dcdcde; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit' ) ); ?>" class="button button-secondary" style="background: #f6f7f7; border-color: #cbd5e1; color: #1e293b; font-weight: 700; border-radius: 6px; height: 34px; line-height: 32px; padding: 0 16px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
+							<span class="dashicons dashicons-arrow-left-alt" style="font-size: 16px; width: 16px; height: 16px; margin: 0; line-height: 1;"></span> Volver al Centro de Módulos
+						</a>
+						<button type="submit" class="button button-primary" style="background: #2271b1; border-color: #135e96; font-weight: 700; height: 34px; line-height: 32px; padding: 0 20px; border-radius: 6px;">
+							Guardar Cambios
 						</button>
-						<button type="button" class="wpat-tab-link <?php echo ( $active_tab === 'tab-security' ) ? 'active' : ''; ?>" data-tab="tab-security">
-							<span class="dashicons dashicons-shield"></span> Seguridad & Acceso
-						</button>
-						<button type="button" class="wpat-tab-link <?php echo ( $active_tab === 'tab-woocommerce' ) ? 'active' : ''; ?>" data-tab="tab-woocommerce">
-							<span class="dashicons dashicons-cart"></span> WooCommerce
-						</button>
-						<button type="button" class="wpat-tab-link <?php echo ( $active_tab === 'tab-performance' ) ? 'active' : ''; ?>" data-tab="tab-performance">
-							<span class="dashicons dashicons-performance"></span> Rendimiento & Código
-						</button>
-						<button type="button" class="wpat-tab-link <?php echo ( $active_tab === 'tab-media' ) ? 'active' : ''; ?>" data-tab="tab-media">
-							<span class="dashicons dashicons-admin-media"></span> Optimización de Medios
-						</button>
-						<button type="button" class="wpat-tab-link <?php echo ( $active_tab === 'tab-kits' ) ? 'active' : ''; ?>" data-tab="tab-kits">
-							<span class="dashicons dashicons-download"></span> Importador de Kits
-						</button>
-						<button type="button" class="wpat-tab-link <?php echo ( $active_tab === 'tab-smtp' ) ? 'active' : ''; ?>" data-tab="tab-smtp">
-							<span class="dashicons dashicons-email-alt"></span> Configuración SMTP
-						</button>
-						<button type="button" class="wpat-tab-link <?php echo ( $active_tab === 'tab-seo' ) ? 'active' : ''; ?>" data-tab="tab-seo">
-							<span class="dashicons dashicons-google"></span> Optimización SEO
-						</button>
-						<button type="button" class="wpat-tab-link <?php echo ( $active_tab === 'tab-integrations' ) ? 'active' : ''; ?>" data-tab="tab-integrations">
-							<span class="dashicons dashicons-admin-links"></span> Integraciones
-						</button>
-						<button type="button" class="wpat-tab-link <?php echo ( $active_tab === 'tab-initial-setup' ) ? 'active' : ''; ?>" data-tab="tab-initial-setup">
-							<span class="dashicons dashicons-admin-settings"></span> Configuración Inicial
-						</button>
-						<button type="button" class="wpat-tab-link <?php echo ( $active_tab === 'tab-tools' ) ? 'active' : ''; ?>" data-tab="tab-tools">
-							<span class="dashicons dashicons-admin-tools"></span> Exportación & importación
-						</button>
-						<button type="button" class="wpat-tab-link <?php echo ( $active_tab === 'tab-health' ) ? 'active' : ''; ?>" data-tab="tab-health">
-							<span class="dashicons dashicons-database"></span> Salud & Base de Datos
-						</button>
-
 					</div>
+				<?php endif; ?>
 
+				<div class="wpat-container">
 					<!-- Contenido de las Pestañas -->
 					<div class="wpat-tabs-content">
 

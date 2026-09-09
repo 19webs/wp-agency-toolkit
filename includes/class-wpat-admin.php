@@ -4775,13 +4775,20 @@ class WPAT_Admin {
 							<?php endif; ?>
 						</div>
 
-						<!-- PESTAÑA: INTEGRACIONES -->
-						<div id="tab-integrations" class="wpat-tab-panel <?php echo ( $active_tab === 'tab-integrations' ) ? 'active' : ''; ?>">
-							<h2>Integraciones de Terceros</h2>
-							<p class="section-desc">Gestiona e inyecta códigos de herramientas externas en tu web de forma ultra-ligera, limpia y sin sobrecargar la web.</p>
+						<?php
+						break;
 
-							<!-- Tarjeta: Google Search Console -->
-							<div class="wpat-module-card">
+					case 'integrations':
+						?>
+						<div class="wpat-module-card" style="margin-bottom: 20px;">
+							<div class="wpat-module-header">
+								<div class="wpat-module-info">
+									<h3>Integraciones de Terceros</h3>
+									<p>Gestiona e inyecta códigos de herramientas externas en tu web de forma ultra-ligera, limpia y sin sobrecargar la web.</p>
+								</div>
+							</div>
+						</div>
+						<div class="wpat-module-card">
 								<?php
 								// Comprobar si hay un archivo de verificación en el directorio raíz (ABSPATH)
 								$google_files = glob( ABSPATH . 'google*.html' );
@@ -5254,33 +5261,6 @@ class WPAT_Admin {
 				<?php
 				break;
 
-			<!-- PESTAÑA 5: SALUD Y BASE DE DATOS -->
-						<div id="tab-health" class="wpat-tab-panel <?php echo ( $active_tab === 'tab-health' ) ? 'active' : ''; ?>">
-							<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
-								<h2 style="margin:0;">Salud & Base de Datos</h2>
-								<button type="button" class="button" id="wpat_refresh_health_btn">
-									<span class="dashicons dashicons-update" style="vertical-align: middle; font-size:16px; width:16px; height:16px; margin-right:5px;"></span> Actualizar Datos
-								</button>
-							</div>
-							<p class="section-desc">Monitorea los límites clave del servidor PHP y limpia los residuos acumulados en tu base de datos de WordPress.</p>
-
-							<!-- Nonce para acciones de Base de Datos -->
-							<?php wp_nonce_field( 'wpat_cleanup_nonce_action', 'wpat_cleanup_ajax_nonce' ); ?>
-
-							<div id="wpat_health_content_wrapper">
-								<?php $this->render_health_tab_content(); ?>
-							</div>
-						</div>
-
-						<!-- PESTAÑA 6: IMPORTADOR DE KITS -->
-						<div id="tab-kits" class="wpat-tab-panel <?php echo ( $active_tab === 'tab-kits' ) ? 'active' : ''; ?>">
-							<h2>Importador de Kits de Plantillas (Envato)</h2>
-							<p class="section-desc">Sube tus archivos ZIP de kits de plantillas de Envato Elements para gestionarlos e importarlos en Elementor.</p>
-
-							<!-- Formulario de carga AJAX de ZIP -->
-							
-				<?php
-				break;
 			case 'kits':
 			case 'envato-importer':
 				$this->render_tab_kits_content( $settings );

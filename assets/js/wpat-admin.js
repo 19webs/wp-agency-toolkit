@@ -87,7 +87,7 @@ jQuery(document).ready(function($) {
 		var cat = $(this).data('cat');
 
 		$('.wpat-module-grid-card').each(function() {
-			if (cat === 'all' || $(this).hasClass('cat-' + cat)) {
+			if (cat === 'all' || $(this).hasClass('cat-' + cat) || $(this).hasClass(cat)) {
 				$(this).show();
 			} else {
 				$(this).hide();

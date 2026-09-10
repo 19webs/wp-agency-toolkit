@@ -2049,7 +2049,7 @@ class WPAT_Admin {
 										<div class="wpat-cat-nav-list" style="display: flex; flex-direction: column; gap: 4px;">
 											<button type="button" class="wpat-cat-item active" data-cat="all">
 												<span class="wpat-cat-label">📌 Todos</span>
-												<span class="wpat-cat-badge">34</span>
+												<span class="wpat-cat-badge">35</span>
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="woocommerce">
 												<span class="wpat-cat-label">🛍️ WooCommerce</span>
@@ -2061,7 +2061,7 @@ class WPAT_Admin {
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="performance">
 												<span class="wpat-cat-label">⚡ Rendimiento & SEO</span>
-												<span class="wpat-cat-badge">6</span>
+												<span class="wpat-cat-badge">7</span>
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="tools">
 												<span class="wpat-cat-label">🛠️ Herramientas</span>
@@ -2082,10 +2082,10 @@ class WPAT_Admin {
 									<div class="wpat-mobile-cat-container" style="display: none; width: 100%; margin-bottom: 15px;">
 										<label for="wpat_mobile_cat_select" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 6px;">Categoría:</label>
 										<select id="wpat_mobile_cat_select" style="width: 100%; height: 38px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 0 12px; font-weight: 600; font-size: 13px; background: #fff;">
-											<option value="all">📌 Todos (34)</option>
+											<option value="all">📌 Todos (35)</option>
 											<option value="woocommerce">🛍️ WooCommerce (9)</option>
 											<option value="security">🛡️ Seguridad (6)</option>
-											<option value="performance">⚡ Rendimiento & SEO (6)</option>
+											<option value="performance">⚡ Rendimiento & SEO (7)</option>
 											<option value="tools">🛠️ Herramientas (6)</option>
 											<option value="system">⚙️ Sistema & Admin (7)</option>
 										</select>
@@ -2123,7 +2123,7 @@ class WPAT_Admin {
 	 * Renderiza el grid completo de 35 tarjetas de módulos en el Centro de Módulos.
 	 */
 		public function render_all_modules_grid_cards( $settings ) {
-		$modules_data = array(
+				$modules_data = array(
 			// WOOCOMMERCE (9)
 			array(
 				'id'          => 'woo-extra-options',
@@ -2195,118 +2195,118 @@ class WPAT_Admin {
 			array(
 				'id'          => 'woo-catalog',
 				'title'       => 'Modo Catálogo',
-				'badge'       => 'Automático',
+				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Desactiva la compra de productos, ocultando precios o los botones de añadir al carrito.',
 				'cat_class'   => 'cat-woocommerce cat-woo',
 				'icon'        => '🏷️',
 				'icon_bg'     => 'woo',
-				'keywords'    => 'modo catalogo ocultar precios carrito',
-				'has_settings'=> false
+				'keywords'    => 'modo catalogo ocultar precios carrito whatsapp'
 			),
 			array(
 				'id'          => 'woo-zoom',
 				'title'       => 'Zoom en Galería',
-				'badge'       => 'Automático',
+				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
-				'desc'        => 'Desactiva de forma independiente funciones de la galería como Zoom, Lightbox o Slider.',
+				'desc'        => 'Desactiva de forma independiente funciones nativas de la galería de producto como Zoom, Lightbox o Slider.',
 				'cat_class'   => 'cat-woocommerce cat-woo',
-				'icon'        => '🔎',
+				'icon'        => '🔍',
 				'icon_bg'     => 'woo',
-				'keywords'    => 'zoom galeria lightbox slider productos',
-				'has_settings'=> false
+				'keywords'    => 'woo zoom galeria lightbox slider desactivar'
 			),
 			array(
 				'id'          => 'woo-variation-swatches',
 				'title'       => 'Swatches de Variación',
-				'badge'       => 'Configuración',
-				'badge_class' => 'tweak',
-				'desc'        => 'Convierte los menús desplegables de atributos de variación en botones visuales de color o texto.',
+				'badge'       => 'Subpágina',
+				'badge_class' => 'subpage',
+				'desc'        => 'Transforma desplegables de variaciones en botones visuales de color, imagen o etiqueta.',
 				'cat_class'   => 'cat-woocommerce cat-woo',
 				'icon'        => '🎨',
 				'icon_bg'     => 'woo',
-				'keywords'    => 'swatches variacion colores botones producto'
+				'keywords'    => 'swatches variaciones botones color imagen atributos'
 			),
 
-			// SEGURIDAD & ACCESO (6)
-			array(
-				'id'          => 'login-customizer',
-				'title'       => 'Personalizador del Login',
-				'badge'       => 'Subpágina',
-				'badge_class' => 'subpage',
-				'desc'        => 'Personaliza la pantalla de inicio de sesión de WordPress con logo corporativo, colores y estilos.',
-				'cat_class'   => 'cat-security cat-sec',
-				'icon'        => '🔐',
-				'icon_bg'     => 'sec',
-				'keywords'    => 'personalizador login wp-login logo inicio sesion'
-			),
-			array(
-				'id'          => 'hide-login',
-				'title'       => 'Ocultar URL de Login',
-				'badge'       => 'Configuración',
-				'badge_class' => 'tweak',
-				'desc'        => 'Cambia la ruta predeterminada wp-login.php por un slug personalizado para evitar ataques.',
-				'cat_class'   => 'cat-security cat-sec',
-				'icon'        => '🚪',
-				'icon_bg'     => 'sec',
-				'keywords'    => 'ocultar login slug wp-login acceso'
-			),
+			// SEGURIDAD (6)
 			array(
 				'id'          => 'security-hardening',
 				'title'       => 'Fortalecimiento de Seguridad',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
-				'desc'        => 'Aplica directivas de seguridad para desactivar XML-RPC, ocultar versión WP y restringir archivos.',
+				'desc'        => 'Protección activa contra inyecciones PHP, desactivación de XML-RPC, enumeración de usuarios y ocultación de versión.',
 				'cat_class'   => 'cat-security cat-sec',
 				'icon'        => '🛡️',
 				'icon_bg'     => 'sec',
-				'keywords'    => 'seguridad hardening xmlrpc proteccion'
+				'keywords'    => 'seguridad hardening xmlrpc uploads php usuarios edicion'
+			),
+			array(
+				'id'          => 'hide-login',
+				'title'       => 'Ocultar Acceso Admin',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Cambia la URL nativa wp-login.php por un slug personalizado e incluye captcha anti fuerza bruta.',
+				'cat_class'   => 'cat-security cat-sec',
+				'icon'        => '🔐',
+				'icon_bg'     => 'sec',
+				'keywords'    => 'ocultar login acceso wp-login slug captcha'
 			),
 			array(
 				'id'          => 'bot-blocker',
-				'title'       => 'Bloqueador de Bots por 404',
+				'title'       => 'Bloqueador de Bots Anti-DDoS',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
-				'desc'        => 'Detecta y bloquea IPs sospechosas que generan múltiples errores 404 buscando vulnerabilidades.',
+				'desc'        => 'Limita solicitudes maliciosas por IP por segundo y bloquea bots abusivos o ataques DDoS.',
 				'cat_class'   => 'cat-security cat-sec',
 				'icon'        => '🤖',
 				'icon_bg'     => 'sec',
-				'keywords'    => 'bloqueador bots 404 ips vulnerabilidades'
+				'keywords'    => 'bot blocker ddos ip whitelist solicitudes limite'
 			),
 			array(
 				'id'          => 'anti-spam',
-				'title'       => 'Protección Anti-Spam',
-				'badge'       => 'Configuración',
+				'title'       => 'Anti-Spam en Formularios',
+				'badge'       => 'Automático',
 				'badge_class' => 'tweak',
-				'desc'        => 'Bloquea spam en formularios (Elementor, MetForm, Comentarios) con Honeypot sin Captchas molestos.',
+				'desc'        => 'Protección Honeypot invisible sin captchas molestos para comentarios y formularios.',
 				'cat_class'   => 'cat-security cat-sec',
 				'icon'        => '🚫',
 				'icon_bg'     => 'sec',
-				'keywords'    => 'anti-spam antispam honeypot formularios comentarios'
+				'keywords'    => 'antispam honeypot comentarios formularios',
+				'has_settings'=> false
+			),
+			array(
+				'id'          => 'conflict-detector',
+				'title'       => 'Detector de Conflictos JS/CSS',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Supervisa errores de Javascript en la consola y problemas de carga de scripts de plugins.',
+				'cat_class'   => 'cat-security cat-sec',
+				'icon'        => '⚠️',
+				'icon_bg'     => 'sec',
+				'keywords'    => 'conflictos js css errores consola depuracion'
 			),
 			array(
 				'id'          => 'ssl-fixer',
-				'title'       => 'Forzar SSL & HTTPS',
+				'title'       => 'Forzar SSL & Contenido Mixto',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
-				'desc'        => 'Fuerza la redirección 301 a HTTPS y corrige automáticamente advertencias de contenido mixto.',
+				'desc'        => 'Fuerza redirección HTTPS y repara automáticamente imágenes o scripts cargados por HTTP.',
 				'cat_class'   => 'cat-security cat-sec',
 				'icon'        => '🔒',
 				'icon_bg'     => 'sec',
 				'keywords'    => 'ssl https contenido mixto redireccion 301'
 			),
 
-			// RENDIMIENTO & SEO (6)
+			// RENDIMIENTO & SEO (7)
 			array(
 				'id'          => 'performance',
 				'title'       => 'Optimización de Rendimiento',
-				'badge'       => 'Configuración',
+				'badge'       => 'Automático',
 				'badge_class' => 'tweak',
-				'desc'        => 'Limpieza de cabeceras WP, control de Heartbeat API y desactivación de emojis y embeds innecesarios.',
+				'desc'        => 'Limpieza de cabeceras WP, control de Heartbeat API, límites de revisiones y desactivación de emojis.',
 				'cat_class'   => 'cat-performance cat-perf',
 				'icon'        => '⚡',
 				'icon_bg'     => 'perf',
-				'keywords'    => 'rendimiento performance heartbeat emojis cabeceras'
+				'keywords'    => 'rendimiento performance heartbeat emojis cabeceras',
+				'has_settings'=> false
 			),
 			array(
 				'id'          => 'disable-comments',
@@ -2347,11 +2347,22 @@ class WPAT_Admin {
 				'title'       => 'Optimización SEO Integrada',
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
-				'desc'        => 'Auditoría SEO on-page, generador de meta etiquetas y solución automática de imágenes sin ALT.',
+				'desc'        => 'Campos SEO en el editor (título, meta descripción, noindex), previsualización de Google y metadatos Open Graph.',
 				'cat_class'   => 'cat-performance cat-perf',
 				'icon'        => '🚀',
 				'icon_bg'     => 'perf',
 				'keywords'    => 'seo optimizacion meta titulos auditoria alt'
+			),
+			array(
+				'id'          => 'sitemap-xml',
+				'title'       => 'Generador Sitemap XML',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Genera automáticamente un sitemap XML dinámico en la raíz (/sitemap.xml) excluyendo contenido noindex.',
+				'cat_class'   => 'cat-performance cat-perf cat-seo',
+				'icon'        => '🗺️',
+				'icon_bg'     => 'perf',
+				'keywords'    => 'sitemap xml seo sitemaps noindex'
 			),
 			array(
 				'id'          => 'reading-progress',
@@ -2472,13 +2483,14 @@ class WPAT_Admin {
 			array(
 				'id'          => 'hide_admin_bar',
 				'title'       => 'Restringir Barra & Acceso Admin',
-				'badge'       => 'Configuración',
+				'badge'       => 'Automático',
 				'badge_class' => 'tweak',
 				'desc'        => 'Oculta la barra superior negra de WordPress y bloquea el acceso a wp-admin a clientes/suscriptores.',
 				'cat_class'   => 'cat-system cat-admin',
 				'icon'        => '🚫',
 				'icon_bg'     => 'sec',
-				'keywords'    => 'restringir barra admin wp-admin acceso clientes'
+				'keywords'    => 'restringir barra admin wp-admin acceso clientes',
+				'has_settings'=> false
 			),
 			array(
 				'id'          => 'smtp',
@@ -2516,7 +2528,7 @@ class WPAT_Admin {
 			),
 		);
 
-				$active_cat = isset( $_GET['cat'] ) && ! empty( $_GET['cat'] ) ? sanitize_key( $_GET['cat'] ) : 'all';
+		$active_cat = isset( $_GET['cat'] ) && ! empty( $_GET['cat'] ) ? sanitize_key( $_GET['cat'] ) : 'all';
 
 		foreach ( $modules_data as $mod ) {
 			$is_active = ( isset( $settings[ $mod['id'] ] ) && '1' === $settings[ $mod['id'] ] );
@@ -4681,6 +4693,33 @@ class WPAT_Admin {
 										<button type="button" class="button button-secondary" id="wpat_smtp_send_test_btn" style="height:30px;">Enviar Prueba</button>
 									</div>
 									<div id="wpat_smtp_test_result" style="display:none; margin-top:15px; padding:15px; border-radius:6px; font-size:13px; line-height:1.5; font-family: monospace;"></div>
+								</div>
+							</div>
+				<?php
+				break;
+						case 'sitemap-xml':
+				?>
+<div class="wpat-module-card">
+								<div class="wpat-module-header">
+									<div class="wpat-module-info">
+										<h3>Generador de Sitemap XML</h3>
+										<p>Genera automáticamente un sitemap XML dinámico y ligero en la raíz de tu sitio (<code>/sitemap.xml</code>) excluyendo cualquier contenido configurado como noindex.</p>
+									</div>
+									<?php $this->render_module_toggle( 'sitemap-xml', $settings, true ); ?>
+								</div>
+								<div class="wpat-module-body" style="display: block;">
+									<div class="wpat-field-group">
+										<label>Sitemap XML Integrado</label>
+										<p class="description" style="margin-bottom: 12px;">El sitemap se genera dinámicamente en <code><?php echo esc_url( home_url( '/sitemap.xml' ) ); ?></code> y excluye automáticamente las páginas o entradas configuradas con directiva <code>noindex</code>.</p>
+										<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+											<a href="<?php echo esc_url( home_url( '/sitemap.xml' ) ); ?>" target="_blank" class="button button-secondary">
+												<span class="dashicons dashicons-external" style="vertical-align: middle; font-size: 16px; width: 16px; height: 16px; margin-right: 5px;"></span> Ver Sitemap.xml
+											</a>
+											<a href="<?php echo esc_url( home_url( '/sitemap.xml' ) ); ?>" download="sitemap.xml" class="button button-secondary">
+												<span class="dashicons dashicons-download" style="vertical-align: middle; font-size: 16px; width: 16px; height: 16px; margin-right: 5px;"></span> Descargar Sitemap.xml
+											</a>
+										</div>
+									</div>
 								</div>
 							</div>
 				<?php

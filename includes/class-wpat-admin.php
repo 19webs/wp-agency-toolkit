@@ -615,7 +615,6 @@ class WPAT_Admin {
 			'woo-dni',
 			'woo-catalog',
 			'woo-checkout-designer',
-			'woo-checkout-designer',
 			'woo-zoom',
 			'duplicator',
 			'snippets',
@@ -1259,6 +1258,7 @@ class WPAT_Admin {
 			'ssl-fixer',
 			'woo-dni',
 			'woo-catalog',
+			'woo-checkout-designer',
 			'woo-zoom',
 			'duplicator',
 			'snippets',
@@ -2237,6 +2237,17 @@ class WPAT_Admin {
 				'icon'        => '🏷️',
 				'icon_bg'     => 'woo',
 				'keywords'    => 'modo catalogo ocultar precios carrito whatsapp'
+			),
+			array(
+				'id'          => 'woo-checkout-designer',
+				'title'       => 'Diseñador de Checkout',
+				'badge'       => 'Subpágina',
+				'badge_class' => 'subpage',
+				'desc'        => 'Diseño de checkout de alta conversión con 4 plantillas (Classic, Express, Accordion, Minimalist) y optimizaciones.',
+				'cat_class'   => 'cat-woocommerce cat-woo',
+				'icon'        => '🎨',
+				'icon_bg'     => 'woo',
+				'keywords'    => 'checkout diseñador plantillas woocommerce plantilla classic express minimalista acordeon'
 			),
 			array(
 				'id'          => 'woo-zoom',

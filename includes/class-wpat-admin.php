@@ -1232,7 +1232,7 @@ class WPAT_Admin {
 	 * Guarda de forma aislada e instantánea el estado de un módulo general vía AJAX.
 	 */
 	public function ajax_toggle_module() {
-		check_ajax_referer( 'wpat_save_settings_action', 'security' );
+		if ( ! check_ajax_referer( 'wpat_save_settings_action', 'security', false ) ) { wp_send_json_error( array( 'message' => 'Error de seguridad (nonce de ajustes inválido). Por favor, recarga la página.' ) ); }
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
@@ -1335,7 +1335,7 @@ class WPAT_Admin {
 	 * Ejecuta consultas SQL de limpieza sobre la base de datos vía AJAX.
 	 */
 	public function ajax_cleanup_database() {
-		check_ajax_referer( 'wpat_cleanup_nonce_action', 'security' );
+		if ( ! check_ajax_referer( 'wpat_cleanup_nonce_action', 'security', false ) ) { wp_send_json_error( array( 'message' => 'Error de seguridad (nonce de limpieza inválido). Por favor, recarga la página.' ) ); }
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
@@ -1555,7 +1555,7 @@ class WPAT_Admin {
 	 * Callback AJAX para obtener el estado de salud y base de datos actualizado.
 	 */
 	public function ajax_get_health_status() {
-		check_ajax_referer( 'wpat_cleanup_nonce_action', 'security' );
+		if ( ! check_ajax_referer( 'wpat_cleanup_nonce_action', 'security', false ) ) { wp_send_json_error( array( 'message' => 'Error de seguridad (nonce de salud inválido). Por favor, recarga la página.' ) ); }
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
@@ -1574,6 +1574,7 @@ class WPAT_Admin {
 	public function render_health_tab_content() {
 		$stats = $this->get_db_cleanup_stats();
 		?>
+		<?php wp_nonce_field( 'wpat_cleanup_nonce_action', 'wpat_cleanup_ajax_nonce' ); ?>
 		<!-- Tarjeta de Diagnóstico: Detector de Incompatibilidades y Salud de Plugins -->
 		<div class="wpat-module-card" style="margin-bottom: 25px; padding: 20px;">
 			<h3 style="margin-top:0; font-size:15px; font-weight:600; display:flex; align-items:center; gap:8px;">
@@ -2010,6 +2011,7 @@ class WPAT_Admin {
 
 			<form method="post" action="" enctype="multipart/form-data">
 				<?php wp_nonce_field( 'wpat_save_settings_action', 'wpat_settings_nonce' ); ?>
+				<?php wp_nonce_field( 'wpat_cleanup_nonce_action', 'wpat_cleanup_ajax_nonce' ); ?>
 
 				<?php
 				// Banner de aviso si los motores de búsqueda están disuadidos

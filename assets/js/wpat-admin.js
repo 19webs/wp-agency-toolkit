@@ -78,7 +78,7 @@ jQuery(document).ready(function($) {
 		$card.css('opacity', '0.7');
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_toggle_module',
@@ -252,7 +252,7 @@ jQuery(document).ready(function($) {
 				$card.css('opacity', '0.7');
 
 				$.ajax({
-					url: ajaxurl,
+					url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 					type: 'POST',
 					data: {
 						action: 'wpat_toggle_module',
@@ -419,7 +419,7 @@ jQuery(document).ready(function($) {
 		var dateStart = $('#wpat_bulk_filter_date_start').val();
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_scan_images',
@@ -494,7 +494,7 @@ jQuery(document).ready(function($) {
 		var batchIds = imagesToOptimizeIds.slice(currentOptimizeIndex, currentOptimizeIndex + 5);
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_optimize_image_batch',
@@ -579,7 +579,7 @@ jQuery(document).ready(function($) {
 		currentOrphanIndex = 0;
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_scan_unused_images'
@@ -632,7 +632,7 @@ jQuery(document).ready(function($) {
 		var batchIds = orphanCandidateIds.slice(currentOrphanIndex, currentOrphanIndex + 20);
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_check_unused_images_batch',
@@ -721,7 +721,7 @@ jQuery(document).ready(function($) {
 		$btn.prop('disabled', true).text('Eliminando...');
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_delete_unused_images',
@@ -881,7 +881,7 @@ jQuery(document).ready(function($) {
 		$btn.prop('disabled', true).text('Guardando...');
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_save_snippet',
@@ -922,7 +922,7 @@ jQuery(document).ready(function($) {
 		$badge.text('Cargando...');
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_toggle_snippet',
@@ -956,7 +956,7 @@ jQuery(document).ready(function($) {
 		}
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_clone_snippet',
@@ -988,7 +988,7 @@ jQuery(document).ready(function($) {
 		}
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_delete_snippet',
@@ -1015,12 +1015,12 @@ jQuery(document).ready(function($) {
 		e.preventDefault();
 		var $btn = $(this);
 		var type = $btn.data('type');
-		var nonce = $('#wpat_cleanup_ajax_nonce').val();
+		var nonce = $('#wpat_cleanup_ajax_nonce').val() || (typeof wpat_object !== 'undefined' ? wpat_object.cleanup_nonce : '');
 
 		$btn.prop('disabled', true).text('Limpiando...');
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_cleanup_database',
@@ -1041,7 +1041,7 @@ jQuery(document).ready(function($) {
 			},
 			error: function() {
 				$btn.prop('disabled', false).text('Limpiar');
-				alert('Fallo de conexión al realizar la limpieza.');
+				alert('Fallo de conexión al realizar la limpieza: ' + (xhr && xhr.responseText ? xhr.responseText.substring(0, 100) : (error || 'Error de red')));
 			}
 		});
 	});
@@ -1050,7 +1050,7 @@ jQuery(document).ready(function($) {
 	$('#wpat_db_clean_all_btn').on('click', function(e) {
 		e.preventDefault();
 		var $btn = $(this);
-		var nonce = $('#wpat_cleanup_ajax_nonce').val();
+		var nonce = $('#wpat_cleanup_ajax_nonce').val() || (typeof wpat_object !== 'undefined' ? wpat_object.cleanup_nonce : '');
 
 		if (!confirm('¿Estás seguro de que deseas limpiar y optimizar la base de datos por completo? Se vaciarán revisiones, borradores automáticos, papelera, spam y transitorios expirados.')) {
 			return;
@@ -1059,7 +1059,7 @@ jQuery(document).ready(function($) {
 		$btn.prop('disabled', true).text('Optimizando...');
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_cleanup_database',
@@ -1079,7 +1079,7 @@ jQuery(document).ready(function($) {
 			},
 			error: function() {
 				$btn.prop('disabled', false).html('<span class="dashicons dashicons-admin-tools" style="vertical-align: middle; font-size:16px; width:16px; height:16px; margin-right:5px;"></span> Limpiar y Optimizar Todo');
-				alert('Fallo de conexión al optimizar la base de datos.');
+				alert('Fallo de conexión al optimizar la base de datos: ' + (xhr && xhr.responseText ? xhr.responseText.substring(0, 100) : (error || 'Error de red')));
 			}
 		});
 	});
@@ -1088,14 +1088,14 @@ jQuery(document).ready(function($) {
 	$(document).on('click', '#wpat_refresh_health_btn', function(e) {
 		e.preventDefault();
 		var $btn = $(this);
-		var nonce = $('#wpat_cleanup_ajax_nonce').val();
+		var nonce = $('#wpat_cleanup_ajax_nonce').val() || (typeof wpat_object !== 'undefined' ? wpat_object.cleanup_nonce : '');
 		var originalHtml = $btn.html();
 
 		// Deshabilitar y mostrar loader con animación de giro wpat-spin
 		$btn.prop('disabled', true).html('<span class="dashicons dashicons-update wpat-spin" style="vertical-align: middle; font-size:16px; width:16px; height:16px; margin-right:5px;"></span> Cargando...');
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_get_health_status',
@@ -1177,7 +1177,7 @@ jQuery(document).ready(function($) {
 		$selectBtn.prop('disabled', true);
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: formData,
 			contentType: false,
@@ -1439,7 +1439,7 @@ jQuery(document).ready(function($) {
 		}, 300);
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_import_envato_template',
@@ -1487,7 +1487,7 @@ jQuery(document).ready(function($) {
 		$btn.prop('disabled', true);
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_delete_envato_kit',
@@ -1578,7 +1578,7 @@ jQuery(document).ready(function($) {
 		$result.hide().html('');
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_smtp_send_test',
@@ -1641,7 +1641,7 @@ jQuery(document).ready(function($) {
 		$btn.prop('disabled', true).text('Activando...');
 		
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_activate_required_plugin',
@@ -1692,7 +1692,7 @@ jQuery(document).ready(function($) {
 		$btn.prop('disabled', true).text('Instalando...');
 		
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_install_required_plugin',
@@ -1744,7 +1744,7 @@ jQuery(document).ready(function($) {
 		$btn.prop('disabled', true).text('Configurando...');
 		
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_enable_elementor_setting',
@@ -1847,7 +1847,7 @@ jQuery(document).ready(function($) {
 		$btn.prop('disabled', true).text('Procesando...');
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_unblock_ip',
@@ -1890,7 +1890,7 @@ jQuery(document).ready(function($) {
 		$btn.prop('disabled', true).text('Procesando...');
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_whitelist_ip',
@@ -2492,7 +2492,7 @@ jQuery(document).ready(function($) {
 		$progressPercent.text('0%');
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_seo_get_pages_to_scan',
@@ -2530,7 +2530,7 @@ jQuery(document).ready(function($) {
 						$progressLabel.text('Escaneando lote ' + (currentBatchIndex + 1) + ' de ' + batches.length + '...');
 
 						$.ajax({
-							url: ajaxurl,
+							url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 							type: 'POST',
 							data: {
 								action: 'wpat_seo_audit_page',
@@ -2863,7 +2863,7 @@ jQuery(document).ready(function($) {
 		$progressPercent.text('0%');
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_seo_get_posts_to_fill',
@@ -2899,7 +2899,7 @@ jQuery(document).ready(function($) {
 						$progressLabel.text('Procesando lote ' + (currentBatchIndex + 1) + ' de ' + batches.length + '...');
 
 						$.ajax({
-							url: ajaxurl,
+							url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 							type: 'POST',
 							data: {
 								action: 'wpat_seo_fill_posts_batch',
@@ -2952,7 +2952,7 @@ jQuery(document).ready(function($) {
 		$btn.prop('disabled', true).text('Procesando...');
 
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_seo_fill_posts_batch',
@@ -2962,7 +2962,7 @@ jQuery(document).ready(function($) {
 				if (res.success) {
 					// Obtener los datos actualizados del post para refrescar la fila en caliente
 					$.ajax({
-						url: ajaxurl,
+						url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 						type: 'POST',
 						data: {
 							action: 'wpat_seo_audit_page',
@@ -3053,7 +3053,7 @@ jQuery(document).ready(function($) {
 		$btn.prop('disabled', true).text('Comprobando...');
 		
 		$.ajax({
-			url: ajaxurl,
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 			type: 'POST',
 			data: {
 				action: 'wpat_force_update_check'
@@ -3215,7 +3215,7 @@ jQuery(document).ready(function($) {
 			$progressBar.css('width', percent + '%');
 
 			$.ajax({
-				url: ajaxurl,
+				url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 				type: 'POST',
 				data: {
 					action: 'wpat_csv_import_batch',
@@ -3265,7 +3265,7 @@ jQuery(document).ready(function($) {
 			var nonce = $('#wpat_settings_nonce').val();
 
 			$.ajax({
-				url: ajaxurl,
+				url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
 				type: 'GET',
 				data: {
 					action: 'wpat_search_products',

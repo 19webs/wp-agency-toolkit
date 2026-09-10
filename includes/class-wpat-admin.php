@@ -110,6 +110,12 @@ class WPAT_Admin {
 		wp_enqueue_style( 'wpat-admin-css', WPAT_URL . 'assets/css/wpat-admin.css', array(), time() );
 		wp_enqueue_script( 'wpat-admin-js', WPAT_URL . 'assets/js/wpat-admin.js', array( 'jquery', 'wp-color-picker' ), time(), true );
 
+		wp_localize_script( 'wpat-admin-js', 'wpat_object', array(
+			'ajax_url'      => admin_url( 'admin-ajax.php' ),
+			'nonce'         => wp_create_nonce( 'wpat_save_settings_action' ),
+			'cleanup_nonce' => wp_create_nonce( 'wpat_cleanup_nonce_action' ),
+		) );
+
 		// Localizar kits instalados para el JS de administración
 		require_once WPAT_PATH . 'includes/modules/class-wpat-envato-importer.php';
 		$kits = WPAT_Envato_Importer::get_instance()->get_kits_with_plugin_status();
@@ -777,6 +783,8 @@ class WPAT_Admin {
 				$new_settings['google_search_console_code'] = '';
 			}
 			if ( isset( $input_settings['google_analytics_id'] ) ) $new_settings['google_analytics_id'] = sanitize_text_field( $input_settings['google_analytics_id'] );
+			if ( isset( $input_settings['gtm_container_id'] ) ) $new_settings['gtm_container_id'] = sanitize_text_field( $input_settings['gtm_container_id'] );
+			if ( isset( $input_settings['facebook_pixel_id'] ) ) $new_settings['facebook_pixel_id'] = sanitize_text_field( $input_settings['facebook_pixel_id'] );
 			if ( isset( $input_settings['google_drive_token'] ) ) $new_settings['google_drive_token'] = sanitize_text_field( $input_settings['google_drive_token'] );
 			if ( isset( $input_settings['google_drive_folder'] ) ) $new_settings['google_drive_folder'] = sanitize_text_field( $input_settings['google_drive_folder'] );
 			if ( isset( $input_settings['dropbox_token'] ) ) $new_settings['dropbox_token'] = sanitize_text_field( $input_settings['dropbox_token'] );
@@ -4730,7 +4738,7 @@ class WPAT_Admin {
 								<div class="wpat-module-header">
 									<div class="wpat-module-info">
 										<h3>Módulo SEO Ultra-Ligero</h3>
-										<p>Activa los meta campos de títulos y descripciones en tus páginas, Open Graph y el sitemap XML integrado.</p>
+										<p>Activa los meta campos de títulos y descripciones en tus páginas, previsualización en Google y metadatos Open Graph.</p>
 									</div>
 									<?php $this->render_module_toggle( 'seo', $settings, true ); ?>
 								</div>
@@ -4744,24 +4752,11 @@ class WPAT_Admin {
 										<ul style="margin: 0; padding: 0 0 0 20px; list-style-type: disc; font-size: 12.5px; color: #475569; line-height: 1.6;">
 											<li><strong>Campos SEO en el Editor:</strong> Añade una sección al final de la edición de tus páginas, entradas y tipos de contenido personalizados (CPT) para configurar el título SEO, el slug, la meta descripción y las directivas de rastreo (`noindex`).</li>
 											<li><strong>Previsualización de Google en Vivo:</strong> Te permite ver en tiempo real cómo se mostrará tu enlace en los resultados de Google (tanto en su formato de teléfono móvil como en ordenador de escritorio) a medida que escribes.</li>
-											<li><strong>Optimización en Redes Sociales (Open Graph):</strong> Inyecta de forma automática los metadatos necesarios para que, al compartir el enlace de tu web en WhatsApp, Telegram, LinkedIn o Facebook, este aparezca con una imagen de portada atractiva, título personalizado y descripción corta.</li>
-											<li><strong>Sitemap XML Dinámico:</strong> Activa tu sitemap XML en la raíz de la web (`/sitemap.xml`) excluyendo automáticamente cualquier entrada o página que configures como `noindex`.</li>
+											<li><strong>Optimización en Redes Sociales (Open Graph):</strong> Inyecta de forma automática los metadatos necesarios para que, al compartir el enlace de tu web en WhatsApp, Telegram, LinkedIn o Facebook, este aparezca con una imagen de portada atractiva, título personalizado y descripción corta.</li>
 										</ul>
 									</div>
 
-									<!-- Configuración del Sitemap XML -->
-									<div class="wpat-field-group" style="margin-top: 15px;">
-										<label>Sitemap XML Integrado</label>
-										<p class="description" style="margin-bottom: 10px;">El sitemap se genera dinámicamente y excluye automáticamente las páginas configuradas como noindex.</p>
-										<div style="display: flex; gap: 10px; flex-wrap: wrap;">
-											<a href="<?php echo esc_url( home_url( '/sitemap.xml' ) ); ?>" target="_blank" class="button button-secondary">
-												<span class="dashicons dashicons-external" style="vertical-align: middle; font-size: 16px; width: 16px; height: 16px; margin-right: 5px;"></span> Ver Sitemap.xml
-											</a>
-											<a href="<?php echo esc_url( home_url( '/sitemap.xml' ) ); ?>" download="sitemap.xml" class="button button-secondary">
-												<span class="dashicons dashicons-download" style="vertical-align: middle; font-size: 16px; width: 16px; height: 16px; margin-right: 5px;"></span> Descargar Sitemap.xml
-											</a>
-										</div>
-									</div>
+									
 									
 									
 								</div>
@@ -5005,6 +5000,72 @@ class WPAT_Admin {
 										</div>
 										<a href="https://analytics.google.com/" target="_blank" rel="noopener noreferrer" class="button button-secondary" style="height: 30px; display: inline-flex; align-items: center; gap: 5px;">
 											<span class="dashicons dashicons-external" style="font-size: 16px; width: 16px; height: 16px; margin: 0;"></span> Acceder a Google Analytics
+										</a>
+									</div>
+								</div>
+							</div>
+
+							<!-- Tarjeta: Google Tag Manager (GTM) -->
+							<div class="wpat-module-card" style="margin-top: 20px;">
+								<div class="wpat-module-header" style="cursor: pointer; border-bottom: none;">
+									<div class="wpat-module-info" style="width: 100%;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+											<h3 style="margin: 0; font-size: 15px;">Google Tag Manager (GTM)</h3>
+											<div style="display: flex; align-items: center; gap: 10px;">
+												<?php if ( ! empty( $settings['gtm_container_id'] ) && preg_match( '/^GTM-[A-Z0-9]+$/i', trim( $settings['gtm_container_id'] ) ) ) : ?>
+													<span class="wpat-status-indicator" style="background: #e6f4ea; color: #137333; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+														<span style="width: 6px; height: 6px; background: #137333; border-radius: 50%;"></span> Conectado
+													</span>
+												<?php else : ?>
+													<span class="wpat-status-indicator" style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
+													</span>
+												<?php endif; ?>
+											</div>
+										</div>
+										<p style="margin: 0 0 4px 0; color: #64748b; font-size: 13px;">Introduce el ID de contenedor de Google Tag Manager (debe comenzar con <code>GTM-</code>). Obtén tu ID en <a href="https://tagmanager.google.com/" target="_blank" rel="noopener noreferrer" style="color: var(--wpat-primary); font-weight: 600; text-decoration: underline;">Google Tag Manager</a>.</p>
+									</div>
+								</div>
+								<div class="wpat-module-body" style="display: none; padding: 15px 20px 20px 20px;">
+									<div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+										<div style="flex: 1; min-width: 300px;">
+											<input type="text" name="wpat_settings[gtm_container_id]" id="wpat_gtm_container_id" value="<?php echo esc_attr( isset( $settings['gtm_container_id'] ) ? $settings['gtm_container_id'] : '' ); ?>" class="large-text" placeholder="Ej: GTM-XXXXXXX" style="width:100%; margin:0;" />
+										</div>
+										<a href="https://tagmanager.google.com/" target="_blank" rel="noopener noreferrer" class="button button-secondary" style="height: 30px; display: inline-flex; align-items: center; gap: 5px;">
+											<span class="dashicons dashicons-external" style="font-size: 16px; width: 16px; height: 16px; margin: 0;"></span> Acceder a GTM
+										</a>
+									</div>
+								</div>
+							</div>
+
+							<!-- Tarjeta: Facebook / Meta Pixel -->
+							<div class="wpat-module-card" style="margin-top: 20px;">
+								<div class="wpat-module-header" style="cursor: pointer; border-bottom: none;">
+									<div class="wpat-module-info" style="width: 100%;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+											<h3 style="margin: 0; font-size: 15px;">Facebook / Meta Pixel</h3>
+											<div style="display: flex; align-items: center; gap: 10px;">
+												<?php if ( ! empty( $settings['facebook_pixel_id'] ) && preg_match( '/^[0-9]+$/', trim( $settings['facebook_pixel_id'] ) ) ) : ?>
+													<span class="wpat-status-indicator" style="background: #e6f4ea; color: #137333; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+														<span style="width: 6px; height: 6px; background: #137333; border-radius: 50%;"></span> Conectado
+													</span>
+												<?php else : ?>
+													<span class="wpat-status-indicator" style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
+													</span>
+												<?php endif; ?>
+											</div>
+										</div>
+										<p style="margin: 0 0 4px 0; color: #64748b; font-size: 13px;">Introduce tu ID de Pixel de Meta/Facebook (sólo dígitos). Obtén tu ID en el <a href="https://eventsmanager.facebook.com/" target="_blank" rel="noopener noreferrer" style="color: var(--wpat-primary); font-weight: 600; text-decoration: underline;">Administrador de Eventos de Meta</a>.</p>
+									</div>
+								</div>
+								<div class="wpat-module-body" style="display: none; padding: 15px 20px 20px 20px;">
+									<div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+										<div style="flex: 1; min-width: 300px;">
+											<input type="text" name="wpat_settings[facebook_pixel_id]" id="wpat_facebook_pixel_id" value="<?php echo esc_attr( isset( $settings['facebook_pixel_id'] ) ? $settings['facebook_pixel_id'] : '' ); ?>" class="large-text" placeholder="Ej: 123456789012345" style="width:100%; margin:0;" />
+										</div>
+										<a href="https://eventsmanager.facebook.com/" target="_blank" rel="noopener noreferrer" class="button button-secondary" style="height: 30px; display: inline-flex; align-items: center; gap: 5px;">
+											<span class="dashicons dashicons-external" style="font-size: 16px; width: 16px; height: 16px; margin: 0;"></span> Meta Events Manager
 										</a>
 									</div>
 								</div>

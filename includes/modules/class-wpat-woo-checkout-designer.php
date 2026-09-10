@@ -38,12 +38,9 @@ class WPAT_Woo_Checkout_Designer {
 	private function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_checkout_assets' ) );
 
-		// Enganchar en múltiples eventos de checkout para compatibilidad 100% con todos los temas
+		// Enganchar únicamente en los eventos globales del formulario para envolver TODO el checkout de forma limpia
 		add_action( 'woocommerce_before_checkout_form', array( $this, 'render_checkout_layout_header' ), 1 );
-		add_action( 'woocommerce_checkout_before_customer_details', array( $this, 'render_checkout_layout_header' ), 1 );
-
 		add_action( 'woocommerce_after_checkout_form', array( $this, 'render_checkout_layout_footer' ), 999 );
-		add_action( 'woocommerce_checkout_after_customer_details', array( $this, 'render_checkout_layout_footer' ), 999 );
 
 		// Interceptar el contenido de la página para convertir WooCommerce Checkout Block a Checkout Clásico
 		add_filter( 'the_content', array( $this, 'filter_checkout_content' ), 1 );
@@ -115,7 +112,7 @@ class WPAT_Woo_Checkout_Designer {
 	}
 
 	/**
-	 * Inyecta el contenedor inicial, aviso de plantilla activa y resumen móvil antes del checkout.
+	 * Inyecta el contenedor inicial y resumen móvil antes del checkout.
 	 */
 	public function render_checkout_layout_header( $checkout = null ) {
 		if ( $this->has_rendered_header ) {
@@ -127,25 +124,8 @@ class WPAT_Woo_Checkout_Designer {
 		$layout   = isset( $settings['woo_checkout_designer_layout'] ) ? $settings['woo_checkout_designer_layout'] : 'wpat-classic';
 		$mobile_summary = ! isset( $settings['woo_checkout_designer_mobile_summary'] ) || '1' === $settings['woo_checkout_designer_mobile_summary'];
 
-		$layout_names = array(
-			'wpat-classic'    => 'WPAT Classic Checkout (2 Columnas con Pasos)',
-			'wpat-express'    => 'WPAT Express Checkout (1 Columna Centrada Rápida)',
-			'wpat-accordion'  => 'WPAT Accordion Checkout (Pasos Desplegables)',
-			'wpat-minimalist' => 'WPAT Minimalist Checkout (Minimalista de Alta Conversión)',
-		);
-		$layout_title = isset( $layout_names[ $layout ] ) ? $layout_names[ $layout ] : 'WPAT Classic Checkout';
-
 		?>
 		<div class="wpat-checkout-wrapper <?php echo esc_attr( $layout ); ?>">
-
-			<!-- Indicador en vivo de plantilla activa (WPAT Checkout Designer) -->
-			<div class="wpat-checkout-template-badge" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff !important; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 13.5px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 3px 8px rgba(37,99,235,0.25); border: 1px solid #1e40af;">
-				<span style="display: inline-flex; align-items: center; gap: 8px;">
-					<span style="font-size: 16px;">🎨</span>
-					<span>Plantilla Activa: <strong><?php echo esc_html( $layout_title ); ?></strong></span>
-				</span>
-				<span style="font-size: 11px; background: rgba(255,255,255,0.22); color: #ffffff; padding: 3px 10px; border-radius: 12px; font-weight: 600;">WP Agency Toolkit</span>
-			</div>
 
 			<?php if ( $mobile_summary ) : ?>
 				<!-- Barra Flotante de Resumen de Pedido en Móvil -->

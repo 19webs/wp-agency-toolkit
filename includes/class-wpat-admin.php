@@ -2631,74 +2631,187 @@ class WPAT_Admin {
 		}
 		$importer = WPAT_Envato_Importer::get_instance();
 		$kits     = $importer->get_kits_with_plugin_status();
+
+		$active_slug = isset( $_GET['kit_slug'] ) ? sanitize_title( $_GET['kit_slug'] ) : '';
+		$active_kit  = ( ! empty( $active_slug ) && isset( $kits[ $active_slug ] ) ) ? $kits[ $active_slug ] : null;
+
 		?>
 		<div class="wpat-module-card" style="margin-bottom: 25px;">
 			<div class="wpat-module-header">
 				<div class="wpat-module-info">
 					<h3>Importador de Template Kits (Envato & Elementor)</h3>
-					<p>Sube un paquete ZIP de un Template Kit de Envato Elements u otra fuente compatible para importar sus plantillas directamente a Elementor.</p>
+					<p>Sube tus archivos ZIP de kits de plantillas de Envato Elements para gestionarlos e importarlos en Elementor.</p>
 				</div>
 				<?php $this->render_module_toggle( 'envato-importer', $settings, true ); ?>
 			</div>
+
 			<div class="wpat-module-body" style="display: block; padding: 20px;">
-				<div class="wpat-kit-upload-box" style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 25px; text-align: center; margin-bottom: 25px;">
-					<span class="dashicons dashicons-upload" style="font-size: 36px; width: 36px; height: 36px; color: #64748b; margin-bottom: 10px; display: inline-block;"></span>
-					<h4 style="margin: 0 0 5px 0; font-size: 15px; font-weight: 600;">Subir Nuevo Kit de Plantillas (Archivo ZIP)</h4>
-					<p style="margin: 0 0 15px 0; color: #64748b; font-size: 13px;">Selecciona el archivo .zip descargado directamente de Envato Elements.</p>
-					<form id="wpat_envato_upload_form" style="display: inline-flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center;">
-						<?php wp_nonce_field( 'wpat_envato_importer_nonce', 'wpat_envato_nonce' ); ?>
-						<input type="file" name="kit_zip" id="wpat_kit_zip_input" accept=".zip" style="font-size: 13px;" required />
-						<button type="submit" class="button button-primary" id="wpat_upload_kit_btn">Subir y Procesar Kit</button>
-					</form>
-					<div id="wpat_kit_upload_status" style="margin-top: 12px; font-size: 13px; font-weight: 600; display: none;"></div>
-				</div>
+				<?php if ( $active_kit ) : ?>
+					<!-- VISTA DETALLADA DEL KIT SELECCIONADO (Subpágina de Plantillas) -->
+					<div class="wpat-kit-detail-view">
+						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--wpat-border, #e2e8f0); padding-bottom: 15px;">
+							<div>
+								<h3 style="margin: 0 0 5px 0; font-size: 18px; font-weight: 700;">Plantillas del Kit: <?php echo esc_html( $active_kit['title'] ); ?></h3>
+								<p style="margin: 0; color: #64748b; font-size: 13px;">Explora e importa las plantillas individuales directamente a tu biblioteca de Elementor.</p>
+							</div>
+							<a href="<?php echo esc_url( remove_query_arg( 'kit_slug' ) ); ?>" class="button button-secondary">
+								← Volver a los Kits
+							</a>
+						</div>
 
-				<h4 style="margin: 0 0 15px 0; font-size: 16px; font-weight: 700;">Kits de Plantillas Instalados</h4>
-				<?php if ( ! empty( $kits ) ) : ?>
-					<div class="wpat-kits-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
-						<?php foreach ( $kits as $slug => $kit ) : ?>
-							<div class="wpat-kit-card" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-								<?php if ( ! empty( $kit['thumbnail'] ) ) : ?>
-									<img src="<?php echo esc_url( $kit['thumbnail'] ); ?>" alt="<?php echo esc_attr( $kit['title'] ); ?>" style="width: 100%; height: 160px; object-fit: cover;" />
-								<?php endif; ?>
-								<div style="padding: 15px;">
-									<h4 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 700;"><?php echo esc_html( $kit['title'] ); ?></h4>
-									<p style="margin: 0 0 12px 0; font-size: 12px; color: #64748b;">
-										<strong>Plantillas incluidas:</strong> <?php echo count( isset( $kit['templates'] ) ? $kit['templates'] : array() ); ?>
-									</p>
-
-									<?php if ( ! empty( $kit['required_plugins'] ) ) : ?>
-										<div style="margin-bottom: 12px; font-size: 11px; background: #f8fafc; padding: 8px 10px; border-radius: 4px; border: 1px solid #e2e8f0;">
-											<strong>Requisitos:</strong>
-											<ul style="margin: 4px 0 0 15px; padding: 0; list-style-type: disc;">
-												<?php foreach ( $kit['required_plugins'] as $req ) : ?>
-													<li style="color: <?php echo ! empty( $req['active'] ) ? '#16a34a' : '#dc2626'; ?>;">
-														<?php echo esc_html( $req['name'] ); ?> 
-														(<?php echo ! empty( $req['active'] ) ? 'Activo' : ( ! empty( $req['installed'] ) ? 'Instalado (Inactivo)' : 'No Instalado' ); ?>)
-													</li>
-												<?php endforeach; ?>
-											</ul>
+						<!-- REQUISITOS Y PLUGINS REQUERIDOS -->
+						<?php if ( ! empty( $active_kit['required_plugins'] ) ) : ?>
+							<div class="wpat-required-plugins-box" style="background: var(--wpat-card-bg, #f8fafc); border: 1px solid var(--wpat-border, #cbd5e1); border-radius: 8px; padding: 18px; margin-bottom: 25px;">
+								<h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 700; color: #1e293b;">🔌 Plugins Requeridos por el Kit</h4>
+								<p style="margin: 0 0 12px 0; font-size: 12px; color: #64748b;">Para garantizar que las plantillas de este kit funcionen y se vean correctamente, es necesario tener instalados y activos los siguientes plugins:</p>
+								<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+									<?php foreach ( $active_kit['required_plugins'] as $req ) : ?>
+										<?php
+										$is_active = ! empty( $req['active'] );
+										$is_installed = ! empty( $req['installed'] );
+										?>
+										<div style="display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 12px;">
+											<strong><?php echo esc_html( $req['name'] ); ?></strong>
+											<?php if ( $is_active ) : ?>
+												<span style="background: #dcfce7; color: #15803d; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10px;">Activo</span>
+											<?php elseif ( $is_installed ) : ?>
+												<span style="background: #fef9c3; color: #a16207; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10px;">Instalado</span>
+												<button type="button" class="button button-small wpat-activate-plugin-btn" data-slug="<?php echo esc_attr( $req['slug'] ); ?>" style="font-size: 11px; height: 22px; line-height: 20px; padding: 0 8px;">Activar</button>
+											<?php else : ?>
+												<span style="background: #fee2e2; color: #b91c1c; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10px;">No Instalado</span>
+												<button type="button" class="button button-small button-primary wpat-install-plugin-btn" data-slug="<?php echo esc_attr( $req['slug'] ); ?>" style="font-size: 11px; height: 22px; line-height: 20px; padding: 0 8px;">Instalar</button>
+											<?php endif; ?>
 										</div>
-									<?php endif; ?>
-
-									<button type="button" class="button button-link-delete wpat-delete-kit-btn" data-slug="<?php echo esc_attr( $slug ); ?>" style="color: #ef4444; text-decoration: none;">Eliminar Kit</button>
+									<?php endforeach; ?>
 								</div>
 							</div>
-						<?php endforeach; ?>
+						<?php endif; ?>
+
+						<!-- GRILLA DE PLANTILLAS DEL KIT -->
+						<?php if ( ! empty( $active_kit['templates'] ) ) : ?>
+							<div class="wpat-kit-templates-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
+								<?php foreach ( $active_kit['templates'] as $tpl ) : ?>
+									<?php
+									$is_global = (
+										false !== strpos( strtolower( $tpl['title'] ), 'global' ) ||
+										'global-styles' === $tpl['type'] ||
+										'kit-settings' === $tpl['type'] ||
+										'global.json' === basename( $tpl['file'] )
+									);
+									?>
+									<div class="wpat-template-card" style="background: #fff; border: 1px solid var(--wpat-border, #cbd5e1); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+										<div>
+											<div style="width: 100%; height: 170px; background: #f1f5f9; position: relative; overflow: hidden; border-bottom: 1px solid #e2e8f0;">
+												<?php if ( ! empty( $tpl['thumbnail'] ) ) : ?>
+													<img src="<?php echo esc_url( $tpl['thumbnail'] ); ?>" alt="<?php echo esc_attr( $tpl['title'] ); ?>" style="width: 100%; height: 100%; object-fit: cover;" />
+												<?php else : ?>
+													<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #94a3b8; font-size: 12px; font-weight: 600;">
+														📄 <?php echo esc_html( strtoupper( $tpl['type'] ) ); ?>
+													</div>
+												<?php endif; ?>
+												<span style="position: absolute; bottom: 8px; left: 8px; background: rgba(15,23,42,0.8); color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; backdrop-filter: blur(2px);">
+													<?php echo esc_html( $tpl['type'] ); ?>
+												</span>
+											</div>
+											<div style="padding: 12px 14px;">
+												<h5 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 700; color: #1e293b;"><?php echo esc_html( $tpl['title'] ); ?></h5>
+											</div>
+										</div>
+										<div style="padding: 12px 14px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; align-items: center;">
+											<?php if ( $is_global ) : ?>
+												<button type="button" class="button button-primary wpat-admin-import-template-btn" data-kit="<?php echo esc_attr( $active_slug ); ?>" data-id="<?php echo esc_attr( $tpl['id'] ); ?>" style="flex: 1;">
+													Aplicar Estilos Globales
+												</button>
+											<?php else : ?>
+												<?php if ( ! empty( $tpl['preview_url'] ) ) : ?>
+													<a href="<?php echo esc_url( $tpl['preview_url'] ); ?>" target="_blank" class="button button-secondary" style="padding: 0 8px;" title="Ver vista previa">👁️ Ver</a>
+												<?php endif; ?>
+												<button type="button" class="button button-primary wpat-admin-import-template-btn" data-kit="<?php echo esc_attr( $active_slug ); ?>" data-id="<?php echo esc_attr( $tpl['id'] ); ?>" style="flex: 1;">
+													Importar a Elementor
+												</button>
+											<?php endif; ?>
+										</div>
+									</div>
+								<?php endforeach; ?>
+							</div>
+						<?php else : ?>
+							<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; text-align: center; border-radius: 6px; color: #64748b;">
+								No se encontraron plantillas dentro de este kit.
+							</div>
+						<?php endif; ?>
 					</div>
+
 				<?php else : ?>
-					<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; text-align: center; border-radius: 6px; color: #64748b;">
-						No hay kits de plantillas subidos actualmente. Sube un archivo .zip para comenzar.
+					<!-- VISTA PRINCIPAL (CARGADOR ZIP + LISTA DE KITS INSTALADOS) -->
+					<div class="wpat-kit-upload-box" style="background: var(--wpat-card-bg, #f8fafc); border: 2px dashed var(--wpat-border, #cbd5e1); border-radius: 8px; padding: 25px; text-align: center; margin-bottom: 25px;">
+						<span class="dashicons dashicons-cloud-upload" style="font-size: 42px; width: 42px; height: 42px; color: #2563eb; margin-bottom: 10px; display: inline-block;"></span>
+						<h4 style="margin: 0 0 5px 0; font-size: 16px; font-weight: 700;">Sube tu archivo ZIP de Kit de Plantilla</h4>
+						<p style="margin: 0 0 15px 0; color: #64748b; font-size: 13px;">Arrastra tu archivo ZIP aquí o haz clic en el botón para seleccionarlo desde tu ordenador.</p>
+						<form id="wpat_envato_upload_form" style="display: inline-flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center;">
+							<?php wp_nonce_field( 'wpat_envato_importer_nonce', 'wpat_envato_nonce' ); ?>
+							<input type="file" name="kit_zip" id="wpat_kit_zip_input" accept=".zip" style="font-size: 13px;" required />
+							<button type="submit" class="button button-primary" id="wpat_upload_kit_btn">Seleccionar ZIP de Kit</button>
+						</form>
+						<div id="wpat_kit_upload_status" style="margin-top: 12px; font-size: 13px; font-weight: 600; display: none;"></div>
 					</div>
+
+					<h4 style="margin: 0 0 15px 0; font-size: 16px; font-weight: 700;">Kits Instalados</h4>
+					<?php if ( ! empty( $kits ) ) : ?>
+						<div class="wpat-kits-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+							<?php foreach ( $kits as $slug => $kit ) : ?>
+								<?php
+								$num_templates = count( isset( $kit['templates'] ) ? $kit['templates'] : array() );
+								$num_reqs      = count( isset( $kit['required_plugins'] ) ? $kit['required_plugins'] : array() );
+								?>
+								<div class="wpat-kit-card" style="background: #fff; border: 1px solid var(--wpat-border, #cbd5e1); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;">
+									<div>
+										<?php if ( ! empty( $kit['thumbnail'] ) ) : ?>
+											<img src="<?php echo esc_url( $kit['thumbnail'] ); ?>" alt="<?php echo esc_attr( $kit['title'] ); ?>" style="width: 100%; height: 160px; object-fit: cover;" />
+										<?php endif; ?>
+										<div style="padding: 15px;">
+											<h4 style="margin: 0 0 6px 0; font-size: 16px; font-weight: 700;"><?php echo esc_html( $kit['title'] ); ?></h4>
+											<div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+												<span style="background: #e0e7ff; color: #3730a3; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px; border: 1px solid #c7d2fe;">
+													<?php echo esc_html( $num_templates ); ?> plantillas
+												</span>
+												<?php if ( $num_reqs > 0 ) : ?>
+													<span style="background: #fee2e2; color: #991b1b; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px; border: 1px solid #fecaca;">
+														<?php echo esc_html( $num_reqs ); ?> plugins necesarios
+													</span>
+												<?php endif; ?>
+											</div>
+
+											<?php if ( ! empty( $kit['required_plugins'] ) ) : ?>
+												<div style="margin-bottom: 12px; font-size: 11px; background: #f8fafc; padding: 8px 10px; border-radius: 4px; border: 1px solid #e2e8f0;">
+													<strong>Requisitos:</strong>
+													<ul style="margin: 4px 0 0 15px; padding: 0; list-style-type: disc;">
+														<?php foreach ( $kit['required_plugins'] as $req ) : ?>
+															<li style="color: <?php echo ! empty( $req['active'] ) ? '#16a34a' : '#dc2626'; ?>;">
+																<?php echo esc_html( $req['name'] ); ?> 
+																(<?php echo ! empty( $req['active'] ) ? 'Activo' : ( ! empty( $req['installed'] ) ? 'Instalado' : 'No Instalado' ); ?>)
+															</li>
+														<?php endforeach; ?>
+													</ul>
+												</div>
+											<?php endif; ?>
+										</div>
+									</div>
+									<div style="padding: 12px 15px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+										<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'wp-agency-toolkit', 'mod' => 'envato-importer', 'kit_slug' => $slug ), admin_url( 'admin.php' ) ) ); ?>" class="button button-primary">Ver Plantillas</a>
+										<button type="button" class="button button-link-delete wpat-delete-kit-btn" data-slug="<?php echo esc_attr( $slug ); ?>" style="color: #ef4444; text-decoration: none;">Eliminar Kit</button>
+									</div>
+								</div>
+							<?php endforeach; ?>
+						</div>
+					<?php else : ?>
+						<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; text-align: center; border-radius: 6px; color: #64748b;">
+							No hay kits de plantillas subidos actualmente. Sube un archivo .zip para comenzar.
+						</div>
+					<?php endif; ?>
 				<?php endif; ?>
 			</div>
 		</div>
-		<?php
-	}
-
-	/**
-	 * Renderiza el contenido de Importación/Exportación CSV & JSON.
-	 */
+	
 	public function render_tab_tools_content( $settings ) {
 		if ( ! class_exists( 'WPAT_Post_CSV_Importer' ) ) {
 			require_once WPAT_PATH . 'includes/modules/class-wpat-post-csv-importer.php';

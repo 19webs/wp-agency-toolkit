@@ -45,9 +45,29 @@ class WPAT_Woo_Checkout_Designer {
 		add_action( 'woocommerce_after_checkout_form', array( $this, 'render_checkout_layout_footer' ), 999 );
 		add_action( 'woocommerce_checkout_after_customer_details', array( $this, 'render_checkout_layout_footer' ), 999 );
 
+		// Interceptar el contenido de la página para convertir WooCommerce Checkout Block a Checkout Clásico
+		add_filter( 'the_content', array( $this, 'filter_checkout_content' ), 1 );
+
 		// Filtros para las miniaturas y clases de body
 		add_filter( 'woocommerce_cart_item_name', array( $this, 'add_product_thumbnail_to_checkout' ), 10, 3 );
 		add_filter( 'body_class', array( $this, 'add_body_class' ) );
+	}
+
+	/**
+	 * Filtra el contenido de la página de checkout.
+	 * Si la página usa el bloque Gutenberg de WooCommerce Checkout, lo convierte dinámicamente
+	 * al shortcode clásico [woocommerce_checkout] para habilitar los hooks PHP y nuestros 4 layouts.
+	 */
+	public function filter_checkout_content( $content ) {
+		if ( is_admin() || ! function_exists( 'is_checkout' ) || ! is_checkout() || is_order_received_page() ) {
+			return $content;
+		}
+
+		if ( has_block( 'woocommerce/checkout', $content ) || strpos( $content, 'wp:woocommerce/checkout' ) !== false ) {
+			return do_shortcode( '[woocommerce_checkout]' );
+		}
+
+		return $content;
 	}
 
 	/**

@@ -8,18 +8,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$settings     = WPAT_Main::get_instance()->get_settings();
-$layout       = isset( $settings['woo_checkout_designer_layout'] ) ? $settings['woo_checkout_designer_layout'] : 'wpat-classic';
-$trust_badges = ! isset( $settings['woo_checkout_designer_trust_badges'] ) || '1' === $settings['woo_checkout_designer_trust_badges'];
-$trust_text   = ! empty( $settings['woo_checkout_designer_trust_text'] ) ? $settings['woo_checkout_designer_trust_text'] : 'Garantía de Devolución • Pago 100% Seguro • Envío Gratis';
+// Inicializar de forma 100% segura el objeto $checkout para evitar Fatal Error PHP
+if ( ! isset( $checkout ) || ! $checkout instanceof WC_Checkout ) {
+	$checkout = function_exists( 'WC' ) ? WC()->checkout() : null;
+}
+
+if ( ! $checkout ) {
+	return;
+}
+
+$settings          = WPAT_Main::get_instance()->get_settings();
+$layout            = isset( $settings['woo_checkout_designer_layout'] ) ? $settings['woo_checkout_designer_layout'] : 'wpat-classic';
+$trust_badges      = ! isset( $settings['woo_checkout_designer_trust_badges'] ) || '1' === $settings['woo_checkout_designer_trust_badges'];
+$trust_text        = ! empty( $settings['woo_checkout_designer_trust_text'] ) ? $settings['woo_checkout_designer_trust_text'] : 'Garantía de Devolución • Pago 100% Seguro • Envío Gratis';
+$order_button_text = apply_filters( 'woocommerce_order_button_text', __( 'Realizar el pedido', 'woocommerce' ) );
 
 // Imprimir avisos de WooCommerce (cupones, errores, avisos)
 wc_print_notices();
 
 do_action( 'woocommerce_before_checkout_form', $checkout );
 
-// Si el carrito está vacío, no continuar
-if ( ! $checkout->get_checkout_fields() && ! WC()->cart->needs_payment() ) {
+// Si el carrito está vacío o no requiere campos, salir
+if ( function_exists( 'WC' ) && WC()->cart && WC()->cart->is_empty() ) {
 	return;
 }
 ?>
@@ -126,7 +136,7 @@ if ( ! $checkout->get_checkout_fields() && ! WC()->cart->needs_payment() ) {
 							<div class="form-row place-order">
 								<?php wc_get_template( 'checkout/terms.php' ); ?>
 								<?php do_action( 'woocommerce_review_order_before_submit' ); ?>
-								<?php echo apply_filters( 'woocommerce_order_button_html', '<button type="submit" class="button alt wpat-btn-place-order" name="woocommerce_checkout_place_order" id="place_order" value="' . esc_attr( $order_button_text ?? 'Realizar el pedido' ) . '" data-value="' . esc_attr( $order_button_text ?? 'Realizar el pedido' ) . '">Realizar el pedido</button>' ); ?>
+								<?php echo apply_filters( 'woocommerce_order_button_html', '<button type="submit" class="button alt wpat-btn-place-order" name="woocommerce_checkout_place_order" id="place_order" value="' . esc_attr( $order_button_text ) . '" data-value="' . esc_attr( $order_button_text ) . '">' . esc_html( $order_button_text ) . '</button>' ); ?>
 								<?php do_action( 'woocommerce_review_order_after_submit' ); ?>
 								<?php wp_nonce_field( 'woocommerce-process_checkout', 'woocommerce-process-checkout-nonce' ); ?>
 							</div>

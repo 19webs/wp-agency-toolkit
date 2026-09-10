@@ -30,6 +30,7 @@
 	<!-- CONTENIDO PRINCIPAL DEL CHECKOUT -->
 	<main class="wpat-checkout-main-content">
 		<?php
+		$checkout = function_exists( 'WC' ) ? WC()->checkout() : null;
 		$template_file = WPAT_PATH . 'templates/checkout/form-checkout.php';
 		if ( file_exists( $template_file ) ) {
 			include $template_file;

@@ -621,6 +621,7 @@ class WPAT_Admin {
 			'svg-support',
 			'image-optimizer',
 			'seo',
+			'sitemap-xml',
 			'disable-comments',
 			'security-hardening',
 			'envato-importer',
@@ -1254,6 +1255,7 @@ class WPAT_Admin {
 			'svg-support',
 			'image-optimizer',
 			'seo',
+			'sitemap-xml',
 			'disable-comments',
 			'security-hardening',
 			'envato-importer',
@@ -1947,6 +1949,7 @@ class WPAT_Admin {
 				'wpat-woo-pdf-invoices'  => 'woo-pdf-invoices',
 				'wpat-login-customizer'  => 'login-customizer',
 				'wpat-seo'               => 'seo',
+				'wpat-sitemap-xml'       => 'sitemap-xml',
 				'wpat-tools'             => 'tools',
 			);
 			if ( isset( $map[ $page_slug ] ) ) {

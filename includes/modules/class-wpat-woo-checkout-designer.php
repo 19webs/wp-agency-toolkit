@@ -32,7 +32,13 @@ class WPAT_Woo_Checkout_Designer {
 	private function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_checkout_assets' ) );
 
-		// Intercepta la plantilla global de WordPress para aislar el checkout de Elementor (prioridad máxima 9999)
+		// Mover el formulario de cupón fuera de la parte superior del checkout
+		remove_action( 'woocommerce_before_checkout_form', 'woocommerce_checkout_coupon_form', 10 );
+
+		// Evitar duplicación de pasarelas de pago y botón de pago
+		remove_action( 'woocommerce_checkout_order_review', 'woocommerce_checkout_payment', 20 );
+
+		// Interceptar la plantilla global de WordPress para aislar el checkout de Elementor (prioridad máxima 9999)
 		add_filter( 'template_include', array( $this, 'override_checkout_page_template' ), 9999 );
 
 		// Interceptar también la función de plantillas de WooCommerce por compatibilidad adicional
@@ -72,7 +78,7 @@ class WPAT_Woo_Checkout_Designer {
 	 */
 	public function override_checkout_page_template( $template ) {
 		if ( $this->is_checkout_page() ) {
-			// Desactivar filtros de Elementor en la página de checkout para aislar el renderizado
+			// Desactivar filtros de Elementor en el contenido del checkout
 			if ( class_exists( '\Elementor\Plugin' ) ) {
 				remove_all_filters( 'elementor/frontend/the_content' );
 			}

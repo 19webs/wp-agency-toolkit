@@ -23,7 +23,7 @@ $trust_badges      = ! isset( $settings['woo_checkout_designer_trust_badges'] ) 
 $trust_text        = ! empty( $settings['woo_checkout_designer_trust_text'] ) ? $settings['woo_checkout_designer_trust_text'] : 'Garantía de Devolución • Pago 100% Seguro • Envío Gratis';
 $order_button_text = apply_filters( 'woocommerce_order_button_text', __( 'Realizar el pedido', 'woocommerce' ) );
 
-// Imprimir avisos de WooCommerce (cupones, errores, avisos)
+// Imprimir avisos de WooCommerce (errores, avisos)
 wc_print_notices();
 
 do_action( 'woocommerce_before_checkout_form', $checkout );
@@ -113,34 +113,11 @@ if ( function_exists( 'WC' ) && WC()->cart && WC()->cart->is_empty() ) {
 					</div>
 				</div>
 
-				<!-- PASO 3: Pasarelas de Pago -->
+				<!-- PASO 3: Pasarelas de Pago & Botón Único de Realizar Pedido -->
 				<div class="wpat-step-panel" data-step="3" style="display:none;">
 					<div class="wpat-card-box">
 						<h3 class="wpat-card-title">Opciones de Pago</h3>
-						<div id="payment" class="woocommerce-checkout-payment">
-							<?php if ( WC()->cart->needs_payment() ) : ?>
-								<ul class="wc_payment_methods payment_methods methods">
-									<?php
-									$available_gateways = WC()->payment_gateways()->get_available_payment_gateways();
-									if ( ! empty( $available_gateways ) ) {
-										foreach ( $available_gateways as $gateway ) {
-											wc_get_template( 'checkout/payment-method.php', array( 'gateway' => $gateway ) );
-										}
-									} else {
-										echo '<li class="woocommerce-notice woocommerce-notice--info woocommerce-info">' . esc_html__( 'No hay métodos de pago disponibles.', 'woocommerce' ) . '</li>';
-									}
-									?>
-								</ul>
-							<?php endif; ?>
-
-							<div class="form-row place-order">
-								<?php wc_get_template( 'checkout/terms.php' ); ?>
-								<?php do_action( 'woocommerce_review_order_before_submit' ); ?>
-								<?php echo apply_filters( 'woocommerce_order_button_html', '<button type="submit" class="button alt wpat-btn-place-order" name="woocommerce_checkout_place_order" id="place_order" value="' . esc_attr( $order_button_text ) . '" data-value="' . esc_attr( $order_button_text ) . '">' . esc_html( $order_button_text ) . '</button>' ); ?>
-								<?php do_action( 'woocommerce_review_order_after_submit' ); ?>
-								<?php wp_nonce_field( 'woocommerce-process_checkout', 'woocommerce-process-checkout-nonce' ); ?>
-							</div>
-						</div>
+						<?php woocommerce_checkout_payment(); ?>
 					</div>
 					<div class="wpat-step-actions">
 						<button type="button" class="wpat-step-btn wpat-prev-btn" data-prev="2">← Volver a Envío</button>
@@ -153,10 +130,20 @@ if ( function_exists( 'WC' ) && WC()->cart && WC()->cart->is_empty() ) {
 			<div class="wpat-checkout-col-right">
 				<div class="wpat-order-review-card">
 					<h3 class="wpat-summary-card-title">Resumen del pedido</h3>
+					
 					<?php do_action( 'woocommerce_checkout_before_order_review' ); ?>
+					
 					<div id="order_review" class="woocommerce-checkout-review-order">
-						<?php do_action( 'woocommerce_checkout_order_review' ); ?>
+						<?php woocommerce_order_review(); ?>
 					</div>
+
+					<!-- Formulario de Cupón colocado limpia después del Total -->
+					<?php if ( wc_coupons_enabled() ) : ?>
+						<div class="wpat-checkout-coupon-box" style="margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+							<?php woocommerce_checkout_coupon_form(); ?>
+						</div>
+					<?php endif; ?>
+
 					<?php do_action( 'woocommerce_checkout_after_order_review' ); ?>
 				</div>
 			</div>
@@ -177,15 +164,30 @@ if ( function_exists( 'WC' ) && WC()->cart && WC()->cart->is_empty() ) {
 					</div>
 					<?php do_action( 'woocommerce_checkout_after_customer_details' ); ?>
 				<?php endif; ?>
+
+				<div class="wpat-card-box" style="margin-top: 20px;">
+					<h3 class="wpat-card-title">Opciones de Pago</h3>
+					<?php woocommerce_checkout_payment(); ?>
+				</div>
 			</div>
 
 			<div class="wpat-checkout-col-right">
 				<div class="wpat-order-review-card">
 					<h3 class="wpat-summary-card-title">Resumen del pedido</h3>
+					
 					<?php do_action( 'woocommerce_checkout_before_order_review' ); ?>
+					
 					<div id="order_review" class="woocommerce-checkout-review-order">
-						<?php do_action( 'woocommerce_checkout_order_review' ); ?>
+						<?php woocommerce_order_review(); ?>
 					</div>
+
+					<!-- Formulario de Cupón colocado limpia después del Total -->
+					<?php if ( wc_coupons_enabled() ) : ?>
+						<div class="wpat-checkout-coupon-box" style="margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+							<?php woocommerce_checkout_coupon_form(); ?>
+						</div>
+					<?php endif; ?>
+
 					<?php do_action( 'woocommerce_checkout_after_order_review' ); ?>
 				</div>
 			</div>

@@ -114,24 +114,75 @@ jQuery(document).ready(function($) {
 	// 1.1 Centro de Módulos (Buscador, Categorías y AJAX Toggle)
 	var validCategories = ['all', 'woocommerce', 'security', 'performance', 'tools', 'system'];
 
+	function removeAccents(str) {
+		if (!str) return '';
+		return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+	}
+
+	function getWordRoot(word) {
+		var w = removeAccents(word.toLowerCase());
+		if (w.length > 4) {
+			w = w.replace(/(es|er|ar|ir|ción|cion|dor|dora|do|da|dos|das|s)$/g, '');
+		}
+		return w;
+	}
+
+	function matchesModuleSearch(searchableText, query) {
+		if (!query) return true;
+
+		var normQuery = removeAccents(query.toLowerCase());
+		var normText = removeAccents(searchableText.toLowerCase());
+
+		var tokens = normQuery.split(/\s+/).filter(Boolean);
+
+		return tokens.every(function(token) {
+			if (normText.indexOf(token) !== -1) {
+				return true;
+			}
+			var root = getWordRoot(token);
+			if (root.length >= 3 && normText.indexOf(root) !== -1) {
+				return true;
+			}
+			return false;
+		});
+	}
+
 	function filterModules() {
 		var cat = window.wpatActiveCat || 'all';
-		var query = $('#wpat_modules_search_input').length ? $('#wpat_modules_search_input').val().toLowerCase().trim() : '';
+		var query = $('#wpat_modules_search_input').length ? $('#wpat_modules_search_input').val().trim() : '';
+		var visibleCount = 0;
 
 		$('.wpat-module-grid-card').each(function() {
 			var $card = $(this);
-			var name = ($card.attr('data-name') || $card.data('name') || '').toLowerCase();
 			var cardClasses = $card.attr('class') || '';
 
 			var matchesCategory = (cat === 'all' || $card.hasClass('cat-' + cat) || $card.hasClass(cat) || cardClasses.indexOf('cat-' + cat) !== -1);
-			var matchesSearch = (!query || name.indexOf(query) !== -1);
+			
+			var searchableText = ($card.attr('data-search') || '') + ' ' + ($card.attr('data-name') || '') + ' ' + $card.find('h3').text() + ' ' + $card.find('p').text() + ' ' + ($card.find('.wpat-ajax-toggle-module').attr('data-module') || '');
+
+			var matchesSearch = matchesModuleSearch(searchableText, query);
 
 			if (matchesCategory && matchesSearch) {
 				$card.css('display', 'flex').show();
+				visibleCount++;
 			} else {
 				$card.hide();
 			}
 		});
+
+		var $grid = $('#wpat_modules_grid');
+		var $noResults = $('#wpat_no_modules_found');
+		if (visibleCount === 0) {
+			if (!$noResults.length) {
+				$grid.append('<div id="wpat_no_modules_found" style="text-align: center; padding: 45px 20px; grid-column: 1 / -1; color: #64748b; background: var(--wpat-card-bg, #fff); border: 1px dashed var(--wpat-border, #cbd5e1); border-radius: 12px; margin-top: 10px;"><span class="dashicons dashicons-search" style="font-size: 36px; width: 36px; height: 36px; color: #94a3b8; margin-bottom: 10px; display: inline-block;"></span><h4 style="margin: 0 0 6px 0; font-size: 16px; font-weight: 700;">No se encontraron módulos</h4><p style="margin: 0; font-size: 13px; color: #94a3b8;">Prueba con otros términos de búsqueda o cambia el filtro de categoría.</p></div>');
+			} else {
+				$noResults.show();
+			}
+		} else {
+			if ($noResults.length) {
+				$noResults.hide();
+			}
+		}
 	}
 
 	// Función central para aplicar filtrado por Categoría

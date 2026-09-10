@@ -2240,6 +2240,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'woo-checkout-designer',
+				'is_new'      => true,
 				'title'       => 'Diseñador de Checkout',
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
@@ -2580,11 +2581,16 @@ class WPAT_Admin {
 			$is_active = ( isset( $settings[ $mod['id'] ] ) && '1' === $settings[ $mod['id'] ] );
 			$has_settings = ! isset( $mod['has_settings'] ) || true === $mod['has_settings'];
 			$is_always_active = isset( $mod['always_active'] ) && true === $mod['always_active'];
+			$is_new = ! empty( $mod['is_new'] );
+			$search_text = $mod['title'] . ' ' . $mod['desc'] . ' ' . ( isset( $mod['keywords'] ) ? $mod['keywords'] : '' ) . ' ' . $mod['id'] . ' ' . ( isset( $mod['badge'] ) ? $mod['badge'] : '' );
 
 			$is_visible = ( 'all' === $active_cat || strpos( $mod['cat_class'], 'cat-' . $active_cat ) !== false || strpos( $mod['cat_class'], $active_cat ) !== false );
 			$card_style = $is_visible ? '' : 'style="display:none;"';
 			?>
-			<div class="wpat-module-grid-card <?php echo esc_attr( $mod['cat_class'] ); ?>" <?php echo $card_style; ?> data-name="<?php echo esc_attr( $mod['keywords'] ); ?>">
+			<div class="wpat-module-grid-card <?php echo esc_attr( $mod['cat_class'] ); ?>" <?php echo $card_style; ?> data-name="<?php echo esc_attr( isset( $mod['keywords'] ) ? $mod['keywords'] : '' ); ?>" data-search="<?php echo esc_attr( mb_strtolower( $search_text, 'UTF-8' ) ); ?>">
+				<?php if ( $is_new ) : ?>
+					<div class="wpat-card-badge-new">NUEVO</div>
+				<?php endif; ?>
 				<div class="wpat-card-top">
 					<div class="wpat-card-icon-box <?php echo esc_attr( $mod['icon_bg'] ); ?>"><?php echo $mod['icon']; ?></div>
 					<?php if ( $is_always_active ) : ?>

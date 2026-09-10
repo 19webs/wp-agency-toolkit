@@ -93,11 +93,36 @@ jQuery(document).ready(function($) {
 		});
 	});
 
+	// 1.1 Centro de Módulos (Buscador, Categorías y AJAX Toggle)
+	var validCategories = ['all', 'woocommerce', 'security', 'performance', 'tools', 'system'];
+
+	function filterModules() {
+		var cat = window.wpatActiveCat || 'all';
+		var query = $('#wpat_modules_search_input').length ? $('#wpat_modules_search_input').val().toLowerCase().trim() : '';
+
+		$('.wpat-module-grid-card').each(function() {
+			var $card = $(this);
+			var name = ($card.attr('data-name') || $card.data('name') || '').toLowerCase();
+			var cardClasses = $card.attr('class') || '';
+
+			var matchesCategory = (cat === 'all' || $card.hasClass('cat-' + cat) || $card.hasClass(cat) || cardClasses.indexOf('cat-' + cat) !== -1);
+			var matchesSearch = (!query || name.indexOf(query) !== -1);
+
+			if (matchesCategory && matchesSearch) {
+				$card.css('display', 'flex').show();
+			} else {
+				$card.hide();
+			}
+		});
+	}
+
 	// Función central para aplicar filtrado por Categoría
 	function applyCategoryFilter(cat) {
-		if (!cat || cat === 'undefined' || cat === 'null') {
+		if (!cat || cat === 'undefined' || cat === 'null' || validCategories.indexOf(cat) === -1) {
 			cat = 'all';
 		}
+		window.wpatActiveCat = cat;
+
 		$('.wpat-cat-item, .wpat-cat-pill').removeClass('active');
 		$('.wpat-cat-item[data-cat="' + cat + '"], .wpat-cat-pill[data-cat="' + cat + '"]').addClass('active');
 		$('#wpat_mobile_cat_select').val(cat);
@@ -113,35 +138,40 @@ jQuery(document).ready(function($) {
 			}
 		});
 
-		$('.wpat-module-grid-card').each(function() {
-			if (cat === 'all' || $(this).hasClass('cat-' + cat) || $(this).hasClass(cat)) {
-				$(this).show();
-			} else {
-				$(this).hide();
-			}
-		});
+		filterModules();
 	}
 
 	// Clics en la Navegación Vertical o Pills
-	$(document).on('click', '.wpat-cat-item[data-cat], .wpat-cat-pill[data-cat]', function() {
-		var cat = $(this).data('cat');
-		if (cat) {
-			applyCategoryFilter(cat);
+	$(document).on('click', '.wpat-cat-item, .wpat-cat-pill', function(e) {
+		var $item = $(this).closest('[data-cat]');
+		if ($item.length) {
+			e.preventDefault();
+			e.stopPropagation();
+			var cat = $item.attr('data-cat') || $item.data('cat');
+			if (cat) {
+				applyCategoryFilter(cat);
+			}
 		}
 	});
 
 	// Cambio en el Selector Desplegable Móvil
-	$(document).on('change', '#wpat_mobile_cat_select', function() {
+	$(document).on('change', '#wpat_mobile_cat_select', function(e) {
+		e.preventDefault();
 		var cat = $(this).val();
 		if (cat) {
 			applyCategoryFilter(cat);
 		}
 	});
 
+	// Buscador en Vivo en Centro de Módulos
+	$(document).on('keyup input search', '#wpat_modules_search_input', function() {
+		filterModules();
+	});
+
 	// Restaurar Categoría Activa al Cargar la Página
 	var urlParams = new URLSearchParams(window.location.search);
 	var savedCat = urlParams.get('cat') || localStorage.getItem('wpat_active_cat') || sessionStorage.getItem('wpat_active_cat');
-	if (savedCat && savedCat !== 'undefined' && savedCat !== 'null') {
+	if (savedCat && validCategories.indexOf(savedCat) !== -1) {
 		applyCategoryFilter(savedCat);
 	} else {
 		applyCategoryFilter('all');
@@ -162,30 +192,17 @@ jQuery(document).ready(function($) {
 		}
 	}
 
-	$(document).on('click', '#wpat_theme_toggle_btn', function() {
+	$(document).on('click', '#wpat_theme_toggle_btn', function(e) {
+		e.preventDefault();
 		var currentTheme = localStorage.getItem('wpat_theme_mode') === 'dark' ? 'dark' : 'light';
 		var newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 		applyThemeMode(newTheme);
 	});
 
-	// Restaurar Tema Guardado al Cargar
 	var savedTheme = localStorage.getItem('wpat_theme_mode');
 	if (savedTheme === 'dark') {
 		applyThemeMode('dark');
 	}
-
-	// Buscador en Vivo en Centro de Módulos
-	$(document).on('keyup input', '#wpat_modules_search_input', function() {
-		var query = $(this).val().toLowerCase().trim();
-		$('.wpat-module-grid-card').each(function() {
-			var name = $(this).data('name') || '';
-			if (name.toLowerCase().indexOf(query) !== -1) {
-				$(this).show();
-			} else {
-				$(this).hide();
-			}
-		});
-	});
 
 	// Restaurar kit activo si estaba guardado en sessionStorage
 	var activeKitSlug = sessionStorage.getItem('wpat_active_kit_slug');

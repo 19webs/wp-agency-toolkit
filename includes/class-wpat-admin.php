@@ -4698,7 +4698,7 @@ class WPAT_Admin {
 
 							<!-- Caja de Correo de Prueba -->
 							<div class="wpat-module-card" style="margin-top: 30px;">
-								<div class="wpat-module-header" style="background:#f8fafc;">
+								<div class="wpat-module-header" style="border-bottom: 1px solid var(--wpat-border);">
 									<div class="wpat-module-info">
 										<h3 style="color:#0f172a;">Diagnóstico: Enviar correo de prueba</h3>
 										<p>Introduce una dirección de destino para verificar la correcta comunicación con tu servidor SMTP.</p>

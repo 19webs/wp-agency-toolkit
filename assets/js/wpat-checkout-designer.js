@@ -18,21 +18,42 @@ jQuery(document).ready(function($) {
 		});
 	});
 
-	// --- 2. MULTI-STEP / BREADCRUMB NAVIGATION ---
+	// --- 2. MULTI-STEP NAVIGATION (NEXT / PREV BUTTONS & STEPS BAR) ---
+	function goToStep(step) {
+		step = parseInt(step, 10);
+		if (isNaN(step) || step < 1 || step > 3) return;
+
+		// Actualizar barra de pasos
+		$('.wpat-step-item').removeClass('active');
+		$('.wpat-step-item[data-step="' + step + '"]').addClass('active');
+
+		// Mostrar panel correspondiente
+		$('.wpat-step-panel').hide().removeClass('active');
+		$('.wpat-step-panel[data-step="' + step + '"]').fadeIn(200).addClass('active');
+
+		// Scroll suave al inicio del checkout
+		if ($('.wpat-checkout-container').length) {
+			$('html, body').animate({
+				scrollTop: $('.wpat-checkout-container').offset().top - 40
+			}, 300);
+		}
+	}
+
+	$(document).on('click', '.wpat-next-btn', function(e) {
+		e.preventDefault();
+		var nextStep = $(this).data('next');
+		goToStep(nextStep);
+	});
+
+	$(document).on('click', '.wpat-prev-btn', function(e) {
+		e.preventDefault();
+		var prevStep = $(this).data('prev');
+		goToStep(prevStep);
+	});
+
 	$(document).on('click', '.wpat-step-item', function() {
 		var step = $(this).data('step');
-		$('.wpat-step-item').removeClass('active');
-		$(this).addClass('active');
-
-		if (step === 1) {
-			$('#customer_details').show();
-			$('#woocommerce_checkout_add_ons').show();
-		} else if (step === 2) {
-			$('#customer_details').show();
-			$('html, body').animate({ scrollTop: $('#shipping_method').offset() ? $('#shipping_method').offset().top - 100 : 300 }, 300);
-		} else if (step === 3) {
-			$('html, body').animate({ scrollTop: $('#payment').offset() ? $('#payment').offset().top - 100 : 500 }, 300);
-		}
+		goToStep(step);
 	});
 
 	// --- 3. SMART EMAIL AUTOCORRECT SUGGESTION ---

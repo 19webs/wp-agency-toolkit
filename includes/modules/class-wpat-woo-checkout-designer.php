@@ -32,10 +32,13 @@ class WPAT_Woo_Checkout_Designer {
 	private function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_checkout_assets' ) );
 
-		// Interceptar el template de checkout de WooCommerce para cargar nuestra plantilla CheckoutWC / Shopify
-		add_filter( 'woocommerce_locate_template', array( $this, 'override_checkout_template' ), 999, 3 );
+		// Interceptar la plantilla global de la página de checkout con prioridad máxima (9999)
+		add_filter( 'template_include', array( $this, 'override_checkout_page_template' ), 9999 );
 
-		// Interceptar el contenido de la página para convertir WooCommerce Checkout Block a Checkout Clásico
+		// Interceptar también la función de plantillas de WooCommerce por compatibilidad adicional
+		add_filter( 'woocommerce_locate_template', array( $this, 'override_checkout_template' ), 9999, 3 );
+
+		// Interceptar el contenido para convertir bloques WooCommerce Checkout a shortcode si aplica
 		add_filter( 'the_content', array( $this, 'filter_checkout_content' ), 1 );
 
 		// Filtros para las miniaturas y clases de body
@@ -44,8 +47,25 @@ class WPAT_Woo_Checkout_Designer {
 	}
 
 	/**
-	 * Intercepta la carga de la plantilla checkout/form-checkout.php de WooCommerce
-	 * y devuelve nuestra plantilla de alta conversión estilo CheckoutWC.
+	 * Intercepta la inclusión de la plantilla de WordPress para la página de checkout.
+	 */
+	public function override_checkout_page_template( $template ) {
+		if ( is_admin() ) {
+			return $template;
+		}
+
+		if ( function_exists( 'is_checkout' ) && is_checkout() && ! is_order_received_page() && ! is_wc_endpoint_url( 'order-pay' ) ) {
+			$custom_page_template = WPAT_PATH . 'templates/checkout/page-checkout.php';
+			if ( file_exists( $custom_page_template ) ) {
+				return $custom_page_template;
+			}
+		}
+
+		return $template;
+	}
+
+	/**
+	 * Intercepta la carga de la plantilla checkout/form-checkout.php de WooCommerce.
 	 */
 	public function override_checkout_template( $template, $template_name, $template_path ) {
 		if ( 'checkout/form-checkout.php' === $template_name ) {
@@ -58,9 +78,7 @@ class WPAT_Woo_Checkout_Designer {
 	}
 
 	/**
-	 * Filtra el contenido de la página de checkout.
-	 * Si la página usa el bloque Gutenberg de WooCommerce Checkout, lo convierte dinámicamente
-	 * al shortcode clásico [woocommerce_checkout] para cargar nuestra plantilla de alta conversión.
+	 * Filtra el contenido de la página de checkout si usa el bloque Gutenberg.
 	 */
 	public function filter_checkout_content( $content ) {
 		if ( is_admin() || ! function_exists( 'is_checkout' ) || ! is_checkout() || is_order_received_page() ) {
@@ -85,7 +103,7 @@ class WPAT_Woo_Checkout_Designer {
 	}
 
 	/**
-	 * Encola los estilos y scripts del diseñador de checkout solo en la página de checkout.
+	 * Encola los estilos y scripts del diseñador de checkout.
 	 */
 	public function enqueue_checkout_assets() {
 		if ( is_admin() ) {

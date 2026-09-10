@@ -3,9 +3,17 @@
  * Estilo Shopify / CheckoutWC Standalone Template
  * ============================================================================== */
 
+.wpat-checkout-builder-wrapper {
+	width: 100% !important;
+	min-height: 600px !important;
+	background: #f8fafc !important;
+	padding: 30px 15px !important;
+	box-sizing: border-box !important;
+}
+
 .wpat-checkout-container {
 	max-width: 1180px;
-	margin: 20px auto 40px auto;
+	margin: 0 auto 40px auto;
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
 	box-sizing: border-box;
 	clear: both;
@@ -104,6 +112,70 @@
 	color: #cbd5e1;
 	font-size: 16px;
 	font-weight: bold;
+}
+
+/* --- STEP PANELS & ACTION BUTTONS --- */
+.wpat-step-panel {
+	width: 100%;
+}
+
+.wpat-card-box {
+	background: #ffffff !important;
+	border: 1px solid #e2e8f0 !important;
+	border-radius: 12px !important;
+	padding: 24px !important;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.03) !important;
+	margin-bottom: 20px !important;
+}
+
+.wpat-card-title {
+	font-size: 18px !important;
+	font-weight: 700 !important;
+	color: #0f172a !important;
+	margin: 0 0 18px 0 !important;
+	padding-bottom: 10px !important;
+	border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.wpat-step-actions {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	gap: 15px !important;
+	margin-top: 20px !important;
+}
+
+.wpat-step-btn {
+	padding: 12px 22px !important;
+	font-size: 14.5px !important;
+	font-weight: 600 !important;
+	border-radius: 8px !important;
+	cursor: pointer !important;
+	transition: all 0.2s ease !important;
+	border: none !important;
+}
+
+.wpat-next-btn {
+	background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+	color: #ffffff !important;
+	margin-left: auto !important;
+	box-shadow: 0 2px 8px rgba(37,99,235,0.25) !important;
+}
+
+.wpat-next-btn:hover {
+	background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+	box-shadow: 0 4px 12px rgba(37,99,235,0.35) !important;
+}
+
+.wpat-prev-btn {
+	background: #ffffff !important;
+	color: #475569 !important;
+	border: 1px solid #cbd5e1 !important;
+}
+
+.wpat-prev-btn:hover {
+	background: #f1f5f9 !important;
+	color: #1e293b !important;
 }
 
 /* --- MAIN WOOCOMMERCE FORM GRID --- */
@@ -457,6 +529,34 @@
 	padding: 24px !important;
 }
 
+/* --- MOBILE ORDER SUMMARY --- */
+.wpat-mobile-order-summary-toggle {
+	display: none;
+	justify-content: space-between;
+	align-items: center;
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	padding: 14px 18px;
+	border-radius: 10px;
+	margin-bottom: 20px;
+	cursor: pointer;
+	font-weight: 600;
+	font-size: 14px;
+	color: #1e293b;
+}
+
+.wpat-mobile-summary-info {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.wpat-mobile-summary-total {
+	font-weight: 700;
+	color: #2563eb;
+	font-size: 15px;
+}
+
 /* --- TRUST BADGES --- */
 .wpat-checkout-trust-badges {
 	margin-top: 35px;
@@ -502,6 +602,9 @@
 	.wpat-checkout-container form.wpat-main-checkout-form {
 		flex-direction: column !important;
 	}
+	.wpat-mobile-order-summary-toggle {
+		display: flex !important;
+	}
 	.wpat-checkout-container .wpat-checkout-col-right {
 		position: static !important;
 		width: 100% !important;
@@ -513,11 +616,17 @@
 }
 
 /* --- DARK MODE OVERRIDES --- */
+.wpat-dark-mode .wpat-checkout-builder-wrapper {
+	background-color: #0f172a !important;
+}
+
 .wpat-dark-mode .wpat-checkout-steps-bar,
+.wpat-dark-mode .wpat-card-box,
 .wpat-dark-mode .wpat-checkout-container .wpat-customer-details-card .col-1,
 .wpat-dark-mode .wpat-checkout-container .wpat-customer-details-card .col-2,
 .wpat-dark-mode .wpat-checkout-container .wpat-order-review-card,
-.wpat-dark-mode .wpat-checkout-trust-badges {
+.wpat-dark-mode .wpat-checkout-trust-badges,
+.wpat-dark-mode .wpat-mobile-order-summary-toggle {
 	background-color: #1e293b !important;
 	border-color: #334155 !important;
 	color: #f8fafc !important;
@@ -527,7 +636,7 @@
 .wpat-dark-mode .wpat-checkout-container input[type="email"],
 .wpat-dark-mode .wpat-checkout-container input[type="tel"],
 .wpat-dark-mode .wpat-checkout-container input[type="password"],
-.wpat-dark-mode .wpat-checkout-container select,
+.wpat-dark-mode .wpat-dark-mode select,
 .wpat-dark-mode .wpat-checkout-container textarea {
 	background-color: #0f172a !important;
 	border-color: #334155 !important;
@@ -535,6 +644,7 @@
 }
 
 .wpat-dark-mode .wpat-trust-text strong,
+.wpat-dark-mode .wpat-card-title,
 .wpat-dark-mode .wpat-checkout-container .wpat-customer-details-card h3,
 .wpat-dark-mode .wpat-checkout-container .wpat-summary-card-title {
 	color: #f8fafc !important;

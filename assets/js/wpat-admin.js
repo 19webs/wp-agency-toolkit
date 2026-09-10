@@ -198,12 +198,16 @@ jQuery(document).ready(function($) {
 	// LÓGICA MODO CLARO / MODO OSCURO (DARK MODE)
 	function applyThemeMode(theme) {
 		if (theme === 'dark') {
-			$('body, .wpat-admin-wrapper').addClass('wpat-dark-mode');
+			$('body, html, .wpat-admin-wrapper').addClass('wpat-dark-mode');
+			document.documentElement.classList.add('wpat-dark-mode');
+			document.cookie = "wpat_theme_mode=dark; path=/; max-age=31536000";
 			$('#wpat_theme_icon').text('🌙');
 			$('#wpat_theme_label').text('Modo Claro');
 			localStorage.setItem('wpat_theme_mode', 'dark');
 		} else {
-			$('body, .wpat-admin-wrapper').removeClass('wpat-dark-mode');
+			$('body, html, .wpat-admin-wrapper').removeClass('wpat-dark-mode');
+			document.documentElement.classList.remove('wpat-dark-mode');
+			document.cookie = "wpat_theme_mode=light; path=/; max-age=31536000";
 			$('#wpat_theme_icon').text('☀️');
 			$('#wpat_theme_label').text('Modo Oscuro');
 			localStorage.setItem('wpat_theme_mode', 'light');
@@ -212,14 +216,16 @@ jQuery(document).ready(function($) {
 
 	$(document).on('click', '#wpat_theme_toggle_btn', function(e) {
 		e.preventDefault();
-		var currentTheme = localStorage.getItem('wpat_theme_mode') === 'dark' ? 'dark' : 'light';
+		var currentTheme = localStorage.getItem('wpat_theme_mode') === 'dark' || $('html').hasClass('wpat-dark-mode') ? 'dark' : 'light';
 		var newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 		applyThemeMode(newTheme);
 	});
 
 	var savedTheme = localStorage.getItem('wpat_theme_mode');
-	if (savedTheme === 'dark') {
+	if (savedTheme === 'dark' || document.cookie.indexOf('wpat_theme_mode=dark') !== -1) {
 		applyThemeMode('dark');
+	} else if (savedTheme === 'light') {
+		applyThemeMode('light');
 	}
 
 	// Restaurar kit activo si estaba guardado en sessionStorage

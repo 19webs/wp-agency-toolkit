@@ -1959,7 +1959,17 @@ class WPAT_Admin {
 
 		$is_single_module_view = ! empty( $mod_id );
 		?>
-		<div class="wrap wpat-admin-wrapper">
+		<?php $is_dark = ( isset( $_COOKIE['wpat_theme_mode'] ) && 'dark' === $_COOKIE['wpat_theme_mode'] ); ?>
+		<script>
+		(function() {
+			var saved = localStorage.getItem('wpat_theme_mode');
+			if (saved === 'dark' || (!saved && document.cookie.indexOf('wpat_theme_mode=dark') !== -1)) {
+				document.documentElement.classList.add('wpat-dark-mode');
+				document.write('<style id="wpat-early-dark">html.wpat-dark-mode, html.wpat-dark-mode body, html.wpat-dark-mode #wpbody-content, html.wpat-dark-mode .wpat-admin-wrapper { background-color: #0f172a !important; color: #f8fafc !important; }</style>');
+			}
+		})();
+		</script>
+		<div class="wrap wpat-admin-wrapper <?php echo $is_dark ? 'wpat-dark-mode' : ''; ?>">
 			<div class="wpat-header" style="display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;">
 				<div class="wpat-title-area">
 					<h1>WP Agency Toolkit <span class="wpat-badge">v<?php echo esc_html( WPAT_VERSION ); ?></span></h1>

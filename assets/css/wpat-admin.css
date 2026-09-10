@@ -932,3 +932,244 @@ body.wpat-dark-mode,
 	background: rgba(255, 255, 255, 0.08);
 	color: #93c5fd;
 }
+
+
+/* ==============================================================================
+ * MODO OSCURO (DARK MODE) COMPLETO & ZERO WHITE FLASH
+ * ============================================================================== */
+
+html.wpat-dark-mode,
+body.wpat-dark-mode,
+html.wpat-dark-mode #wpbody,
+html.wpat-dark-mode #wpbody-content,
+html.wpat-dark-mode #wpcontent,
+.wpat-admin-wrapper.wpat-dark-mode {
+	background-color: #0f172a !important;
+	color: #f8fafc !important;
+	--wpat-bg-card: #1e293b;
+	--wpat-border: #334155;
+	--wpat-text: #f8fafc;
+	--wpat-text-light: #94a3b8;
+}
+
+/* Card Containers & Main Panels */
+.wpat-dark-mode .wpat-container,
+.wpat-dark-mode .wpat-tabs-content,
+.wpat-dark-mode .wpat-cat-sidebar,
+.wpat-dark-mode .wpat-dashboard-toolbar,
+.wpat-dark-mode .wpat-module-grid-card,
+.wpat-dark-mode .wpat-module-card,
+.wpat-dark-mode .wpat-back-bar,
+.wpat-dark-mode .wpat-single-module-standalone-wrapper {
+	background-color: #1e293b !important;
+	border-color: #334155 !important;
+	color: #f8fafc !important;
+}
+
+/* All Inner Containers, Sub-boxes, Info Boxes with Light Backgrounds */
+.wpat-dark-mode .wpat-module-body,
+.wpat-dark-mode .wpat-field-group,
+.wpat-dark-mode .wpat-sub-field,
+.wpat-dark-mode .wpat-sub-fields-container,
+.wpat-dark-mode .wpat-bulk-filters,
+.wpat-dark-mode .wpat-catalog-actions-container,
+.wpat-dark-mode div[style*="background"],
+.wpat-dark-mode div[style*="background: #fff"],
+.wpat-dark-mode div[style*="background: #f8fafc"],
+.wpat-dark-mode div[style*="background:#ffffff"],
+.wpat-dark-mode div[style*="background:#f8fafc"],
+.wpat-dark-mode div[style*="background: #ffffff"],
+.wpat-dark-mode div[style*="background:#fff"] {
+	background-color: #0f172a !important;
+	border-color: #334155 !important;
+	color: #e2e8f0 !important;
+}
+
+/* Headings & Typography */
+.wpat-dark-mode h1,
+.wpat-dark-mode h2,
+.wpat-dark-mode h3,
+.wpat-dark-mode h4,
+.wpat-dark-mode h5,
+.wpat-dark-mode h6,
+.wpat-dark-mode strong,
+.wpat-dark-mode b,
+.wpat-dark-mode label,
+.wpat-dark-mode legend {
+	color: #f8fafc !important;
+}
+
+.wpat-dark-mode p,
+.wpat-dark-mode span:not(.wpat-badge):not(.wpat-status-indicator):not(.wpat-cat-badge),
+.wpat-dark-mode li,
+.wpat-dark-mode td,
+.wpat-dark-mode th,
+.wpat-dark-mode .description,
+.wpat-dark-mode .section-desc {
+	color: #94a3b8 !important;
+}
+
+.wpat-dark-mode p strong,
+.wpat-dark-mode li strong,
+.wpat-dark-mode td strong {
+	color: #f8fafc !important;
+}
+
+/* Form Inputs, Selects & Textareas */
+.wpat-dark-mode input[type="text"],
+.wpat-dark-mode input[type="number"],
+.wpat-dark-mode input[type="email"],
+.wpat-dark-mode input[type="password"],
+.wpat-dark-mode input[type="date"],
+.wpat-dark-mode select,
+.wpat-dark-mode textarea {
+	background-color: #0f172a !important;
+	border-color: #334155 !important;
+	color: #f8fafc !important;
+}
+
+.wpat-dark-mode input::placeholder,
+.wpat-dark-mode textarea::placeholder {
+	color: #64748b !important;
+}
+
+.wpat-dark-mode input[type="checkbox"],
+.wpat-dark-mode input[type="radio"] {
+	accent-color: #2563eb;
+}
+
+/* Code & Shortcodes */
+.wpat-dark-mode code,
+.wpat-dark-mode pre {
+	background-color: #0f172a !important;
+	color: #38bdf8 !important;
+	border-color: #334155 !important;
+}
+
+/* Tables & Lists */
+.wpat-dark-mode table,
+.wpat-dark-mode table.widefat,
+.wpat-dark-mode table.wp-list-table {
+	background-color: #0f172a !important;
+	border-color: #334155 !important;
+}
+
+.wpat-dark-mode table.widefat th,
+.wpat-dark-mode table.widefat td {
+	border-bottom-color: #334155 !important;
+	color: #e2e8f0 !important;
+}
+
+.wpat-dark-mode table.widefat tr:nth-child(even),
+.wpat-dark-mode table.striped > tbody > tr:nth-child(odd) {
+	background-color: #182234 !important;
+}
+
+.wpat-dark-mode table.widefat thead th {
+	background-color: #1e293b !important;
+	color: #f8fafc !important;
+}
+
+/* Sidebar & Navigation Items */
+.wpat-dark-mode .wpat-cat-item {
+	color: #cbd5e1 !important;
+}
+
+.wpat-dark-mode .wpat-cat-item:hover {
+	background: #334155 !important;
+	color: #38bdf8 !important;
+}
+
+.wpat-dark-mode .wpat-cat-item.active {
+	background: #2563eb !important;
+	color: #ffffff !important;
+}
+
+.wpat-dark-mode .wpat-cat-badge {
+	background: #334155 !important;
+	color: #94a3b8 !important;
+}
+
+.wpat-dark-mode .wpat-cat-item.active .wpat-cat-badge {
+	background: rgba(255, 255, 255, 0.2) !important;
+	color: #ffffff !important;
+}
+
+.wpat-dark-mode .wpat-sidebar-divider {
+	border-top-color: #334155 !important;
+}
+
+.wpat-dark-mode .wpat-cat-direct-link {
+	color: #60a5fa !important;
+}
+
+.wpat-dark-mode .wpat-cat-direct-link:hover {
+	background: rgba(255, 255, 255, 0.08) !important;
+	color: #93c5fd !important;
+}
+
+/* Action Buttons in Cards & Header Bar */
+.wpat-dark-mode .wpat-card-bottom {
+	border-top-color: #334155 !important;
+}
+
+.wpat-dark-mode .wpat-card-action-btn.primary {
+	background-color: #2563eb !important;
+	color: #ffffff !important;
+	border: 1px solid #3b82f6 !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+.wpat-dark-mode .wpat-card-action-btn.primary:hover {
+	background-color: #1d4ed8 !important;
+	border-color: #2563eb !important;
+	color: #ffffff !important;
+}
+
+.wpat-dark-mode .wpat-card-action-btn.disabled,
+.wpat-dark-mode .wpat-card-action-btn.primary.disabled {
+	background-color: #1e293b !important;
+	color: #64748b !important;
+	border: 1px solid #334155 !important;
+	opacity: 0.5 !important;
+	pointer-events: none !important;
+}
+
+.wpat-dark-mode .wpat-back-bar a.button-secondary {
+	background-color: #334155 !important;
+	border-color: #475569 !important;
+	color: #f8fafc !important;
+}
+
+.wpat-dark-mode .wpat-back-bar a.button-secondary:hover {
+	background-color: #475569 !important;
+	color: #ffffff !important;
+}
+
+.wpat-dark-mode .wpat-back-bar button.button-primary {
+	background-color: #2563eb !important;
+	border-color: #3b82f6 !important;
+	color: #ffffff !important;
+}
+
+/* General Secondary Buttons */
+.wpat-dark-mode .button-secondary,
+.wpat-dark-mode .button.button-secondary {
+	background-color: #334155 !important;
+	border-color: #475569 !important;
+	color: #f8fafc !important;
+}
+
+.wpat-dark-mode .button-secondary:hover,
+.wpat-dark-mode .button.button-secondary:hover {
+	background-color: #475569 !important;
+	color: #ffffff !important;
+}
+
+/* Warnings & Notice Banners */
+.wpat-dark-mode .notice,
+.wpat-dark-mode .wpat-warning-banner {
+	background-color: #182234 !important;
+	border-color: #ea580c !important;
+	color: #f8fafc !important;
+}

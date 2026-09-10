@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.3
+ * Version:     4.3.4
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.3' );
+define( 'WPAT_VERSION', '4.3.4' );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -356,6 +356,13 @@ class WPAT_Main {
 			'accessibility_readable_font'     => '1',
 
 			// Opciones de Editor de Campos de Checkout (WooCommerce)
+			'woo-checkout-designer'              => '0',
+			'woo_checkout_designer_layout'         => 'wpat-classic',
+			'woo_checkout_designer_mobile_summary' => '1',
+			'woo_checkout_designer_trust_badges'   => '1',
+			'woo_checkout_designer_trust_text'     => 'Garantía de Devolución • Pago 100% Seguro • Envío Gratis',
+			'woo_checkout_designer_email_fix'      => '1',
+			'woo_checkout_designer_product_thumbs' => '1',
 			'woo-checkout-editor'             => '0',
 			'checkout_editor_enabled'         => '0',
 			'checkout_nif_enabled'            => '1',

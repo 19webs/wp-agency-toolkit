@@ -7,6 +7,7 @@
 	margin: 20px auto 40px auto;
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 	box-sizing: border-box;
+	clear: both;
 }
 
 .wpat-checkout-wrapper * {
@@ -66,34 +67,38 @@
 	font-weight: bold;
 }
 
-/* --- MAIN GRID & LAYOUTS --- */
-.wpat-checkout-main-grid {
-	display: flex;
-	gap: 30px;
-	align-items: flex-start;
+/* --- WOOCOMMERCE FORM LAYOUT INTERCEPTOR --- */
+.wpat-checkout-wrapper form.checkout.woocommerce-checkout {
+	display: flex !important;
+	gap: 30px !important;
+	align-items: flex-start !important;
+	flex-wrap: wrap !important;
+	width: 100% !important;
+	margin: 0 !important;
 }
 
-/* 2-Columns & Multi-step Layouts */
-.wpat-checkout-wrapper.wpat-classic .col-1,
-.wpat-checkout-wrapper.wpat-classic .col-2,
-.wpat-checkout-wrapper.wpat-express .col-1,
-.wpat-checkout-wrapper.wpat-express .col-2 {
+/* Hide duplicated order review heading for clean box */
+.wpat-checkout-wrapper form.checkout.woocommerce-checkout #order_review_heading {
+	display: none !important;
+}
+
+/* --- LAYOUT 1: CLASSIC (2 Columns: Billing/Shipping on Left, Order Summary Sticky on Right) --- */
+.wpat-checkout-wrapper.wpat-classic form.checkout.woocommerce-checkout #customer_details,
+.wpat-checkout-wrapper.wpat-classic form.checkout.woocommerce-checkout .col2-set {
+	flex: 1.2 !important;
+	min-width: 320px !important;
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 20px !important;
+	float: none !important;
+	width: auto !important;
+}
+
+.wpat-checkout-wrapper.wpat-classic form.checkout.woocommerce-checkout #customer_details .col-1,
+.wpat-checkout-wrapper.wpat-classic form.checkout.woocommerce-checkout #customer_details .col-2 {
 	float: none !important;
 	width: 100% !important;
-}
-
-.wpat-checkout-wrapper #customer_details {
-	flex: 1.2;
-	min-width: 0;
-	display: flex;
-	flex-direction: column;
-	gap: 20px;
-}
-
-.wpat-checkout-wrapper #order_review_heading,
-.wpat-checkout-wrapper #order_review {
-	flex: 1;
-	min-width: 0;
+	margin-bottom: 15px !important;
 	background: #ffffff;
 	border: 1px solid #e2e8f0;
 	border-radius: 12px;
@@ -101,9 +106,78 @@
 	box-shadow: 0 1px 3px rgba(0,0,0,0.03);
 }
 
-.wpat-checkout-wrapper.wpat-classic #order_review {
-	position: sticky;
-	top: 20px;
+.wpat-checkout-wrapper.wpat-classic form.checkout.woocommerce-checkout #order_review {
+	flex: 1 !important;
+	min-width: 300px !important;
+	background: #ffffff !important;
+	border: 1px solid #e2e8f0 !important;
+	border-radius: 12px !important;
+	padding: 24px !important;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.03) !important;
+	position: sticky !important;
+	top: 20px !important;
+	float: none !important;
+	width: auto !important;
+}
+
+/* --- LAYOUT 2: EXPRESS (Single Column Centered Layout) --- */
+.wpat-checkout-wrapper.wpat-express {
+	max-width: 680px !important;
+}
+
+.wpat-checkout-wrapper.wpat-express form.checkout.woocommerce-checkout {
+	flex-direction: column !important;
+	align-items: stretch !important;
+}
+
+.wpat-checkout-wrapper.wpat-express form.checkout.woocommerce-checkout #customer_details,
+.wpat-checkout-wrapper.wpat-express form.checkout.woocommerce-checkout #order_review {
+	width: 100% !important;
+	flex: none !important;
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	padding: 24px;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.wpat-checkout-wrapper.wpat-express form.checkout.woocommerce-checkout #customer_details .col-1,
+.wpat-checkout-wrapper.wpat-express form.checkout.woocommerce-checkout #customer_details .col-2 {
+	float: none !important;
+	width: 100% !important;
+}
+
+/* --- LAYOUT 3: ACCORDION --- */
+.wpat-checkout-wrapper.wpat-accordion form.checkout.woocommerce-checkout {
+	flex-direction: column !important;
+}
+
+.wpat-checkout-wrapper.wpat-accordion form.checkout.woocommerce-checkout #customer_details,
+.wpat-checkout-wrapper.wpat-accordion form.checkout.woocommerce-checkout #order_review {
+	width: 100% !important;
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	padding: 24px;
+	margin-bottom: 20px;
+}
+
+/* --- LAYOUT 4: MINIMALIST --- */
+.wpat-checkout-wrapper.wpat-minimalist form.checkout.woocommerce-checkout {
+	display: flex !important;
+	gap: 40px !important;
+}
+
+.wpat-checkout-wrapper.wpat-minimalist form.checkout.woocommerce-checkout #customer_details {
+	flex: 1.3 !important;
+}
+
+.wpat-checkout-wrapper.wpat-minimalist form.checkout.woocommerce-checkout #order_review {
+	flex: 1 !important;
+	background: #f8fafc !important;
+	border: 1px solid #e2e8f0 !important;
+	border-radius: 8px !important;
+	padding: 20px !important;
 }
 
 /* --- PRODUCT THUMBNAILS IN SUMMARY --- */
@@ -236,15 +310,15 @@
 
 /* --- RESPONSIVE MOBILE --- */
 @media (max-width: 991px) {
-	.wpat-checkout-main-grid {
-		flex-direction: column;
+	.wpat-checkout-wrapper form.checkout.woocommerce-checkout {
+		flex-direction: column !important;
 	}
 	.wpat-mobile-order-summary-toggle {
-		display: flex;
+		display: flex !important;
 	}
-	.wpat-checkout-wrapper #order_review {
-		position: static;
-		width: 100%;
+	.wpat-checkout-wrapper form.checkout.woocommerce-checkout #order_review {
+		position: static !important;
+		width: 100% !important;
 	}
 	.wpat-checkout-steps-bar {
 		flex-wrap: wrap;

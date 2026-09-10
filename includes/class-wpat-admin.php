@@ -724,6 +724,7 @@ class WPAT_Admin {
 		// 5. Sanitizar WooCommerce Catalog
 		// Sanitizar Diseñador de Checkout High-Conversion
 		if ( empty( $saving_module ) || 'woo-checkout-designer' === $saving_module ) {
+			$new_settings['woo-checkout-designer']                = isset( $input_settings['woo-checkout-designer'] ) && '1' === $input_settings['woo-checkout-designer'] ? '1' : '0';
 			$new_settings['woo_checkout_designer_layout']         = isset( $input_settings['woo_checkout_designer_layout'] ) && in_array( $input_settings['woo_checkout_designer_layout'], array( 'wpat-classic', 'wpat-express', 'wpat-accordion', 'wpat-minimalist' ), true ) ? $input_settings['woo_checkout_designer_layout'] : 'wpat-classic';
 			$new_settings['woo_checkout_designer_mobile_summary'] = isset( $input_settings['woo_checkout_designer_mobile_summary'] ) && '1' === $input_settings['woo_checkout_designer_mobile_summary'] ? '1' : '0';
 			$new_settings['woo_checkout_designer_trust_badges']   = isset( $input_settings['woo_checkout_designer_trust_badges'] ) && '1' === $input_settings['woo_checkout_designer_trust_badges'] ? '1' : '0';

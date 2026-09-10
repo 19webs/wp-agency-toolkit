@@ -31,17 +31,43 @@ class WPAT_Woo_Checkout_Designer {
 	 */
 	private function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_checkout_assets' ) );
-		add_filter( 'template_include', array( $this, 'override_checkout_template' ), 99 );
+		
+		// Conectar directamente con los hooks de WooCommerce checkout
+		add_action( 'woocommerce_before_checkout_form', array( $this, 'render_checkout_layout_header' ), 1 );
+		add_action( 'woocommerce_after_checkout_form', array( $this, 'render_checkout_layout_footer' ), 999 );
 
 		// Filtros para personalizar el resumen de pedido (miniaturas de productos)
 		add_filter( 'woocommerce_cart_item_name', array( $this, 'add_product_thumbnail_to_checkout' ), 10, 3 );
+		add_filter( 'body_class', array( $this, 'add_body_class' ) );
+	}
+
+	/**
+	 * Añade clase al body en la página de checkout.
+	 */
+	public function add_body_class( $classes ) {
+		if ( function_exists( 'is_checkout' ) && is_checkout() && ! is_order_received_page() ) {
+			$classes[] = 'wpat-checkout-designer-active';
+		}
+		return $classes;
 	}
 
 	/**
 	 * Encola los estilos y scripts del diseñador de checkout solo en la página de checkout.
 	 */
 	public function enqueue_checkout_assets() {
-		if ( ! function_exists( 'is_checkout' ) || ! is_checkout() || is_order_received_page() ) {
+		if ( is_admin() ) {
+			return;
+		}
+
+		if ( ! function_exists( 'is_checkout' ) ) {
+			return;
+		}
+
+		if ( ! is_checkout() && ! is_page( wc_get_page_id( 'checkout' ) ) ) {
+			return;
+		}
+
+		if ( is_order_received_page() ) {
 			return;
 		}
 
@@ -72,24 +98,6 @@ class WPAT_Woo_Checkout_Designer {
 	}
 
 	/**
-	 * Reemplaza la plantilla del checkout si el módulo está activo.
-	 *
-	 * @param string $template Ruta de la plantilla actual.
-	 * @return string Ruta de la plantilla modificada.
-	 */
-	public function override_checkout_template( $template ) {
-		if ( ! function_exists( 'is_checkout' ) || ! is_checkout() || is_order_received_page() ) {
-			return $template;
-		}
-
-		// Interceptar form-checkout.php de WooCommerce mediante hooks
-		add_action( 'woocommerce_before_checkout_form', array( $this, 'render_checkout_layout_header' ), 1 );
-		add_action( 'woocommerce_after_checkout_form', array( $this, 'render_checkout_layout_footer' ), 999 );
-
-		return $template;
-	}
-
-	/**
 	 * Inyecta el contenedor inicial y resumen móvil antes del formulario del checkout.
 	 */
 	public function render_checkout_layout_header( $checkout ) {
@@ -109,7 +117,7 @@ class WPAT_Woo_Checkout_Designer {
 						<span class="wpat-summary-arrow">▼</span>
 					</div>
 					<div class="wpat-mobile-summary-total">
-						<?php echo WC()->cart ? WC()->cart->get_total() : ''; ?>
+						<?php echo ( function_exists( 'WC' ) && WC()->cart ) ? WC()->cart->get_total() : ''; ?>
 					</div>
 				</div>
 			<?php endif; ?>
@@ -133,8 +141,6 @@ class WPAT_Woo_Checkout_Designer {
 					</div>
 				</div>
 			<?php endif; ?>
-
-			<div class="wpat-checkout-main-grid">
 		<?php
 	}
 
@@ -144,10 +150,9 @@ class WPAT_Woo_Checkout_Designer {
 	public function render_checkout_layout_footer( $checkout ) {
 		$settings = WPAT_Main::get_instance()->get_settings();
 		$trust_badges = ! isset( $settings['woo_checkout_designer_trust_badges'] ) || '1' === $settings['woo_checkout_designer_trust_badges'];
+		$trust_text   = ! empty( $settings['woo_checkout_designer_trust_text'] ) ? $settings['woo_checkout_designer_trust_text'] : 'Garantía de Devolución • Pago 100% Seguro • Envío Gratis';
 
 		?>
-			</div> <!-- .wpat-checkout-main-grid -->
-
 			<?php if ( $trust_badges ) : ?>
 				<!-- Sellos de Confianza y Pago Seguro -->
 				<div class="wpat-checkout-trust-badges">
@@ -169,7 +174,7 @@ class WPAT_Woo_Checkout_Designer {
 						<span class="wpat-trust-icon">🛡️</span>
 						<div class="wpat-trust-text">
 							<strong>Garantía de Satisfacción</strong>
-							<span>Soporte dedicado al cliente</span>
+							<span><?php echo esc_html( $trust_text ); ?></span>
 						</div>
 					</div>
 				</div>
@@ -183,7 +188,7 @@ class WPAT_Woo_Checkout_Designer {
 	 * Agrega la miniatura del producto y badge de cantidad en el resumen del checkout.
 	 */
 	public function add_product_thumbnail_to_checkout( $product_name, $cart_item, $cart_item_key ) {
-		if ( ! is_checkout() ) {
+		if ( ! function_exists( 'is_checkout' ) || ! is_checkout() ) {
 			return $product_name;
 		}
 

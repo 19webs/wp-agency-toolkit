@@ -15,6 +15,12 @@ class WPAT_Woo_Checkout_Designer {
 	private static $instance = null;
 
 	/**
+	 * Banderas para evitar renderizado duplicado.
+	 */
+	private $has_rendered_header = false;
+	private $has_rendered_footer = false;
+
+	/**
 	 * Obtiene la instancia Singleton de la clase.
 	 *
 	 * @return WPAT_Woo_Checkout_Designer
@@ -31,12 +37,15 @@ class WPAT_Woo_Checkout_Designer {
 	 */
 	private function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_checkout_assets' ) );
-		
-		// Conectar directamente con los hooks de WooCommerce checkout
-		add_action( 'woocommerce_before_checkout_form', array( $this, 'render_checkout_layout_header' ), 1 );
-		add_action( 'woocommerce_after_checkout_form', array( $this, 'render_checkout_layout_footer' ), 999 );
 
-		// Filtros para personalizar el resumen de pedido (miniaturas de productos)
+		// Enganchar en múltiples eventos de checkout para compatibilidad 100% con todos los temas
+		add_action( 'woocommerce_before_checkout_form', array( $this, 'render_checkout_layout_header' ), 1 );
+		add_action( 'woocommerce_checkout_before_customer_details', array( $this, 'render_checkout_layout_header' ), 1 );
+
+		add_action( 'woocommerce_after_checkout_form', array( $this, 'render_checkout_layout_footer' ), 999 );
+		add_action( 'woocommerce_checkout_after_customer_details', array( $this, 'render_checkout_layout_footer' ), 999 );
+
+		// Filtros para las miniaturas y clases de body
 		add_filter( 'woocommerce_cart_item_name', array( $this, 'add_product_thumbnail_to_checkout' ), 10, 3 );
 		add_filter( 'body_class', array( $this, 'add_body_class' ) );
 	}
@@ -56,18 +65,6 @@ class WPAT_Woo_Checkout_Designer {
 	 */
 	public function enqueue_checkout_assets() {
 		if ( is_admin() ) {
-			return;
-		}
-
-		if ( ! function_exists( 'is_checkout' ) ) {
-			return;
-		}
-
-		if ( ! is_checkout() && ! is_page( wc_get_page_id( 'checkout' ) ) ) {
-			return;
-		}
-
-		if ( is_order_received_page() ) {
 			return;
 		}
 
@@ -98,15 +95,37 @@ class WPAT_Woo_Checkout_Designer {
 	}
 
 	/**
-	 * Inyecta el contenedor inicial y resumen móvil antes del formulario del checkout.
+	 * Inyecta el contenedor inicial, aviso de plantilla activa y resumen móvil antes del checkout.
 	 */
-	public function render_checkout_layout_header( $checkout ) {
+	public function render_checkout_layout_header( $checkout = null ) {
+		if ( $this->has_rendered_header ) {
+			return;
+		}
+		$this->has_rendered_header = true;
+
 		$settings = WPAT_Main::get_instance()->get_settings();
 		$layout   = isset( $settings['woo_checkout_designer_layout'] ) ? $settings['woo_checkout_designer_layout'] : 'wpat-classic';
 		$mobile_summary = ! isset( $settings['woo_checkout_designer_mobile_summary'] ) || '1' === $settings['woo_checkout_designer_mobile_summary'];
 
+		$layout_names = array(
+			'wpat-classic'    => 'WPAT Classic Checkout (2 Columnas con Pasos)',
+			'wpat-express'    => 'WPAT Express Checkout (1 Columna Centrada Rápida)',
+			'wpat-accordion'  => 'WPAT Accordion Checkout (Pasos Desplegables)',
+			'wpat-minimalist' => 'WPAT Minimalist Checkout (Minimalista de Alta Conversión)',
+		);
+		$layout_title = isset( $layout_names[ $layout ] ) ? $layout_names[ $layout ] : 'WPAT Classic Checkout';
+
 		?>
 		<div class="wpat-checkout-wrapper <?php echo esc_attr( $layout ); ?>">
+
+			<!-- Indicador en vivo de plantilla activa (WPAT Checkout Designer) -->
+			<div class="wpat-checkout-template-badge" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff !important; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 13.5px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 3px 8px rgba(37,99,235,0.25); border: 1px solid #1e40af;">
+				<span style="display: inline-flex; align-items: center; gap: 8px;">
+					<span style="font-size: 16px;">🎨</span>
+					<span>Plantilla Activa: <strong><?php echo esc_html( $layout_title ); ?></strong></span>
+				</span>
+				<span style="font-size: 11px; background: rgba(255,255,255,0.22); color: #ffffff; padding: 3px 10px; border-radius: 12px; font-weight: 600;">WP Agency Toolkit</span>
+			</div>
 
 			<?php if ( $mobile_summary ) : ?>
 				<!-- Barra Flotante de Resumen de Pedido en Móvil -->
@@ -147,7 +166,12 @@ class WPAT_Woo_Checkout_Designer {
 	/**
 	 * Cierra los contenedores e inyecta sellos de confianza al final del checkout.
 	 */
-	public function render_checkout_layout_footer( $checkout ) {
+	public function render_checkout_layout_footer( $checkout = null ) {
+		if ( $this->has_rendered_footer || ! $this->has_rendered_header ) {
+			return;
+		}
+		$this->has_rendered_footer = true;
+
 		$settings = WPAT_Main::get_instance()->get_settings();
 		$trust_badges = ! isset( $settings['woo_checkout_designer_trust_badges'] ) || '1' === $settings['woo_checkout_designer_trust_badges'];
 		$trust_text   = ! empty( $settings['woo_checkout_designer_trust_text'] ) ? $settings['woo_checkout_designer_trust_text'] : 'Garantía de Devolución • Pago 100% Seguro • Envío Gratis';

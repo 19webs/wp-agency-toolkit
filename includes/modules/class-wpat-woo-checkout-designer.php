@@ -32,14 +32,11 @@ class WPAT_Woo_Checkout_Designer {
 	private function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_checkout_assets' ) );
 
-		// Interceptar la plantilla global de la página de checkout con prioridad máxima (9999)
+		// Intercepta la plantilla global de WordPress para aislar el checkout de Elementor (prioridad máxima 9999)
 		add_filter( 'template_include', array( $this, 'override_checkout_page_template' ), 9999 );
 
 		// Interceptar también la función de plantillas de WooCommerce por compatibilidad adicional
 		add_filter( 'woocommerce_locate_template', array( $this, 'override_checkout_template' ), 9999, 3 );
-
-		// Interceptar el contenido para convertir bloques WooCommerce Checkout a shortcode si aplica
-		add_filter( 'the_content', array( $this, 'filter_checkout_content' ), 1 );
 
 		// Filtros para las miniaturas y clases de body
 		add_filter( 'woocommerce_cart_item_name', array( $this, 'add_product_thumbnail_to_checkout' ), 10, 3 );
@@ -47,14 +44,39 @@ class WPAT_Woo_Checkout_Designer {
 	}
 
 	/**
-	 * Intercepta la inclusión de la plantilla de WordPress para la página de checkout.
+	 * Comprueba si la petición actual corresponde a la página de checkout.
+	 *
+	 * @return bool
 	 */
-	public function override_checkout_page_template( $template ) {
+	private function is_checkout_page() {
 		if ( is_admin() ) {
-			return $template;
+			return false;
 		}
 
 		if ( function_exists( 'is_checkout' ) && is_checkout() && ! is_order_received_page() && ! is_wc_endpoint_url( 'order-pay' ) ) {
+			return true;
+		}
+
+		if ( function_exists( 'wc_get_page_id' ) ) {
+			$checkout_id = wc_get_page_id( 'checkout' );
+			if ( $checkout_id && is_page( $checkout_id ) && ! is_order_received_page() ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Intercepta la inclusión de la plantilla de WordPress para aislar el checkout de Elementor.
+	 */
+	public function override_checkout_page_template( $template ) {
+		if ( $this->is_checkout_page() ) {
+			// Desactivar filtros de Elementor en la página de checkout para aislar el renderizado
+			if ( class_exists( '\Elementor\Plugin' ) ) {
+				remove_all_filters( 'elementor/frontend/the_content' );
+			}
+
 			$custom_page_template = WPAT_PATH . 'templates/checkout/page-checkout.php';
 			if ( file_exists( $custom_page_template ) ) {
 				return $custom_page_template;
@@ -78,26 +100,12 @@ class WPAT_Woo_Checkout_Designer {
 	}
 
 	/**
-	 * Filtra el contenido de la página de checkout si usa el bloque Gutenberg.
-	 */
-	public function filter_checkout_content( $content ) {
-		if ( is_admin() || ! function_exists( 'is_checkout' ) || ! is_checkout() || is_order_received_page() ) {
-			return $content;
-		}
-
-		if ( has_block( 'woocommerce/checkout', $content ) || strpos( $content, 'wp:woocommerce/checkout' ) !== false ) {
-			return do_shortcode( '[woocommerce_checkout]' );
-		}
-
-		return $content;
-	}
-
-	/**
 	 * Añade clase al body en la página de checkout.
 	 */
 	public function add_body_class( $classes ) {
-		if ( function_exists( 'is_checkout' ) && is_checkout() && ! is_order_received_page() ) {
+		if ( $this->is_checkout_page() ) {
 			$classes[] = 'wpat-checkout-designer-active';
+			$classes[] = 'wpat-standalone-checkout-page';
 		}
 		return $classes;
 	}
@@ -140,7 +148,7 @@ class WPAT_Woo_Checkout_Designer {
 	 * Agrega la miniatura del producto y badge de cantidad en el resumen del checkout.
 	 */
 	public function add_product_thumbnail_to_checkout( $product_name, $cart_item, $cart_item_key ) {
-		if ( ! function_exists( 'is_checkout' ) || ! is_checkout() ) {
+		if ( ! $this->is_checkout_page() ) {
 			return $product_name;
 		}
 

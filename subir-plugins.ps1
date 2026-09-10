@@ -1,8 +1,8 @@
-﻿# Set console output and input encoding to UTF-8
+# Set console output and input encoding to UTF-8
 try { [Console]::InputEncoding  = [System.Text.Encoding]::UTF8 } catch {}
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 try { $OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
-try { chcp 65001 >$null } catch {}
+try { chcp 65001 | Out-Null } catch {}
 
 # ==============================================================================
 # CONFIGURACIÓN DE PUBLIT.IO API Y REPOSITORIOS DE PLUGINS
@@ -105,7 +105,7 @@ function New-PluginZipPackage {
 
     $sourceDir   = Get-Item $folderPath
     $allFiles    = Get-ChildItem -Path $folderPath -Recurse
-    $excludeList = @(".git", ".vscode", "subir.bat", "subir.ps1", "subir-plugins.bat", "subir-plugins.ps1", (Split-Path $zipPath -Leaf))
+    $excludeList = @(".git", ".vscode", "null", "subir.bat", "subir.ps1", "subir-plugins.bat", "subir-plugins.ps1", (Split-Path $zipPath -Leaf))
 
     foreach ($item in $allFiles) {
         $relPath = $item.FullName.Substring($sourceDir.FullName.Length).TrimStart('\', '/')

@@ -967,18 +967,6 @@ class WPAT_Admin {
 		}
 
 		wp_safe_redirect( $redirect_url );
-		exit;// Actualizar reglas del archivo .htaccess para SSL
-		require_once WPAT_PATH . 'includes/modules/class-wpat-ssl-fixer.php';
-		$ssl_active = isset( $new_settings['ssl-fixer'] ) && '1' === $new_settings['ssl-fixer'];
-		$method_htaccess = 'htaccess' === $new_settings['ssl_redirect_method'];
-		WPAT_SSL_Fixer::update_htaccess_rules( $ssl_active && $method_htaccess );
-
-		// Redirigir para mostrar mensaje y evitar reenvíos de formulario
-		$active_tab = isset( $_POST['wpat_active_tab'] ) ? sanitize_key( $_POST['wpat_active_tab'] ) : 'tab-security';
-		wp_safe_redirect( add_query_arg( array(
-			'settings-updated' => 'true',
-			'tab'              => $active_tab,
-		), menu_page_url( 'wp-agency-toolkit', false ) ) );
 		exit;
 	}
 

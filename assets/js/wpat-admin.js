@@ -4,6 +4,24 @@
 
 jQuery(document).ready(function($) {
 	
+	// Helper global para mostrar notificaciones flotantes (Toast)
+	window.showToast = function(message, type) {
+		$('.wpat-toast').remove(); // Evitar duplicados
+		var bg = '#10b981'; // Verde por defecto para éxito/activación
+		
+		if (type === true || type === 'error') {
+			bg = '#ea580c'; // Naranja para errores
+		} else if (type === 'deactivate') {
+			bg = '#ef4444'; // Rojo con la misma tonalidad moderna para desactivación
+		}
+
+		var $toast = $('<div class="wpat-toast" style="position: fixed; top: 55px; right: 25px; background: ' + bg + '; color: #fff; padding: 12px 22px; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2); z-index: 999999; font-weight: 600; font-size: 13.5px; display: flex; align-items: center; gap: 8px;"><span style="font-size: 16px; font-weight: bold;">✓</span> ' + message + '</div>');
+		$('body').append($toast);
+		$toast.fadeIn(300).delay(2600).fadeOut(400, function() {
+			$(this).remove();
+		});
+	};
+	var showToast = window.showToast;
 	
 	// Record scroll position when clicking module action buttons
 	$(document).on('click', '.wpat-remember-scroll-btn, .wpat-back-bar a', function() {
@@ -215,28 +233,15 @@ jQuery(document).ready(function($) {
 		}, 150);
 	}
 	
-		// Helper global para mostrar notificaciones flotantes (Toast)
-	window.showToast = function(message, type) {
-		$('.wpat-toast').remove(); // Evitar duplicados
-		var bg = '#10b981'; // Verde por defecto para éxito/activación
-		
-		if (type === true || type === 'error') {
-			bg = '#ea580c'; // Naranja para errores
-		} else if (type === 'deactivate') {
-			bg = '#ef4444'; // Rojo con la misma tonalidad moderna para desactivación
-		}
+	
 
-		var $toast = $('<div class="wpat-toast" style="position: fixed; top: 55px; right: 25px; background: ' + bg + '; color: #fff; padding: 12px 22px; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2); z-index: 999999; font-weight: 600; font-size: 13.5px; display: flex; align-items: center; gap: 8px;"><span style="font-size: 16px; font-weight: bold;">✓</span> ' + message + '</div>');
-		$('body').append($toast);
-		$toast.fadeIn(300).delay(2600).fadeOut(400, function() {
-			$(this).remove();
-		});
-	};
-	var showToast = window.showToast;
-
-		// Auto-guardar si es un conmutador principal de módulo (dentro de .wpat-module-header)
-		if ($checkbox.closest('.wpat-module-header').length) {
-			var nameAttr = $checkbox.attr('name');
+	// Auto-guardar si es un conmutador principal de módulo (dentro de .wpat-module-header)
+	$(document).on('change', '.wpat-module-header input[type="checkbox"]', function() {
+		var $checkbox = $(this);
+		var $card = $checkbox.closest('.wpat-module-card, .wpat-card, .wpat-module-header');
+		var $body = $card.find('.wpat-module-body, .wpat-card-body');
+		var nameAttr = $checkbox.attr('name');
+		if (nameAttr) {
 			var match = nameAttr.match(/wpat_settings\[(.*?)\]/);
 			if (match) {
 				var moduleId = match[1];

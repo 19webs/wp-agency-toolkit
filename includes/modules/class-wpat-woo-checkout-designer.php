@@ -15,12 +15,6 @@ class WPAT_Woo_Checkout_Designer {
 	private static $instance = null;
 
 	/**
-	 * Banderas para evitar renderizado duplicado.
-	 */
-	private $has_rendered_header = false;
-	private $has_rendered_footer = false;
-
-	/**
 	 * Obtiene la instancia Singleton de la clase.
 	 *
 	 * @return WPAT_Woo_Checkout_Designer
@@ -38,9 +32,8 @@ class WPAT_Woo_Checkout_Designer {
 	private function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_checkout_assets' ) );
 
-		// Enganchar únicamente en los eventos globales del formulario para envolver TODO el checkout de forma limpia
-		add_action( 'woocommerce_before_checkout_form', array( $this, 'render_checkout_layout_header' ), 1 );
-		add_action( 'woocommerce_after_checkout_form', array( $this, 'render_checkout_layout_footer' ), 999 );
+		// Interceptar el template de checkout de WooCommerce para cargar nuestra plantilla CheckoutWC / Shopify
+		add_filter( 'woocommerce_locate_template', array( $this, 'override_checkout_template' ), 999, 3 );
 
 		// Interceptar el contenido de la página para convertir WooCommerce Checkout Block a Checkout Clásico
 		add_filter( 'the_content', array( $this, 'filter_checkout_content' ), 1 );
@@ -51,9 +44,23 @@ class WPAT_Woo_Checkout_Designer {
 	}
 
 	/**
+	 * Intercepta la carga de la plantilla checkout/form-checkout.php de WooCommerce
+	 * y devuelve nuestra plantilla de alta conversión estilo CheckoutWC.
+	 */
+	public function override_checkout_template( $template, $template_name, $template_path ) {
+		if ( 'checkout/form-checkout.php' === $template_name ) {
+			$custom_template = WPAT_PATH . 'templates/checkout/form-checkout.php';
+			if ( file_exists( $custom_template ) ) {
+				return $custom_template;
+			}
+		}
+		return $template;
+	}
+
+	/**
 	 * Filtra el contenido de la página de checkout.
 	 * Si la página usa el bloque Gutenberg de WooCommerce Checkout, lo convierte dinámicamente
-	 * al shortcode clásico [woocommerce_checkout] para habilitar los hooks PHP y nuestros 4 layouts.
+	 * al shortcode clásico [woocommerce_checkout] para cargar nuestra plantilla de alta conversión.
 	 */
 	public function filter_checkout_content( $content ) {
 		if ( is_admin() || ! function_exists( 'is_checkout' ) || ! is_checkout() || is_order_received_page() ) {
@@ -109,103 +116,6 @@ class WPAT_Woo_Checkout_Designer {
 			'email_autocorrect'    => isset( $settings['woo_checkout_designer_email_fix'] ) ? $settings['woo_checkout_designer_email_fix'] : '1',
 			'mobile_summary_label' => __( 'Resumen del pedido', 'wp-agency-toolkit' ),
 		) );
-	}
-
-	/**
-	 * Inyecta el contenedor inicial y resumen móvil antes del checkout.
-	 */
-	public function render_checkout_layout_header( $checkout = null ) {
-		if ( $this->has_rendered_header ) {
-			return;
-		}
-		$this->has_rendered_header = true;
-
-		$settings = WPAT_Main::get_instance()->get_settings();
-		$layout   = isset( $settings['woo_checkout_designer_layout'] ) ? $settings['woo_checkout_designer_layout'] : 'wpat-classic';
-		$mobile_summary = ! isset( $settings['woo_checkout_designer_mobile_summary'] ) || '1' === $settings['woo_checkout_designer_mobile_summary'];
-
-		?>
-		<div class="wpat-checkout-wrapper <?php echo esc_attr( $layout ); ?>">
-
-			<?php if ( $mobile_summary ) : ?>
-				<!-- Barra Flotante de Resumen de Pedido en Móvil -->
-				<div class="wpat-mobile-order-summary-toggle">
-					<div class="wpat-mobile-summary-info">
-						<span class="wpat-summary-icon">🛒</span>
-						<span class="wpat-summary-text">Ver resumen del pedido</span>
-						<span class="wpat-summary-arrow">▼</span>
-					</div>
-					<div class="wpat-mobile-summary-total">
-						<?php echo ( function_exists( 'WC' ) && WC()->cart ) ? WC()->cart->get_total() : ''; ?>
-					</div>
-				</div>
-			<?php endif; ?>
-
-			<?php if ( 'wpat-classic' === $layout || 'wpat-accordion' === $layout ) : ?>
-				<!-- Pasos de Progreso / Breadcrumbs -->
-				<div class="wpat-checkout-steps-bar">
-					<div class="wpat-step-item active" data-step="1">
-						<span class="wpat-step-num">1</span>
-						<span class="wpat-step-title">Información & Envío</span>
-					</div>
-					<div class="wpat-step-separator">›</div>
-					<div class="wpat-step-item" data-step="2">
-						<span class="wpat-step-num">2</span>
-						<span class="wpat-step-title">Método de Envío</span>
-					</div>
-					<div class="wpat-step-separator">›</div>
-					<div class="wpat-step-item" data-step="3">
-						<span class="wpat-step-num">3</span>
-						<span class="wpat-step-title">Pago & Confirmación</span>
-					</div>
-				</div>
-			<?php endif; ?>
-		<?php
-	}
-
-	/**
-	 * Cierra los contenedores e inyecta sellos de confianza al final del checkout.
-	 */
-	public function render_checkout_layout_footer( $checkout = null ) {
-		if ( $this->has_rendered_footer || ! $this->has_rendered_header ) {
-			return;
-		}
-		$this->has_rendered_footer = true;
-
-		$settings = WPAT_Main::get_instance()->get_settings();
-		$trust_badges = ! isset( $settings['woo_checkout_designer_trust_badges'] ) || '1' === $settings['woo_checkout_designer_trust_badges'];
-		$trust_text   = ! empty( $settings['woo_checkout_designer_trust_text'] ) ? $settings['woo_checkout_designer_trust_text'] : 'Garantía de Devolución • Pago 100% Seguro • Envío Gratis';
-
-		?>
-			<?php if ( $trust_badges ) : ?>
-				<!-- Sellos de Confianza y Pago Seguro -->
-				<div class="wpat-checkout-trust-badges">
-					<div class="wpat-trust-item">
-						<span class="wpat-trust-icon">🔒</span>
-						<div class="wpat-trust-text">
-							<strong>Pago 100% Seguro</strong>
-							<span>Cifrado SSL de 256-bits de alta seguridad</span>
-						</div>
-					</div>
-					<div class="wpat-trust-item">
-						<span class="wpat-trust-icon">🚀</span>
-						<div class="wpat-trust-text">
-							<strong>Envío Garantizado</strong>
-							<span>Seguimiento directo de tu paquete</span>
-						</div>
-					</div>
-					<div class="wpat-trust-item">
-						<span class="wpat-trust-icon">🛡️</span>
-						<div class="wpat-trust-text">
-							<strong>Garantía de Satisfacción</strong>
-							<span><?php echo esc_html( $trust_text ); ?></span>
-						</div>
-					</div>
-				</div>
-			<?php endif; ?>
-
-		</div> <!-- .wpat-checkout-wrapper -->
-		<?php
 	}
 
 	/**

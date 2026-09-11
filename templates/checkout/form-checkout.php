@@ -152,6 +152,72 @@ if ( function_exists( 'WC' ) && WC()->cart && WC()->cart->is_empty() ) {
 				</div>
 			</div>
 
+		<?php elseif ( 'wpat-shop-style' === $layout ) : ?>
+
+			<!-- LAYOUT 5: WPAT SHOP-STYLE CHECKOUT -->
+			<div class="wpat-checkout-col-left">
+
+				<!-- SECCIÓN 1 & 2: CONTACTO & ENTREGA -->
+				<div class="wpat-card-box wpat-shop-section-customer">
+					<?php if ( $checkout->get_checkout_fields() ) : ?>
+						<?php do_action( 'woocommerce_checkout_before_customer_details' ); ?>
+						<div class="col2-set wpat-customer-details-card" id="customer_details">
+							<div class="col-1 wpat-billing-box">
+								<?php do_action( 'woocommerce_checkout_billing' ); ?>
+							</div>
+							<div class="col-2 wpat-shipping-box">
+								<?php do_action( 'woocommerce_checkout_shipping' ); ?>
+							</div>
+						</div>
+						<?php do_action( 'woocommerce_checkout_after_customer_details' ); ?>
+					<?php endif; ?>
+				</div>
+
+				<!-- SECCIÓN 3: MÉTODOS DE ENVÍO -->
+				<div class="wpat-card-box wpat-shop-section-shipping" style="margin-top: 20px;">
+					<h3 class="wpat-card-title">Métodos de envío</h3>
+					<div class="wpat-shipping-methods-container">
+						<?php if ( WC()->cart->needs_shipping() && WC()->cart->show_shipping() ) : ?>
+							<?php wc_cart_totals_shipping_html(); ?>
+						<?php else : ?>
+							<p style="font-size: 13px; color: #64748b;">Ingresa tu dirección de envío para ver los métodos disponibles.</p>
+						<?php endif; ?>
+					</div>
+				</div>
+
+				<!-- SECCIÓN 4: PAGO -->
+				<div class="wpat-card-box wpat-shop-section-payment" style="margin-top: 20px;">
+					<h3 class="wpat-card-title">Pago</h3>
+					<p class="wpat-card-subtitle" style="font-size: 13px; color: #64748b; margin-top: -6px; margin-bottom: 15px;">Todas las transacciones son seguras y están encriptadas.</p>
+					<?php woocommerce_checkout_payment(); ?>
+				</div>
+
+			</div>
+
+			<!-- COLUMNA DERECHA: STICKY ORDER REVIEW & CUPÓN -->
+			<div class="wpat-checkout-col-right">
+				<div class="wpat-order-review-card wpat-shop-sidebar-card">
+					
+					<?php do_action( 'woocommerce_checkout_before_order_review' ); ?>
+					
+					<div id="order_review" class="woocommerce-checkout-review-order">
+						<?php woocommerce_order_review(); ?>
+					</div>
+
+					<!-- Formulario de Cupón Personalizado colocada limpia antes/después del Total -->
+					<?php if ( wc_coupons_enabled() ) : ?>
+						<div class="wpat-custom-coupon-box">
+							<div class="wpat-coupon-input-group">
+								<input type="text" name="wpat_coupon_code" class="input-text wpat-coupon-field" id="wpat_coupon_code_field" placeholder="Código de descuento" value="" />
+								<button type="button" class="button wpat-coupon-submit-btn" id="wpat_coupon_apply_btn">Aplicar</button>
+							</div>
+						</div>
+					<?php endif; ?>
+
+					<?php do_action( 'woocommerce_checkout_after_order_review' ); ?>
+				</div>
+			</div>
+
 		<?php else : ?>
 
 			<!-- LAYOUTS 2, 3, 4: EXPRESS, ACCORDION, MINIMALIST -->

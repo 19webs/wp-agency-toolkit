@@ -63,6 +63,7 @@ jQuery(document).ready(function($) {
 		if (!code) return;
 
 		var $btn = $(this);
+		var origText = $btn.text();
 		$btn.prop('disabled', true).text('Aplicando...');
 
 		var data = {
@@ -76,11 +77,11 @@ jQuery(document).ready(function($) {
 			url: typeof wc_checkout_params !== 'undefined' ? wc_checkout_params.ajax_url : '/?wc-ajax=apply_coupon',
 			data: data,
 			success: function(response) {
-				$btn.prop('disabled', false).text('Aplicar cupón');
+				$btn.prop('disabled', false).text(origText);
 				$(document.body).trigger('update_checkout');
 			},
 			error: function() {
-				$btn.prop('disabled', false).text('Aplicar cupón');
+				$btn.prop('disabled', false).text(origText);
 				$(document.body).trigger('update_checkout');
 			}
 		});

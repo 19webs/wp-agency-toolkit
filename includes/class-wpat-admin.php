@@ -731,7 +731,7 @@ class WPAT_Admin {
 		// Sanitizar Diseñador de Checkout High-Conversion
 		if ( empty( $saving_module ) || 'woo-checkout-designer' === $saving_module ) {
 			$new_settings['woo-checkout-designer']                = isset( $input_settings['woo-checkout-designer'] ) && '1' === $input_settings['woo-checkout-designer'] ? '1' : '0';
-			$new_settings['woo_checkout_designer_layout']         = isset( $input_settings['woo_checkout_designer_layout'] ) && in_array( $input_settings['woo_checkout_designer_layout'], array( 'wpat-classic', 'wpat-express', 'wpat-accordion', 'wpat-minimalist' ), true ) ? $input_settings['woo_checkout_designer_layout'] : 'wpat-classic';
+			$new_settings['woo_checkout_designer_layout']         = isset( $input_settings['woo_checkout_designer_layout'] ) && in_array( $input_settings['woo_checkout_designer_layout'], array( 'wpat-classic', 'wpat-express', 'wpat-accordion', 'wpat-minimalist', 'wpat-shop-style' ), true ) ? $input_settings['woo_checkout_designer_layout'] : 'wpat-classic';
 			$new_settings['woo_checkout_designer_mobile_summary'] = isset( $input_settings['woo_checkout_designer_mobile_summary'] ) && '1' === $input_settings['woo_checkout_designer_mobile_summary'] ? '1' : '0';
 			$new_settings['woo_checkout_designer_trust_badges']   = isset( $input_settings['woo_checkout_designer_trust_badges'] ) && '1' === $input_settings['woo_checkout_designer_trust_badges'] ? '1' : '0';
 			$new_settings['woo_checkout_designer_email_fix']      = isset( $input_settings['woo_checkout_designer_email_fix'] ) && '1' === $input_settings['woo_checkout_designer_email_fix'] ? '1' : '0';
@@ -5073,25 +5073,30 @@ class WPAT_Admin {
 						<div class="wpat-field-group">
 							<label style="font-weight: 700; display: block; margin-bottom: 12px;">Selecciona la Plantilla de Checkout:</label>
 							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
-								<label style="border: 2px solid <?php echo 'wpat-classic' === $layout ? '#2563eb' : '#e2e8f0'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
+								<label class="wpat-checkout-layout-card <?php echo 'wpat-classic' === $layout ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'wpat-classic' === $layout ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
 									<input type="radio" name="wpat_settings[woo_checkout_designer_layout]" value="wpat-classic" <?php checked( $layout, 'wpat-classic' ); ?>>
 									<strong style="display: block; margin-top: 6px; font-size: 14px;">WPAT Classic Checkout</strong>
 									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Multi-Paso (3 Pasos) con migas de pan y columna de resumen fija (<em>sticky</em>).</span>
 								</label>
-								<label style="border: 2px solid <?php echo 'wpat-express' === $layout ? '#2563eb' : '#e2e8f0'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
+								<label class="wpat-checkout-layout-card <?php echo 'wpat-express' === $layout ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'wpat-express' === $layout ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
 									<input type="radio" name="wpat_settings[woo_checkout_designer_layout]" value="wpat-express" <?php checked( $layout, 'wpat-express' ); ?>>
 									<strong style="display: block; margin-top: 6px; font-size: 14px;">WPAT Express Checkout</strong>
 									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Vista rápida en 2 columnas agrupadas en tarjetas redondeadas limpias.</span>
 								</label>
-								<label style="border: 2px solid <?php echo 'wpat-accordion' === $layout ? '#2563eb' : '#e2e8f0'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
+								<label class="wpat-checkout-layout-card <?php echo 'wpat-accordion' === $layout ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'wpat-accordion' === $layout ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
 									<input type="radio" name="wpat_settings[woo_checkout_designer_layout]" value="wpat-accordion" <?php checked( $layout, 'wpat-accordion' ); ?>>
 									<strong style="display: block; margin-top: 6px; font-size: 14px;">WPAT Accordion Checkout</strong>
 									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Pasos desplegables secuenciales que avanzan conforme se valida cada paso.</span>
 								</label>
-								<label style="border: 2px solid <?php echo 'wpat-minimalist' === $layout ? '#2563eb' : '#e2e8f0'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
+								<label class="wpat-checkout-layout-card <?php echo 'wpat-minimalist' === $layout ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'wpat-minimalist' === $layout ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
 									<input type="radio" name="wpat_settings[woo_checkout_designer_layout]" value="wpat-minimalist" <?php checked( $layout, 'wpat-minimalist' ); ?>>
 									<strong style="display: block; margin-top: 6px; font-size: 14px;">WPAT Minimalist Checkout</strong>
 									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">1 Columna ultra-limpia enfocado en máxima conversión y sellos de confianza.</span>
+								</label>
+								<label class="wpat-checkout-layout-card <?php echo 'wpat-shop-style' === $layout ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'wpat-shop-style' === $layout ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
+									<input type="radio" name="wpat_settings[woo_checkout_designer_layout]" value="wpat-shop-style" <?php checked( $layout, 'wpat-shop-style' ); ?>>
+									<strong style="display: block; margin-top: 6px; font-size: 14px;">WPAT Shop-Style Checkout</strong>
+									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Diseño en 2 columnas agrupadas (Contacto, Entrega, Envío y Pago a la izquierda) y lateral sticky con productos y cupones.</span>
 								</label>
 							</div>
 						</div>

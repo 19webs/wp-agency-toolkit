@@ -1221,3 +1221,39 @@ html.wpat-dark-mode #wpcontent,
 .wpat-dark-mode .wpat-module-info p {
 	color: #94a3b8 !important;
 }
+
+/* Checkout Designer Template Cards Dark Mode */
+.wpat-checkout-layout-card {
+	background-color: var(--wpat-bg-card, #ffffff);
+	border-color: var(--wpat-border, #e2e8f0);
+	color: var(--wpat-text, #0f172a);
+}
+
+.wpat-checkout-layout-card strong {
+	color: #0f172a;
+}
+
+.wpat-checkout-layout-card .description {
+	color: #64748b;
+}
+
+.wpat-dark-mode .wpat-checkout-layout-card {
+	background-color: #1e293b !important;
+	border-color: #334155 !important;
+	color: #f8fafc !important;
+}
+
+.wpat-dark-mode .wpat-checkout-layout-card strong {
+	color: #f8fafc !important;
+}
+
+.wpat-dark-mode .wpat-checkout-layout-card .description {
+	color: #94a3b8 !important;
+}
+
+.wpat-dark-mode .wpat-checkout-layout-card.active,
+.wpat-dark-mode .wpat-checkout-layout-card:has(input:checked) {
+	border-color: #2563eb !important;
+	background-color: #0f172a !important;
+	box-shadow: 0 0 0 1px #2563eb;
+}

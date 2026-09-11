@@ -1,5 +1,5 @@
 /**
- * AUTOCOMPLETADO RECÍPROCO DE CP, PROVINCIA Y POBLACIÓN - WP AGENCY TOOLKIT
+ * AUTOCOMPLETADO RECÍPROCO DE CP, PROVINCIA Y POBLACIÓN (DROPDOWN REAL) - WP AGENCY TOOLKIT
  */
 jQuery(document).ready(function($) {
 	'use strict';
@@ -8,7 +8,7 @@ jQuery(document).ready(function($) {
 		return;
 	}
 
-	var isProgrammaticChange = false;
+	var isProgrammatic = false;
 
 	function isCountrySpain(type) {
 		var $countryField = $('#' + type + '_country');
@@ -46,28 +46,77 @@ jQuery(document).ready(function($) {
 			.replace(/[^a-z0-9]/g, '');
 	}
 
-	function updateCityDatalist(type, towns) {
-		var listId = type + '_city_datalist';
-		var $list = $('#' + listId);
-		if (!$list.length) {
-			$list = $('<datalist id="' + listId + '"></datalist>');
-			$('body').append($list);
-		}
+	function getProvinceCodeFromVal(stateVal) {
+		if (!stateVal) return '';
+		var pCode = stateVal;
+		$.each(wpatAutofillOptions.spain_provinces, function(prefix, data) {
+			if (data.code === stateVal || data.name.toLowerCase() === stateVal.toLowerCase()) {
+				pCode = data.code;
+				return false;
+			}
+		});
+		return pCode;
+	}
 
-		$list.empty();
+	function convertCityToSelect(type, towns, currentVal) {
+		var $cityField = $('#' + type + '_city');
+		if (!$cityField.length) return;
+
+		// Si ya es un select o un input, construimos las opciones
+		var nameAttr = $cityField.attr('name') || (type + '_city');
+		var idAttr = $cityField.attr('id') || (type + '_city');
+
+		var $select = $('<select name="' + nameAttr + '" id="' + idAttr + '" class="input-text wpat-city-select" style="width:100%; height:46px; border:1px solid #cbd5e1; border-radius:8px; padding:0 14px; font-size:14px; color:#0f172a; background:#ffffff; outline:none; appearance:none; -webkit-appearance:none; background-image:url(\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%2364748b%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 stroke-width=%222%22 d=%22M19 9l-7 7-7-7%22%3E%3C/path%3E%3C/svg%3E\'); background-repeat:no-repeat; background-position:right 12px center; background-size:16px 16px;"></select>');
+
+		$select.append('<option value="">Selecciona tu población...</option>');
+
+		var foundMatch = false;
 		if (towns && towns.length) {
 			$.each(towns, function(i, town) {
-				$list.append('<option value="' + town + '">');
+				var selectedAttr = '';
+				if (currentVal && (town.toLowerCase() === currentVal.toLowerCase() || sanitizeKey(town) === sanitizeKey(currentVal))) {
+					selectedAttr = ' selected="selected"';
+					foundMatch = true;
+				}
+				$select.append('<option value="' + town + '"' + selectedAttr + '>' + town + '</option>');
 			});
-			$('#' + type + '_city').attr('list', listId);
+		}
+
+		if (currentVal && !foundMatch && currentVal !== '__custom__') {
+			$select.append('<option value="' + currentVal + '" selected="selected">' + currentVal + '</option>');
+		}
+
+		$select.append('<option value="__custom__">✏️ Otra población (Escribir manualmente)...</option>');
+
+		if ($cityField.is('input')) {
+			$cityField.replaceWith($select);
+		} else if ($cityField.is('select')) {
+			$cityField.html($select.html());
+			if (currentVal && foundMatch) {
+				$cityField.val(currentVal);
+			}
 		}
 	}
 
-	// --- 1. DIRECCIÓN A: CP -> PROVINCIA Y POBLACIÓN ---
-	function handlePostcodeToAddress(type) {
-		if (isProgrammaticChange || !isCountrySpain(type)) {
-			return;
+	function convertCityToInput(type, currentVal) {
+		var $cityField = $('#' + type + '_city');
+		if (!$cityField.length || $cityField.is('input')) return;
+
+		var nameAttr = $cityField.attr('name') || (type + '_city');
+		var idAttr = $cityField.attr('id') || (type + '_city');
+
+		var $input = $('<input type="text" name="' + nameAttr + '" id="' + idAttr + '" class="input-text" style="width:100%; height:46px; border:1px solid #cbd5e1; border-radius:8px; padding:10px 14px; font-size:14px; color:#0f172a; background:#ffffff; outline:none;" placeholder="Escribe tu población..." />');
+		if (currentVal && currentVal !== '__custom__') {
+			$input.val(currentVal);
 		}
+
+		$cityField.replaceWith($input);
+		$input.focus();
+	}
+
+	// --- 1. CP -> PROVINCIA Y POBLACIÓN ---
+	function handlePostcodeChange(type) {
+		if (isProgrammatic || !isCountrySpain(type)) return;
 
 		var $postcodeField = $('#' + type + '_postcode');
 		if (!$postcodeField.length) return;
@@ -75,11 +124,11 @@ jQuery(document).ready(function($) {
 		var cp = $.trim($postcodeField.val() || '');
 		if (cp.length < 2) return;
 
-		isProgrammaticChange = true;
+		isProgrammatic = true;
 
-		// A1. Detectar provincia por 2 dígitos
-		var prefix = cp.substring(0, 2);
-		var provinceData = wpatAutofillOptions.spain_provinces[prefix];
+		// 1A. Detectar Provincia con 2 dígitos
+		var prefix2 = cp.substring(0, 2);
+		var provinceData = wpatAutofillOptions.spain_provinces[prefix2];
 
 		if (provinceData) {
 			var pCode = provinceData.code;
@@ -94,7 +143,6 @@ jQuery(document).ready(function($) {
 							return $(this).text().toLowerCase().indexOf(pName.toLowerCase()) !== -1;
 						});
 					}
-
 					if ($opt.length && $stateField.val() !== $opt.val()) {
 						$stateField.val($opt.val()).trigger('change');
 						if ($.fn.select2) {
@@ -108,139 +156,112 @@ jQuery(document).ready(function($) {
 				}
 			}
 
-			// Actualizar sugerencias de localidades para esa provincia
-			if (wpatAutofillOptions.spain_province_cities && wpatAutofillOptions.spain_province_cities[pCode]) {
-				updateCityDatalist(type, wpatAutofillOptions.spain_province_cities[pCode]);
+			// Actualizar el desplegable de poblaciones de esa provincia
+			var towns = wpatAutofillOptions.spain_province_cities ? wpatAutofillOptions.spain_province_cities[pCode] : null;
+			var currentCityVal = $('#' + type + '_city').val();
+
+			// 1B. Detectar ciudad específica si tenemos 3 o 5 dígitos de CP (ej: 114 -> Jerez de la Frontera)
+			var prefix3 = cp.substring(0, 3);
+			var matchedCity = wpatAutofillOptions.spain_prefix_to_city ? wpatAutofillOptions.spain_prefix_to_city[prefix3] : null;
+
+			if (matchedCity) {
+				currentCityVal = matchedCity;
+			}
+
+			convertCityToSelect(type, towns, currentCityVal);
+
+			if (matchedCity) {
+				$('#' + type + '_city').val(matchedCity);
 			}
 		}
 
-		// A2. Detectar población SOLO cuando el CP tiene 5 dígitos completos
-		if (cp.length === 5 && wpatAutofillOptions.autofill_city === '1') {
-			var $cityField = $('#' + type + '_city');
-			if ($cityField.length) {
-				var townsMatch = wpatAutofillOptions.spain_cp_to_cities ? wpatAutofillOptions.spain_cp_to_cities[cp] : null;
-				if (townsMatch && townsMatch.length) {
-					updateCityDatalist(type, townsMatch);
-					if (!$cityField.val() || $cityField.data('wpat-autofilled') === '1') {
-						$cityField.val(townsMatch[0]).trigger('change');
-						$cityField.data('wpat-autofilled', '1');
-					}
-				}
-			}
-		}
-
-		isProgrammaticChange = false;
+		isProgrammatic = false;
 	}
 
-	// --- 2. DIRECCIÓN B: PROVINCIA + POBLACIÓN -> CÓDIGO POSTAL (RECÍPROCO) ---
-	function handleAddressToPostcode(type) {
-		if (isProgrammaticChange || !isCountrySpain(type)) {
-			return;
-		}
+	// --- 2. PROVINCIA / POBLACIÓN -> CÓDIGO POSTAL (RECÍPROCO) ---
+	function handleCityOrStateChange(type) {
+		if (isProgrammatic || !isCountrySpain(type)) return;
 
 		var $stateField = $('#' + type + '_state');
-		var $cityField = $('#' + type + '_city');
-		var $postcodeField = $('#' + type + '_postcode');
-
-		if (!$stateField.length || !$cityField.length || !$postcodeField.length) {
-			return;
-		}
-
 		var stateVal = $.trim($stateField.val() || '');
+		var pCode = getProvinceCodeFromVal(stateVal);
+
+		var $cityField = $('#' + type + '_city');
 		var cityVal = $.trim($cityField.val() || '');
 
-		if (!stateVal || !cityVal) {
+		if (cityVal === '__custom__') {
+			convertCityToInput(type, '');
 			return;
 		}
 
-		isProgrammaticChange = true;
+		isProgrammatic = true;
 
-		// Convertir código de estado a código corto de 2 letras (ej: 'MA', 'M', 'SE')
-		var pCode = stateVal;
-		if (stateVal.length > 2) {
-			$.each(wpatAutofillOptions.spain_provinces, function(pref, data) {
-				if (data.name.toLowerCase() === stateVal.toLowerCase()) {
-					pCode = data.code;
-					return false;
+		// Si se cambió la provincia pero no la ciudad, cargar desplegable de la provincia
+		if (pCode && wpatAutofillOptions.spain_province_cities && wpatAutofillOptions.spain_province_cities[pCode]) {
+			if ($cityField.is('input') || !$cityField.find('option[value="' + cityVal + '"]').length) {
+				var towns = wpatAutofillOptions.spain_province_cities[pCode];
+				convertCityToSelect(type, towns, cityVal);
+				$cityField = $('#' + type + '_city');
+			}
+		}
+
+		// Buscar el Código Postal correspondiente a la población elegida
+		if (cityVal && cityVal !== '__custom__' && pCode) {
+			var key1 = sanitizeKey(cityVal) + '_' + pCode.toLowerCase();
+			var key2 = sanitizeKey(cityVal);
+			var matchedCP = null;
+
+			if (wpatAutofillOptions.spain_city_to_cp) {
+				matchedCP = wpatAutofillOptions.spain_city_to_cp[key1] || wpatAutofillOptions.spain_city_to_cp[key2];
+			}
+
+			if (matchedCP) {
+				var $postcodeField = $('#' + type + '_postcode');
+				if ($postcodeField.length && $postcodeField.val() !== matchedCP) {
+					$postcodeField.val(matchedCP).trigger('change');
 				}
-			});
-		}
-
-		var lookupKey1 = sanitizeKey(cityVal) + '_' + pCode.toLowerCase();
-		var lookupKey2 = sanitizeKey(cityVal);
-
-		var matchedCP = null;
-		if (wpatAutofillOptions.spain_city_to_cp) {
-			matchedCP = wpatAutofillOptions.spain_city_to_cp[lookupKey1] || wpatAutofillOptions.spain_city_to_cp[lookupKey2];
-		}
-
-		if (matchedCP) {
-			if (!$postcodeField.val() || $postcodeField.data('wpat-autofilled') === '1') {
-				$postcodeField.val(matchedCP).trigger('change');
-				$postcodeField.data('wpat-autofilled', '1');
 			}
 		}
 
-		isProgrammaticChange = false;
+		isProgrammatic = false;
 	}
 
-	// Escuchar cuando el usuario cambia la provincia -> Cargar sugerencias de municipios de esa provincia
-	function onStateChange(type) {
-		var $stateField = $('#' + type + '_state');
-		var stateVal = $.trim($stateField.val() || '');
-		if (!stateVal) return;
-
-		var pCode = stateVal;
-		$.each(wpatAutofillOptions.spain_provinces, function(pref, data) {
-			if (data.code === stateVal || data.name.toLowerCase() === stateVal.toLowerCase()) {
-				pCode = data.code;
-				return false;
-			}
-		});
-
-		if (wpatAutofillOptions.spain_province_cities && wpatAutofillOptions.spain_province_cities[pCode]) {
-			updateCityDatalist(type, wpatAutofillOptions.spain_province_cities[pCode]);
-		}
-
-		handleAddressToPostcode(type);
-	}
-
-	// Escuchar eventos en billing y shipping
+	// Escuchadores de eventos
 	$(document).on('input keyup blur change', '#billing_postcode', function() {
-		handlePostcodeToAddress('billing');
+		handlePostcodeChange('billing');
 	});
 
 	$(document).on('input keyup blur change', '#shipping_postcode', function() {
-		handlePostcodeToAddress('shipping');
+		handlePostcodeChange('shipping');
 	});
 
 	$(document).on('change', '#billing_state', function() {
-		onStateChange('billing');
+		handleCityOrStateChange('billing');
 	});
 
 	$(document).on('change', '#shipping_state', function() {
-		onStateChange('shipping');
+		handleCityOrStateChange('shipping');
 	});
 
-	$(document).on('input blur change', '#billing_city', function() {
-		handleAddressToPostcode('billing');
+	$(document).on('change', '#billing_city', function() {
+		handleCityOrStateChange('billing');
 	});
 
-	$(document).on('input blur change', '#shipping_city', function() {
-		handleAddressToPostcode('shipping');
+	$(document).on('change', '#shipping_city', function() {
+		handleCityOrStateChange('shipping');
 	});
 
 	$(document).on('change', '#ship-to-different-address-checkbox', function() {
 		if ($(this).is(':checked')) {
 			setTimeout(function() {
-				handlePostcodeToAddress('shipping');
+				handleCityOrStateChange('shipping');
 			}, 200);
 		}
 	});
 
-	// Inicialización suave
+	// Inicialización al cargar la página
 	setTimeout(function() {
-		if ($('#billing_postcode').val()) handlePostcodeToAddress('billing');
-		if ($('#shipping_postcode').val()) handlePostcodeToAddress('shipping');
+		handleCityOrStateChange('billing');
+		handleCityOrStateChange('shipping');
 	}, 400);
 });

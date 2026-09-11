@@ -2860,7 +2860,8 @@ class WPAT_Admin {
 				<?php endif; ?>
 			</div>
 		</div>
-	
+	}
+
 	public function render_tab_tools_content( $settings ) {
 		if ( ! class_exists( 'WPAT_Post_CSV_Importer' ) ) {
 			require_once WPAT_PATH . 'includes/modules/class-wpat-post-csv-importer.php';
@@ -6226,29 +6227,6 @@ class WPAT_Admin {
 			'update_url'      => $update_url,
 		) );
 	}
-
-	/**
-	 * Determina si un módulo es considerado NUEVO (duración de 30 días desde su lanzamiento).
-	 *
-	 * @param string $module_id ID del módulo.
-	 * @return bool
-	 */
-	public function is_new_module( $module_id ) {
-		$release_dates = array(
-			'woo-checkout-designer' => '2026-09-10',
-			'woo-sale-badges'       => '2026-09-11',
-		);
-
-		if ( ! isset( $release_dates[ $module_id ] ) ) {
-			return false;
-		}
-
-		$release_time = strtotime( $release_dates[ $module_id ] );
-		$days_elapsed = ( time() - $release_time ) / DAY_IN_SECONDS;
-
-		return $days_elapsed <= 30;
-	}
-
 
 	/**
 	 * Determina si un módulo es considerado NUEVO (duración de 30 días desde su lanzamiento).

@@ -975,17 +975,7 @@ class WPAT_Admin {
 			}
 		}
 
-		// 20. Sanitizar Badges y Etiquetas de Oferta High-Impact (WooCommerce)
-		if ( empty( $saving_module ) || 'woo-sale-badges' === $saving_module ) {
-			$new_settings['woo-sale-badges']           = isset( $input_settings['woo-sale-badges'] ) && '1' === $input_settings['woo-sale-badges'] ? '1' : '0';
-			$new_settings['woo_sale_badge_shape']       = isset( $input_settings['woo_sale_badge_shape'] ) && in_array( $input_settings['woo_sale_badge_shape'], array( 'soft', 'pill', 'rect', 'circle', 'corner-ribbon', 'price-tag' ), true ) ? $input_settings['woo_sale_badge_shape'] : 'soft';
-			$new_settings['woo_sale_badge_text_type']   = isset( $input_settings['woo_sale_badge_text_type'] ) && in_array( $input_settings['woo_sale_badge_text_type'], array( 'custom', 'percentage' ), true ) ? $input_settings['woo_sale_badge_text_type'] : 'custom';
-			$new_settings['woo_sale_badge_custom_text'] = isset( $input_settings['woo_sale_badge_custom_text'] ) ? sanitize_text_field( $input_settings['woo_sale_badge_custom_text'] ) : '¡OFERTA!';
-			$new_settings['woo_sale_badge_bg_color']    = isset( $input_settings['woo_sale_badge_bg_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_sale_badge_bg_color'] ) ? $input_settings['woo_sale_badge_bg_color'] : '#ef4444';
-			$new_settings['woo_sale_badge_txt_color']   = isset( $input_settings['woo_sale_badge_txt_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_sale_badge_txt_color'] ) ? $input_settings['woo_sale_badge_txt_color'] : '#ffffff';
-			$new_settings['woo_sale_badge_font_size']   = isset( $input_settings['woo_sale_badge_font_size'] ) ? max( 8, min( 32, absint( $input_settings['woo_sale_badge_font_size'] ) ) ) : 13;
-			$new_settings['woo_sale_badge_position']    = isset( $input_settings['woo_sale_badge_position'] ) && in_array( $input_settings['woo_sale_badge_position'], array( 'top-left', 'top-right' ), true ) ? $input_settings['woo_sale_badge_position'] : 'top-left';
-		}
+
 
 		// Guardar en la base de datos
 		update_option( 'wpat_settings', $new_settings );
@@ -2268,7 +2258,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'woo-sale-badges',
-				'title'       => 'Badges y Etiquetas de Oferta',
+			'title'       => 'Badges y Etiquetas de Oferta',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Añade badges y cintas de oferta de alto impacto personalizables (Soft, Pill, Rect, Circle, Corner Ribbon, Price Tag) con cálculo automático de % de descuento.',
@@ -2277,17 +2267,7 @@ class WPAT_Admin {
 				'icon_bg'     => 'woo',
 				'keywords'    => 'badges oferta etiquetas descuento sale flash ribbon woocommerce'
 			),
-			array(
-				'id'          => 'woo-sale-badges',
-				'title'       => 'Badges y Etiquetas de Oferta',
-				'badge'       => 'Configuración',
-				'badge_class' => 'tweak',
-				'desc'        => 'Añade badges y cintas de oferta de alto impacto personalizables (Soft, Pill, Rect, Circle, Corner Ribbon, Price Tag) con cálculo automático de % de descuento.',
-				'cat_class'   => 'cat-woocommerce cat-woo',
-				'icon'        => '🏷️',
-				'icon_bg'     => 'woo',
-				'keywords'    => 'badges oferta etiquetas descuento sale flash ribbon woocommerce'
-			),
+
 			array(
 				'id'          => 'woo-checkout-designer',
 				'is_new'      => true,
@@ -4959,106 +4939,8 @@ class WPAT_Admin {
 							<h3>Badges y Etiquetas de Oferta High-Impact</h3>
 							<p>Reemplaza la etiqueta de oferta nativa de WooCommerce por botones, cintas y etiquetas personalizadas de alto impacto con cálculo automático de descuento.</p>
 						</div>
-						<?php $this->render_module_toggle( 'woo-sale-badges', $settings, true ); ?>
-					</div>
-					<div class="wpat-module-body" style="display: block;">
-						<div class="wpat-field-group">
-							<label style="font-weight: 700; display: block; margin-bottom: 12px;">Selecciona la Forma del Badge / Etiqueta:</label>
-							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
-								<label style="border: 2px solid <?php echo 'soft' === $shape ? '#2563eb' : '#e2e8f0'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
-									<input type="radio" name="wpat_settings[woo_sale_badge_shape]" value="soft" <?php checked( $shape, 'soft' ); ?>>
-									<strong style="display: block; margin-top: 6px; font-size: 14px;">Bordes Suaves</strong>
-									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Esquinas ligeramente redondeadas (8px radius).</span>
-								</label>
-								<label style="border: 2px solid <?php echo 'pill' === $shape ? '#2563eb' : '#e2e8f0'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
-									<input type="radio" name="wpat_settings[woo_sale_badge_shape]" value="pill" <?php checked( $shape, 'pill' ); ?>>
-									<strong style="display: block; margin-top: 6px; font-size: 14px;">Píldora (Pill)</strong>
-									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Totalmente redondeado estilo cápsula (20px radius).</span>
-								</label>
-								<label style="border: 2px solid <?php echo 'rect' === $shape ? '#2563eb' : '#e2e8f0'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
-									<input type="radio" name="wpat_settings[woo_sale_badge_shape]" value="rect" <?php checked( $shape, 'rect' ); ?>>
-									<strong style="display: block; margin-top: 6px; font-size: 14px;">Rectangular</strong>
-									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Bordes rectos limpios (0px radius).</span>
-								</label>
-								<label style="border: 2px solid <?php echo 'circle' === $shape ? '#2563eb' : '#e2e8f0'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
-									<input type="radio" name="wpat_settings[woo_sale_badge_shape]" value="circle" <?php checked( $shape, 'circle' ); ?>>
-									<strong style="display: block; margin-top: 6px; font-size: 14px;">Circular Compacto</strong>
-									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Badge circular concéntrico (50x50px).</span>
-								</label>
-								<label style="border: 2px solid <?php echo 'corner-ribbon' === $shape ? '#2563eb' : '#e2e8f0'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
-									<input type="radio" name="wpat_settings[woo_sale_badge_shape]" value="corner-ribbon" <?php checked( $shape, 'corner-ribbon' ); ?>>
-									<strong style="display: block; margin-top: 6px; font-size: 14px;">Cinta Diagonal</strong>
-									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Cinta de esquina cruzada a 45 grados.</span>
-								</label>
-								<label style="border: 2px solid <?php echo 'price-tag' === $shape ? '#2563eb' : '#e2e8f0'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
-									<input type="radio" name="wpat_settings[woo_sale_badge_shape]" value="price-tag" <?php checked( $shape, 'price-tag' ); ?>>
-									<strong style="display: block; margin-top: 6px; font-size: 14px;">Etiqueta de Precio</strong>
-									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Estilo ticket con muesca lateral.</span>
-								</label>
-							</div>
-						</div>
-
-						<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
-
-						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-							<div class="wpat-field-group">
-								<label style="font-weight: 600; display: block; margin-bottom: 6px;">Tipo de Texto a Mostrar:</label>
-								<select name="wpat_settings[woo_sale_badge_text_type]" class="regular-text" style="width: 100%;">
-									<option value="custom" <?php selected( $text_type, 'custom' ); ?>>Texto Personalizado (Ej: ¡OFERTA!)</option>
-									<option value="percentage" <?php selected( $text_type, 'percentage' ); ?>>Porcentaje de Descuento Real (Ej: -25%)</option>
-								</select>
-							</div>
-							<div class="wpat-field-group">
-								<label style="font-weight: 600; display: block; margin-bottom: 6px;">Texto Personalizado:</label>
-								<input type="text" name="wpat_settings[woo_sale_badge_custom_text]" value="<?php echo esc_attr( $custom_txt ); ?>" class="regular-text" style="width: 100%;" placeholder="¡OFERTA!">
-							</div>
-						</div>
-
-						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; margin-top: 15px;">
-							<div class="wpat-field-group">
-								<label style="font-weight: 600; display: block; margin-bottom: 6px;">Color de Fondo:</label>
-								<input type="text" name="wpat_settings[woo_sale_badge_bg_color]" value="<?php echo esc_attr( $bg_color ); ?>" class="wpat-color-picker" data-default-color="#ef4444">
-							</div>
-							<div class="wpat-field-group">
-								<label style="font-weight: 600; display: block; margin-bottom: 6px;">Color de Texto:</label>
-								<input type="text" name="wpat_settings[woo_sale_badge_txt_color]" value="<?php echo esc_attr( $txt_color ); ?>" class="wpat-color-picker" data-default-color="#ffffff">
-							</div>
-							<div class="wpat-field-group">
-								<label style="font-weight: 600; display: block; margin-bottom: 6px;">Tamaño Fuente (px):</label>
-								<input type="number" name="wpat_settings[woo_sale_badge_font_size]" value="<?php echo esc_attr( $font_size ); ?>" min="8" max="32" class="small-text">
-							</div>
-							<div class="wpat-field-group">
-								<label style="font-weight: 600; display: block; margin-bottom: 6px;">Posición en la Imagen:</label>
-								<select name="wpat_settings[woo_sale_badge_position]" style="width: 100%;">
-									<option value="top-left" <?php selected( $position, 'top-left' ); ?>>Superior Izquierda</option>
-									<option value="top-right" <?php selected( $position, 'top-right' ); ?>>Superior Derecha</option>
-								</select>
-							</div>
-						</div>
-					</div>
-				</div>
-				<?php
-				break;
-			case 'woo-sale-badges':
-				$shape      = isset( $settings['woo_sale_badge_shape'] ) ? $settings['woo_sale_badge_shape'] : 'soft';
-				$text_type  = isset( $settings['woo_sale_badge_text_type'] ) ? $settings['woo_sale_badge_text_type'] : 'custom';
-				$custom_txt = isset( $settings['woo_sale_badge_custom_text'] ) ? $settings['woo_sale_badge_custom_text'] : '¡OFERTA!';
-				$bg_color   = isset( $settings['woo_sale_badge_bg_color'] ) ? $settings['woo_sale_badge_bg_color'] : '#ef4444';
-				$txt_color  = isset( $settings['woo_sale_badge_txt_color'] ) ? $settings['woo_sale_badge_txt_color'] : '#ffffff';
-				$font_size  = isset( $settings['woo_sale_badge_font_size'] ) ? $settings['woo_sale_badge_font_size'] : '13';
-				$position   = isset( $settings['woo_sale_badge_position'] ) ? $settings['woo_sale_badge_position'] : 'top-left';
-				$is_new_mod = $this->is_new_module( 'woo-sale-badges' );
-				?>
-				<div class="wpat-module-card" style="position: relative; overflow: hidden;">
-					<?php if ( $is_new_mod ) : ?>
-						<div class="wpat-new-module-ribbon" style="position: absolute; top: 12px; right: -28px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; font-size: 10px; font-weight: 800; padding: 3px 30px; transform: rotate(45deg); text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); pointer-events: none; z-index: 5;">NUEVO</div>
-					<?php endif; ?>
-					<div class="wpat-module-header">
-						<div class="wpat-module-info">
-							<h3>Badges y Etiquetas de Oferta High-Impact</h3>
-							<p>Reemplaza la etiqueta de oferta nativa de WooCommerce por botones, cintas y etiquetas personalizadas de alto impacto con cálculo automático de descuento.</p>
-						</div>
-						<?php $this->render_module_toggle( 'woo-sale-badges', $settings, true ); ?>
+						<?php $this->render_module_toggle( 'woo-sale-badges',
+			$settings, true ); ?>
 					</div>
 					<div class="wpat-module-body" style="display: block;">
 						<div class="wpat-field-group">

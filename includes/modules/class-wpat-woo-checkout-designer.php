@@ -1,6 +1,6 @@
 <?php
 /**
- * Módulo: Diseñador de Checkout High-Conversion - WP Agency Toolkit
+ * Módulo: Diseñador de Carrito y Checkout High-Conversion - WP Agency Toolkit
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -41,8 +41,13 @@ class WPAT_Woo_Checkout_Designer {
 		// Interceptar la plantilla global de WordPress para aislar el checkout de Elementor (prioridad máxima 9999)
 		add_filter( 'template_include', array( $this, 'override_checkout_page_template' ), 9999 );
 
-		// Interceptar también la función de plantillas de WooCommerce por compatibilidad adicional
+		// Interceptar las plantillas de WooCommerce para checkout y carrito
 		add_filter( 'woocommerce_locate_template', array( $this, 'override_checkout_template' ), 9999, 3 );
+		add_filter( 'woocommerce_locate_template', array( $this, 'override_cart_template' ), 9999, 3 );
+
+		// Carrito Deslizable (Drawer) y Fragmentos AJAX
+		add_action( 'wp_footer', array( $this, 'render_drawer_cart_footer' ) );
+		add_filter( 'woocommerce_add_to_cart_fragments', array( $this, 'add_to_cart_fragments' ) );
 
 		// Filtros para las miniaturas y clases de body
 		add_filter( 'woocommerce_cart_item_name', array( $this, 'add_product_thumbnail_to_checkout' ), 10, 3 );
@@ -58,7 +63,7 @@ class WPAT_Woo_Checkout_Designer {
 	 *
 	 * @return bool
 	 */
-	private function is_checkout_page() {
+	public function is_checkout_page() {
 		if ( is_admin() ) {
 			return false;
 		}
@@ -78,11 +83,34 @@ class WPAT_Woo_Checkout_Designer {
 	}
 
 	/**
+	 * Comprueba si la petición actual corresponde a la página de carrito.
+	 *
+	 * @return bool
+	 */
+	public function is_cart_page() {
+		if ( is_admin() ) {
+			return false;
+		}
+
+		if ( function_exists( 'is_cart' ) && is_cart() ) {
+			return true;
+		}
+
+		if ( function_exists( 'wc_get_page_id' ) ) {
+			$cart_id = wc_get_page_id( 'cart' );
+			if ( $cart_id && is_page( $cart_id ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Intercepta la inclusión de la plantilla de WordPress para aislar el checkout de Elementor.
 	 */
 	public function override_checkout_page_template( $template ) {
 		if ( $this->is_checkout_page() ) {
-			// Desactivar filtros de Elementor en el contenido del checkout
 			if ( class_exists( '\Elementor\Plugin' ) ) {
 				remove_all_filters( 'elementor/frontend/the_content' );
 			}
@@ -110,25 +138,141 @@ class WPAT_Woo_Checkout_Designer {
 	}
 
 	/**
-	 * Añade clase al body en la página de checkout.
+	 * Intercepta la carga de la plantilla cart/cart.php de WooCommerce.
+	 */
+	public function override_cart_template( $template, $template_name, $template_path ) {
+		$settings              = WPAT_Main::get_instance()->get_settings();
+		$cart_designer_enabled = ! isset( $settings['woo_cart_designer_enabled'] ) || '1' === $settings['woo_cart_designer_enabled'];
+
+		if ( 'cart/cart.php' === $template_name && $cart_designer_enabled ) {
+			$custom_cart_template = WPAT_PATH . 'templates/cart/cart.php';
+			if ( file_exists( $custom_cart_template ) ) {
+				return $custom_cart_template;
+			}
+		}
+		return $template;
+	}
+
+	/**
+	 * Genera el HTML de la Barra de Progreso para Envío Gratuito.
+	 */
+	public function get_free_shipping_progress_html() {
+		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+			return '';
+		}
+
+		$settings = WPAT_Main::get_instance()->get_settings();
+		$show_bar = ! isset( $settings['woo_cart_free_shipping_bar'] ) || '1' === $settings['woo_cart_free_shipping_bar'];
+
+		if ( ! $show_bar ) {
+			return '';
+		}
+
+		$min_amount = isset( $settings['woo_cart_free_shipping_min_amount'] ) ? floatval( $settings['woo_cart_free_shipping_min_amount'] ) : 50;
+		if ( $min_amount <= 0 ) {
+			return '';
+		}
+
+		$subtotal   = floatval( WC()->cart->get_subtotal() );
+		$percentage = min( 100, max( 0, ( $subtotal / $min_amount ) * 100 ) );
+		$remaining  = max( 0, $min_amount - $subtotal );
+
+		ob_start();
+		?>
+		<div class="wpat-free-shipping-progress-box">
+			<?php if ( $remaining > 0 ) : ?>
+				<p class="wpat-free-shipping-text">
+					🚚 Te faltan <strong><?php echo wc_price( $remaining ); ?></strong> para conseguir <span>ENVÍO GRATIS</span>
+				</p>
+			<?php else : ?>
+				<p class="wpat-free-shipping-text wpat-shipping-unlocked">
+					🎉 ¡Enhorabuena! Has conseguido <span>ENVÍO GRATIS</span> en tu pedido
+				</p>
+			<?php endif; ?>
+			<div class="wpat-progress-bar-bg">
+				<div class="wpat-progress-bar-fill" style="width: <?php echo esc_attr( $percentage ); ?>%;"></div>
+			</div>
+		</div>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * Renderiza el Mini-Carrito Deslizable (Slide-Out / Drawer Cart) en el footer.
+	 */
+	public function render_drawer_cart_footer() {
+		if ( is_admin() || $this->is_checkout_page() ) {
+			return;
+		}
+
+		$settings              = WPAT_Main::get_instance()->get_settings();
+		$cart_designer_enabled = ! isset( $settings['woo_cart_designer_enabled'] ) || '1' === $settings['woo_cart_designer_enabled'];
+		$cart_layout            = isset( $settings['woo_cart_designer_layout'] ) ? $settings['woo_cart_designer_layout'] : 'wpat-cart-classic';
+
+		if ( ! $cart_designer_enabled || 'wpat-cart-drawer' !== $cart_layout ) {
+			return;
+		}
+
+		$drawer_template = WPAT_PATH . 'templates/cart/cart-drawer.php';
+		if ( file_exists( $drawer_template ) ) {
+			include $drawer_template;
+		}
+	}
+
+	/**
+	 * Actualiza los fragmentos AJAX de WooCommerce al añadir o eliminar un producto.
+	 */
+	public function add_to_cart_fragments( $fragments ) {
+		$settings              = WPAT_Main::get_instance()->get_settings();
+		$cart_designer_enabled = ! isset( $settings['woo_cart_designer_enabled'] ) || '1' === $settings['woo_cart_designer_enabled'];
+		$cart_layout            = isset( $settings['woo_cart_designer_layout'] ) ? $settings['woo_cart_designer_layout'] : 'wpat-cart-classic';
+
+		if ( $cart_designer_enabled && 'wpat-cart-drawer' === $cart_layout ) {
+			ob_start();
+			$drawer_content_template = WPAT_PATH . 'templates/cart/cart-drawer-content.php';
+			if ( file_exists( $drawer_content_template ) ) {
+				include $drawer_content_template;
+			}
+			$fragments['div.wpat-drawer-cart-body'] = ob_get_clean();
+
+			$cart_count = function_exists( 'WC' ) && WC()->cart ? WC()->cart->get_cart_contents_count() : 0;
+			$fragments['span.wpat-drawer-cart-count'] = '<span class="wpat-drawer-cart-count">' . esc_html( $cart_count ) . '</span>';
+		}
+
+		return $fragments;
+	}
+
+	/**
+	 * Añade clases al body para checkout y carrito.
 	 */
 	public function add_body_class( $classes ) {
 		if ( $this->is_checkout_page() ) {
 			$classes[] = 'wpat-checkout-designer-active';
 			$classes[] = 'wpat-standalone-checkout-page';
 		}
+		if ( $this->is_cart_page() ) {
+			$classes[] = 'wpat-cart-designer-active';
+		}
 		return $classes;
 	}
 
 	/**
-	 * Encola los estilos y scripts del diseñador de checkout.
+	 * Encola los estilos y scripts del diseñador de carrito y checkout.
 	 */
 	public function enqueue_checkout_assets() {
 		if ( is_admin() ) {
 			return;
 		}
 
-		$settings = WPAT_Main::get_instance()->get_settings();
+		$settings    = WPAT_Main::get_instance()->get_settings();
+		$is_checkout = $this->is_checkout_page();
+		$is_cart     = $this->is_cart_page();
+		$cart_layout = isset( $settings['woo_cart_designer_layout'] ) ? $settings['woo_cart_designer_layout'] : 'wpat-cart-classic';
+		$is_drawer   = 'wpat-cart-drawer' === $cart_layout;
+
+		if ( ! $is_checkout && ! $is_cart && ! $is_drawer ) {
+			return;
+		}
 
 		wp_enqueue_style(
 			'wpat-checkout-designer-css',
@@ -147,7 +291,9 @@ class WPAT_Woo_Checkout_Designer {
 			.wpat-checkout-container .wpat-coupon-submit-btn,
 			.wpat-checkout-container #place_order,
 			.wpat-checkout-container button#place_order,
-			.wpat-checkout-container input[type='submit'].button.alt {
+			.wpat-checkout-container input[type='submit'].button.alt,
+			.wpat-cart-container .checkout-button,
+			.wpat-cart-drawer-checkout-btn {
 				background: {$btn_bg_color} !important;
 				color: {$btn_txt_color} !important;
 			}
@@ -155,7 +301,9 @@ class WPAT_Woo_Checkout_Designer {
 			.wpat-checkout-container .wpat-coupon-submit-btn:hover,
 			.wpat-checkout-container #place_order:hover,
 			.wpat-checkout-container button#place_order:hover,
-			.wpat-checkout-container input[type='submit'].button.alt:hover {
+			.wpat-checkout-container input[type='submit'].button.alt:hover,
+			.wpat-cart-container .checkout-button:hover,
+			.wpat-cart-drawer-checkout-btn:hover {
 				background: {$btn_hover_bg_color} !important;
 				color: {$btn_txt_color} !important;
 			}
@@ -178,7 +326,8 @@ class WPAT_Woo_Checkout_Designer {
 			true
 		);
 
-		$layout = isset( $settings['woo_checkout_designer_layout'] ) ? $settings['woo_checkout_designer_layout'] : 'wpat-classic';
+		$layout            = isset( $settings['woo_checkout_designer_layout'] ) ? $settings['woo_checkout_designer_layout'] : 'wpat-classic';
+		$drawer_auto_open  = ! isset( $settings['woo_cart_drawer_auto_open'] ) || '1' === $settings['woo_cart_drawer_auto_open'];
 
 		$spain_provinces = array(
 			'01' => 'VI', '02' => 'AB', '03' => 'A',  '04' => 'AL', '05' => 'AV',
@@ -196,11 +345,14 @@ class WPAT_Woo_Checkout_Designer {
 
 		wp_localize_script( 'wpat-checkout-designer-js', 'wpatCheckoutOptions', array(
 			'layout'               => $layout,
+			'cart_layout'          => $cart_layout,
+			'drawer_auto_open'     => $drawer_auto_open ? '1' : '0',
 			'email_autocorrect'    => isset( $settings['woo_checkout_designer_email_fix'] ) ? $settings['woo_checkout_designer_email_fix'] : '1',
 			'normalize_selects'    => isset( $settings['woo_checkout_designer_normalize_selects'] ) ? $settings['woo_checkout_designer_normalize_selects'] : '1',
 			'autofill_spain_cp'    => isset( $settings['woo_checkout_designer_autofill_spain_cp'] ) ? $settings['woo_checkout_designer_autofill_spain_cp'] : '1',
 			'spain_provinces'      => $spain_provinces,
 			'mobile_summary_label' => __( 'Resumen del pedido', 'wp-agency-toolkit' ),
+			'ajax_url'             => admin_url( 'admin-ajax.php' ),
 		) );
 	}
 
@@ -212,7 +364,7 @@ class WPAT_Woo_Checkout_Designer {
 			return $product_name;
 		}
 
-		$settings = WPAT_Main::get_instance()->get_settings();
+		$settings    = WPAT_Main::get_instance()->get_settings();
 		$show_thumbs = ! isset( $settings['woo_checkout_designer_product_thumbs'] ) || '1' === $settings['woo_checkout_designer_product_thumbs'];
 
 		if ( ! $show_thumbs ) {

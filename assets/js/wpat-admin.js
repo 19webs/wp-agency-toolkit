@@ -23,6 +23,12 @@ jQuery(document).ready(function($) {
 	};
 	var showToast = window.showToast;
 	
+	// Detectar si la URL contiene settings-updated=true y mostrar el aviso flotante (Toast)
+	var urlParams = new URLSearchParams(window.location.search);
+	if (urlParams.get('settings-updated') === 'true' || urlParams.get('settings-updated') === '1') {
+		showToast('Cambios guardados correctamente', false);
+	}
+
 	// Record scroll position when clicking module action buttons
 	$(document).on('click', '.wpat-remember-scroll-btn, .wpat-back-bar a', function() {
 		sessionStorage.setItem('wpat_scroll_y', window.scrollY || window.pageYOffset);
@@ -52,6 +58,69 @@ jQuery(document).ready(function($) {
 		// Guardar pestaña activa en input hidden y localStorage
 		$('#wpat_active_tab_input').val(targetTab);
 		localStorage.setItem('wpat_active_tab', targetTab);
+	});
+
+	// Control de Sub-Pestañas internas dentro de módulos (ej: Checkout vs Carrito)
+	$(document).on('click', '.wpat-subtab-nav-btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var target = $btn.data('subtab');
+		var $parent = $btn.closest('.wpat-module-body');
+
+		$parent.find('.wpat-subtab-nav-btn').removeClass('active').css({
+			'border-bottom-color': 'transparent',
+			'color': '#64748b'
+		});
+		$btn.addClass('active').css({
+			'border-bottom-color': '#2563eb',
+			'color': '#2563eb'
+		});
+
+		$parent.find('.wpat-subtab-content').hide();
+		$parent.find('#wpat-subtab-' + target).show();
+	});
+
+	// Estilizado dinámico para selección de plantillas de Carrito
+	$(document).on('change', '.wpat-cart-layout-card input[type="radio"]', function() {
+		$('.wpat-cart-layout-card').removeClass('active').css('border-color', 'var(--wpat-border, #e2e8f0)');
+		$(this).closest('.wpat-cart-layout-card').addClass('active').css('border-color', '#2563eb');
+	});
+
+	// Estilizado dinámico para selección de plantillas de Email
+	$(document).on('change', '.wpat-email-layout-card input[type="radio"]', function() {
+		$('.wpat-email-layout-card').removeClass('active').css('border-color', 'var(--wpat-border, #e2e8f0)');
+		$(this).closest('.wpat-email-layout-card').addClass('active').css('border-color', '#2563eb');
+	});
+
+	// Envío AJAX de correo electrónico de prueba (Diseñador de Emails)
+	$(document).on('click', '#wpat_send_test_email_btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var origHtml = $btn.html();
+		var nonce = $('#wpat_settings_nonce').val();
+
+		$btn.prop('disabled', true).html('⏳ Enviando...');
+
+		$.ajax({
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : '/wp-admin/admin-ajax.php'),
+			type: 'POST',
+			data: {
+				action: 'wpat_send_test_email',
+				security: nonce
+			},
+			success: function(response) {
+				$btn.prop('disabled', false).html(origHtml);
+				if (response.success) {
+					showToast(response.data.message, false);
+				} else {
+					showToast('Error: ' + (response.data ? response.data.message : 'No se pudo enviar el correo'), true);
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).html(origHtml);
+				showToast('Error de conexión al enviar el correo de prueba', true);
+			}
+		});
 	});
 	
 	// Restaurar pestaña activa guardada en localStorage (solo si no se pasó tab por URL)

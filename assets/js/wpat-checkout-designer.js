@@ -156,4 +156,55 @@ jQuery(document).ready(function($) {
 			handleSpainPostcode('shipping');
 		});
 	}
+
+	// --- 6. CART DESIGNER: QUANTITY BUTTONS (+ / -) ---
+	$(document).on('click', '.wpat-qty-plus', function(e) {
+		e.preventDefault();
+		var $input = $(this).siblings('input.qty');
+		var val = parseInt($input.val(), 10) || 1;
+		var max = parseInt($input.attr('max'), 10);
+		if (isNaN(max) || val < max) {
+			$input.val(val + 1).trigger('change');
+		}
+	});
+
+	$(document).on('click', '.wpat-qty-minus', function(e) {
+		e.preventDefault();
+		var $input = $(this).siblings('input.qty');
+		var val = parseInt($input.val(), 10) || 1;
+		var min = parseInt($input.attr('min'), 10) || 1;
+		if (val > min) {
+			$input.val(val - 1).trigger('change');
+		}
+	});
+
+	// --- 7. CART DESIGNER: SLIDE-OUT DRAWER CART ---
+	function openCartDrawer() {
+		$('.wpat-cart-drawer-panel').addClass('open');
+		$('.wpat-drawer-overlay').addClass('active');
+		$('body').addClass('wpat-drawer-open');
+	}
+
+	function closeCartDrawer() {
+		$('.wpat-cart-drawer-panel').removeClass('open');
+		$('.wpat-drawer-overlay').removeClass('active');
+		$('body').removeClass('wpat-drawer-open');
+	}
+
+	$(document).on('click', '.wpat-drawer-close-btn, .wpat-drawer-overlay', function(e) {
+		e.preventDefault();
+		closeCartDrawer();
+	});
+
+	$(document).on('click', '.wpat-open-drawer-cart', function(e) {
+		e.preventDefault();
+		openCartDrawer();
+	});
+
+	// Auto-abrir mini-carrito deslizable al añadir producto vía AJAX
+	$(document.body).on('added_to_cart', function(event, fragments, cart_hash, $button) {
+		if (typeof wpatCheckoutOptions !== 'undefined' && wpatCheckoutOptions.cart_layout === 'wpat-cart-drawer' && wpatCheckoutOptions.drawer_auto_open === '1') {
+			openCartDrawer();
+		}
+	});
 });

@@ -619,6 +619,7 @@ class WPAT_Admin {
 			'woo-dni',
 			'woo-catalog',
 			'woo-checkout-designer',
+			'woo-email-designer',
 			'woo-sale-badges',
 			'woo-address-autofill',
 			'woo-zoom',
@@ -728,7 +729,7 @@ class WPAT_Admin {
 		}
 
 		// 5. Sanitizar WooCommerce Catalog
-		// Sanitizar Diseñador de Checkout High-Conversion
+		// Sanitizar Diseñador de Carrito y Checkout High-Conversion
 		if ( empty( $saving_module ) || 'woo-checkout-designer' === $saving_module ) {
 			$new_settings['woo-checkout-designer']                = isset( $input_settings['woo-checkout-designer'] ) && '1' === $input_settings['woo-checkout-designer'] ? '1' : '0';
 			$new_settings['woo_checkout_designer_layout']         = isset( $input_settings['woo_checkout_designer_layout'] ) && in_array( $input_settings['woo_checkout_designer_layout'], array( 'wpat-classic', 'wpat-express', 'wpat-accordion', 'wpat-minimalist', 'wpat-shop-style' ), true ) ? $input_settings['woo_checkout_designer_layout'] : 'wpat-classic';
@@ -740,6 +741,30 @@ class WPAT_Admin {
 			$new_settings['woo_checkout_btn_hover_bg_color']         = isset( $input_settings['woo_checkout_btn_hover_bg_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_checkout_btn_hover_bg_color'] ) ? $input_settings['woo_checkout_btn_hover_bg_color'] : '#1d4ed8';
 			$new_settings['woo_checkout_btn_txt_color']              = isset( $input_settings['woo_checkout_btn_txt_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_checkout_btn_txt_color'] ) ? $input_settings['woo_checkout_btn_txt_color'] : '#ffffff';
 			$new_settings['woo_checkout_step_accent_color']          = isset( $input_settings['woo_checkout_step_accent_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_checkout_step_accent_color'] ) ? $input_settings['woo_checkout_step_accent_color'] : '#2563eb';
+
+			// Ajustes de Diseñador de Carrito
+			$new_settings['woo_cart_designer_enabled']           = isset( $input_settings['woo_cart_designer_enabled'] ) && '1' === $input_settings['woo_cart_designer_enabled'] ? '1' : '0';
+			$new_settings['woo_cart_designer_layout']            = isset( $input_settings['woo_cart_designer_layout'] ) && in_array( $input_settings['woo_cart_designer_layout'], array( 'wpat-cart-classic', 'wpat-cart-modern', 'wpat-cart-drawer' ), true ) ? $input_settings['woo_cart_designer_layout'] : 'wpat-cart-classic';
+			$new_settings['woo_cart_free_shipping_bar']          = isset( $input_settings['woo_cart_free_shipping_bar'] ) && '1' === $input_settings['woo_cart_free_shipping_bar'] ? '1' : '0';
+			$new_settings['woo_cart_free_shipping_min_amount']   = isset( $input_settings['woo_cart_free_shipping_min_amount'] ) ? max( 0, floatval( $input_settings['woo_cart_free_shipping_min_amount'] ) ) : 50;
+			$new_settings['woo_cart_drawer_auto_open']           = isset( $input_settings['woo_cart_drawer_auto_open'] ) && '1' === $input_settings['woo_cart_drawer_auto_open'] ? '1' : '0';
+		}
+
+		// Sanitizar Diseñador de Plantillas de Email
+		if ( empty( $saving_module ) || 'woo-email-designer' === $saving_module ) {
+			$new_settings['woo-email-designer']         = isset( $input_settings['woo-email-designer'] ) && '1' === $input_settings['woo-email-designer'] ? '1' : '0';
+			$new_settings['woo_email_template_style'] = isset( $input_settings['woo_email_template_style'] ) && in_array( $input_settings['woo_email_template_style'], array( 'classic', 'modern', 'minimalist' ), true ) ? $input_settings['woo_email_template_style'] : 'modern';
+			$new_settings['woo_email_logo_url']       = isset( $input_settings['woo_email_logo_url'] ) ? esc_url_raw( $input_settings['woo_email_logo_url'] ) : '';
+			$new_settings['woo_email_logo_width']     = isset( $input_settings['woo_email_logo_width'] ) ? max( 30, min( 500, absint( $input_settings['woo_email_logo_width'] ) ) ) : 150;
+			$new_settings['woo_email_primary_color']  = isset( $input_settings['woo_email_primary_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_email_primary_color'] ) ? $input_settings['woo_email_primary_color'] : '#2563eb';
+			$new_settings['woo_email_body_bg']        = isset( $input_settings['woo_email_body_bg'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_email_body_bg'] ) ? $input_settings['woo_email_body_bg'] : '#f8fafc';
+			$new_settings['woo_email_card_bg']        = isset( $input_settings['woo_email_card_bg'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_email_card_bg'] ) ? $input_settings['woo_email_card_bg'] : '#ffffff';
+			$new_settings['woo_email_text_color']     = isset( $input_settings['woo_email_text_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_email_text_color'] ) ? $input_settings['woo_email_text_color'] : '#1e293b';
+			$new_settings['woo_email_footer_text']    = isset( $input_settings['woo_email_footer_text'] ) ? sanitize_textarea_field( $input_settings['woo_email_footer_text'] ) : '';
+			$new_settings['woo_email_social_fb']      = isset( $input_settings['woo_email_social_fb'] ) ? esc_url_raw( $input_settings['woo_email_social_fb'] ) : '';
+			$new_settings['woo_email_social_ig']      = isset( $input_settings['woo_email_social_ig'] ) ? esc_url_raw( $input_settings['woo_email_social_ig'] ) : '';
+			$new_settings['woo_email_social_tw']      = isset( $input_settings['woo_email_social_tw'] ) ? esc_url_raw( $input_settings['woo_email_social_tw'] ) : '';
+			$new_settings['woo_email_social_web']     = isset( $input_settings['woo_email_social_web'] ) ? esc_url_raw( $input_settings['woo_email_social_web'] ) : '';
 		}
 
 		// Sanitizar Autocompletado de CP y Provincia (WooCommerce)
@@ -1291,6 +1316,7 @@ class WPAT_Admin {
 			'woo-dni',
 			'woo-catalog',
 			'woo-checkout-designer',
+			'woo-email-designer',
 			'woo-sale-badges',
 			'woo-address-autofill',
 			'woo-zoom',
@@ -1934,14 +1960,29 @@ class WPAT_Admin {
 			</div>
 			<?php
 		}
-				if ( isset( $_GET['settings-updated'] ) && 'true' === $_GET['settings-updated'] ) {
+				if ( isset( $_GET['settings-updated'] ) && ( 'true' === $_GET['settings-updated'] || '1' === $_GET['settings-updated'] ) ) {
 			?>
+			<div class="notice notice-success is-dismissible wpat-settings-saved-notice" style="border-left-color: #10b981; padding: 12px 15px; margin-top: 15px; margin-bottom: 15px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-radius: 6px;">
+				<p style="margin: 0; font-weight: 600; font-size: 13.5px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+					<span class="dashicons dashicons-yes-alt" style="color: #10b981; font-size: 18px; width: 18px; height: 18px; line-height: 18px;"></span>
+					<?php esc_html_e( 'Cambios guardados correctamente.', 'wp-agency-toolkit' ); ?>
+				</p>
+			</div>
 			<script>
-			document.addEventListener('DOMContentLoaded', function() {
-				if (typeof showToast === 'function') {
-					showToast('Configuración guardada correctamente', false);
+			(function() {
+				function triggerSavedToast() {
+					if (typeof window.showToast === 'function') {
+						window.showToast('Cambios guardados correctamente', false);
+					} else {
+						setTimeout(triggerSavedToast, 100);
+					}
 				}
-			});
+				if (document.readyState === 'complete' || document.readyState === 'interactive') {
+					triggerSavedToast();
+				} else {
+					document.addEventListener('DOMContentLoaded', triggerSavedToast);
+				}
+			})();
 			</script>
 			<?php
 		}
@@ -2289,14 +2330,27 @@ class WPAT_Admin {
 			array(
 				'id'          => 'woo-checkout-designer',
 				'is_new'      => true,
-				'title'       => 'Diseñador de Checkout',
+				'title'       => 'Diseñador de Carrito y Checkout',
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
-				'desc'        => 'Diseño de checkout de alta conversión con 4 plantillas (Classic, Express, Accordion, Minimalist) y optimizaciones.',
+				'desc'        => 'Diseño de Carrito y Checkout de alta conversión con plantillas responsivas (Classic, Express, Accordion, Minimalist, Shop-Style, Slide-Out Drawer Cart) y barra de envío gratis.',
 				'cat_class'   => 'cat-woocommerce cat-woo',
-				'icon'        => '🎨',
+				'icon'        => '🛒',
 				'icon_bg'     => 'woo',
-				'keywords'    => 'checkout diseñador plantillas woocommerce plantilla classic express minimalista acordeon'
+				'keywords'    => 'checkout carrito cart diseñador plantillas woocommerce plantilla classic express minimalista acordeon deslizable drawer'
+			),
+
+			array(
+				'id'          => 'woo-email-designer',
+				'is_new'      => true,
+				'title'       => 'Diseñador de Emails',
+				'badge'       => 'Configuración',
+				'badge_class' => 'config',
+				'desc'        => 'Personaliza visualmente las plantillas de correo de WooCommerce con 3 diseños modernos (Clásica, Moderna, Minimalista), logotipo, colores corporativos y envío de pruebas.',
+				'cat_class'   => 'cat-woocommerce cat-woo',
+				'icon'        => '📧',
+				'icon_bg'     => 'woo',
+				'keywords'    => 'email correo plantilla plantillas diseñador woocommerce mail pedido enviado'
 			),
 			array(
 				'id'          => 'woo-address-autofill',
@@ -5104,99 +5158,301 @@ class WPAT_Admin {
 				$btn_hover_bg_color  = isset( $settings['woo_checkout_btn_hover_bg_color'] ) ? $settings['woo_checkout_btn_hover_bg_color'] : '#1d4ed8';
 				$btn_txt_color       = isset( $settings['woo_checkout_btn_txt_color'] ) ? $settings['woo_checkout_btn_txt_color'] : '#ffffff';
 				$step_accent_color   = isset( $settings['woo_checkout_step_accent_color'] ) ? $settings['woo_checkout_step_accent_color'] : '#2563eb';
+
+				// Ajustes de Carrito
+				$cart_designer_enabled  = ! isset( $settings['woo_cart_designer_enabled'] ) || '1' === $settings['woo_cart_designer_enabled'];
+				$cart_layout            = isset( $settings['woo_cart_designer_layout'] ) ? $settings['woo_cart_designer_layout'] : 'wpat-cart-classic';
+				$cart_free_shipping_bar = ! isset( $settings['woo_cart_free_shipping_bar'] ) || '1' === $settings['woo_cart_free_shipping_bar'];
+				$cart_free_shipping_min = isset( $settings['woo_cart_free_shipping_min_amount'] ) ? floatval( $settings['woo_cart_free_shipping_min_amount'] ) : 50;
+				$cart_drawer_auto_open  = ! isset( $settings['woo_cart_drawer_auto_open'] ) || '1' === $settings['woo_cart_drawer_auto_open'];
 				?>
 				<div class="wpat-module-card">
 					<div class="wpat-module-header">
 						<div class="wpat-module-info">
-							<h3>Diseño de Checkout High-Conversion</h3>
-							<p>Transforma la página de pago (<em>Checkout</em>) de WooCommerce en una experiencia fluida de alta conversión inspirada en la mejor UX del mercado sin sobrecargar tu web.</p>
+							<h3>Diseñador de Carrito y Checkout</h3>
+							<p>Personaliza y optimiza tanto el <strong>Carrito de Compras</strong> como la página de <strong>Checkout</strong> de WooCommerce para maximizar la conversión con plantillas modernas y responsivas.</p>
 						</div>
 						<?php $this->render_module_toggle( 'woo-checkout-designer', $settings, true ); ?>
 					</div>
 					<div class="wpat-module-body" style="display: block;">
+						<div class="wpat-inner-subtabs" style="display: flex; gap: 8px; border-bottom: 2px solid var(--wpat-border, #e2e8f0); margin-bottom: 20px;">
+							<button type="button" class="wpat-subtab-nav-btn active" data-subtab="checkout-designer" style="padding: 10px 18px; font-weight: 700; font-size: 13.5px; border: none; background: transparent; cursor: pointer; border-bottom: 3px solid #2563eb; margin-bottom: -2px; color: #2563eb;">💳 Diseñador de Checkout</button>
+							<button type="button" class="wpat-subtab-nav-btn" data-subtab="cart-designer" style="padding: 10px 18px; font-weight: 700; font-size: 13.5px; border: none; background: transparent; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; color: #64748b;">🛒 Diseñador de Carrito</button>
+						</div>
+
+						<!-- Subpestaña 1: Checkout -->
+						<div id="wpat-subtab-checkout-designer" class="wpat-subtab-content active" style="display: block;">
+							<div class="wpat-field-group">
+								<label style="font-weight: 700; display: block; margin-bottom: 12px;">Selecciona la Plantilla de Checkout:</label>
+								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+									<label class="wpat-checkout-layout-card <?php echo 'wpat-classic' === $layout ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'wpat-classic' === $layout ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
+										<input type="radio" name="wpat_settings[woo_checkout_designer_layout]" value="wpat-classic" <?php checked( $layout, 'wpat-classic' ); ?>>
+										<strong style="display: block; margin-top: 6px; font-size: 14px;">WPAT Classic Checkout</strong>
+										<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Multi-Paso (3 Pasos) con migas de pan y columna de resumen fija (<em>sticky</em>).</span>
+									</label>
+									<label class="wpat-checkout-layout-card <?php echo 'wpat-express' === $layout ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'wpat-express' === $layout ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
+										<input type="radio" name="wpat_settings[woo_checkout_designer_layout]" value="wpat-express" <?php checked( $layout, 'wpat-express' ); ?>>
+										<strong style="display: block; margin-top: 6px; font-size: 14px;">WPAT Express Checkout</strong>
+										<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Vista rápida en 2 columnas agrupadas en tarjetas redondeadas limpias.</span>
+									</label>
+									<label class="wpat-checkout-layout-card <?php echo 'wpat-accordion' === $layout ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'wpat-accordion' === $layout ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
+										<input type="radio" name="wpat_settings[woo_checkout_designer_layout]" value="wpat-accordion" <?php checked( $layout, 'wpat-accordion' ); ?>>
+										<strong style="display: block; margin-top: 6px; font-size: 14px;">WPAT Accordion Checkout</strong>
+										<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Pasos desplegables secuenciales que avanzan conforme se valida cada paso.</span>
+									</label>
+									<label class="wpat-checkout-layout-card <?php echo 'wpat-minimalist' === $layout ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'wpat-minimalist' === $layout ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
+										<input type="radio" name="wpat_settings[woo_checkout_designer_layout]" value="wpat-minimalist" <?php checked( $layout, 'wpat-minimalist' ); ?>>
+										<strong style="display: block; margin-top: 6px; font-size: 14px;">WPAT Minimalist Checkout</strong>
+										<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">1 Columna ultra-limpia enfocado en máxima conversión y sellos de confianza.</span>
+									</label>
+									<label class="wpat-checkout-layout-card <?php echo 'wpat-shop-style' === $layout ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'wpat-shop-style' === $layout ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
+										<input type="radio" name="wpat_settings[woo_checkout_designer_layout]" value="wpat-shop-style" <?php checked( $layout, 'wpat-shop-style' ); ?>>
+										<strong style="display: block; margin-top: 6px; font-size: 14px;">WPAT Shop-Style Checkout</strong>
+										<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Diseño en 2 columnas agrupadas (Contacto, Entrega, Envío y Pago a la izquierda) y lateral sticky con productos y cupones.</span>
+									</label>
+								</div>
+							</div>
+
+							<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
+
+							<div class="wpat-field-group">
+								<label style="font-weight: 700; display: block; margin-bottom: 12px;">Personalización de Colores de Botones y Pasos:</label>
+								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+									<div class="wpat-field-group">
+										<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color Fondo de Botones Principales:</label>
+										<input type="text" name="wpat_settings[woo_checkout_btn_bg_color]" value="<?php echo esc_attr( $btn_bg_color ); ?>" class="wpat-color-picker" data-default-color="#2563eb">
+									</div>
+									<div class="wpat-field-group">
+										<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color Fondo Al Pasar el Ratón (Hover):</label>
+										<input type="text" name="wpat_settings[woo_checkout_btn_hover_bg_color]" value="<?php echo esc_attr( $btn_hover_bg_color ); ?>" class="wpat-color-picker" data-default-color="#1d4ed8">
+									</div>
+									<div class="wpat-field-group">
+										<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color Texto de Botones Principales:</label>
+										<input type="text" name="wpat_settings[woo_checkout_btn_txt_color]" value="<?php echo esc_attr( $btn_txt_color ); ?>" class="wpat-color-picker" data-default-color="#ffffff">
+									</div>
+									<div class="wpat-field-group">
+										<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color del Paso Activo (Acento):</label>
+										<input type="text" name="wpat_settings[woo_checkout_step_accent_color]" value="<?php echo esc_attr( $step_accent_color ); ?>" class="wpat-color-picker" data-default-color="#2563eb">
+									</div>
+								</div>
+							</div>
+
+							<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
+
+							<div class="wpat-field-group">
+								<label style="font-weight: 600;">
+									<input type="checkbox" name="wpat_settings[woo_checkout_designer_mobile_summary]" value="1" <?php checked( $mobile_summary ); ?>>
+									Activar Barra Flotante de Resumen del Pedido en Smartphones (Estilo Desplegable Superior)
+								</label>
+							</div>
+
+							<div class="wpat-field-group" style="margin-top: 12px;">
+								<label style="font-weight: 600;">
+									<input type="checkbox" name="wpat_settings[woo_checkout_designer_product_thumbs]" value="1" <?php checked( $product_thumbs ); ?>>
+									Mostrar Miniaturas de Productos con Badge de Cantidad en el Resumen
+								</label>
+							</div>
+
+							<div class="wpat-field-group" style="margin-top: 12px;">
+								<label style="font-weight: 600;">
+									<input type="checkbox" name="wpat_settings[woo_checkout_designer_trust_badges]" value="1" <?php checked( $trust_badges ); ?>>
+									Mostrar Tarjetas y Sellos de Garantía y Pago Seguro (SSL, Envío Seguro, Soporte)
+								</label>
+							</div>
+
+							<div class="wpat-field-group" style="margin-top: 12px;">
+								<label style="font-weight: 600;">
+									<input type="checkbox" name="wpat_settings[woo_checkout_designer_email_fix]" value="1" <?php checked( $email_fix ); ?>>
+									Activar Corrección Inteligente de Erratas en Correos Electrónicos (Ej: <code>@gmai.com</code> &rarr; <code>@gmail.com</code>)
+								</label>
+							</div>
+						</div>
+
+						<!-- Subpestaña 2: Carrito -->
+						<div id="wpat-subtab-cart-designer" class="wpat-subtab-content" style="display: none;">
+							<div class="wpat-field-group" style="margin-bottom: 20px;">
+								<label style="font-weight: 700; font-size: 14px;">
+									<input type="checkbox" name="wpat_settings[woo_cart_designer_enabled]" value="1" <?php checked( $cart_designer_enabled ); ?>>
+									Activar el Diseñador Personalizado de Carrito de Compras
+								</label>
+							</div>
+
+							<div class="wpat-field-group">
+								<label style="font-weight: 700; display: block; margin-bottom: 12px;">Selecciona la Plantilla de Carrito:</label>
+								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+									<label class="wpat-cart-layout-card <?php echo 'wpat-cart-classic' === $cart_layout ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'wpat-cart-classic' === $cart_layout ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
+										<input type="radio" name="wpat_settings[woo_cart_designer_layout]" value="wpat-cart-classic" <?php checked( $cart_layout, 'wpat-cart-classic' ); ?>>
+										<strong style="display: block; margin-top: 6px; font-size: 14px;">WPAT Classic Cart</strong>
+										<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Tabla limpia de productos a 2 columnas con tarjetas redondeadas y resumen fija (*sticky*).</span>
+									</label>
+									<label class="wpat-cart-layout-card <?php echo 'wpat-cart-modern' === $cart_layout ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'wpat-cart-modern' === $cart_layout ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
+										<input type="radio" name="wpat_settings[woo_cart_designer_layout]" value="wpat-cart-modern" <?php checked( $cart_layout, 'wpat-cart-modern' ); ?>>
+										<strong style="display: block; margin-top: 6px; font-size: 14px;">WPAT Modern Cards Cart</strong>
+										<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Formato en tarjetas individuales con imágenes destacadas y botones táctiles <code>+</code> / <code>-</code> de cantidad.</span>
+									</label>
+									<label class="wpat-cart-layout-card <?php echo 'wpat-cart-drawer' === $cart_layout ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'wpat-cart-drawer' === $cart_layout ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
+										<input type="radio" name="wpat_settings[woo_cart_designer_layout]" value="wpat-cart-drawer" <?php checked( $cart_layout, 'wpat-cart-drawer' ); ?>>
+										<strong style="display: block; margin-top: 6px; font-size: 14px;">WPAT Slide-Out Drawer Cart</strong>
+										<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Mini-carrito deslizable lateral desplegable automáticamente vía AJAX sin recargar la página.</span>
+									</label>
+								</div>
+							</div>
+
+							<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
+
+							<div class="wpat-field-group">
+								<label style="font-weight: 700; display: block; margin-bottom: 12px;">Barra de Progreso para Envío Gratuito:</label>
+								<label style="font-weight: 600; display: block; margin-bottom: 10px;">
+									<input type="checkbox" name="wpat_settings[woo_cart_free_shipping_bar]" value="1" <?php checked( $cart_free_shipping_bar ); ?>>
+									Mostrar barra de incentivo animada (Ej: <em>"¡Te faltan X € para conseguir ENVÍO GRATIS!"</em>)
+								</label>
+								<div style="max-width: 300px; margin-top: 8px;">
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Importe mínimo para Envío Gratis (€):</label>
+									<input type="number" step="0.01" name="wpat_settings[woo_cart_free_shipping_min_amount]" value="<?php echo esc_attr( $cart_free_shipping_min ); ?>" class="regular-text" style="width: 100%;">
+								</div>
+							</div>
+
+							<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
+
+							<div class="wpat-field-group">
+								<label style="font-weight: 600;">
+									<input type="checkbox" name="wpat_settings[woo_cart_drawer_auto_open]" value="1" <?php checked( $cart_drawer_auto_open ); ?>>
+									Abrir automáticamente el carrito deslizable (Drawer) al añadir un producto desde cualquier página de la tienda
+								</label>
+							</div>
+						</div>
+					</div>
+				</div>
+				<?php
+				break;
+			case 'woo-email-designer':
+				$email_style     = isset( $settings['woo_email_template_style'] ) ? $settings['woo_email_template_style'] : 'modern';
+				$email_logo      = isset( $settings['woo_email_logo_url'] ) ? $settings['woo_email_logo_url'] : '';
+				$email_logo_w    = isset( $settings['woo_email_logo_width'] ) ? $settings['woo_email_logo_width'] : 150;
+				$email_primary   = isset( $settings['woo_email_primary_color'] ) ? $settings['woo_email_primary_color'] : '#2563eb';
+				$email_body_bg   = isset( $settings['woo_email_body_bg'] ) ? $settings['woo_email_body_bg'] : '#f8fafc';
+				$email_card_bg   = isset( $settings['woo_email_card_bg'] ) ? $settings['woo_email_card_bg'] : '#ffffff';
+				$email_text_col  = isset( $settings['woo_email_text_color'] ) ? $settings['woo_email_text_color'] : '#1e293b';
+				$email_footer    = isset( $settings['woo_email_footer_text'] ) ? $settings['woo_email_footer_text'] : get_option( 'woocommerce_email_footer_text' );
+				$social_fb       = isset( $settings['woo_email_social_fb'] ) ? $settings['woo_email_social_fb'] : '';
+				$social_ig       = isset( $settings['woo_email_social_ig'] ) ? $settings['woo_email_social_ig'] : '';
+				$social_tw       = isset( $settings['woo_email_social_tw'] ) ? $settings['woo_email_social_tw'] : '';
+				$social_web      = isset( $settings['woo_email_social_web'] ) ? $settings['woo_email_social_web'] : '';
+				?>
+				<div class="wpat-module-card">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Diseñador de Plantillas de Email para WooCommerce</h3>
+							<p>Personaliza visualmente todas las notificaciones por correo electrónico de WooCommerce con un diseño moderno, logotipos y colores de marca.</p>
+						</div>
+						<?php $this->render_module_toggle( 'woo-email-designer', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block;">
 						<div class="wpat-field-group">
-							<label style="font-weight: 700; display: block; margin-bottom: 12px;">Selecciona la Plantilla de Checkout:</label>
+							<label style="font-weight: 700; display: block; margin-bottom: 12px;">Selecciona el Estilo de Plantilla:</label>
 							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
-								<label class="wpat-checkout-layout-card <?php echo 'wpat-classic' === $layout ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'wpat-classic' === $layout ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
-									<input type="radio" name="wpat_settings[woo_checkout_designer_layout]" value="wpat-classic" <?php checked( $layout, 'wpat-classic' ); ?>>
-									<strong style="display: block; margin-top: 6px; font-size: 14px;">WPAT Classic Checkout</strong>
-									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Multi-Paso (3 Pasos) con migas de pan y columna de resumen fija (<em>sticky</em>).</span>
+								<label class="wpat-email-layout-card <?php echo 'classic' === $email_style ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'classic' === $email_style ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
+									<input type="radio" name="wpat_settings[woo_email_template_style]" value="classic" <?php checked( $email_style, 'classic' ); ?>>
+									<strong style="display: block; margin-top: 6px; font-size: 14px;">Clásica Profesional</strong>
+									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Cabecera en color corporativo sólido, tabla limpia con bordes suaves y pie de página en tono oscuro.</span>
 								</label>
-								<label class="wpat-checkout-layout-card <?php echo 'wpat-express' === $layout ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'wpat-express' === $layout ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
-									<input type="radio" name="wpat_settings[woo_checkout_designer_layout]" value="wpat-express" <?php checked( $layout, 'wpat-express' ); ?>>
-									<strong style="display: block; margin-top: 6px; font-size: 14px;">WPAT Express Checkout</strong>
-									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Vista rápida en 2 columnas agrupadas en tarjetas redondeadas limpias.</span>
+								<label class="wpat-email-layout-card <?php echo 'modern' === $email_style ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'modern' === $email_style ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
+									<input type="radio" name="wpat_settings[woo_email_template_style]" value="modern" <?php checked( $email_style, 'modern' ); ?>>
+									<strong style="display: block; margin-top: 6px; font-size: 14px;">Moderna High-Tech</strong>
+									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Estructura flotante en tarjeta con esquinas redondeadas (12px), sombra sutil y tipografía refinada.</span>
 								</label>
-								<label class="wpat-checkout-layout-card <?php echo 'wpat-accordion' === $layout ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'wpat-accordion' === $layout ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
-									<input type="radio" name="wpat_settings[woo_checkout_designer_layout]" value="wpat-accordion" <?php checked( $layout, 'wpat-accordion' ); ?>>
-									<strong style="display: block; margin-top: 6px; font-size: 14px;">WPAT Accordion Checkout</strong>
-									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Pasos desplegables secuenciales que avanzan conforme se valida cada paso.</span>
-								</label>
-								<label class="wpat-checkout-layout-card <?php echo 'wpat-minimalist' === $layout ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'wpat-minimalist' === $layout ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
-									<input type="radio" name="wpat_settings[woo_checkout_designer_layout]" value="wpat-minimalist" <?php checked( $layout, 'wpat-minimalist' ); ?>>
-									<strong style="display: block; margin-top: 6px; font-size: 14px;">WPAT Minimalist Checkout</strong>
-									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">1 Columna ultra-limpia enfocado en máxima conversión y sellos de confianza.</span>
-								</label>
-								<label class="wpat-checkout-layout-card <?php echo 'wpat-shop-style' === $layout ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'wpat-shop-style' === $layout ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
-									<input type="radio" name="wpat_settings[woo_checkout_designer_layout]" value="wpat-shop-style" <?php checked( $layout, 'wpat-shop-style' ); ?>>
-									<strong style="display: block; margin-top: 6px; font-size: 14px;">WPAT Shop-Style Checkout</strong>
-									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Diseño en 2 columnas agrupadas (Contacto, Entrega, Envío y Pago a la izquierda) y lateral sticky con productos y cupones.</span>
+								<label class="wpat-email-layout-card <?php echo 'minimalist' === $email_style ? 'active' : ''; ?>" style="border: 2px solid <?php echo 'minimalist' === $email_style ? '#2563eb' : 'var(--wpat-border, #e2e8f0)'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-bg-card, #ffffff); transition: all 0.2s ease;">
+									<input type="radio" name="wpat_settings[woo_email_template_style]" value="minimalist" <?php checked( $email_style, 'minimalist' ); ?>>
+									<strong style="display: block; margin-top: 6px; font-size: 14px;">Minimalista / Elegante</strong>
+									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Diseño blanco ultra-limpio con bordes sutiles, logotipo centrado y líneas de división finas.</span>
 								</label>
 							</div>
 						</div>
 
 						<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
 
+						<!-- Personalización de Logotipo -->
 						<div class="wpat-field-group">
-							<label style="font-weight: 700; display: block; margin-bottom: 12px;">Personalización de Colores de Botones y Pasos:</label>
+							<label style="font-weight: 700; display: block; margin-bottom: 12px;">Identidad Visual y Logotipo:</label>
+							<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+								<div>
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">URL del Logotipo:</label>
+									<div style="display: flex; gap: 8px;">
+										<input type="text" id="woo_email_logo_url_input" name="wpat_settings[woo_email_logo_url]" value="<?php echo esc_attr( $email_logo ); ?>" class="regular-text" style="flex: 1;" placeholder="https://tudominio.com/logo.png">
+										<button type="button" class="button wpat-upload-image-btn" data-target="#woo_email_logo_url_input">Subir Logotipo</button>
+									</div>
+								</div>
+								<div>
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Ancho Máximo del Logo (px):</label>
+									<input type="number" name="wpat_settings[woo_email_logo_width]" value="<?php echo esc_attr( $email_logo_w ); ?>" min="30" max="500" class="small-text" style="width: 100%;">
+								</div>
+							</div>
+						</div>
+
+						<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
+
+						<!-- Personalización de Colores -->
+						<div class="wpat-field-group">
+							<label style="font-weight: 700; display: block; margin-bottom: 12px;">Paleta de Colores de los Correos:</label>
 							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-								<div class="wpat-field-group">
-									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color Fondo de Botones Principales:</label>
-									<input type="text" name="wpat_settings[woo_checkout_btn_bg_color]" value="<?php echo esc_attr( $btn_bg_color ); ?>" class="wpat-color-picker" data-default-color="#2563eb">
+								<div>
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color Primario / Acento:</label>
+									<input type="text" name="wpat_settings[woo_email_primary_color]" value="<?php echo esc_attr( $email_primary ); ?>" class="wpat-color-picker" data-default-color="#2563eb">
 								</div>
-								<div class="wpat-field-group">
-									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color Fondo Al Pasar el Ratón (Hover):</label>
-									<input type="text" name="wpat_settings[woo_checkout_btn_hover_bg_color]" value="<?php echo esc_attr( $btn_hover_bg_color ); ?>" class="wpat-color-picker" data-default-color="#1d4ed8">
+								<div>
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Fondo General del Email:</label>
+									<input type="text" name="wpat_settings[woo_email_body_bg]" value="<?php echo esc_attr( $email_body_bg ); ?>" class="wpat-color-picker" data-default-color="#f8fafc">
 								</div>
-								<div class="wpat-field-group">
-									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color Texto de Botones Principales:</label>
-									<input type="text" name="wpat_settings[woo_checkout_btn_txt_color]" value="<?php echo esc_attr( $btn_txt_color ); ?>" class="wpat-color-picker" data-default-color="#ffffff">
+								<div>
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Fondo de la Tarjeta Interior:</label>
+									<input type="text" name="wpat_settings[woo_email_card_bg]" value="<?php echo esc_attr( $email_card_bg ); ?>" class="wpat-color-picker" data-default-color="#ffffff">
 								</div>
-								<div class="wpat-field-group">
-									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color del Paso Activo (Acento):</label>
-									<input type="text" name="wpat_settings[woo_checkout_step_accent_color]" value="<?php echo esc_attr( $step_accent_color ); ?>" class="wpat-color-picker" data-default-color="#2563eb">
+								<div>
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color del Texto:</label>
+									<input type="text" name="wpat_settings[woo_email_text_color]" value="<?php echo esc_attr( $email_text_col ); ?>" class="wpat-color-picker" data-default-color="#1e293b">
 								</div>
 							</div>
 						</div>
 
 						<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
 
+						<!-- Pie de Página y Redes Sociales -->
 						<div class="wpat-field-group">
-							<label style="font-weight: 600;">
-								<input type="checkbox" name="wpat_settings[woo_checkout_designer_mobile_summary]" value="1" <?php checked( $mobile_summary ); ?>>
-								Activar Barra Flotante de Resumen del Pedido en Smartphones (Estilo Desplegable Superior)
-							</label>
+							<label style="font-weight: 700; display: block; margin-bottom: 6px;">Texto de Pie de Página (Copyright / Aviso Legal):</label>
+							<textarea name="wpat_settings[woo_email_footer_text]" rows="2" class="large-text" style="width: 100%;"><?php echo esc_textarea( $email_footer ); ?></textarea>
 						</div>
 
-						<div class="wpat-field-group" style="margin-top: 12px;">
-							<label style="font-weight: 600;">
-								<input type="checkbox" name="wpat_settings[woo_checkout_designer_product_thumbs]" value="1" <?php checked( $product_thumbs ); ?>>
-								Mostrar Miniaturas de Productos con Badge de Cantidad en el Resumen
-							</label>
+						<div class="wpat-field-group" style="margin-top: 15px;">
+							<label style="font-weight: 700; display: block; margin-bottom: 12px;">Enlaces a Redes Sociales (Opcional):</label>
+							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+								<div>
+									<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Facebook:</label>
+									<input type="text" name="wpat_settings[woo_email_social_fb]" value="<?php echo esc_attr( $social_fb ); ?>" class="regular-text" style="width: 100%;" placeholder="https://facebook.com/tupagina">
+								</div>
+								<div>
+									<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Instagram:</label>
+									<input type="text" name="wpat_settings[woo_email_social_ig]" value="<?php echo esc_attr( $social_ig ); ?>" class="regular-text" style="width: 100%;" placeholder="https://instagram.com/tuusuario">
+								</div>
+								<div>
+									<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">X (Twitter):</label>
+									<input type="text" name="wpat_settings[woo_email_social_tw]" value="<?php echo esc_attr( $social_tw ); ?>" class="regular-text" style="width: 100%;" placeholder="https://x.com/tuusuario">
+								</div>
+								<div>
+									<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Sitio Web:</label>
+									<input type="text" name="wpat_settings[woo_email_social_web]" value="<?php echo esc_attr( $social_web ); ?>" class="regular-text" style="width: 100%;" placeholder="https://tudominio.com">
+								</div>
+							</div>
 						</div>
 
-						<div class="wpat-field-group" style="margin-top: 12px;">
-							<label style="font-weight: 600;">
-								<input type="checkbox" name="wpat_settings[woo_checkout_designer_trust_badges]" value="1" <?php checked( $trust_badges ); ?>>
-								Mostrar Tarjetas y Sellos de Garantía y Pago Seguro (SSL, Envío Seguro, Soporte)
-							</label>
-						</div>
+						<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
 
-						<div class="wpat-field-group" style="margin-top: 12px;">
-							<label style="font-weight: 600;">
-								<input type="checkbox" name="wpat_settings[woo_checkout_designer_email_fix]" value="1" <?php checked( $email_fix ); ?>>
-								Activar Corrección Inteligente de Erratas en Correos Electrónicos (Ej: <code>@gmai.com</code> &rarr; <code>@gmail.com</code>)
-							</label>
+						<!-- Envío de Correo de Prueba -->
+						<div class="wpat-field-group" style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 15px 20px; border-radius: 10px; border: 1px solid #e2e8f0;">
+							<div>
+								<strong style="font-size: 14px; color: #0f172a; display: block;">¿Quieres comprobar cómo queda tu diseño?</strong>
+								<span style="font-size: 12px; color: #64748b;">Envía un correo de prueba de WooCommerce con el estilo actual a tu email personal.</span>
+							</div>
+							<button type="button" class="button button-secondary" id="wpat_send_test_email_btn" style="height: 36px; padding: 0 20px; font-weight: 700;">📧 Enviar Email de Prueba</button>
 						</div>
 					</div>
 				</div>

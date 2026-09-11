@@ -11,24 +11,25 @@ jQuery(document).ready(function($) {
 	function isCountrySpain(type) {
 		var $countryField = $('#' + type + '_country');
 		if (!$countryField.length) {
-			// Si no existe campo de país, asumir España por defecto si WC solo tiene 1 país habilitado
+			if (type === 'shipping') {
+				return isCountrySpain('billing');
+			}
 			return true;
 		}
 
-		var val = $countryField.val();
-		if (!val && $countryField.is('input[type="hidden"]')) {
-			val = $countryField.attr('value');
+		var val = $countryField.val() || $countryField.attr('value') || '';
+		val = $.trim(val).toUpperCase();
+
+		if (!val || val === 'ES' || val === 'SPAIN' || val === 'ESPAÑA') {
+			return true;
 		}
 
-		if (!val) {
-			// Buscar en contenedor o texto estático
-			var text = $('#' + type + '_country_field').text();
-			if (text && text.indexOf('España') !== -1) {
-				return true;
-			}
+		var text = $('#' + type + '_country_field').text() || '';
+		if (text.indexOf('España') !== -1 || text.indexOf('Spain') !== -1) {
+			return true;
 		}
 
-		return (!val || val === 'ES');
+		return false;
 	}
 
 	function handleAddressAutofill(type) {
@@ -44,26 +45,56 @@ jQuery(document).ready(function($) {
 
 		// 1. Detectar Provincia por los primeros 2 dígitos
 		var prefix = cp.substring(0, 2);
-		var provinceCode = wpatAutofillOptions.spain_provinces[prefix];
+		var provinceData = wpatAutofillOptions.spain_provinces[prefix];
 
-		if (provinceCode) {
+		if (provinceData) {
+			var pCode = provinceData.code;
+			var pName = provinceData.name;
 			var $stateField = $('#' + type + '_state');
-			if ($stateField.length && $stateField.val() !== provinceCode) {
-				$stateField.val(provinceCode).trigger('change');
-				$(document.body).trigger('country_to_state_changed');
 
-				if ($.fn.select2 && $stateField.hasClass('select2-hidden-accessible')) {
-					$stateField.trigger('change.select2');
+			if ($stateField.length) {
+				if ($stateField.is('select')) {
+					var $opt = $stateField.find('option[value="' + pCode + '"]');
+					if (!$opt.length && pName) {
+						$opt = $stateField.find('option').filter(function() {
+							return $(this).text().toLowerCase().indexOf(pName.toLowerCase()) !== -1;
+						});
+					}
+
+					if ($opt.length) {
+						var targetVal = $opt.val();
+						if ($stateField.val() !== targetVal) {
+							$stateField.val(targetVal).trigger('change');
+
+							if ($.fn.select2) {
+								$stateField.trigger('change.select2');
+								if ($stateField.data('select2')) {
+									$stateField.trigger('select2:select');
+								}
+							}
+							$(document.body).trigger('country_to_state_changed');
+						}
+					}
+				} else {
+					if ($stateField.val() !== pName && $stateField.val() !== pCode) {
+						$stateField.val(pName).trigger('change');
+					}
 				}
 			}
 		}
 
 		// 2. Autocompletar / Sugerir Población si coincide con CP completo (5 dígitos)
-		if (wpatAutofillOptions.autofill_city === '1' && cp.length === 5 && wpatAutofillOptions.spain_cities) {
-			var cityMatch = wpatAutofillOptions.spain_cities[cp];
-			if (cityMatch) {
-				var $cityField = $('#' + type + '_city');
-				if ($cityField.length && (!$cityField.val() || $cityField.data('wpat-autofilled') === '1')) {
+		if (wpatAutofillOptions.autofill_city === '1') {
+			var $cityField = $('#' + type + '_city');
+			if ($cityField.length) {
+				var cityMatch = (cp.length === 5 && wpatAutofillOptions.spain_cities) ? wpatAutofillOptions.spain_cities[cp] : '';
+				if (!cityMatch && provinceData && provinceData.name) {
+					if (!$cityField.val()) {
+						cityMatch = provinceData.name;
+					}
+				}
+
+				if (cityMatch && (!$cityField.val() || $cityField.data('wpat-autofilled') === '1')) {
 					$cityField.val(cityMatch).trigger('change');
 					$cityField.data('wpat-autofilled', '1');
 				}
@@ -71,18 +102,39 @@ jQuery(document).ready(function($) {
 		}
 	}
 
-	// Escuchar eventos en tiempo real
-	$(document).on('input blur change', '#billing_postcode', function() {
+	// Escuchar eventos en tiempo real en billing y shipping
+	$(document).on('input keyup blur change', '#billing_postcode', function() {
 		handleAddressAutofill('billing');
 	});
 
-	$(document).on('input blur change', '#shipping_postcode', function() {
+	$(document).on('input keyup blur change', '#shipping_postcode', function() {
 		handleAddressAutofill('shipping');
 	});
 
-	// Ejecución inicial por si el CP viene pre-rellenado (ej: usuarios registrados o borrado de formulario)
+	// Escuchar cuando el usuario marca o desmarca "Enviar a una dirección diferente"
+	$(document).on('change', '#ship-to-different-address-checkbox', function() {
+		if ($(this).is(':checked')) {
+			setTimeout(function() {
+				handleAddressAutofill('shipping');
+			}, 200);
+		}
+	});
+
+	// Escuchar cambio de país
+	$(document).on('change', '#billing_country, #shipping_country', function() {
+		var id = $(this).attr('id');
+		var type = id.replace('_country', '');
+		handleAddressAutofill(type);
+	});
+
+	// Ejecución inicial por si vienen valores pre-rellenados
 	setTimeout(function() {
 		handleAddressAutofill('billing');
 		handleAddressAutofill('shipping');
-	}, 400);
+	}, 300);
+
+	setTimeout(function() {
+		handleAddressAutofill('billing');
+		handleAddressAutofill('shipping');
+	}, 1000);
 });

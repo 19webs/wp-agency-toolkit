@@ -54,6 +54,17 @@ class WPAT_Woo_Address_Autofill {
 			}
 		}
 
+		global $post;
+		if ( is_a( $post, 'WP_Post' ) ) {
+			if ( has_shortcode( $post->post_content, 'woocommerce_checkout' ) || has_block( 'woocommerce/checkout', $post ) ) {
+				return true;
+			}
+		}
+
+		if ( isset( $_SERVER['REQUEST_URI'] ) && strpos( sanitize_text_field( $_SERVER['REQUEST_URI'] ), 'checkout' ) !== false && ! is_order_received_page() ) {
+			return true;
+		}
+
 		return false;
 	}
 
@@ -81,17 +92,58 @@ class WPAT_Woo_Address_Autofill {
 		);
 
 		$spain_provinces = array(
-			'01' => 'VI', '02' => 'AB', '03' => 'A',  '04' => 'AL', '05' => 'AV',
-			'06' => 'BA', '07' => 'PM', '08' => 'B',  '09' => 'BU', '10' => 'CC',
-			'11' => 'CA', '12' => 'CS', '13' => 'CR', '14' => 'CO', '15' => 'C',
-			'16' => 'CU', '17' => 'GI', '18' => 'GR', '19' => 'GU', '20' => 'SS',
-			'21' => 'H',  '22' => 'HU', '23' => 'J',  '24' => 'LE', '25' => 'L',
-			'26' => 'LO', '27' => 'LU', '28' => 'M',  '29' => 'MA', '30' => 'MU',
-			'31' => 'NA', '32' => 'OR', '33' => 'O',  '34' => 'P',  '35' => 'GC',
-			'36' => 'PO', '37' => 'SA', '38' => 'TF', '39' => 'S',  '40' => 'SG',
-			'41' => 'SE', '42' => 'SO', '43' => 'T',  '44' => 'TE', '45' => 'TO',
-			'46' => 'V',  '47' => 'VA', '48' => 'BI', '49' => 'ZA', '50' => 'Z',
-			'51' => 'CE', '52' => 'ML',
+			'01' => array( 'code' => 'VI', 'name' => 'Álava' ),
+			'02' => array( 'code' => 'AB', 'name' => 'Albacete' ),
+			'03' => array( 'code' => 'A',  'name' => 'Alicante' ),
+			'04' => array( 'code' => 'AL', 'name' => 'Almería' ),
+			'05' => array( 'code' => 'AV', 'name' => 'Ávila' ),
+			'06' => array( 'code' => 'BA', 'name' => 'Badajoz' ),
+			'07' => array( 'code' => 'PM', 'name' => 'Baleares' ),
+			'08' => array( 'code' => 'B',  'name' => 'Barcelona' ),
+			'09' => array( 'code' => 'BU', 'name' => 'Burgos' ),
+			'10' => array( 'code' => 'CC', 'name' => 'Cáceres' ),
+			'11' => array( 'code' => 'CA', 'name' => 'Cádiz' ),
+			'12' => array( 'code' => 'CS', 'name' => 'Castellón' ),
+			'13' => array( 'code' => 'CR', 'name' => 'Ciudad Real' ),
+			'14' => array( 'code' => 'CO', 'name' => 'Córdoba' ),
+			'15' => array( 'code' => 'C',  'name' => 'A Coruña' ),
+			'16' => array( 'code' => 'CU', 'name' => 'Cuenca' ),
+			'17' => array( 'code' => 'GI', 'name' => 'Girona' ),
+			'18' => array( 'code' => 'GR', 'name' => 'Granada' ),
+			'19' => array( 'code' => 'GU', 'name' => 'Guadalajara' ),
+			'20' => array( 'code' => 'SS', 'name' => 'Gipuzkoa' ),
+			'21' => array( 'code' => 'H',  'name' => 'Huelva' ),
+			'22' => array( 'code' => 'HU', 'name' => 'Huesca' ),
+			'23' => array( 'code' => 'J',  'name' => 'Jaén' ),
+			'24' => array( 'code' => 'LE', 'name' => 'León' ),
+			'25' => array( 'code' => 'L',  'name' => 'Lleida' ),
+			'26' => array( 'code' => 'LO', 'name' => 'La Rioja' ),
+			'27' => array( 'code' => 'LU', 'name' => 'Lugo' ),
+			'28' => array( 'code' => 'M',  'name' => 'Madrid' ),
+			'29' => array( 'code' => 'MA', 'name' => 'Málaga' ),
+			'30' => array( 'code' => 'MU', 'name' => 'Murcia' ),
+			'31' => array( 'code' => 'NA', 'name' => 'Navarra' ),
+			'32' => array( 'code' => 'OR', 'name' => 'Ourense' ),
+			'33' => array( 'code' => 'O',  'name' => 'Asturias' ),
+			'34' => array( 'code' => 'P',  'name' => 'Palencia' ),
+			'35' => array( 'code' => 'GC', 'name' => 'Las Palmas' ),
+			'36' => array( 'code' => 'PO', 'name' => 'Pontevedra' ),
+			'37' => array( 'code' => 'SA', 'name' => 'Salamanca' ),
+			'38' => array( 'code' => 'TF', 'name' => 'Santa Cruz de Tenerife' ),
+			'39' => array( 'code' => 'S',  'name' => 'Cantabria' ),
+			'40' => array( 'code' => 'SG', 'name' => 'Segovia' ),
+			'41' => array( 'code' => 'SE', 'name' => 'Sevilla' ),
+			'42' => array( 'code' => 'SO', 'name' => 'Soria' ),
+			'43' => array( 'code' => 'T',  'name' => 'Tarragona' ),
+			'44' => array( 'code' => 'TE', 'name' => 'Teruel' ),
+			'45' => array( 'code' => 'TO', 'name' => 'Toledo' ),
+			'46' => array( 'code' => 'V',  'name' => 'Valencia' ),
+			'47' => array( 'code' => 'VA', 'name' => 'Valladolid' ),
+			'48' => array( 'code' => 'BI', 'name' => 'Bizkaia' ),
+			'49' => array( 'code' => 'ZA', 'name' => 'Zamora' ),
+			'50' => array( 'code' => 'Z',  'name' => 'Zaragoza' ),
+			'51' => array( 'code' => 'CE', 'name' => 'Ceuta' ),
+			'52' => array( 'code' => 'ML', 'name' => 'Melilla' ),
 		);
 
 		$spain_cities = array(

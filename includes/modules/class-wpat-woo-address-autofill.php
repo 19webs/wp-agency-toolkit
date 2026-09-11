@@ -91,7 +91,52 @@ class WPAT_Woo_Address_Autofill {
 			true
 		);
 
-		$spain_provinces = array(
+		$spain_data            = self::get_builtin_spain_data();
+		$spain_provinces       = $spain_data['provinces'];
+		$spain_prefix_to_city  = $spain_data['prefix_to_city'];
+		$spain_city_to_cp      = $spain_data['city_to_cp'];
+		$spain_province_cities = $spain_data['province_cities'];
+
+		$configured_countries = self::get_configured_countries();
+		$countries_data       = array();
+
+		foreach ( $configured_countries as $code => $info ) {
+			if ( ! isset( $info['enabled'] ) || '1' !== (string) $info['enabled'] ) {
+				continue;
+			}
+
+			if ( 'ES' === $code ) {
+				$countries_data['ES'] = array(
+					'provinces'       => $spain_provinces,
+					'prefix_to_city'  => $spain_prefix_to_city,
+					'city_to_cp'      => $spain_city_to_cp,
+					'province_cities' => $spain_province_cities,
+				);
+			} else {
+				$cdata = get_option( 'wpat_autofill_data_' . $code, array() );
+				if ( ! empty( $cdata ) ) {
+					$countries_data[ $code ] = $cdata;
+				}
+			}
+		}
+
+		wp_localize_script( 'wpat-address-autofill-js', 'wpatAutofillOptions', array(
+			'spain_provinces'       => $spain_provinces,
+			'spain_prefix_to_city'  => $spain_prefix_to_city,
+			'spain_city_to_cp'      => $spain_city_to_cp,
+			'spain_province_cities' => $spain_province_cities,
+			'countries'             => $countries_data,
+			'autofill_city'         => isset( $settings['woo_address_autofill_city'] ) ? $settings['woo_address_autofill_city'] : '1',
+		) );
+	}
+
+	/**
+	 * Obtiene los datos nativos incorporados de España (52 provincias, CPs y municipios completos).
+	 *
+	 * @return array
+	 */
+	public static function get_builtin_spain_data() {
+		$provinces = array(
 			'01' => array( 'code' => 'VI', 'name' => 'Álava' ),
 			'02' => array( 'code' => 'AB', 'name' => 'Albacete' ),
 			'03' => array( 'code' => 'A',  'name' => 'Alicante' ),
@@ -146,7 +191,7 @@ class WPAT_Woo_Address_Autofill {
 			'52' => array( 'code' => 'ML', 'name' => 'Melilla' ),
 		);
 
-		$spain_prefix_to_city = array(
+		$prefix_to_city = array(
 			'114' => 'Jerez de la Frontera', '110' => 'Cádiz', '115' => 'El Puerto de Santa María', '112' => 'Algeciras', '111' => 'Chiclana de la Frontera', '113' => 'San Roque', '116' => 'Ubrique',
 			'296' => 'Marbella', '290' => 'Málaga', '297' => 'Vélez-Málaga', '292' => 'Antequera', '294' => 'Ronda', '295' => 'Cártama',
 			'280' => 'Madrid', '288' => 'Alcalá de Henares', '289' => 'Getafe', '281' => 'Alcobendas', '282' => 'Pozuelo de Alarcón', '283' => 'Aranjuez', '284' => 'Collado Villalba', '285' => 'Rivas-Vaciamadrid', '286' => 'Boadilla del Monte', '287' => 'San Sebastián de los Reyes',
@@ -160,7 +205,7 @@ class WPAT_Woo_Address_Autofill {
 			'300' => 'Murcia', '302' => 'Cartagena', '140' => 'Córdoba', '180' => 'Granada', '040' => 'Almería', '210' => 'Huelva', '230' => 'Jaén', '060' => 'Badajoz', '100' => 'Cáceres', '450' => 'Toledo', '130' => 'Ciudad Real', '020' => 'Albacete', '190' => 'Guadalajara', '160' => 'Cuenca', '170' => 'Girona', '430' => 'Tarragona', '250' => 'Lleida', '260' => 'Logroño', '320' => 'Ourense', '270' => 'Lugo', '490' => 'Zamora', '340' => 'Palencia', '050' => 'Ávila', '400' => 'Segovia', '420' => 'Soria', '440' => 'Teruel', '510' => 'Ceuta', '520' => 'Melilla'
 		);
 
-		$spain_city_to_cp = array(
+		$city_to_cp = array(
 			'jerez de la frontera_ca' => '11401', 'cádiz_ca' => '11001', 'cadiz_ca' => '11001', 'el puerto de santa maría_ca' => '11500', 'el puerto de santa maria_ca' => '11500',
 			'algeciras_ca' => '11201', 'san fernando_ca' => '11100', 'chiclana de la frontera_ca' => '11130', 'sanlúcar de barrameda_ca' => '11540', 'la línea de la concepción_ca' => '11300',
 			'puerto real_ca' => '11510', 'arcos de la frontera_ca' => '11630', 'san roque_ca' => '11360', 'rota_ca' => '11520', 'los barrios_ca' => '11370', 'barbate_ca' => '11160',
@@ -215,7 +260,7 @@ class WPAT_Woo_Address_Autofill {
 			'ceuta_ce' => '51001', 'melilla_ml' => '52001'
 		);
 
-		$spain_province_cities = array(
+		$province_cities = array(
 			'CA' => array( 'Jerez de la Frontera', 'Cádiz', 'El Puerto de Santa María', 'Algeciras', 'San Fernando', 'Chiclana de la Frontera', 'Sanlúcar de Barrameda', 'La Línea de la Concepción', 'Puerto Real', 'Arcos de la Frontera', 'San Roque', 'Rota', 'Los Barrios', 'Barbate', 'Conil de la Frontera', 'Chipiona', 'Tarifa', 'Ubrique', 'Vejer de la Frontera', 'Villamartín', 'Medina-Sidonia', 'Jimena de la Frontera', 'Puerto Serrano', 'Olvera', 'Bornos', 'Benalup-Casas Viejas', 'Trebujena', 'Prado del Rey', 'Algodonales', 'Paterna de Rivera', 'Alcalá de los Gazules', 'Grazalema', 'El Gastor', 'Espera' ),
 			'MA' => array( 'Málaga', 'Marbella', 'Mijas', 'Fuengirola', 'Vélez-Málaga', 'Torremolinos', 'Benalmádena', 'Estepona', 'Rincón de la Victoria', 'Antequera', 'Alhaurín de la Torre', 'Ronda', 'Alhaurín el Grande', 'Cártama', 'Nerja', 'Coín', 'Torrox', 'Manilva', 'Álora', 'Pizarra', 'Campillos', 'Archidona', 'Casabermeja', 'Benahavís' ),
 			'SE' => array( 'Sevilla', 'Dos Hermanas', 'Alcalá de Guadaíra', 'Utrera', 'Mairena del Aljarafe', 'Écija', 'La Rinconada', 'Los Palacios y Villafranca', 'Coria del Río', 'Carmona', 'Lebrija', 'Camas', 'Morón de la Frontera', 'Tomares', 'San Juan de Aznalfarache', 'Bormujos', 'Marchena', 'Arahal', 'Lora del Río', 'Osuna', 'Castilleja de la Cuesta', 'Espartinas', 'Sanlúcar la Mayor', 'Estepa', 'Brenes', 'Gines', 'Puebla del Río' ),
@@ -268,37 +313,12 @@ class WPAT_Woo_Address_Autofill {
 			'ML' => array( 'Melilla' ),
 		);
 
-		$configured_countries = self::get_configured_countries();
-		$countries_data       = array();
-
-		foreach ( $configured_countries as $code => $info ) {
-			if ( ! isset( $info['enabled'] ) || '1' !== (string) $info['enabled'] ) {
-				continue;
-			}
-
-			if ( 'ES' === $code ) {
-				$countries_data['ES'] = array(
-					'provinces'       => $spain_provinces,
-					'prefix_to_city'  => $spain_prefix_to_city,
-					'city_to_cp'      => $spain_city_to_cp,
-					'province_cities' => $spain_province_cities,
-				);
-			} else {
-				$cdata = get_option( 'wpat_autofill_data_' . $code, array() );
-				if ( ! empty( $cdata ) ) {
-					$countries_data[ $code ] = $cdata;
-				}
-			}
-		}
-
-		wp_localize_script( 'wpat-address-autofill-js', 'wpatAutofillOptions', array(
-			'spain_provinces'       => $spain_provinces,
-			'spain_prefix_to_city'  => $spain_prefix_to_city,
-			'spain_city_to_cp'      => $spain_city_to_cp,
-			'spain_province_cities' => $spain_province_cities,
-			'countries'             => $countries_data,
-			'autofill_city'         => isset( $settings['woo_address_autofill_city'] ) ? $settings['woo_address_autofill_city'] : '1',
-		) );
+		return array(
+			'provinces'       => $provinces,
+			'prefix_to_city'  => $prefix_to_city,
+			'city_to_cp'      => $city_to_cp,
+			'province_cities' => $province_cities,
+		);
 	}
 
 	/**
@@ -521,30 +541,10 @@ class WPAT_Woo_Address_Autofill {
 		$city_to_cp      = array();
 
 		if ( 'ES' === $country_code ) {
-			// Cargar datos por defecto de España
-			$instance = self::get_instance();
-			// Reutilizamos datos cargados en enqueue
-			// ...
-			$provinces = array(
-				'01' => array( 'code' => 'VI', 'name' => 'Álava' ),
-				'02' => array( 'code' => 'AB', 'name' => 'Albacete' ),
-				'03' => array( 'code' => 'A',  'name' => 'Alicante' ),
-				'04' => array( 'code' => 'AL', 'name' => 'Almería' ),
-				'08' => array( 'code' => 'B',  'name' => 'Barcelona' ),
-				'11' => array( 'code' => 'CA', 'name' => 'Cádiz' ),
-				'28' => array( 'code' => 'M',  'name' => 'Madrid' ),
-				'29' => array( 'code' => 'MA', 'name' => 'Málaga' ),
-				'41' => array( 'code' => 'SE', 'name' => 'Sevilla' ),
-				'46' => array( 'code' => 'V',  'name' => 'Valencia' ),
-			);
-			$province_cities = array(
-				'CA' => array( 'Jerez de la Frontera', 'Cádiz', 'El Puerto de Santa María', 'Algeciras', 'San Fernando', 'Chiclana de la Frontera', 'Sanlúcar de Barrameda' ),
-				'M'  => array( 'Madrid', 'Alcalá de Henares', 'Alcobendas', 'Alcorcón', 'Fuenlabrada', 'Getafe', 'Leganés', 'Móstoles' ),
-				'B'  => array( 'Barcelona', 'L\'Hospitalet de Llobregat', 'Badalona', 'Terrassa', 'Sabadell', 'Mataró' ),
-				'SE' => array( 'Sevilla', 'Dos Hermanas', 'Alcalá de Guadaíra', 'Utrera', 'Écija' ),
-				'MA' => array( 'Málaga', 'Marbella', 'Mijas', 'Fuengirola', 'Vélez-Málaga', 'Torremolinos' ),
-				'V'  => array( 'Valencia', 'Torrent', 'Gandia', 'Paterna', 'Sagunto' ),
-			);
+			$spain_data      = self::get_builtin_spain_data();
+			$provinces       = $spain_data['provinces'];
+			$province_cities = $spain_data['province_cities'];
+			$city_to_cp      = $spain_data['city_to_cp'];
 		} else {
 			$cdata = get_option( 'wpat_autofill_data_' . $country_code, array() );
 			if ( ! empty( $cdata ) ) {
@@ -566,10 +566,23 @@ class WPAT_Woo_Address_Autofill {
 			}
 
 			foreach ( $cities as $city ) {
+				$exact_key  = strtolower( $city ) . '_' . strtolower( $pcode );
 				$clean_city = strtolower( preg_replace( '/[^a-z0-9]/i', '', $city ) );
-				$key1       = $clean_city . '_' . strtolower( $pcode );
-				$cp         = isset( $city_to_cp[ $key1 ] ) ? $city_to_cp[ $key1 ] : ( isset( $city_to_cp[ $clean_city ] ) ? $city_to_cp[ $clean_city ] : '' );
-				$lines[]    = sprintf( '%s,%s,%s,"%s","%s"', $country_code, $cp, $pcode, str_replace( '"', '""', $pname ), str_replace( '"', '""', $city ) );
+				$clean_key  = $clean_city . '_' . strtolower( $pcode );
+				$exact_city = strtolower( $city );
+
+				$cp = '';
+				if ( isset( $city_to_cp[ $exact_key ] ) ) {
+					$cp = $city_to_cp[ $exact_key ];
+				} elseif ( isset( $city_to_cp[ $clean_key ] ) ) {
+					$cp = $city_to_cp[ $clean_key ];
+				} elseif ( isset( $city_to_cp[ $exact_city ] ) ) {
+					$cp = $city_to_cp[ $exact_city ];
+				} elseif ( isset( $city_to_cp[ $clean_city ] ) ) {
+					$cp = $city_to_cp[ $clean_city ];
+				}
+
+				$lines[] = sprintf( '%s,%s,%s,"%s","%s"', $country_code, $cp, $pcode, str_replace( '"', '""', $pname ), str_replace( '"', '""', $city ) );
 			}
 		}
 

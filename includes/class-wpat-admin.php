@@ -2869,6 +2869,7 @@ class WPAT_Admin {
 				<?php endif; ?>
 			</div>
 		</div>
+		<?php
 	}
 
 	public function render_tab_tools_content( $settings ) {

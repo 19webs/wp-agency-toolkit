@@ -769,6 +769,69 @@
 	color: #cbd5e1 !important;
 }
 
+/* --- LOGICAL ADDRESS FIELD ORDERING (País -> Provincia -> Población -> CP -> Dirección) --- */
+.wpat-checkout-container .woocommerce-billing-fields__field-wrapper,
+.wpat-checkout-container .woocommerce-shipping-fields__field-wrapper,
+.wpat-checkout-container .woocommerce-address-fields__field-wrapper,
+.wpat-checkout-container .col-1,
+.wpat-checkout-container .col-2 {
+	display: flex !important;
+	flex-direction: column !important;
+}
+
+.wpat-checkout-container #billing_country_field,
+.wpat-checkout-container #shipping_country_field {
+	order: 10 !important;
+}
+
+.wpat-checkout-container #billing_state_field,
+.wpat-checkout-container #shipping_state_field {
+	order: 20 !important;
+}
+
+.wpat-checkout-container #billing_city_field,
+.wpat-checkout-container #shipping_city_field {
+	order: 30 !important;
+}
+
+.wpat-checkout-container #billing_postcode_field,
+.wpat-checkout-container #shipping_postcode_field {
+	order: 40 !important;
+}
+
+.wpat-checkout-container #billing_address_1_field,
+.wpat-checkout-container #shipping_address_1_field {
+	order: 50 !important;
+}
+
+.wpat-checkout-container #billing_address_2_field,
+.wpat-checkout-container #shipping_address_2_field {
+	order: 60 !important;
+}
+
+.wpat-checkout-container #billing_first_name_field,
+.wpat-checkout-container #shipping_first_name_field {
+	order: 1 !important;
+}
+
+.wpat-checkout-container #billing_last_name_field,
+.wpat-checkout-container #shipping_last_name_field {
+	order: 2 !important;
+}
+
+.wpat-checkout-container #billing_company_field,
+.wpat-checkout-container #shipping_company_field {
+	order: 3 !important;
+}
+
+.wpat-checkout-container #billing_phone_field {
+	order: 70 !important;
+}
+
+.wpat-checkout-container #billing_email_field {
+	order: 80 !important;
+}
+
 .wpat-dark-mode .wpat-step-item.active .wpat-step-num {
 	background: #2563eb !important;
 	color: #ffffff !important;

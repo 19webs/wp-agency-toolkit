@@ -47,6 +47,10 @@ class WPAT_Woo_Checkout_Designer {
 		// Filtros para las miniaturas y clases de body
 		add_filter( 'woocommerce_cart_item_name', array( $this, 'add_product_thumbnail_to_checkout' ), 10, 3 );
 		add_filter( 'body_class', array( $this, 'add_body_class' ) );
+
+		// Reordenar campos de dirección (País -> Provincia -> Población -> CP -> Dirección)
+		add_filter( 'woocommerce_default_address_fields', array( $this, 'custom_default_address_fields_order' ), 9999 );
+		add_filter( 'woocommerce_checkout_fields', array( $this, 'custom_checkout_fields_order' ), 9999 );
 	}
 
 	/**
@@ -216,5 +220,58 @@ class WPAT_Woo_Checkout_Designer {
 		}
 
 		return $product_name;
+	}
+
+	/**
+	 * Reordena los campos por defecto de dirección de WooCommerce.
+	 */
+	public function custom_default_address_fields_order( $fields ) {
+		if ( isset( $fields['country'] ) ) {
+			$fields['country']['priority'] = 10;
+		}
+		if ( isset( $fields['state'] ) ) {
+			$fields['state']['priority'] = 20;
+		}
+		if ( isset( $fields['city'] ) ) {
+			$fields['city']['priority'] = 30;
+		}
+		if ( isset( $fields['postcode'] ) ) {
+			$fields['postcode']['priority'] = 40;
+		}
+		if ( isset( $fields['address_1'] ) ) {
+			$fields['address_1']['priority'] = 50;
+		}
+		if ( isset( $fields['address_2'] ) ) {
+			$fields['address_2']['priority'] = 60;
+		}
+
+		return $fields;
+	}
+
+	/**
+	 * Reordena los campos de billing y shipping del checkout de WooCommerce.
+	 */
+	public function custom_checkout_fields_order( $fields ) {
+		$order = array(
+			'country'   => 10,
+			'state'     => 20,
+			'city'      => 30,
+			'postcode'  => 40,
+			'address_1' => 50,
+			'address_2' => 60,
+		);
+
+		foreach ( array( 'billing', 'shipping' ) as $type ) {
+			if ( isset( $fields[ $type ] ) ) {
+				foreach ( $order as $key => $priority ) {
+					$field_key = $type . '_' . $key;
+					if ( isset( $fields[ $type ][ $field_key ] ) ) {
+						$fields[ $type ][ $field_key ]['priority'] = $priority;
+					}
+				}
+			}
+		}
+
+		return $fields;
 	}
 }

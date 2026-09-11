@@ -886,6 +886,7 @@ class WPAT_Admin {
 							'section'     => isset( $cf['section'] ) && in_array( $cf['section'], array( 'billing', 'shipping', 'order' ), true ) ? $cf['section'] : 'billing',
 							'position'    => isset( $cf['position'] ) && in_array( $cf['position'], array( 'after_names', 'after_company', 'after_address', 'end_of_section' ), true ) ? $cf['position'] : 'after_names',
 							'priority'    => isset( $cf['priority'] ) ? intval( $cf['priority'] ) : 100,
+							'width'       => isset( $cf['width'] ) && in_array( $cf['width'], array( 'full', 'half' ), true ) ? $cf['width'] : 'full',
 							'options'     => isset( $cf['options'] ) ? sanitize_textarea_field( $cf['options'] ) : '',
 						);
 					}
@@ -3660,11 +3661,12 @@ class WPAT_Admin {
 												$f_placeholder = esc_attr( isset( $cf['placeholder'] ) ? $cf['placeholder'] : '' );
 												$f_required    = isset( $cf['required'] ) && '1' === $cf['required'] ? '1' : '0';
 												$f_section     = esc_attr( isset( $cf['section'] ) ? $cf['section'] : 'billing' );
-												$f_position    = esc_attr( isset( $cf['position'] ) ? $cf['position'] : 'after_names' );
+												$f_position    = esc_attr( isset( $cf['position'] ) ? $cf['position'] : 'end_of_section' );
+												$f_width       = esc_attr( isset( $cf['width'] ) ? $cf['width'] : 'full' );
 												$f_options     = esc_textarea( isset( $cf['options'] ) ? $cf['options'] : '' );
 												?>
 												<div class="wpat-custom-field-row" style="background: #ffffff; border: 1px solid var(--wpat-border); padding: 12px 15px; border-radius: 6px; margin-bottom: 10px;">
-													<div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr auto; gap: 10px; align-items: center;">
+													<div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr 1.2fr auto; gap: 10px; align-items: center;">
 														<div>
 															<label style="font-size: 11px; display: block; font-weight: 600;">Nombre del Campo (Etiqueta)</label>
 															<input type="text" name="wpat_settings[checkout_custom_fields][<?php echo $index; ?>][label]" value="<?php echo $f_label; ?>" class="regular-text" placeholder="Ej. Horario de Preferencia" required style="width: 100%;" />
@@ -3695,14 +3697,23 @@ class WPAT_Admin {
 														<div>
 															<label style="font-size: 11px; display: block; font-weight: 600;">Posición</label>
 															<select name="wpat_settings[checkout_custom_fields][<?php echo $index; ?>][position]" style="width: 100%;">
+																<option value="end_of_section" <?php selected( $f_position, 'end_of_section' ); ?>>Al final de Sección (Línea 7+)</option>
 																<option value="after_names" <?php selected( $f_position, 'after_names' ); ?>>Después de Apellidos</option>
 																<option value="after_company" <?php selected( $f_position, 'after_company' ); ?>>Después de Empresa</option>
 																<option value="after_address" <?php selected( $f_position, 'after_address' ); ?>>Después de Dirección</option>
-																<option value="end_of_section" <?php selected( $f_position, 'end_of_section' ); ?>>Al final de Sección</option>
 															</select>
 														</div>
-														<div style="text-align: right; padding-top: 15px;">
-															<button type="button" class="button button-link-delete wpat-remove-field-btn" style="color: #ef4444;">Eliminar</button>
+														<div>
+															<label style="font-size: 11px; display: block; font-weight: 600;">Ancho (Distribución)</label>
+															<select name="wpat_settings[checkout_custom_fields][<?php echo $index; ?>][width]" style="width: 100%;">
+																<option value="full" <?php selected( $f_width, 'full' ); ?>>100% (Línea sola)</option>
+																<option value="half" <?php selected( $f_width, 'half' ); ?>>50% (Al lado)</option>
+															</select>
+														</div>
+														<div style="text-align: right; padding-top: 15px; display: flex; gap: 4px; justify-content: flex-end;">
+															<button type="button" class="button button-small wpat-move-up-btn" title="Subir posición">▲</button>
+															<button type="button" class="button button-small wpat-move-down-btn" title="Bajar posición">▼</button>
+															<button type="button" class="button button-link-delete wpat-remove-field-btn" style="color: #ef4444;" title="Eliminar campo">Eliminar</button>
 														</div>
 													</div>
 
@@ -3730,17 +3741,30 @@ class WPAT_Admin {
 										var noMsg = document.getElementById('wpat_no_custom_fields_msg');
 										if (!addBtn || !container) return;
 
+										function reindexFields() {
+											var rows = container.querySelectorAll('.wpat-custom-field-row');
+											rows.forEach(function(row, idx) {
+												row.querySelectorAll('input, select, textarea').forEach(function(input) {
+													var name = input.getAttribute('name');
+													if (name) {
+														input.setAttribute('name', name.replace(/\[checkout_custom_fields\]\[\d+\]/, '[checkout_custom_fields][' + idx + ']'));
+													}
+												});
+											});
+										}
+
 										addBtn.addEventListener('click', function() {
 											if (noMsg) noMsg.style.display = 'none';
 											var index = container.querySelectorAll('.wpat-custom-field-row').length;
 											var html = '<div class="wpat-custom-field-row" style="background: #ffffff; border: 1px solid var(--wpat-border); padding: 12px 15px; border-radius: 6px; margin-bottom: 10px;">' +
-												'<div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr auto; gap: 10px; align-items: center;">' +
+												'<div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr 1.2fr auto; gap: 10px; align-items: center;">' +
 													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Nombre del Campo (Etiqueta)</label><input type="text" name="wpat_settings[checkout_custom_fields][' + index + '][label]" value="" class="regular-text" placeholder="Ej. Horario de Preferencia" required style="width: 100%;" /></div>' +
 													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Identificador Único (Key)</label><input type="text" name="wpat_settings[checkout_custom_fields][' + index + '][key]" value="" class="regular-text" placeholder="ej. horario_entrega" style="width: 100%;" /></div>' +
 													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Tipo de Campo</label><select name="wpat_settings[checkout_custom_fields][' + index + '][type]" class="wpat-field-type-select" style="width: 100%;"><option value="text">Texto Corto</option><option value="select">Desplegable (Select)</option><option value="radio">Radio (Botones de Opción)</option><option value="textarea">Área de Texto</option><option value="checkbox">Casilla (Checkbox)</option><option value="date">Fecha (Calendario)</option></select></div>' +
 													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Sección</label><select name="wpat_settings[checkout_custom_fields][' + index + '][section]" style="width: 100%;"><option value="billing">Facturación</option><option value="shipping">Envío</option><option value="order">Notas Adicionales</option></select></div>' +
-													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Posición</label><select name="wpat_settings[checkout_custom_fields][' + index + '][position]" style="width: 100%;"><option value="after_names">Después de Apellidos</option><option value="after_company">Después de Empresa</option><option value="after_address">Después de Dirección</option><option value="end_of_section">Al final de Sección</option></select></div>' +
-													'<div style="text-align: right; padding-top: 15px;"><button type="button" class="button button-link-delete wpat-remove-field-btn" style="color: #ef4444;">Eliminar</button></div>' +
+													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Posición</label><select name="wpat_settings[checkout_custom_fields][' + index + '][position]" style="width: 100%;"><option value="end_of_section">Al final de Sección (Línea 7+)</option><option value="after_names">Después de Apellidos</option><option value="after_company">Después de Empresa</option><option value="after_address">Después de Dirección</option></select></div>' +
+													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Ancho (Distribución)</label><select name="wpat_settings[checkout_custom_fields][' + index + '][width]" style="width: 100%;"><option value="full">100% (Línea sola)</option><option value="half">50% (Al lado)</option></select></div>' +
+													'<div style="text-align: right; padding-top: 15px; display: flex; gap: 4px; justify-content: flex-end;"><button type="button" class="button button-small wpat-move-up-btn" title="Subir posición">▲</button><button type="button" class="button button-small wpat-move-down-btn" title="Bajar posición">▼</button><button type="button" class="button button-link-delete wpat-remove-field-btn" style="color: #ef4444;" title="Eliminar campo">Eliminar</button></div>' +
 												'</div>' +
 												'<div style="display: flex; gap: 15px; margin-top: 10px; align-items: center;">' +
 													'<label style="font-weight: normal; font-size: 12px;"><input type="checkbox" name="wpat_settings[checkout_custom_fields][' + index + '][required]" value="1" /> Campo Obligatorio</label>' +
@@ -3752,6 +3776,7 @@ class WPAT_Admin {
 												'</div>' +
 											'</div>';
 											container.insertAdjacentHTML('beforeend', html);
+											reindexFields();
 										});
 
 										container.addEventListener('change', function(e) {
@@ -3765,9 +3790,24 @@ class WPAT_Admin {
 										});
 
 										container.addEventListener('click', function(e) {
-											if (e.target && e.target.classList.contains('wpat-remove-field-btn')) {
+											if (e.target && e.target.classList.contains('wpat-move-up-btn')) {
 												var row = e.target.closest('.wpat-custom-field-row');
-												if (row) row.remove();
+												if (row && row.previousElementSibling && row.previousElementSibling.classList.contains('wpat-custom-field-row')) {
+													row.parentNode.insertBefore(row, row.previousElementSibling);
+													reindexFields();
+												}
+											} else if (e.target && e.target.classList.contains('wpat-move-down-btn')) {
+												var row = e.target.closest('.wpat-custom-field-row');
+												if (row && row.nextElementSibling && row.nextElementSibling.classList.contains('wpat-custom-field-row')) {
+													row.parentNode.insertBefore(row.nextElementSibling, row);
+													reindexFields();
+												}
+											} else if (e.target && e.target.classList.contains('wpat-remove-field-btn')) {
+												var row = e.target.closest('.wpat-custom-field-row');
+												if (row) {
+													row.remove();
+													reindexFields();
+												}
 											}
 										});
 									});

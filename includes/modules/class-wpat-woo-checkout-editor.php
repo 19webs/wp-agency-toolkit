@@ -104,7 +104,7 @@ class WPAT_Woo_Checkout_Editor {
 		// 3. Añadir campos personalizados dinámicos
 		$custom_fields = isset( $settings['checkout_custom_fields'] ) && is_array( $settings['checkout_custom_fields'] ) ? $settings['checkout_custom_fields'] : array();
 
-		foreach ( $custom_fields as $cf ) {
+		foreach ( $custom_fields as $cf_idx => $cf ) {
 			if ( empty( $cf['key'] ) || empty( $cf['label'] ) ) {
 				continue;
 			}
@@ -115,24 +115,28 @@ class WPAT_Woo_Checkout_Editor {
 			}
 
 			$field_type = ! empty( $cf['type'] ) ? $cf['type'] : 'text';
-			$pos        = ! empty( $cf['position'] ) ? $cf['position'] : 'after_names';
+			$pos        = ! empty( $cf['position'] ) ? $cf['position'] : 'end_of_section';
+			$width      = ! empty( $cf['width'] ) ? $cf['width'] : 'full';
 
-			// Calcular prioridad según posición elegida por el usuario
-			$priority = 22;
-			if ( 'after_company' === $pos ) {
-				$priority = 32;
+			// Calcular prioridad según posición elegida e índice en la lista
+			$base_priority = 120;
+			if ( 'after_names' === $pos ) {
+				$base_priority = 12;
+			} elseif ( 'after_company' === $pos ) {
+				$base_priority = 32;
 			} elseif ( 'after_address' === $pos ) {
-				$priority = 95;
-			} elseif ( 'end_of_section' === $pos ) {
-				$priority = 120;
+				$base_priority = 95;
 			}
+
+			$priority = $base_priority + $cf_idx;
+			$field_class = ( 'half' === $width ) ? array( 'form-row-first' ) : array( 'form-row-wide' );
 
 			$field_data = array(
 				'label'       => sanitize_text_field( $cf['label'] ),
 				'placeholder' => ! empty( $cf['placeholder'] ) ? sanitize_text_field( $cf['placeholder'] ) : '',
 				'required'    => ! empty( $cf['required'] ) && '1' === $cf['required'],
-				'class'       => array( 'form-row-wide' ),
-				'clear'       => true,
+				'class'       => $field_class,
+				'clear'       => 'full' === $width,
 				'priority'    => $priority,
 			);
 

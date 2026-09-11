@@ -731,6 +731,8 @@ class WPAT_Admin {
 			$new_settings['woo_checkout_designer_trust_badges']   = isset( $input_settings['woo_checkout_designer_trust_badges'] ) && '1' === $input_settings['woo_checkout_designer_trust_badges'] ? '1' : '0';
 			$new_settings['woo_checkout_designer_email_fix']      = isset( $input_settings['woo_checkout_designer_email_fix'] ) && '1' === $input_settings['woo_checkout_designer_email_fix'] ? '1' : '0';
 			$new_settings['woo_checkout_designer_product_thumbs'] = isset( $input_settings['woo_checkout_designer_product_thumbs'] ) && '1' === $input_settings['woo_checkout_designer_product_thumbs'] ? '1' : '0';
+			$new_settings['woo_checkout_designer_normalize_selects'] = isset( $input_settings['woo_checkout_designer_normalize_selects'] ) && '1' === $input_settings['woo_checkout_designer_normalize_selects'] ? '1' : '0';
+			$new_settings['woo_checkout_designer_autofill_spain_cp'] = isset( $input_settings['woo_checkout_designer_autofill_spain_cp'] ) && '1' === $input_settings['woo_checkout_designer_autofill_spain_cp'] ? '1' : '0';
 		}
 
 		if ( empty( $saving_module ) || 'woo-catalog' === $saving_module ) {
@@ -5026,6 +5028,8 @@ class WPAT_Admin {
 				$trust_badges     = ! isset( $settings['woo_checkout_designer_trust_badges'] ) || '1' === $settings['woo_checkout_designer_trust_badges'];
 				$email_fix        = ! isset( $settings['woo_checkout_designer_email_fix'] ) || '1' === $settings['woo_checkout_designer_email_fix'];
 				$product_thumbs   = ! isset( $settings['woo_checkout_designer_product_thumbs'] ) || '1' === $settings['woo_checkout_designer_product_thumbs'];
+				$norm_selects     = ! isset( $settings['woo_checkout_designer_normalize_selects'] ) || '1' === $settings['woo_checkout_designer_normalize_selects'];
+				$spain_cp_autofill = ! isset( $settings['woo_checkout_designer_autofill_spain_cp'] ) || '1' === $settings['woo_checkout_designer_autofill_spain_cp'];
 				?>
 				<div class="wpat-module-card">
 					<div class="wpat-module-header">
@@ -5088,7 +5092,21 @@ class WPAT_Admin {
 						<div class="wpat-field-group" style="margin-top: 12px;">
 							<label style="font-weight: 600;">
 								<input type="checkbox" name="wpat_settings[woo_checkout_designer_email_fix]" value="1" <?php checked( $email_fix ); ?>>
-								Activar Corrección Inteligente de Erratas en Correos Electrónicos (Ej: <code>@gmai.com</code> $ightarrow$ <code>@gmail.com</code>)
+								Activar Corrección Inteligente de Erratas en Correos Electrónicos (Ej: <code>@gmai.com</code> &rarr; <code>@gmail.com</code>)
+							</label>
+						</div>
+
+						<div class="wpat-field-group" style="margin-top: 12px;">
+							<label style="font-weight: 600;">
+								<input type="checkbox" name="wpat_settings[woo_checkout_designer_normalize_selects]" value="1" <?php checked( $norm_selects ); ?>>
+								Normalizar Diseño Visual de Selectores de País / Región y Provincia (Misma altura, bordes y foco que los campos de texto)
+							</label>
+						</div>
+
+						<div class="wpat-field-group" style="margin-top: 12px;">
+							<label style="font-weight: 600;">
+								<input type="checkbox" name="wpat_settings[woo_checkout_designer_autofill_spain_cp]" value="1" <?php checked( $spain_cp_autofill ); ?>>
+								Activar Autocompletado Inteligente por Código Postal para España (Selección Automática de Provincia y Ayuda de Población)
 							</label>
 						</div>
 					</div>

@@ -143,9 +143,26 @@ class WPAT_Woo_Checkout_Designer {
 
 		$layout = isset( $settings['woo_checkout_designer_layout'] ) ? $settings['woo_checkout_designer_layout'] : 'wpat-classic';
 
+		$spain_provinces = array(
+			'01' => 'VI', '02' => 'AB', '03' => 'A',  '04' => 'AL', '05' => 'AV',
+			'06' => 'BA', '07' => 'PM', '08' => 'B',  '09' => 'BU', '10' => 'CC',
+			'11' => 'CA', '12' => 'CS', '13' => 'CR', '14' => 'CO', '15' => 'C',
+			'16' => 'CU', '17' => 'GI', '18' => 'GR', '19' => 'GU', '20' => 'SS',
+			'21' => 'H',  '22' => 'HU', '23' => 'J',  '24' => 'LE', '25' => 'L',
+			'26' => 'LO', '27' => 'LU', '28' => 'M',  '29' => 'MA', '30' => 'MU',
+			'31' => 'NA', '32' => 'OR', '33' => 'O',  '34' => 'P',  '35' => 'GC',
+			'36' => 'PO', '37' => 'SA', '38' => 'TF', '39' => 'S',  '40' => 'SG',
+			'41' => 'SE', '42' => 'SO', '43' => 'T',  '44' => 'TE', '45' => 'TO',
+			'46' => 'V',  '47' => 'VA', '48' => 'BI', '49' => 'ZA', '50' => 'Z',
+			'51' => 'CE', '52' => 'ML',
+		);
+
 		wp_localize_script( 'wpat-checkout-designer-js', 'wpatCheckoutOptions', array(
 			'layout'               => $layout,
 			'email_autocorrect'    => isset( $settings['woo_checkout_designer_email_fix'] ) ? $settings['woo_checkout_designer_email_fix'] : '1',
+			'normalize_selects'    => isset( $settings['woo_checkout_designer_normalize_selects'] ) ? $settings['woo_checkout_designer_normalize_selects'] : '1',
+			'autofill_spain_cp'    => isset( $settings['woo_checkout_designer_autofill_spain_cp'] ) ? $settings['woo_checkout_designer_autofill_spain_cp'] : '1',
+			'spain_provinces'      => $spain_provinces,
 			'mobile_summary_label' => __( 'Resumen del pedido', 'wp-agency-toolkit' ),
 		) );
 	}

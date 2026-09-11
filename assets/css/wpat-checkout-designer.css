@@ -310,7 +310,6 @@
 .wpat-checkout-container input[type="email"],
 .wpat-checkout-container input[type="tel"],
 .wpat-checkout-container input[type="password"],
-.wpat-checkout-container select,
 .wpat-checkout-container textarea {
 	width: 100% !important;
 	height: 46px !important;
@@ -325,6 +324,53 @@
 	outline: none !important;
 }
 
+/* --- UNIFORM STYLING FOR NATIVE SELECT & SELECT2 DROPDOWNS --- */
+.wpat-checkout-container select,
+.wpat-checkout-container .select2-container--default .select2-selection--single {
+	width: 100% !important;
+	height: 46px !important;
+	line-height: 44px !important;
+	padding: 0 36px 0 14px !important;
+	border: 1px solid #cbd5e1 !important;
+	border-radius: 8px !important;
+	background-color: #ffffff !important;
+	font-size: 14px !important;
+	color: #0f172a !important;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+	box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
+	outline: none !important;
+	appearance: none !important;
+	-webkit-appearance: none !important;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+	background-repeat: no-repeat !important;
+	background-position: right 12px center !important;
+	background-size: 16px 16px !important;
+}
+
+.wpat-checkout-container .select2-container {
+	width: 100% !important;
+	display: block !important;
+}
+
+.wpat-checkout-container .select2-container--default .select2-selection--single .select2-selection__rendered {
+	line-height: 44px !important;
+	padding-left: 0 !important;
+	padding-right: 20px !important;
+	color: #0f172a !important;
+	font-size: 14px !important;
+}
+
+.wpat-checkout-container .select2-container--default .select2-selection--single .select2-selection__arrow {
+	display: none !important;
+}
+
+.wpat-checkout-container .select2-container--default.select2-container--open .select2-selection--single,
+.wpat-checkout-container .select2-container--default.select2-container--focus .select2-selection--single,
+.wpat-checkout-container select:focus {
+	border-color: #2563eb !important;
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
 .wpat-checkout-container textarea {
 	height: auto !important;
 	min-height: 80px !important;
@@ -334,7 +380,6 @@
 .wpat-checkout-container input[type="email"]:focus,
 .wpat-checkout-container input[type="tel"]:focus,
 .wpat-checkout-container input[type="password"]:focus,
-.wpat-checkout-container select:focus,
 .wpat-checkout-container textarea:focus {
 	border-color: #2563eb !important;
 	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;

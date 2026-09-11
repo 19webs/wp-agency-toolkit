@@ -121,4 +121,38 @@ jQuery(document).ready(function($) {
 			$('.wpat-email-autocorrect-notice').remove();
 		});
 	}
+
+	// --- 5. SPAIN POSTAL CODE AUTO-FILL (PROVINCE & CITY DETECTOR) ---
+	if (typeof wpatCheckoutOptions !== 'undefined' && wpatCheckoutOptions.autofill_spain_cp === '1' && wpatCheckoutOptions.spain_provinces) {
+		function handleSpainPostcode(type) {
+			var countryField = $('#' + type + '_country');
+			var country = countryField.val();
+			if (country !== 'ES') return;
+
+			var cpField = $('#' + type + '_postcode');
+			var cp = cpField.val() ? cpField.val().trim() : '';
+			if (cp.length < 2) return;
+
+			var prefix = cp.substring(0, 2);
+			var provinceCode = wpatCheckoutOptions.spain_provinces[prefix];
+
+			if (provinceCode) {
+				var $state = $('#' + type + '_state');
+				if ($state.length && $state.val() !== provinceCode) {
+					$state.val(provinceCode).trigger('change');
+					if ($.fn.select2 && $state.hasClass('select2-hidden-accessible')) {
+						$state.trigger('change.select2');
+					}
+				}
+			}
+		}
+
+		$(document).on('input blur change', '#billing_postcode', function() {
+			handleSpainPostcode('billing');
+		});
+
+		$(document).on('input blur change', '#shipping_postcode', function() {
+			handleSpainPostcode('shipping');
+		});
+	}
 });

@@ -3,97 +3,15 @@
  * Estilo Shopify / CheckoutWC Standalone Template & Elementor Isolation
  * ============================================================================== */
 
-body.wpat-standalone-checkout-page {
-	background-color: #f8fafc !important;
-	margin: 0 !important;
-	padding: 0 !important;
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important;
-	color: #0f172a !important;
-}
-
-/* --- STANDALONE HEADER --- */
-.wpat-checkout-header {
-	background: #ffffff !important;
-	border-bottom: 1px solid #e2e8f0 !important;
-	padding: 16px 24px !important;
-	box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
-}
-
-.wpat-header-container {
-	max-width: 1180px;
-	margin: 0 auto;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-}
-
-.wpat-header-logo img {
-	max-height: 44px;
-	width: auto;
-	display: block;
-}
-
-.wpat-site-title {
-	font-size: 20px !important;
-	font-weight: 800 !important;
-	color: #0f172a !important;
-	text-decoration: none !important;
-}
-
-.wpat-header-secure-badge {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	font-size: 13px;
-	font-weight: 600;
-	color: #059669;
-	background: #ecfdf5;
-	border: 1px solid #a7f3d0;
-	padding: 6px 12px;
-	border-radius: 20px;
-}
-
-/* --- STANDALONE MAIN CONTENT --- */
-.wpat-checkout-main-content {
-	max-width: 1180px;
-	margin: 30px auto 50px auto;
-	padding: 0 20px;
-	box-sizing: border-box;
-}
-
-/* --- STANDALONE FOOTER --- */
-.wpat-checkout-footer {
-	background: #ffffff !important;
-	border-top: 1px solid #e2e8f0 !important;
-	padding: 24px !important;
-	text-align: center;
-	font-size: 13px;
-	color: #64748b;
-}
-
-.wpat-footer-container {
-	max-width: 1180px;
-	margin: 0 auto;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 8px;
-}
-
-.wpat-footer-links {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-}
-
-.wpat-footer-links a {
-	color: #64748b !important;
-	text-decoration: none !important;
-}
-
-.wpat-footer-links a:hover {
-	color: #2563eb !important;
-	text-decoration: underline !important;
+.wpat-checkout-builder-wrapper {
+	width: 100% !important;
+	min-height: 600px !important;
+	background: #f8fafc !important;
+	padding-top: 110px !important;
+	padding-bottom: 140px !important;
+	padding-left: 15px !important;
+	padding-right: 15px !important;
+	box-sizing: border-box !important;
 }
 
 .wpat-checkout-container {
@@ -107,6 +25,71 @@ body.wpat-standalone-checkout-page {
 
 .wpat-checkout-container * {
 	box-sizing: border-box;
+}
+
+/* --- HIDE NATIVE WOOCOMMERCE FORM COUPON TOGGLE & NOTICE --- */
+.wpat-checkout-container .woocommerce-form-coupon-toggle,
+.wpat-checkout-container .woocommerce-form-coupon {
+	display: none !important;
+}
+
+/* --- CUSTOM CLEAN INLINE COUPON BOX --- */
+.wpat-custom-coupon-box {
+	margin-top: 20px !important;
+	padding-top: 18px !important;
+	border-top: 1px solid #f1f5f9 !important;
+}
+
+.wpat-coupon-label {
+	display: block !important;
+	font-size: 13.5px !important;
+	font-weight: 700 !important;
+	color: #1e293b !important;
+	margin-bottom: 10px !important;
+}
+
+.wpat-coupon-input-group {
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 10px !important;
+}
+
+.wpat-coupon-field {
+	width: 100% !important;
+	height: 44px !important;
+	border: 1px solid #cbd5e1 !important;
+	border-radius: 8px !important;
+	padding: 8px 14px !important;
+	font-size: 14px !important;
+	background: #ffffff !important;
+	outline: none !important;
+	box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
+	color: #0f172a !important;
+}
+
+.wpat-coupon-field:focus {
+	border-color: #2563eb !important;
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+.wpat-coupon-submit-btn {
+	width: 100% !important;
+	height: 44px !important;
+	background: #2563eb !important;
+	color: #ffffff !important;
+	font-size: 14px !important;
+	font-weight: 700 !important;
+	border: none !important;
+	border-radius: 8px !important;
+	cursor: pointer !important;
+	transition: all 0.2s ease !important;
+	box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25) !important;
+	text-align: center !important;
+}
+
+.wpat-coupon-submit-btn:hover {
+	background: #1d4ed8 !important;
+	box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;
 }
 
 /* --- OVERRIDE ALL DEFAULT WOOCOMMERCE PURPLE / THEME BUTTON STYLES --- */
@@ -701,12 +684,10 @@ body.wpat-standalone-checkout-page {
 }
 
 /* --- DARK MODE OVERRIDES --- */
-.wpat-dark-mode body.wpat-standalone-checkout-page {
+.wpat-dark-mode .wpat-checkout-builder-wrapper {
 	background-color: #0f172a !important;
 }
 
-.wpat-dark-mode .wpat-checkout-header,
-.wpat-dark-mode .wpat-checkout-footer,
 .wpat-dark-mode .wpat-checkout-steps-bar,
 .wpat-dark-mode .wpat-card-box,
 .wpat-dark-mode .wpat-checkout-container .wpat-customer-details-card .col-1,
@@ -719,25 +700,17 @@ body.wpat-standalone-checkout-page {
 	color: #f8fafc !important;
 }
 
-.wpat-dark-mode .wpat-site-title {
-	color: #f8fafc !important;
-}
-
-.wpat-dark-mode .wpat-checkout-container input[type="text"],
-.wpat-dark-mode .wpat-checkout-container input[type="email"],
-.wpat-dark-mode .wpat-checkout-container input[type="tel"],
-.wpat-dark-mode .wpat-checkout-container input[type="password"],
-.wpat-dark-mode .wpat-checkout-container select,
-.wpat-dark-mode .wpat-checkout-container textarea {
-	background-color: #0f172a !important;
-	border-color: #334155 !important;
-	color: #f8fafc !important;
-}
-
+.wpat-dark-mode .wpat-coupon-label,
 .wpat-dark-mode .wpat-trust-text strong,
 .wpat-dark-mode .wpat-card-title,
 .wpat-dark-mode .wpat-checkout-container .wpat-customer-details-card h3,
 .wpat-dark-mode .wpat-checkout-container .wpat-summary-card-title {
+	color: #f8fafc !important;
+}
+
+.wpat-dark-mode .wpat-coupon-field {
+	background-color: #0f172a !important;
+	border-color: #334155 !important;
 	color: #f8fafc !important;
 }
 

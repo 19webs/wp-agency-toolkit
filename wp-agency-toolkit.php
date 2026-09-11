@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.13
+ * Version:     4.3.14
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.13' );
+define( 'WPAT_VERSION', '4.3.14' );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -171,6 +171,10 @@ class WPAT_Main {
 		'woo-checkout-designer' => array(
 			'file'  => 'includes/modules/class-wpat-woo-checkout-designer.php',
 			'class' => 'WPAT_Woo_Checkout_Designer',
+		),
+		'woo-sale-badges' => array(
+			'file'  => 'includes/modules/class-wpat-woo-sale-badges.php',
+			'class' => 'WPAT_Woo_Sale_Badges',
 		),
 	);
 
@@ -407,6 +411,16 @@ class WPAT_Main {
 			'woo-facets'                      => '0',
 			'facets_enabled'                  => '0',
 			'facets_config'                   => array( 'sort', 'price', 'category', 'stock', 'rating' ),
+
+			// Opciones de Badges y Etiquetas de Oferta High-Impact (WooCommerce)
+			'woo-sale-badges'                 => '0',
+			'woo_sale_badge_shape'            => 'soft',
+			'woo_sale_badge_text_type'        => 'custom',
+			'woo_sale_badge_custom_text'      => '¡OFERTA!',
+			'woo_sale_badge_bg_color'         => '#ef4444',
+			'woo_sale_badge_txt_color'        => '#ffffff',
+			'woo_sale_badge_font_size'        => '13',
+			'woo_sale_badge_position'         => 'top-left',
 
 			// Opciones de Detector de Incompatibilidades
 			'conflict-detector'           => '1',

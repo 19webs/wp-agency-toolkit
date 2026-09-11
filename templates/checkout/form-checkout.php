@@ -137,10 +137,14 @@ if ( function_exists( 'WC' ) && WC()->cart && WC()->cart->is_empty() ) {
 						<?php woocommerce_order_review(); ?>
 					</div>
 
-					<!-- Formulario de Cupón colocado limpia después del Total -->
+					<!-- Formulario de Cupón Personalizado colocada limpia después del Total -->
 					<?php if ( wc_coupons_enabled() ) : ?>
-						<div class="wpat-checkout-coupon-box" style="margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
-							<?php woocommerce_checkout_coupon_form(); ?>
+						<div class="wpat-custom-coupon-box">
+							<label class="wpat-coupon-label">¿Tienes un cupón? Introduce tu código</label>
+							<div class="wpat-coupon-input-group">
+								<input type="text" name="wpat_coupon_code" class="input-text wpat-coupon-field" id="wpat_coupon_code_field" placeholder="Código de cupón" value="" />
+								<button type="button" class="button wpat-coupon-submit-btn" id="wpat_coupon_apply_btn">Aplicar cupón</button>
+							</div>
 						</div>
 					<?php endif; ?>
 
@@ -181,10 +185,14 @@ if ( function_exists( 'WC' ) && WC()->cart && WC()->cart->is_empty() ) {
 						<?php woocommerce_order_review(); ?>
 					</div>
 
-					<!-- Formulario de Cupón colocado limpia después del Total -->
+					<!-- Formulario de Cupón Personalizado colocada limpia después del Total -->
 					<?php if ( wc_coupons_enabled() ) : ?>
-						<div class="wpat-checkout-coupon-box" style="margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
-							<?php woocommerce_checkout_coupon_form(); ?>
+						<div class="wpat-custom-coupon-box">
+							<label class="wpat-coupon-label">¿Tienes un cupón? Introduce tu código</label>
+							<div class="wpat-coupon-input-group">
+								<input type="text" name="wpat_coupon_code" class="input-text wpat-coupon-field" id="wpat_coupon_code_field" placeholder="Código de cupón" value="" />
+								<button type="button" class="button wpat-coupon-submit-btn" id="wpat_coupon_apply_btn">Aplicar cupón</button>
+							</div>
 						</div>
 					<?php endif; ?>
 

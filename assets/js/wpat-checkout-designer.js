@@ -56,7 +56,37 @@ jQuery(document).ready(function($) {
 		goToStep(step);
 	});
 
-	// --- 3. SMART EMAIL AUTOCORRECT SUGGESTION ---
+	// --- 3. CUSTOM CLEAN COUPON SUBMIT ---
+	$(document).on('click', '#wpat_coupon_apply_btn', function(e) {
+		e.preventDefault();
+		var code = $('#wpat_coupon_code_field').val().trim();
+		if (!code) return;
+
+		var $btn = $(this);
+		$btn.prop('disabled', true).text('Aplicando...');
+
+		var data = {
+			action: 'woocommerce_apply_coupon',
+			security: typeof wc_checkout_params !== 'undefined' ? wc_checkout_params.apply_coupon_nonce : '',
+			coupon_code: code
+		};
+
+		$.ajax({
+			type: 'POST',
+			url: typeof wc_checkout_params !== 'undefined' ? wc_checkout_params.ajax_url : '/?wc-ajax=apply_coupon',
+			data: data,
+			success: function(response) {
+				$btn.prop('disabled', false).text('Aplicar cupón');
+				$(document.body).trigger('update_checkout');
+			},
+			error: function() {
+				$btn.prop('disabled', false).text('Aplicar cupón');
+				$(document.body).trigger('update_checkout');
+			}
+		});
+	});
+
+	// --- 4. SMART EMAIL AUTOCORRECT SUGGESTION ---
 	if (typeof wpatCheckoutOptions !== 'undefined' && wpatCheckoutOptions.email_autocorrect === '1') {
 		var commonDomains = {
 			'gmai.com': 'gmail.com',

@@ -1,0 +1,88 @@
+/* ==============================================================================
+ * BADGES Y ETIQUETAS DE OFERTA HIGH-IMPACT - WP AGENCY TOOLKIT
+ * ============================================================================== */
+
+/* Base Reset for WooCommerce Sale Badge */
+span.onsale.wpat-sale-badge {
+	position: absolute !important;
+	top: 12px !important;
+	z-index: 9 !important;
+	font-weight: 700 !important;
+	line-height: 1 !important;
+	text-align: center !important;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15) !important;
+	transition: all 0.2s ease !important;
+	margin: 0 !important;
+	padding: 8px 14px !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	border: none !important;
+}
+
+/* SHAPE 1: SOFT ROUNDED (Bordes Suaves 8px) */
+span.onsale.wpat-sale-badge.badge-soft {
+	border-radius: 8px !important;
+}
+
+/* SHAPE 2: PILL (Píldora Redondeada 20px) */
+span.onsale.wpat-sale-badge.badge-pill {
+	border-radius: 20px !important;
+	padding: 8px 16px !important;
+}
+
+/* SHAPE 3: RECTANGLE (Bordes Rectos Minimalistas) */
+span.onsale.wpat-sale-badge.badge-rect {
+	border-radius: 0px !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.05em !important;
+}
+
+/* SHAPE 4: CIRCLE (Círculo Compacto 50px x 50px) */
+span.onsale.wpat-sale-badge.badge-circle {
+	width: 50px !important;
+	height: 50px !important;
+	border-radius: 50% !important;
+	padding: 0 !important;
+	min-height: auto !important;
+	min-width: auto !important;
+}
+
+/* SHAPE 5: CORNER RIBBON (Cinta Diagonal de Esquina) */
+span.onsale.wpat-sale-badge.badge-corner-ribbon {
+	top: 18px !important;
+	left: -32px !important;
+	right: auto !important;
+	padding: 6px 36px !important;
+	transform: rotate(-45deg) !important;
+	border-radius: 0 !important;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+	font-size: 11px !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.05em !important;
+}
+
+span.onsale.wpat-sale-badge.badge-corner-ribbon.pos-top-right {
+	left: auto !important;
+	right: -32px !important;
+	transform: rotate(45deg) !important;
+}
+
+/* SHAPE 6: PRICE TAG (Etiqueta de Precio con Muesca) */
+span.onsale.wpat-sale-badge.badge-price-tag {
+	border-radius: 4px 0 0 4px !important;
+	padding: 7px 16px 7px 12px !important;
+	position: absolute !important;
+	clip-path: polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%) !important;
+}
+
+/* Position Overrides */
+span.onsale.wpat-sale-badge.pos-top-left {
+	left: 12px !important;
+	right: auto !important;
+}
+
+span.onsale.wpat-sale-badge.pos-top-right {
+	right: 12px !important;
+	left: auto !important;
+}

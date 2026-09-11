@@ -133,6 +133,29 @@ class WPAT_Woo_Checkout_Designer {
 			WPAT_VERSION
 		);
 
+		$btn_bg_color      = isset( $settings['woo_checkout_btn_bg_color'] ) ? $settings['woo_checkout_btn_bg_color'] : '#2563eb';
+		$btn_txt_color     = isset( $settings['woo_checkout_btn_txt_color'] ) ? $settings['woo_checkout_btn_txt_color'] : '#ffffff';
+		$step_accent_color = isset( $settings['woo_checkout_step_accent_color'] ) ? $settings['woo_checkout_step_accent_color'] : '#2563eb';
+
+		$custom_css = "
+			.wpat-checkout-container .wpat-next-btn,
+			.wpat-checkout-container .wpat-coupon-submit-btn,
+			.wpat-checkout-container #place_order,
+			.wpat-checkout-container button#place_order,
+			.wpat-checkout-container input[type='submit'].button.alt {
+				background: {$btn_bg_color} !important;
+				color: {$btn_txt_color} !important;
+			}
+			.wpat-checkout-steps-bar .wpat-step-item.active .wpat-step-number {
+				background: {$step_accent_color} !important;
+				color: #ffffff !important;
+			}
+			.wpat-checkout-steps-bar .wpat-step-item.active .wpat-step-title {
+				color: {$step_accent_color} !important;
+			}
+		";
+		wp_add_inline_style( 'wpat-checkout-designer-css', $custom_css );
+
 		wp_enqueue_script(
 			'wpat-checkout-designer-js',
 			WPAT_URL . 'assets/js/wpat-checkout-designer.js',

@@ -616,6 +616,7 @@ class WPAT_Admin {
 			'woo-catalog',
 			'woo-checkout-designer',
 			'woo-sale-badges',
+			'woo-address-autofill',
 			'woo-zoom',
 			'duplicator',
 			'snippets',
@@ -732,7 +733,15 @@ class WPAT_Admin {
 			$new_settings['woo_checkout_designer_email_fix']      = isset( $input_settings['woo_checkout_designer_email_fix'] ) && '1' === $input_settings['woo_checkout_designer_email_fix'] ? '1' : '0';
 			$new_settings['woo_checkout_designer_product_thumbs'] = isset( $input_settings['woo_checkout_designer_product_thumbs'] ) && '1' === $input_settings['woo_checkout_designer_product_thumbs'] ? '1' : '0';
 			$new_settings['woo_checkout_designer_normalize_selects'] = isset( $input_settings['woo_checkout_designer_normalize_selects'] ) && '1' === $input_settings['woo_checkout_designer_normalize_selects'] ? '1' : '0';
-			$new_settings['woo_checkout_designer_autofill_spain_cp'] = isset( $input_settings['woo_checkout_designer_autofill_spain_cp'] ) && '1' === $input_settings['woo_checkout_designer_autofill_spain_cp'] ? '1' : '0';
+			$new_settings['woo_checkout_btn_bg_color']               = isset( $input_settings['woo_checkout_btn_bg_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_checkout_btn_bg_color'] ) ? $input_settings['woo_checkout_btn_bg_color'] : '#2563eb';
+			$new_settings['woo_checkout_btn_txt_color']              = isset( $input_settings['woo_checkout_btn_txt_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_checkout_btn_txt_color'] ) ? $input_settings['woo_checkout_btn_txt_color'] : '#ffffff';
+			$new_settings['woo_checkout_step_accent_color']          = isset( $input_settings['woo_checkout_step_accent_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_checkout_step_accent_color'] ) ? $input_settings['woo_checkout_step_accent_color'] : '#2563eb';
+		}
+
+		// Sanitizar Autocompletado de CP y Provincia (WooCommerce)
+		if ( empty( $saving_module ) || 'woo-address-autofill' === $saving_module ) {
+			$new_settings['woo-address-autofill']     = isset( $input_settings['woo-address-autofill'] ) && '1' === $input_settings['woo-address-autofill'] ? '1' : '0';
+			$new_settings['woo_address_autofill_city'] = isset( $input_settings['woo_address_autofill_city'] ) && '1' === $input_settings['woo_address_autofill_city'] ? '1' : '0';
 		}
 
 		if ( empty( $saving_module ) || 'woo-catalog' === $saving_module ) {
@@ -1278,6 +1287,7 @@ class WPAT_Admin {
 			'woo-catalog',
 			'woo-checkout-designer',
 			'woo-sale-badges',
+			'woo-address-autofill',
 			'woo-zoom',
 			'duplicator',
 			'snippets',
@@ -1977,6 +1987,7 @@ class WPAT_Admin {
 				'wpat-woo-extra-options' => 'woo-extra-options',
 				'wpat-woo-checkout-designer' => 'woo-checkout-designer',
 				'wpat-woo-sale-badges'   => 'woo-sale-badges',
+				'wpat-woo-address-autofill' => 'woo-address-autofill',
 				'wpat-snippets'          => 'snippets',
 				'wpat-woo-pdf-invoices'  => 'woo-pdf-invoices',
 				'wpat-login-customizer'  => 'login-customizer',
@@ -2281,6 +2292,18 @@ class WPAT_Admin {
 				'icon'        => '🎨',
 				'icon_bg'     => 'woo',
 				'keywords'    => 'checkout diseñador plantillas woocommerce plantilla classic express minimalista acordeon'
+			),
+			array(
+				'id'          => 'woo-address-autofill',
+				'is_new'      => true,
+				'title'       => 'Autocompletado de CP y Provincia',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Detecta automáticamente la Provincia y sugiere la Población según el Código Postal (España).',
+				'cat_class'   => 'cat-woocommerce cat-woo',
+				'icon'        => '📍',
+				'icon_bg'     => 'woo',
+				'keywords'    => 'autocompletado codigo postal provincia poblacion españa woocommerce checkout'
 			),
 			array(
 				'id'          => 'woo-zoom',
@@ -5026,10 +5049,12 @@ class WPAT_Admin {
 				$layout           = isset( $settings['woo_checkout_designer_layout'] ) ? $settings['woo_checkout_designer_layout'] : 'wpat-classic';
 				$mobile_summary   = ! isset( $settings['woo_checkout_designer_mobile_summary'] ) || '1' === $settings['woo_checkout_designer_mobile_summary'];
 				$trust_badges     = ! isset( $settings['woo_checkout_designer_trust_badges'] ) || '1' === $settings['woo_checkout_designer_trust_badges'];
-				$email_fix        = ! isset( $settings['woo_checkout_designer_email_fix'] ) || '1' === $settings['woo_checkout_designer_email_fix'];
-				$product_thumbs   = ! isset( $settings['woo_checkout_designer_product_thumbs'] ) || '1' === $settings['woo_checkout_designer_product_thumbs'];
-				$norm_selects     = ! isset( $settings['woo_checkout_designer_normalize_selects'] ) || '1' === $settings['woo_checkout_designer_normalize_selects'];
-				$spain_cp_autofill = ! isset( $settings['woo_checkout_designer_autofill_spain_cp'] ) || '1' === $settings['woo_checkout_designer_autofill_spain_cp'];
+				$email_fix         = ! isset( $settings['woo_checkout_designer_email_fix'] ) || '1' === $settings['woo_checkout_designer_email_fix'];
+				$product_thumbs    = ! isset( $settings['woo_checkout_designer_product_thumbs'] ) || '1' === $settings['woo_checkout_designer_product_thumbs'];
+				$norm_selects      = ! isset( $settings['woo_checkout_designer_normalize_selects'] ) || '1' === $settings['woo_checkout_designer_normalize_selects'];
+				$btn_bg_color      = isset( $settings['woo_checkout_btn_bg_color'] ) ? $settings['woo_checkout_btn_bg_color'] : '#2563eb';
+				$btn_txt_color     = isset( $settings['woo_checkout_btn_txt_color'] ) ? $settings['woo_checkout_btn_txt_color'] : '#ffffff';
+				$step_accent_color = isset( $settings['woo_checkout_step_accent_color'] ) ? $settings['woo_checkout_step_accent_color'] : '#2563eb';
 				?>
 				<div class="wpat-module-card">
 					<div class="wpat-module-header">
@@ -5069,6 +5094,26 @@ class WPAT_Admin {
 						<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
 
 						<div class="wpat-field-group">
+							<label style="font-weight: 700; display: block; margin-bottom: 12px;">Personalización de Colores de Botones y Pasos:</label>
+							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+								<div class="wpat-field-group">
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color Fondo de Botones Principales:</label>
+									<input type="text" name="wpat_settings[woo_checkout_btn_bg_color]" value="<?php echo esc_attr( $btn_bg_color ); ?>" class="wpat-color-picker" data-default-color="#2563eb">
+								</div>
+								<div class="wpat-field-group">
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color Texto de Botones Principales:</label>
+									<input type="text" name="wpat_settings[woo_checkout_btn_txt_color]" value="<?php echo esc_attr( $btn_txt_color ); ?>" class="wpat-color-picker" data-default-color="#ffffff">
+								</div>
+								<div class="wpat-field-group">
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color del Paso Activo (Acento):</label>
+									<input type="text" name="wpat_settings[woo_checkout_step_accent_color]" value="<?php echo esc_attr( $step_accent_color ); ?>" class="wpat-color-picker" data-default-color="#2563eb">
+								</div>
+							</div>
+						</div>
+
+						<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
+
+						<div class="wpat-field-group">
 							<label style="font-weight: 600;">
 								<input type="checkbox" name="wpat_settings[woo_checkout_designer_mobile_summary]" value="1" <?php checked( $mobile_summary ); ?>>
 								Activar Barra Flotante de Resumen del Pedido en Smartphones (Estilo Desplegable Superior)
@@ -5102,11 +5147,30 @@ class WPAT_Admin {
 								Normalizar Diseño Visual de Selectores de País / Región y Provincia (Misma altura, bordes y foco que los campos de texto)
 							</label>
 						</div>
-
-						<div class="wpat-field-group" style="margin-top: 12px;">
+					</div>
+				</div>
+				<?php
+				break;
+			case 'woo-address-autofill':
+				$autofill_city = ! isset( $settings['woo_address_autofill_city'] ) || '1' === $settings['woo_address_autofill_city'];
+				$is_new_mod    = $this->is_new_module( 'woo-address-autofill' );
+				?>
+				<div class="wpat-module-card" style="position: relative; overflow: hidden;">
+					<?php if ( $is_new_mod ) : ?>
+						<div class="wpat-new-module-ribbon" style="position: absolute; top: 12px; right: -28px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; font-size: 10px; font-weight: 800; padding: 3px 30px; transform: rotate(45deg); text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); pointer-events: none; z-index: 5;">NUEVO</div>
+					<?php endif; ?>
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Autocompletado de CP, Provincia y Población</h3>
+							<p>Detecta y selecciona la Provincia de España automáticamente al escribir los 2 primeros dígitos del Código Postal y sugiere la Población sin fallos.</p>
+						</div>
+						<?php $this->render_module_toggle( 'woo-address-autofill', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block;">
+						<div class="wpat-field-group">
 							<label style="font-weight: 600;">
-								<input type="checkbox" name="wpat_settings[woo_checkout_designer_autofill_spain_cp]" value="1" <?php checked( $spain_cp_autofill ); ?>>
-								Activar Autocompletado Inteligente por Código Postal para España (Selección Automática de Provincia y Ayuda de Población)
+								<input type="checkbox" name="wpat_settings[woo_address_autofill_city]" value="1" <?php checked( $autofill_city ); ?>>
+								Autocompletar / Sugerir la Población al ingresar los 5 dígitos del Código Postal (España)
 							</label>
 						</div>
 					</div>

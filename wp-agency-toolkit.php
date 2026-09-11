@@ -176,6 +176,10 @@ class WPAT_Main {
 			'file'  => 'includes/modules/class-wpat-woo-sale-badges.php',
 			'class' => 'WPAT_Woo_Sale_Badges',
 		),
+		'woo-address-autofill' => array(
+			'file'  => 'includes/modules/class-wpat-woo-address-autofill.php',
+			'class' => 'WPAT_Woo_Address_Autofill',
+		),
 	);
 
 	/**

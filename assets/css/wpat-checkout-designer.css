@@ -809,6 +809,10 @@
 	order: 60 !important;
 }
 
+.wpat-checkout-container #billing_email_field {
+	order: 0 !important;
+}
+
 .wpat-checkout-container #billing_first_name_field,
 .wpat-checkout-container #shipping_first_name_field {
 	order: 1 !important;
@@ -826,10 +830,6 @@
 
 .wpat-checkout-container #billing_phone_field {
 	order: 70 !important;
-}
-
-.wpat-checkout-container #billing_email_field {
-	order: 80 !important;
 }
 
 .wpat-dark-mode .wpat-step-item.active .wpat-step-num {

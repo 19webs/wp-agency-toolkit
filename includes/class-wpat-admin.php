@@ -54,6 +54,10 @@ class WPAT_Admin {
 		add_action( 'wp_ajax_wpat_seo_fill_posts_batch', array( $this, 'ajax_seo_fill_posts_batch' ) );
 		add_action( 'wp_ajax_wpat_force_update_check', array( $this, 'ajax_force_update_check' ) );
 		add_action( 'wp_ajax_wpat_search_products', array( $this, 'ajax_search_products' ) );
+		add_action( 'wp_ajax_wpat_autofill_import_csv', array( $this, 'ajax_autofill_import_csv' ) );
+		add_action( 'wp_ajax_wpat_autofill_export_csv', array( $this, 'ajax_autofill_export_csv' ) );
+		add_action( 'wp_ajax_wpat_autofill_toggle_country', array( $this, 'ajax_autofill_toggle_country' ) );
+		add_action( 'wp_ajax_wpat_autofill_delete_country', array( $this, 'ajax_autofill_delete_country' ) );
 	}
 
 	/**
@@ -732,8 +736,8 @@ class WPAT_Admin {
 			$new_settings['woo_checkout_designer_trust_badges']   = isset( $input_settings['woo_checkout_designer_trust_badges'] ) && '1' === $input_settings['woo_checkout_designer_trust_badges'] ? '1' : '0';
 			$new_settings['woo_checkout_designer_email_fix']      = isset( $input_settings['woo_checkout_designer_email_fix'] ) && '1' === $input_settings['woo_checkout_designer_email_fix'] ? '1' : '0';
 			$new_settings['woo_checkout_designer_product_thumbs'] = isset( $input_settings['woo_checkout_designer_product_thumbs'] ) && '1' === $input_settings['woo_checkout_designer_product_thumbs'] ? '1' : '0';
-			$new_settings['woo_checkout_designer_normalize_selects'] = isset( $input_settings['woo_checkout_designer_normalize_selects'] ) && '1' === $input_settings['woo_checkout_designer_normalize_selects'] ? '1' : '0';
 			$new_settings['woo_checkout_btn_bg_color']               = isset( $input_settings['woo_checkout_btn_bg_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_checkout_btn_bg_color'] ) ? $input_settings['woo_checkout_btn_bg_color'] : '#2563eb';
+			$new_settings['woo_checkout_btn_hover_bg_color']         = isset( $input_settings['woo_checkout_btn_hover_bg_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_checkout_btn_hover_bg_color'] ) ? $input_settings['woo_checkout_btn_hover_bg_color'] : '#1d4ed8';
 			$new_settings['woo_checkout_btn_txt_color']              = isset( $input_settings['woo_checkout_btn_txt_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_checkout_btn_txt_color'] ) ? $input_settings['woo_checkout_btn_txt_color'] : '#ffffff';
 			$new_settings['woo_checkout_step_accent_color']          = isset( $input_settings['woo_checkout_step_accent_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_checkout_step_accent_color'] ) ? $input_settings['woo_checkout_step_accent_color'] : '#2563eb';
 		}
@@ -5046,15 +5050,15 @@ class WPAT_Admin {
 				<?php
 				break;
 			case 'woo-checkout-designer':
-				$layout           = isset( $settings['woo_checkout_designer_layout'] ) ? $settings['woo_checkout_designer_layout'] : 'wpat-classic';
-				$mobile_summary   = ! isset( $settings['woo_checkout_designer_mobile_summary'] ) || '1' === $settings['woo_checkout_designer_mobile_summary'];
-				$trust_badges     = ! isset( $settings['woo_checkout_designer_trust_badges'] ) || '1' === $settings['woo_checkout_designer_trust_badges'];
-				$email_fix         = ! isset( $settings['woo_checkout_designer_email_fix'] ) || '1' === $settings['woo_checkout_designer_email_fix'];
-				$product_thumbs    = ! isset( $settings['woo_checkout_designer_product_thumbs'] ) || '1' === $settings['woo_checkout_designer_product_thumbs'];
-				$norm_selects      = ! isset( $settings['woo_checkout_designer_normalize_selects'] ) || '1' === $settings['woo_checkout_designer_normalize_selects'];
-				$btn_bg_color      = isset( $settings['woo_checkout_btn_bg_color'] ) ? $settings['woo_checkout_btn_bg_color'] : '#2563eb';
-				$btn_txt_color     = isset( $settings['woo_checkout_btn_txt_color'] ) ? $settings['woo_checkout_btn_txt_color'] : '#ffffff';
-				$step_accent_color = isset( $settings['woo_checkout_step_accent_color'] ) ? $settings['woo_checkout_step_accent_color'] : '#2563eb';
+				$layout             = isset( $settings['woo_checkout_designer_layout'] ) ? $settings['woo_checkout_designer_layout'] : 'wpat-classic';
+				$mobile_summary     = ! isset( $settings['woo_checkout_designer_mobile_summary'] ) || '1' === $settings['woo_checkout_designer_mobile_summary'];
+				$trust_badges       = ! isset( $settings['woo_checkout_designer_trust_badges'] ) || '1' === $settings['woo_checkout_designer_trust_badges'];
+				$email_fix           = ! isset( $settings['woo_checkout_designer_email_fix'] ) || '1' === $settings['woo_checkout_designer_email_fix'];
+				$product_thumbs      = ! isset( $settings['woo_checkout_designer_product_thumbs'] ) || '1' === $settings['woo_checkout_designer_product_thumbs'];
+				$btn_bg_color        = isset( $settings['woo_checkout_btn_bg_color'] ) ? $settings['woo_checkout_btn_bg_color'] : '#2563eb';
+				$btn_hover_bg_color  = isset( $settings['woo_checkout_btn_hover_bg_color'] ) ? $settings['woo_checkout_btn_hover_bg_color'] : '#1d4ed8';
+				$btn_txt_color       = isset( $settings['woo_checkout_btn_txt_color'] ) ? $settings['woo_checkout_btn_txt_color'] : '#ffffff';
+				$step_accent_color   = isset( $settings['woo_checkout_step_accent_color'] ) ? $settings['woo_checkout_step_accent_color'] : '#2563eb';
 				?>
 				<div class="wpat-module-card">
 					<div class="wpat-module-header">
@@ -5101,6 +5105,10 @@ class WPAT_Admin {
 									<input type="text" name="wpat_settings[woo_checkout_btn_bg_color]" value="<?php echo esc_attr( $btn_bg_color ); ?>" class="wpat-color-picker" data-default-color="#2563eb">
 								</div>
 								<div class="wpat-field-group">
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color Fondo Al Pasar el Ratón (Hover):</label>
+									<input type="text" name="wpat_settings[woo_checkout_btn_hover_bg_color]" value="<?php echo esc_attr( $btn_hover_bg_color ); ?>" class="wpat-color-picker" data-default-color="#1d4ed8">
+								</div>
+								<div class="wpat-field-group">
 									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color Texto de Botones Principales:</label>
 									<input type="text" name="wpat_settings[woo_checkout_btn_txt_color]" value="<?php echo esc_attr( $btn_txt_color ); ?>" class="wpat-color-picker" data-default-color="#ffffff">
 								</div>
@@ -5140,13 +5148,6 @@ class WPAT_Admin {
 								Activar Corrección Inteligente de Erratas en Correos Electrónicos (Ej: <code>@gmai.com</code> &rarr; <code>@gmail.com</code>)
 							</label>
 						</div>
-
-						<div class="wpat-field-group" style="margin-top: 12px;">
-							<label style="font-weight: 600;">
-								<input type="checkbox" name="wpat_settings[woo_checkout_designer_normalize_selects]" value="1" <?php checked( $norm_selects ); ?>>
-								Normalizar Diseño Visual de Selectores de País / Región y Provincia (Misma altura, bordes y foco que los campos de texto)
-							</label>
-						</div>
 					</div>
 				</div>
 				<?php
@@ -5154,6 +5155,8 @@ class WPAT_Admin {
 			case 'woo-address-autofill':
 				$autofill_city = ! isset( $settings['woo_address_autofill_city'] ) || '1' === $settings['woo_address_autofill_city'];
 				$is_new_mod    = $this->is_new_module( 'woo-address-autofill' );
+				require_once WPAT_PATH . 'includes/modules/class-wpat-woo-address-autofill.php';
+				$configured_countries = WPAT_Woo_Address_Autofill::get_configured_countries();
 				?>
 				<div class="wpat-module-card" style="position: relative; overflow: hidden;">
 					<?php if ( $is_new_mod ) : ?>
@@ -5162,7 +5165,7 @@ class WPAT_Admin {
 					<div class="wpat-module-header">
 						<div class="wpat-module-info">
 							<h3>Autocompletado de CP, Provincia y Población</h3>
-							<p>Detecta y selecciona la Provincia de España automáticamente al escribir los 2 primeros dígitos del Código Postal y sugiere la Población sin fallos.</p>
+							<p>Gestión avanzada multi-país de autocompletado recíproco de Provincia, Población y Código Postal. Puedes activar o desactivar países e importar/exportar listados de nuevas regiones mediante archivos CSV.</p>
 						</div>
 						<?php $this->render_module_toggle( 'woo-address-autofill', $settings, true ); ?>
 					</div>
@@ -5170,8 +5173,56 @@ class WPAT_Admin {
 						<div class="wpat-field-group">
 							<label style="font-weight: 600;">
 								<input type="checkbox" name="wpat_settings[woo_address_autofill_city]" value="1" <?php checked( $autofill_city ); ?>>
-								Autocompletar / Sugerir la Población al ingresar los 5 dígitos del Código Postal (España)
+								Autocompletar / Sugerir la Población al ingresar los dígitos del Código Postal
 							</label>
+						</div>
+
+						<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 20px 0;" />
+
+						<h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700; color: #0f172a;">Países Configurados y Gestión CSV</h4>
+
+						<table class="wp-list-table widefat fixed striped" style="border-radius: 8px; overflow: hidden; margin-bottom: 20px;">
+							<thead>
+								<tr>
+									<th style="font-weight: 700; width: 140px;">País / Código</th>
+									<th style="font-weight: 700;">Provincias</th>
+									<th style="font-weight: 700;">Poblaciones</th>
+									<th style="font-weight: 700; width: 100px;">Estado</th>
+									<th style="font-weight: 700; width: 180px;">Acciones</th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ( $configured_countries as $code => $cinfo ) : ?>
+									<tr>
+										<td><strong><?php echo esc_html( $cinfo['name'] ); ?></strong> (<code><?php echo esc_html( $code ); ?></code>)</td>
+										<td><?php echo esc_html( $cinfo['total_provinces'] ); ?> provincias</td>
+										<td><?php echo esc_html( $cinfo['total_cities'] ); ?> poblaciones</td>
+										<td>
+											<label class="wpat-toggle-switch" style="transform: scale(0.85); transform-origin: left center;">
+												<input type="checkbox" class="wpat-autofill-country-toggle" data-country="<?php echo esc_attr( $code ); ?>" <?php checked( isset( $cinfo['enabled'] ) && '1' === (string) $cinfo['enabled'] ); ?>>
+												<span class="wpat-toggle-slider"></span>
+											</label>
+										</td>
+										<td>
+											<a href="<?php echo esc_url( admin_url( 'admin-ajax.php?action=wpat_autofill_export_csv&country=' . $code . '&security=' . wp_create_nonce( 'wpat_save_settings_action' ) ) ); ?>" class="button button-small" title="Exportar a CSV">📥 CSV</a>
+											<?php if ( empty( $cinfo['is_builtin'] ) ) : ?>
+												<button type="button" class="button button-small wpat-autofill-delete-country-btn" data-country="<?php echo esc_attr( $code ); ?>" style="color:#ef4444; border-color:#fca5a5;">🗑️ Eliminar</button>
+											<?php endif; ?>
+										</td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+
+						<div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 18px;">
+							<h5 style="margin: 0 0 8px 0; font-size: 13.5px; font-weight: 700; color: #1e293b;">Importar Nuevo País o Actualizar Datos mediante CSV</h5>
+							<p style="margin: 0 0 12px 0; font-size: 12.5px; color: #64748b;">El archivo CSV debe incluir las columnas: <code>codigo_pais</code>, <code>codigo_postal</code>, <code>codigo_provincia</code>, <code>nombre_provincia</code>, <code>nombre_poblacion</code>.</p>
+							
+							<div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+								<input type="file" id="wpat_autofill_csv_input" accept=".csv" style="font-size: 13px; max-width: 260px;" />
+								<button type="button" class="button button-primary" id="wpat_autofill_import_btn">📤 Importar Archivo CSV</button>
+							</div>
+							<div id="wpat_autofill_import_msg" style="margin-top: 10px; font-size: 13px; font-weight: 600;"></div>
 						</div>
 					</div>
 				</div>
@@ -6212,6 +6263,107 @@ class WPAT_Admin {
 		$days_elapsed = ( time() - $release_time ) / DAY_IN_SECONDS;
 
 		return $days_elapsed <= 30;
+	}
+
+	/**
+	 * AJAX: Importa un archivo CSV de autocompletado de direcciones.
+	 */
+	public function ajax_autofill_import_csv() {
+		if ( ! check_ajax_referer( 'wpat_save_settings_action', 'security', false ) ) {
+			wp_send_json_error( array( 'message' => 'Error de seguridad (nonce inválido).' ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
+		}
+
+		if ( empty( $_FILES['csv_file'] ) || empty( $_FILES['csv_file']['tmp_name'] ) ) {
+			wp_send_json_error( array( 'message' => 'Por favor, selecciona un archivo CSV para importar.' ) );
+		}
+
+		require_once WPAT_PATH . 'includes/modules/class-wpat-woo-address-autofill.php';
+		$result = WPAT_Woo_Address_Autofill::import_csv_data( $_FILES['csv_file']['tmp_name'] );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success( array(
+			'message' => sprintf( '¡Importación completada con éxito! País: %s. Se han importado %d filas (%d provincias y %d poblaciones).', $result['country_code'], $result['total_rows'], $result['total_provinces'], $result['total_cities'] ),
+		) );
+	}
+
+	/**
+	 * AJAX: Exporta los datos a un archivo CSV.
+	 */
+	public function ajax_autofill_export_csv() {
+		if ( ! check_ajax_referer( 'wpat_save_settings_action', 'security', false ) ) {
+			wp_send_json_error( array( 'message' => 'Error de seguridad.' ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
+		}
+
+		$country_code = isset( $_GET['country'] ) ? sanitize_text_field( $_GET['country'] ) : 'ES';
+
+		require_once WPAT_PATH . 'includes/modules/class-wpat-woo-address-autofill.php';
+		$csv_content = WPAT_Woo_Address_Autofill::export_csv_data( $country_code );
+
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="autofill_' . strtolower( $country_code ) . '.csv"' );
+		echo "\xEF\xBB\xBF"; // UTF-8 BOM
+		echo $csv_content;
+		exit;
+	}
+
+	/**
+	 * AJAX: Activa o desactiva un país.
+	 */
+	public function ajax_autofill_toggle_country() {
+		if ( ! check_ajax_referer( 'wpat_save_settings_action', 'security', false ) ) {
+			wp_send_json_error( array( 'message' => 'Error de seguridad.' ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
+		}
+
+		$country_code = isset( $_POST['country'] ) ? sanitize_text_field( $_POST['country'] ) : '';
+		$status       = isset( $_POST['status'] ) && '1' === (string) $_POST['status'];
+
+		require_once WPAT_PATH . 'includes/modules/class-wpat-woo-address-autofill.php';
+		$success = WPAT_Woo_Address_Autofill::toggle_country( $country_code, $status );
+
+		if ( $success ) {
+			wp_send_json_success( array( 'message' => 'Estado del país actualizado.' ) );
+		}
+
+		wp_send_json_error( array( 'message' => 'No se pudo actualizar el estado del país.' ) );
+	}
+
+	/**
+	 * AJAX: Elimina un país.
+	 */
+	public function ajax_autofill_delete_country() {
+		if ( ! check_ajax_referer( 'wpat_save_settings_action', 'security', false ) ) {
+			wp_send_json_error( array( 'message' => 'Error de seguridad.' ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
+		}
+
+		$country_code = isset( $_POST['country'] ) ? sanitize_text_field( $_POST['country'] ) : '';
+
+		require_once WPAT_PATH . 'includes/modules/class-wpat-woo-address-autofill.php';
+		$success = WPAT_Woo_Address_Autofill::delete_country( $country_code );
+
+		if ( $success ) {
+			wp_send_json_success( array( 'message' => 'País eliminado correctamente.' ) );
+		}
+
+		wp_send_json_error( array( 'message' => 'No se puede eliminar el país nativo o no fue encontrado.' ) );
 	}
 
 }

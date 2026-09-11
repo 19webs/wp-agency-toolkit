@@ -268,12 +268,311 @@ class WPAT_Woo_Address_Autofill {
 			'ML' => array( 'Melilla' ),
 		);
 
+		$configured_countries = self::get_configured_countries();
+		$countries_data       = array();
+
+		foreach ( $configured_countries as $code => $info ) {
+			if ( ! isset( $info['enabled'] ) || '1' !== (string) $info['enabled'] ) {
+				continue;
+			}
+
+			if ( 'ES' === $code ) {
+				$countries_data['ES'] = array(
+					'provinces'       => $spain_provinces,
+					'prefix_to_city'  => $spain_prefix_to_city,
+					'city_to_cp'      => $spain_city_to_cp,
+					'province_cities' => $spain_province_cities,
+				);
+			} else {
+				$cdata = get_option( 'wpat_autofill_data_' . $code, array() );
+				if ( ! empty( $cdata ) ) {
+					$countries_data[ $code ] = $cdata;
+				}
+			}
+		}
+
 		wp_localize_script( 'wpat-address-autofill-js', 'wpatAutofillOptions', array(
 			'spain_provinces'       => $spain_provinces,
 			'spain_prefix_to_city'  => $spain_prefix_to_city,
 			'spain_city_to_cp'      => $spain_city_to_cp,
 			'spain_province_cities' => $spain_province_cities,
+			'countries'             => $countries_data,
 			'autofill_city'         => isset( $settings['woo_address_autofill_city'] ) ? $settings['woo_address_autofill_city'] : '1',
 		) );
+	}
+
+	/**
+	 * Obtiene la lista de países configurados.
+	 *
+	 * @return array
+	 */
+	public static function get_configured_countries() {
+		$default_countries = array(
+			'ES' => array(
+				'code'            => 'ES',
+				'name'            => 'España',
+				'enabled'         => '1',
+				'total_provinces' => 52,
+				'total_cities'    => 540,
+				'is_builtin'      => true,
+			),
+		);
+
+		$stored_countries = get_option( 'wpat_autofill_countries', array() );
+
+		if ( empty( $stored_countries ) || ! is_array( $stored_countries ) ) {
+			return $default_countries;
+		}
+
+		return array_merge( $default_countries, $stored_countries );
+	}
+
+	/**
+	 * Activa o desactiva un país en la configuración.
+	 */
+	public static function toggle_country( $country_code, $status ) {
+		$country_code = strtoupper( sanitize_text_field( $country_code ) );
+		$countries    = self::get_configured_countries();
+
+		if ( isset( $countries[ $country_code ] ) ) {
+			$countries[ $country_code ]['enabled'] = $status ? '1' : '0';
+			update_option( 'wpat_autofill_countries', $countries );
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Elimina un país personalizado.
+	 */
+	public static function delete_country( $country_code ) {
+		$country_code = strtoupper( sanitize_text_field( $country_code ) );
+
+		if ( 'ES' === $country_code ) {
+			return false;
+		}
+
+		$countries = get_option( 'wpat_autofill_countries', array() );
+		if ( isset( $countries[ $country_code ] ) ) {
+			unset( $countries[ $country_code ] );
+			update_option( 'wpat_autofill_countries', $countries );
+			delete_option( 'wpat_autofill_data_' . $country_code );
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Importa datos desde un archivo CSV.
+	 */
+	public static function import_csv_data( $file_path ) {
+		if ( ! file_exists( $file_path ) || ! is_readable( $file_path ) ) {
+			return new WP_Error( 'file_error', 'No se pudo acceder al archivo CSV subido.' );
+		}
+
+		$handle = fopen( $file_path, 'r' );
+		if ( ! $handle ) {
+			return new WP_Error( 'file_error', 'No se pudo abrir el archivo CSV para lectura.' );
+		}
+
+		$header = fgetcsv( $handle, 2000, ',' );
+		if ( ! $header ) {
+			fclose( $handle );
+			return new WP_Error( 'csv_error', 'El archivo CSV está vacío o es inválido.' );
+		}
+
+		$header = array_map( function( $h ) {
+			$h = preg_replace( '/[\x{FEFF}\x{FFFE}]/u', '', $h );
+			return strtolower( trim( $h ) );
+		}, $header );
+
+		$col_country  = false;
+		$col_postcode = false;
+		$col_pcode    = false;
+		$col_pname    = false;
+		$col_city     = false;
+
+		foreach ( $header as $idx => $col_name ) {
+			if ( in_array( $col_name, array( 'codigo_pais', 'country_code', 'pais', 'country' ), true ) ) {
+				$col_country = $idx;
+			} elseif ( in_array( $col_name, array( 'codigo_postal', 'postcode', 'cp', 'zip' ), true ) ) {
+				$col_postcode = $idx;
+			} elseif ( in_array( $col_name, array( 'codigo_provincia', 'province_code', 'state_code' ), true ) ) {
+				$col_pcode = $idx;
+			} elseif ( in_array( $col_name, array( 'nombre_provincia', 'province_name', 'provincia', 'state' ), true ) ) {
+				$col_pname = $idx;
+			} elseif ( in_array( $col_name, array( 'nombre_poblacion', 'city_name', 'poblacion', 'localidad', 'city' ), true ) ) {
+				$col_city = $idx;
+			}
+		}
+
+		if ( false === $col_postcode || false === $col_city ) {
+			fclose( $handle );
+			return new WP_Error( 'header_error', 'Faltan cabeceras requeridas en el CSV (código_postal y nombre_poblacion).' );
+		}
+
+		$provinces       = array();
+		$prefix_to_city  = array();
+		$city_to_cp      = array();
+		$province_cities = array();
+
+		$country_code_found = 'ES';
+		$provinces_count    = array();
+		$cities_set         = array();
+		$row_count          = 0;
+
+		while ( ( $row = fgetcsv( $handle, 2000, ',' ) ) !== false ) {
+			if ( empty( $row ) || count( $row ) < 2 ) {
+				continue;
+			}
+
+			$cp     = isset( $row[ $col_postcode ] ) ? trim( $row[ $col_postcode ] ) : '';
+			$city   = isset( $row[ $col_city ] ) ? trim( $row[ $col_city ] ) : '';
+			$pcode  = ( false !== $col_pcode && isset( $row[ $col_pcode ] ) ) ? trim( $row[ $col_pcode ] ) : '';
+			$pname  = ( false !== $col_pname && isset( $row[ $col_pname ] ) ) ? trim( $row[ $col_pname ] ) : '';
+			$c_code = ( false !== $col_country && isset( $row[ $col_country ] ) ) ? strtoupper( trim( $row[ $col_country ] ) ) : 'ES';
+
+			if ( empty( $cp ) || empty( $city ) ) {
+				continue;
+			}
+
+			if ( ! empty( $c_code ) ) {
+				$country_code_found = $c_code;
+			}
+
+			if ( empty( $pcode ) ) {
+				$pcode = substr( $cp, 0, 2 );
+			}
+			if ( empty( $pname ) ) {
+				$pname = 'Provincia ' . $pcode;
+			}
+
+			$prefix2 = substr( $cp, 0, 2 );
+			$prefix3 = substr( $cp, 0, 3 );
+
+			if ( ! isset( $provinces[ $prefix2 ] ) ) {
+				$provinces[ $prefix2 ] = array( 'code' => $pcode, 'name' => $pname );
+			}
+
+			if ( ! empty( $prefix3 ) && ! isset( $prefix_to_city[ $prefix3 ] ) ) {
+				$prefix_to_city[ $prefix3 ] = $city;
+			}
+
+			$clean_city = strtolower( preg_replace( '/[^a-z0-9]/i', '', $city ) );
+			$city_key = $clean_city . '_' . strtolower( $pcode );
+			$city_to_cp[ $city_key ]  = $cp;
+			$city_to_cp[ $clean_city ] = $cp;
+
+			if ( ! isset( $province_cities[ $pcode ] ) ) {
+				$province_cities[ $pcode ] = array();
+			}
+			if ( ! in_array( $city, $province_cities[ $pcode ], true ) ) {
+				$province_cities[ $pcode ][] = $city;
+			}
+
+			$provinces_count[ $pcode ] = true;
+			$cities_set[ $city ]       = true;
+			$row_count++;
+		}
+
+		fclose( $handle );
+
+		if ( 0 === $row_count ) {
+			return new WP_Error( 'empty_csv', 'No se encontraron filas de datos válidos en el archivo.' );
+		}
+
+		$data = array(
+			'provinces'       => $provinces,
+			'prefix_to_city'  => $prefix_to_city,
+			'city_to_cp'      => $city_to_cp,
+			'province_cities' => $province_cities,
+		);
+
+		update_option( 'wpat_autofill_data_' . $country_code_found, $data );
+
+		$countries = self::get_configured_countries();
+		$countries[ $country_code_found ] = array(
+			'code'            => $country_code_found,
+			'name'            => 'País (' . $country_code_found . ')',
+			'enabled'         => '1',
+			'total_provinces' => count( $provinces_count ),
+			'total_cities'    => count( $cities_set ),
+			'is_builtin'      => false,
+		);
+		update_option( 'wpat_autofill_countries', $countries );
+
+		return array(
+			'country_code'    => $country_code_found,
+			'total_rows'      => $row_count,
+			'total_provinces' => count( $provinces_count ),
+			'total_cities'    => count( $cities_set ),
+		);
+	}
+
+	/**
+	 * Genera datos CSV exportables para un país.
+	 */
+	public static function export_csv_data( $country_code ) {
+		$country_code = strtoupper( sanitize_text_field( $country_code ) );
+		$provinces       = array();
+		$province_cities = array();
+		$city_to_cp      = array();
+
+		if ( 'ES' === $country_code ) {
+			// Cargar datos por defecto de España
+			$instance = self::get_instance();
+			// Reutilizamos datos cargados en enqueue
+			// ...
+			$provinces = array(
+				'01' => array( 'code' => 'VI', 'name' => 'Álava' ),
+				'02' => array( 'code' => 'AB', 'name' => 'Albacete' ),
+				'03' => array( 'code' => 'A',  'name' => 'Alicante' ),
+				'04' => array( 'code' => 'AL', 'name' => 'Almería' ),
+				'08' => array( 'code' => 'B',  'name' => 'Barcelona' ),
+				'11' => array( 'code' => 'CA', 'name' => 'Cádiz' ),
+				'28' => array( 'code' => 'M',  'name' => 'Madrid' ),
+				'29' => array( 'code' => 'MA', 'name' => 'Málaga' ),
+				'41' => array( 'code' => 'SE', 'name' => 'Sevilla' ),
+				'46' => array( 'code' => 'V',  'name' => 'Valencia' ),
+			);
+			$province_cities = array(
+				'CA' => array( 'Jerez de la Frontera', 'Cádiz', 'El Puerto de Santa María', 'Algeciras', 'San Fernando', 'Chiclana de la Frontera', 'Sanlúcar de Barrameda' ),
+				'M'  => array( 'Madrid', 'Alcalá de Henares', 'Alcobendas', 'Alcorcón', 'Fuenlabrada', 'Getafe', 'Leganés', 'Móstoles' ),
+				'B'  => array( 'Barcelona', 'L\'Hospitalet de Llobregat', 'Badalona', 'Terrassa', 'Sabadell', 'Mataró' ),
+				'SE' => array( 'Sevilla', 'Dos Hermanas', 'Alcalá de Guadaíra', 'Utrera', 'Écija' ),
+				'MA' => array( 'Málaga', 'Marbella', 'Mijas', 'Fuengirola', 'Vélez-Málaga', 'Torremolinos' ),
+				'V'  => array( 'Valencia', 'Torrent', 'Gandia', 'Paterna', 'Sagunto' ),
+			);
+		} else {
+			$cdata = get_option( 'wpat_autofill_data_' . $country_code, array() );
+			if ( ! empty( $cdata ) ) {
+				$provinces       = isset( $cdata['provinces'] ) ? $cdata['provinces'] : array();
+				$province_cities = isset( $cdata['province_cities'] ) ? $cdata['province_cities'] : array();
+				$city_to_cp      = isset( $cdata['city_to_cp'] ) ? $cdata['city_to_cp'] : array();
+			}
+		}
+
+		$lines = array( "codigo_pais,codigo_postal,codigo_provincia,nombre_provincia,nombre_poblacion" );
+
+		foreach ( $province_cities as $pcode => $cities ) {
+			$pname = $pcode;
+			foreach ( $provinces as $prefix => $pinfo ) {
+				if ( isset( $pinfo['code'] ) && $pinfo['code'] === $pcode ) {
+					$pname = $pinfo['name'];
+					break;
+				}
+			}
+
+			foreach ( $cities as $city ) {
+				$clean_city = strtolower( preg_replace( '/[^a-z0-9]/i', '', $city ) );
+				$key1       = $clean_city . '_' . strtolower( $pcode );
+				$cp         = isset( $city_to_cp[ $key1 ] ) ? $city_to_cp[ $key1 ] : ( isset( $city_to_cp[ $clean_city ] ) ? $city_to_cp[ $clean_city ] : '' );
+				$lines[]    = sprintf( '%s,%s,%s,"%s","%s"', $country_code, $cp, $pcode, str_replace( '"', '""', $pname ), str_replace( '"', '""', $city ) );
+			}
+		}
+
+		return implode( "\n", $lines );
 	}
 }

@@ -137,9 +137,10 @@ class WPAT_Woo_Checkout_Designer {
 			WPAT_VERSION
 		);
 
-		$btn_bg_color      = isset( $settings['woo_checkout_btn_bg_color'] ) ? $settings['woo_checkout_btn_bg_color'] : '#2563eb';
-		$btn_txt_color     = isset( $settings['woo_checkout_btn_txt_color'] ) ? $settings['woo_checkout_btn_txt_color'] : '#ffffff';
-		$step_accent_color = isset( $settings['woo_checkout_step_accent_color'] ) ? $settings['woo_checkout_step_accent_color'] : '#2563eb';
+		$btn_bg_color       = isset( $settings['woo_checkout_btn_bg_color'] ) ? $settings['woo_checkout_btn_bg_color'] : '#2563eb';
+		$btn_hover_bg_color = isset( $settings['woo_checkout_btn_hover_bg_color'] ) ? $settings['woo_checkout_btn_hover_bg_color'] : '#1d4ed8';
+		$btn_txt_color      = isset( $settings['woo_checkout_btn_txt_color'] ) ? $settings['woo_checkout_btn_txt_color'] : '#ffffff';
+		$step_accent_color  = isset( $settings['woo_checkout_step_accent_color'] ) ? $settings['woo_checkout_step_accent_color'] : '#2563eb';
 
 		$custom_css = "
 			.wpat-checkout-container .wpat-next-btn,
@@ -150,7 +151,16 @@ class WPAT_Woo_Checkout_Designer {
 				background: {$btn_bg_color} !important;
 				color: {$btn_txt_color} !important;
 			}
-			.wpat-checkout-steps-bar .wpat-step-item.active .wpat-step-number {
+			.wpat-checkout-container .wpat-next-btn:hover,
+			.wpat-checkout-container .wpat-coupon-submit-btn:hover,
+			.wpat-checkout-container #place_order:hover,
+			.wpat-checkout-container button#place_order:hover,
+			.wpat-checkout-container input[type='submit'].button.alt:hover {
+				background: {$btn_hover_bg_color} !important;
+				color: {$btn_txt_color} !important;
+			}
+			.wpat-checkout-steps-bar .wpat-step-item.active .wpat-step-number,
+			.wpat-checkout-steps-bar .wpat-step-item.active .wpat-step-num {
 				background: {$step_accent_color} !important;
 				color: #ffffff !important;
 			}
@@ -252,6 +262,16 @@ class WPAT_Woo_Checkout_Designer {
 	 * Reordena los campos de billing y shipping del checkout de WooCommerce.
 	 */
 	public function custom_checkout_fields_order( $fields ) {
+		if ( isset( $fields['billing']['billing_email'] ) ) {
+			$fields['billing']['billing_email']['priority'] = 1;
+		}
+		if ( isset( $fields['billing']['billing_first_name'] ) ) {
+			$fields['billing']['billing_first_name']['priority'] = 2;
+		}
+		if ( isset( $fields['billing']['billing_last_name'] ) ) {
+			$fields['billing']['billing_last_name']['priority'] = 3;
+		}
+
 		$order = array(
 			'country'   => 10,
 			'state'     => 20,

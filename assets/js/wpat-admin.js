@@ -3399,6 +3399,104 @@ jQuery(document).ready(function($) {
 		}
 	});
 
+	// --- GESTIÓN CSV DE AUTOCOMPLETADO MULTI-PAÍS ---
+	$(document).on('click', '#wpat_autofill_import_btn', function(e) {
+		e.preventDefault();
+		var $fileInput = $('#wpat_autofill_csv_input');
+		var $msg = $('#wpat_autofill_import_msg');
+		var files = $fileInput[0].files;
+
+		if (!files || !files.length) {
+			$msg.css('color', '#ef4444').text('Por favor, selecciona un archivo CSV antes de importar.');
+			return;
+		}
+
+		var formData = new FormData();
+		formData.append('action', 'wpat_autofill_import_csv');
+		formData.append('security', wpat_object.nonce);
+		formData.append('csv_file', files[0]);
+
+		$msg.css('color', '#2563eb').text('Procesando e importando archivo CSV...');
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: formData,
+			contentType: false,
+			processData: false,
+			success: function(response) {
+				if (response.success) {
+					$msg.css('color', '#10b981').text(response.data.message);
+					showToast('Importación realizada con éxito', false);
+					setTimeout(function() {
+						location.reload();
+					}, 1500);
+				} else {
+					$msg.css('color', '#ef4444').text('Error: ' + response.data.message);
+					showToast('Error en la importación', true);
+				}
+			},
+			error: function() {
+				$msg.css('color', '#ef4444').text('Error del servidor al procesar la importación.');
+				showToast('Error del servidor', true);
+			}
+		});
+	});
+
+	$(document).on('change', '.wpat-autofill-country-toggle', function() {
+		var $checkbox = $(this);
+		var country = $checkbox.data('country');
+		var status = $checkbox.is(':checked') ? '1' : '0';
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_autofill_toggle_country',
+				security: wpat_object.nonce,
+				country: country,
+				status: status
+			},
+			success: function(response) {
+				if (response.success) {
+					showToast('Estado del país actualizado', false);
+				} else {
+					showToast('Error al cambiar estado', true);
+				}
+			}
+		});
+	});
+
+	$(document).on('click', '.wpat-autofill-delete-country-btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var country = $btn.data('country');
+
+		if (!confirm('¿Estás seguro de que deseas eliminar la configuración del país (' + country + ')?')) {
+			return;
+		}
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_autofill_delete_country',
+				security: wpat_object.nonce,
+				country: country
+			},
+			success: function(response) {
+				if (response.success) {
+					showToast('País eliminado', 'deactivate');
+					$btn.closest('tr').fadeOut(300, function() {
+						$(this).remove();
+					});
+				} else {
+					showToast(response.data.message, true);
+				}
+			}
+		});
+	});
+
 });
 
 

@@ -120,16 +120,24 @@ class WPAT_Woo_Checkout_Editor {
 
 			// Calcular prioridad según posición elegida e índice en la lista
 			$base_priority = 120;
-			if ( 'after_names' === $pos ) {
-				$base_priority = 12;
-			} elseif ( 'after_company' === $pos ) {
-				$base_priority = 32;
+			if ( 'after_email' === $pos ) {
+				$base_priority = 5;
+			} elseif ( 'after_names' === $pos ) {
+				$base_priority = 15;
+			} elseif ( 'after_country_state' === $pos ) {
+				$base_priority = 25;
+			} elseif ( 'after_city_postcode' === $pos ) {
+				$base_priority = 35;
 			} elseif ( 'after_address' === $pos ) {
-				$base_priority = 95;
+				$base_priority = 45;
+			} elseif ( 'after_phone' === $pos ) {
+				$base_priority = 55;
+			} elseif ( 'after_company' === $pos ) {
+				$base_priority = 12;
 			}
 
-			$priority = $base_priority + $cf_idx;
-			$field_class = ( 'half' === $width ) ? array( 'form-row-first' ) : array( 'form-row-wide' );
+			$priority    = $base_priority + $cf_idx;
+			$field_class = ( 'half' === $width ) ? array( 'form-row-first', 'wpat-field-half' ) : array( 'form-row-wide', 'wpat-field-full' );
 
 			$field_data = array(
 				'label'       => sanitize_text_field( $cf['label'] ),

@@ -860,8 +860,32 @@
 /* Línea 7+: Campos personalizados adicionales del editor (order 60+) */
 .wpat-checkout-container p.form-row:not([id*="email"]):not([id*="first_name"]):not([id*="last_name"]):not([id*="country"]):not([id*="state"]):not([id*="city"]):not([id*="postcode"]):not([id*="address"]):not([id*="phone"]) {
 	order: 60 !important;
+}
+
+/* Campos de 50% de ancho (form-row-first, form-row-last, wpat-field-half) */
+.wpat-checkout-container p.form-row.form-row-first,
+.wpat-checkout-container p.form-row.form-row-last,
+.wpat-checkout-container p.form-row.wpat-field-half {
+	width: 49% !important;
+	flex: 0 0 49% !important;
+}
+
+/* Campos de 100% de ancho (form-row-wide, wpat-field-full) */
+.wpat-checkout-container p.form-row.form-row-wide,
+.wpat-checkout-container p.form-row.wpat-field-full {
 	width: 100% !important;
 	flex: 0 0 100% !important;
+}
+
+/* Notas del Pedido (Order Comments) e información adicional debajo de la sección de envío */
+.wpat-checkout-container #order_comments_field,
+.wpat-checkout-container .woocommerce-additional-fields,
+.wpat-checkout-container .woocommerce-additional-fields__field-wrapper {
+	order: 99 !important;
+	width: 100% !important;
+	flex: 0 0 100% !important;
+	clear: both !important;
+	margin-top: 15px !important;
 }
 
 @media (max-width: 767px) {

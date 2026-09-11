@@ -884,7 +884,7 @@ class WPAT_Admin {
 							'placeholder' => isset( $cf['placeholder'] ) ? sanitize_text_field( $cf['placeholder'] ) : '',
 							'required'    => isset( $cf['required'] ) && '1' === $cf['required'] ? '1' : '0',
 							'section'     => isset( $cf['section'] ) && in_array( $cf['section'], array( 'billing', 'shipping', 'order' ), true ) ? $cf['section'] : 'billing',
-							'position'    => isset( $cf['position'] ) && in_array( $cf['position'], array( 'after_names', 'after_company', 'after_address', 'end_of_section' ), true ) ? $cf['position'] : 'after_names',
+							'position'    => isset( $cf['position'] ) && in_array( $cf['position'], array( 'after_email', 'after_names', 'after_country_state', 'after_city_postcode', 'after_address', 'after_phone', 'after_company', 'end_of_section' ), true ) ? $cf['position'] : 'end_of_section',
 							'priority'    => isset( $cf['priority'] ) ? intval( $cf['priority'] ) : 100,
 							'width'       => isset( $cf['width'] ) && in_array( $cf['width'], array( 'full', 'half' ), true ) ? $cf['width'] : 'full',
 							'options'     => isset( $cf['options'] ) ? sanitize_textarea_field( $cf['options'] ) : '',
@@ -3698,9 +3698,13 @@ class WPAT_Admin {
 															<label style="font-size: 11px; display: block; font-weight: 600;">Posición</label>
 															<select name="wpat_settings[checkout_custom_fields][<?php echo $index; ?>][position]" style="width: 100%;">
 																<option value="end_of_section" <?php selected( $f_position, 'end_of_section' ); ?>>Al final de Sección (Línea 7+)</option>
-																<option value="after_names" <?php selected( $f_position, 'after_names' ); ?>>Después de Apellidos</option>
+																<option value="after_email" <?php selected( $f_position, 'after_email' ); ?>>Después de Email (Línea 1)</option>
+																<option value="after_names" <?php selected( $f_position, 'after_names' ); ?>>Después de Nombre/Apellidos (Línea 2)</option>
+																<option value="after_country_state" <?php selected( $f_position, 'after_country_state' ); ?>>Después de País/Provincia (Línea 3)</option>
+																<option value="after_city_postcode" <?php selected( $f_position, 'after_city_postcode' ); ?>>Después de Población/CP (Línea 4)</option>
+																<option value="after_address" <?php selected( $f_position, 'after_address' ); ?>>Después de Dirección (Línea 5)</option>
+																<option value="after_phone" <?php selected( $f_position, 'after_phone' ); ?>>Después de Teléfono (Línea 6)</option>
 																<option value="after_company" <?php selected( $f_position, 'after_company' ); ?>>Después de Empresa</option>
-																<option value="after_address" <?php selected( $f_position, 'after_address' ); ?>>Después de Dirección</option>
 															</select>
 														</div>
 														<div>
@@ -3762,7 +3766,7 @@ class WPAT_Admin {
 													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Identificador Único (Key)</label><input type="text" name="wpat_settings[checkout_custom_fields][' + index + '][key]" value="" class="regular-text" placeholder="ej. horario_entrega" style="width: 100%;" /></div>' +
 													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Tipo de Campo</label><select name="wpat_settings[checkout_custom_fields][' + index + '][type]" class="wpat-field-type-select" style="width: 100%;"><option value="text">Texto Corto</option><option value="select">Desplegable (Select)</option><option value="radio">Radio (Botones de Opción)</option><option value="textarea">Área de Texto</option><option value="checkbox">Casilla (Checkbox)</option><option value="date">Fecha (Calendario)</option></select></div>' +
 													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Sección</label><select name="wpat_settings[checkout_custom_fields][' + index + '][section]" style="width: 100%;"><option value="billing">Facturación</option><option value="shipping">Envío</option><option value="order">Notas Adicionales</option></select></div>' +
-													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Posición</label><select name="wpat_settings[checkout_custom_fields][' + index + '][position]" style="width: 100%;"><option value="end_of_section">Al final de Sección (Línea 7+)</option><option value="after_names">Después de Apellidos</option><option value="after_company">Después de Empresa</option><option value="after_address">Después de Dirección</option></select></div>' +
+													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Posición</label><select name="wpat_settings[checkout_custom_fields][' + index + '][position]" style="width: 100%;"><option value="end_of_section">Al final de Sección (Línea 7+)</option><option value="after_email">Después de Email (Línea 1)</option><option value="after_names">Después de Nombre/Apellidos (Línea 2)</option><option value="after_country_state">Después de País/Provincia (Línea 3)</option><option value="after_city_postcode">Después de Población/CP (Línea 4)</option><option value="after_address">Después de Dirección (Línea 5)</option><option value="after_phone">Después de Teléfono (Línea 6)</option><option value="after_company">Después de Empresa</option></select></div>' +
 													'<div><label style="font-size: 11px; display: block; font-weight: 600;">Ancho (Distribución)</label><select name="wpat_settings[checkout_custom_fields][' + index + '][width]" style="width: 100%;"><option value="full">100% (Línea sola)</option><option value="half">50% (Al lado)</option></select></div>' +
 													'<div style="text-align: right; padding-top: 15px; display: flex; gap: 4px; justify-content: flex-end;"><button type="button" class="button button-small wpat-move-up-btn" title="Subir posición">▲</button><button type="button" class="button button-small wpat-move-down-btn" title="Bajar posición">▼</button><button type="button" class="button button-link-delete wpat-remove-field-btn" style="color: #ef4444;" title="Eliminar campo">Eliminar</button></div>' +
 												'</div>' +

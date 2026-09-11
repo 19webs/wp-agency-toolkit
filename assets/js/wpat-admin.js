@@ -78,6 +78,10 @@ jQuery(document).ready(function($) {
 
 		$parent.find('.wpat-subtab-content').hide();
 		$parent.find('#wpat-subtab-' + target).show();
+
+		// Actualizar valor de input oculto para persistencia al guardar
+		$parent.find('.wpat-active-subtab-input').val(target);
+		localStorage.setItem('wpat_active_subtab', target);
 	});
 
 	// Estilizado dinámico para selección de plantillas de Carrito

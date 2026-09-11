@@ -1028,16 +1028,25 @@ class WPAT_Admin {
 		WPAT_SSL_Fixer::update_htaccess_rules( $ssl_active && $method_htaccess );
 
 		// Redirigir de vuelta a la vista adecuada
+		$active_subtab = isset( $_POST['wpat_active_subtab'] ) ? sanitize_key( $_POST['wpat_active_subtab'] ) : '';
+
 		if ( ! empty( $saving_module ) ) {
-			$redirect_url = add_query_arg( array(
+			$args = array(
 				'settings-updated' => 'true',
 				'mod'              => $saving_module,
-			), menu_page_url( 'wp-agency-toolkit', false ) );
+			);
+			if ( ! empty( $active_subtab ) ) {
+				$args['subtab'] = $active_subtab;
+			}
+			$redirect_url = add_query_arg( $args, menu_page_url( 'wp-agency-toolkit', false ) );
 		} else {
 			$active_tab = isset( $_POST['wpat_active_tab'] ) ? sanitize_key( $_POST['wpat_active_tab'] ) : '';
-			$args = array( 'settings-updated' => 'true' );
+			$args       = array( 'settings-updated' => 'true' );
 			if ( ! empty( $active_tab ) ) {
 				$args['tab'] = $active_tab;
+			}
+			if ( ! empty( $active_subtab ) ) {
+				$args['subtab'] = $active_subtab;
 			}
 			$redirect_url = add_query_arg( $args, menu_page_url( 'wp-agency-toolkit', false ) );
 		}
@@ -5165,6 +5174,11 @@ class WPAT_Admin {
 				$cart_free_shipping_bar = ! isset( $settings['woo_cart_free_shipping_bar'] ) || '1' === $settings['woo_cart_free_shipping_bar'];
 				$cart_free_shipping_min = isset( $settings['woo_cart_free_shipping_min_amount'] ) ? floatval( $settings['woo_cart_free_shipping_min_amount'] ) : 50;
 				$cart_drawer_auto_open  = ! isset( $settings['woo_cart_drawer_auto_open'] ) || '1' === $settings['woo_cart_drawer_auto_open'];
+
+				$active_subtab = isset( $_REQUEST['subtab'] ) ? sanitize_key( $_REQUEST['subtab'] ) : ( isset( $_POST['wpat_active_subtab'] ) ? sanitize_key( $_POST['wpat_active_subtab'] ) : 'checkout-designer' );
+				if ( ! in_array( $active_subtab, array( 'checkout-designer', 'cart-designer' ), true ) ) {
+					$active_subtab = 'checkout-designer';
+				}
 				?>
 				<div class="wpat-module-card">
 					<div class="wpat-module-header">
@@ -5176,12 +5190,13 @@ class WPAT_Admin {
 					</div>
 					<div class="wpat-module-body" style="display: block;">
 						<div class="wpat-inner-subtabs" style="display: flex; gap: 8px; border-bottom: 2px solid var(--wpat-border, #e2e8f0); margin-bottom: 20px;">
-							<button type="button" class="wpat-subtab-nav-btn active" data-subtab="checkout-designer" style="padding: 10px 18px; font-weight: 700; font-size: 13.5px; border: none; background: transparent; cursor: pointer; border-bottom: 3px solid #2563eb; margin-bottom: -2px; color: #2563eb;">💳 Diseñador de Checkout</button>
-							<button type="button" class="wpat-subtab-nav-btn" data-subtab="cart-designer" style="padding: 10px 18px; font-weight: 700; font-size: 13.5px; border: none; background: transparent; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; color: #64748b;">🛒 Diseñador de Carrito</button>
+							<input type="hidden" name="wpat_active_subtab" class="wpat-active-subtab-input" value="<?php echo esc_attr( $active_subtab ); ?>">
+							<button type="button" class="wpat-subtab-nav-btn <?php echo 'checkout-designer' === $active_subtab ? 'active' : ''; ?>" data-subtab="checkout-designer" style="padding: 10px 18px; font-weight: 700; font-size: 13.5px; border: none; background: transparent; cursor: pointer; border-bottom: 3px solid <?php echo 'checkout-designer' === $active_subtab ? '#2563eb' : 'transparent'; ?>; margin-bottom: -2px; color: <?php echo 'checkout-designer' === $active_subtab ? '#2563eb' : '#64748b'; ?>;">💳 Diseñador de Checkout</button>
+							<button type="button" class="wpat-subtab-nav-btn <?php echo 'cart-designer' === $active_subtab ? 'active' : ''; ?>" data-subtab="cart-designer" style="padding: 10px 18px; font-weight: 700; font-size: 13.5px; border: none; background: transparent; cursor: pointer; border-bottom: 3px solid <?php echo 'cart-designer' === $active_subtab ? '#2563eb' : 'transparent'; ?>; margin-bottom: -2px; color: <?php echo 'cart-designer' === $active_subtab ? '#2563eb' : '#64748b'; ?>;">🛒 Diseñador de Carrito</button>
 						</div>
 
 						<!-- Subpestaña 1: Checkout -->
-						<div id="wpat-subtab-checkout-designer" class="wpat-subtab-content active" style="display: block;">
+						<div id="wpat-subtab-checkout-designer" class="wpat-subtab-content <?php echo 'checkout-designer' === $active_subtab ? 'active' : ''; ?>" style="display: <?php echo 'checkout-designer' === $active_subtab ? 'block' : 'none'; ?>;">
 							<div class="wpat-field-group">
 								<label style="font-weight: 700; display: block; margin-bottom: 12px;">Selecciona la Plantilla de Checkout:</label>
 								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
@@ -5269,7 +5284,7 @@ class WPAT_Admin {
 						</div>
 
 						<!-- Subpestaña 2: Carrito -->
-						<div id="wpat-subtab-cart-designer" class="wpat-subtab-content" style="display: none;">
+						<div id="wpat-subtab-cart-designer" class="wpat-subtab-content <?php echo 'cart-designer' === $active_subtab ? 'active' : ''; ?>" style="display: <?php echo 'cart-designer' === $active_subtab ? 'block' : 'none'; ?>;">
 							<div class="wpat-field-group" style="margin-bottom: 20px;">
 								<label style="font-weight: 700; font-size: 14px;">
 									<input type="checkbox" name="wpat_settings[woo_cart_designer_enabled]" value="1" <?php checked( $cart_designer_enabled ); ?>>

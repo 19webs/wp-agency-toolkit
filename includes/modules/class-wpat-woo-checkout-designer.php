@@ -38,10 +38,12 @@ class WPAT_Woo_Checkout_Designer {
 		// Evitar duplicación de pasarelas de pago y botón de pago
 		remove_action( 'woocommerce_checkout_order_review', 'woocommerce_checkout_payment', 20 );
 
-		// Interceptar la plantilla global de WordPress para aislar el checkout de Elementor (prioridad máxima 9999)
+		// Interceptación de plantillas globales de WordPress (prioridad máxima 9999)
 		add_filter( 'template_include', array( $this, 'override_checkout_page_template' ), 9999 );
+		add_filter( 'template_include', array( $this, 'override_cart_page_template' ), 9999 );
+		add_filter( 'the_content', array( $this, 'override_cart_content' ), 9999 );
 
-		// Interceptar las plantillas de WooCommerce para checkout y carrito
+		// Interceptación de plantillas internas de WooCommerce por compatibilidad adicional
 		add_filter( 'woocommerce_locate_template', array( $this, 'override_checkout_template' ), 9999, 3 );
 		add_filter( 'woocommerce_locate_template', array( $this, 'override_cart_template' ), 9999, 3 );
 
@@ -151,6 +153,52 @@ class WPAT_Woo_Checkout_Designer {
 			}
 		}
 		return $template;
+	}
+
+	/**
+	 * Intercepta la inclusión de la plantilla de WordPress para aislar la página de carrito de Elementor y constructores.
+	 */
+	public function override_cart_page_template( $template ) {
+		$settings              = WPAT_Main::get_instance()->get_settings();
+		$cart_designer_enabled = ! isset( $settings['woo_cart_designer_enabled'] ) || '1' === $settings['woo_cart_designer_enabled'];
+
+		if ( $this->is_cart_page() && $cart_designer_enabled ) {
+			if ( class_exists( '\Elementor\Plugin' ) ) {
+				remove_all_filters( 'elementor/frontend/the_content' );
+			}
+
+			$custom_page_template = WPAT_PATH . 'templates/cart/page-cart.php';
+			if ( file_exists( $custom_page_template ) ) {
+				return $custom_page_template;
+			}
+		}
+
+		return $template;
+	}
+
+	/**
+	 * Intercepta el contenido de la página de carrito en temas estándar que renderizan shortcodes.
+	 */
+	public function override_cart_content( $content ) {
+		$settings              = WPAT_Main::get_instance()->get_settings();
+		$cart_designer_enabled = ! isset( $settings['woo_cart_designer_enabled'] ) || '1' === $settings['woo_cart_designer_enabled'];
+
+		if ( $this->is_cart_page() && $cart_designer_enabled && ! is_admin() ) {
+			static $rendered = false;
+			if ( $rendered ) {
+				return $content;
+			}
+			$rendered = true;
+
+			ob_start();
+			$template_file = WPAT_PATH . 'templates/cart/cart.php';
+			if ( file_exists( $template_file ) ) {
+				include $template_file;
+			}
+			return ob_get_clean();
+		}
+
+		return $content;
 	}
 
 	/**

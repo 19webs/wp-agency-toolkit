@@ -13,6 +13,22 @@ $settings    = WPAT_Main::get_instance()->get_settings();
 $cart_layout = isset( $settings['woo_cart_designer_layout'] ) ? $settings['woo_cart_designer_layout'] : 'wpat-cart-classic';
 $designer    = WPAT_Woo_Checkout_Designer::get_instance();
 
+if ( function_exists( 'WC' ) && WC()->cart && WC()->cart->is_empty() ) {
+	?>
+	<div class="wpat-cart-container <?php echo esc_attr( $cart_layout ); ?>">
+		<div class="wpat-cart-empty-state" style="text-align: center; padding: 60px 20px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; margin: 20px auto; max-width: 600px;">
+			<span style="font-size: 54px; display: block; margin-bottom: 15px;">🛒</span>
+			<h2 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 700; color: #0f172a;"><?php esc_html_e( 'Tu carrito está vacío', 'woocommerce' ); ?></h2>
+			<p style="color: #64748b; font-size: 14px; margin-bottom: 25px;"><?php esc_html_e( 'Parece que aún no has añadido productos a tu carrito de compras.', 'wp-agency-toolkit' ); ?></p>
+			<a href="<?php echo esc_url( apply_filters( 'woocommerce_return_to_shop_redirect', wc_get_page_permalink( 'shop' ) ) ); ?>" class="button wpat-return-shop-btn" style="background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block;">
+				<?php esc_html_e( 'Volver a la tienda', 'woocommerce' ); ?> &rarr;
+			</a>
+		</div>
+	</div>
+	<?php
+	return;
+}
+
 do_action( 'woocommerce_before_cart' ); ?>
 
 <div class="wpat-cart-container <?php echo esc_attr( $cart_layout ); ?>">

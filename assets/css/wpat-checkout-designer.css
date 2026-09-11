@@ -984,3 +984,9 @@
 .wpat-dark-mode .wpat-checkout-container.wpat-shop-style .wpat-custom-coupon-box {
 	border-top-color: #334155 !important;
 }
+
+/* Ocultar desglose duplicado de métodos de envío en la barra lateral de WPAT Shop-Style */
+.wpat-checkout-container.wpat-shop-style .wpat-shop-sidebar-card tr.shipping,
+.wpat-checkout-container.wpat-shop-style .wpat-shop-sidebar-card tr.woocommerce-shipping-totals {
+	display: none !important;
+}

@@ -769,67 +769,150 @@
 	color: #cbd5e1 !important;
 }
 
-/* --- LOGICAL ADDRESS FIELD ORDERING (País -> Provincia -> Población -> CP -> Dirección) --- */
+/* --- EXACT FIELD GROUPING & 2-COLUMN GRID PAIRINGS --- */
 .wpat-checkout-container .woocommerce-billing-fields__field-wrapper,
 .wpat-checkout-container .woocommerce-shipping-fields__field-wrapper,
 .wpat-checkout-container .woocommerce-address-fields__field-wrapper,
 .wpat-checkout-container .col-1,
 .wpat-checkout-container .col-2 {
 	display: flex !important;
-	flex-direction: column !important;
+	flex-wrap: wrap !important;
+	gap: 12px 2% !important;
+	flex-direction: row !important;
 }
 
-.wpat-checkout-container #billing_country_field,
-.wpat-checkout-container #shipping_country_field {
-	order: 10 !important;
+.wpat-checkout-container p.form-row {
+	margin-bottom: 0 !important;
+	float: none !important;
+	clear: none !important;
+	box-sizing: border-box !important;
 }
 
-.wpat-checkout-container #billing_state_field,
-.wpat-checkout-container #shipping_state_field {
-	order: 20 !important;
-}
-
-.wpat-checkout-container #billing_city_field,
-.wpat-checkout-container #shipping_city_field {
-	order: 30 !important;
-}
-
-.wpat-checkout-container #billing_postcode_field,
-.wpat-checkout-container #shipping_postcode_field {
-	order: 40 !important;
-}
-
-.wpat-checkout-container #billing_address_1_field,
-.wpat-checkout-container #shipping_address_1_field {
-	order: 50 !important;
-}
-
-.wpat-checkout-container #billing_address_2_field,
-.wpat-checkout-container #shipping_address_2_field {
-	order: 60 !important;
-}
-
+/* Línea 1: Email (100%) */
 .wpat-checkout-container #billing_email_field {
-	order: 0 !important;
+	order: 1 !important;
+	width: 100% !important;
+	flex: 0 0 100% !important;
 }
 
+/* Línea 2: Nombre (49%) & Apellidos (49%) */
 .wpat-checkout-container #billing_first_name_field,
 .wpat-checkout-container #shipping_first_name_field {
-	order: 1 !important;
+	order: 10 !important;
+	width: 49% !important;
+	flex: 0 0 49% !important;
 }
 
 .wpat-checkout-container #billing_last_name_field,
 .wpat-checkout-container #shipping_last_name_field {
-	order: 2 !important;
+	order: 11 !important;
+	width: 49% !important;
+	flex: 0 0 49% !important;
 }
 
-.wpat-checkout-container #billing_company_field,
-.wpat-checkout-container #shipping_company_field {
-	order: 3 !important;
+/* Línea 3: País (49%) & Provincia (49%) */
+.wpat-checkout-container #billing_country_field,
+.wpat-checkout-container #shipping_country_field {
+	order: 20 !important;
+	width: 49% !important;
+	flex: 0 0 49% !important;
 }
 
+.wpat-checkout-container #billing_state_field,
+.wpat-checkout-container #shipping_state_field {
+	order: 21 !important;
+	width: 49% !important;
+	flex: 0 0 49% !important;
+}
+
+/* Línea 4: Población (49%) & Código Postal (49%) */
+.wpat-checkout-container #billing_city_field,
+.wpat-checkout-container #shipping_city_field {
+	order: 30 !important;
+	width: 49% !important;
+	flex: 0 0 49% !important;
+}
+
+.wpat-checkout-container #billing_postcode_field,
+.wpat-checkout-container #shipping_postcode_field {
+	order: 31 !important;
+	width: 49% !important;
+	flex: 0 0 49% !important;
+}
+
+/* Línea 5: Dirección (100%) */
+.wpat-checkout-container #billing_address_1_field,
+.wpat-checkout-container #shipping_address_1_field,
+.wpat-checkout-container #billing_address_2_field,
+.wpat-checkout-container #shipping_address_2_field {
+	order: 40 !important;
+	width: 100% !important;
+	flex: 0 0 100% !important;
+}
+
+/* Línea 6: Teléfono (100%) */
 .wpat-checkout-container #billing_phone_field {
-	order: 70 !important;
+	order: 50 !important;
+	width: 100% !important;
+	flex: 0 0 100% !important;
+}
+
+/* Línea 7+: Campos personalizados adicionales del editor (order 60+) */
+.wpat-checkout-container p.form-row:not([id*="email"]):not([id*="first_name"]):not([id*="last_name"]):not([id*="country"]):not([id*="state"]):not([id*="city"]):not([id*="postcode"]):not([id*="address"]):not([id*="phone"]) {
+	order: 60 !important;
+	width: 100% !important;
+	flex: 0 0 100% !important;
+}
+
+@media (max-width: 767px) {
+	.wpat-checkout-container p.form-row {
+		width: 100% !important;
+		flex: 0 0 100% !important;
+	}
+}
+
+/* --- ESTILOS DE MÉTODOS DE ENVÍO --- */
+.wpat-shipping-table {
+	width: 100% !important;
+	border-collapse: collapse !important;
+	margin: 0 !important;
+}
+
+.wpat-shipping-table th {
+	display: none !important;
+}
+
+.wpat-shipping-table td {
+	padding: 0 !important;
+	border: none !important;
+	width: 100% !important;
+	display: block !important;
+}
+
+.wpat-shipping-table ul#shipping_method {
+	list-style: none !important;
+	margin: 0 !important;
+	padding: 0 !important;
+}
+
+.wpat-shipping-table ul#shipping_method li {
+	background: #f8fafc;
+	border: 1px solid #cbd5e1;
+	border-radius: 8px;
+	padding: 12px 16px;
+	margin-bottom: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 14px;
+	color: #0f172a;
+	cursor: pointer;
+}
+
+.wpat-dark-mode .wpat-shipping-table ul#shipping_method li {
+	background: #0f172a !important;
+	border-color: #334155 !important;
+	color: #f8fafc !important;
 }
 
 .wpat-dark-mode .wpat-step-item.active .wpat-step-num {

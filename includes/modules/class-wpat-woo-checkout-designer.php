@@ -236,23 +236,29 @@ class WPAT_Woo_Checkout_Designer {
 	 * Reordena los campos por defecto de dirección de WooCommerce.
 	 */
 	public function custom_default_address_fields_order( $fields ) {
+		if ( isset( $fields['first_name'] ) ) {
+			$fields['first_name']['priority'] = 10;
+		}
+		if ( isset( $fields['last_name'] ) ) {
+			$fields['last_name']['priority'] = 11;
+		}
 		if ( isset( $fields['country'] ) ) {
-			$fields['country']['priority'] = 10;
+			$fields['country']['priority'] = 20;
 		}
 		if ( isset( $fields['state'] ) ) {
-			$fields['state']['priority'] = 20;
+			$fields['state']['priority'] = 21;
 		}
 		if ( isset( $fields['city'] ) ) {
 			$fields['city']['priority'] = 30;
 		}
 		if ( isset( $fields['postcode'] ) ) {
-			$fields['postcode']['priority'] = 40;
+			$fields['postcode']['priority'] = 31;
 		}
 		if ( isset( $fields['address_1'] ) ) {
-			$fields['address_1']['priority'] = 50;
+			$fields['address_1']['priority'] = 40;
 		}
 		if ( isset( $fields['address_2'] ) ) {
-			$fields['address_2']['priority'] = 60;
+			$fields['address_2']['priority'] = 41;
 		}
 
 		return $fields;
@@ -264,29 +270,39 @@ class WPAT_Woo_Checkout_Designer {
 	public function custom_checkout_fields_order( $fields ) {
 		if ( isset( $fields['billing']['billing_email'] ) ) {
 			$fields['billing']['billing_email']['priority'] = 1;
+			$fields['billing']['billing_email']['class']    = array( 'form-row-wide' );
 		}
 		if ( isset( $fields['billing']['billing_first_name'] ) ) {
-			$fields['billing']['billing_first_name']['priority'] = 2;
+			$fields['billing']['billing_first_name']['priority'] = 10;
+			$fields['billing']['billing_first_name']['class']    = array( 'form-row-first' );
 		}
 		if ( isset( $fields['billing']['billing_last_name'] ) ) {
-			$fields['billing']['billing_last_name']['priority'] = 3;
+			$fields['billing']['billing_last_name']['priority'] = 11;
+			$fields['billing']['billing_last_name']['class']    = array( 'form-row-last' );
+		}
+		if ( isset( $fields['billing']['billing_phone'] ) ) {
+			$fields['billing']['billing_phone']['priority'] = 50;
+			$fields['billing']['billing_phone']['class']    = array( 'form-row-wide' );
 		}
 
 		$order = array(
-			'country'   => 10,
-			'state'     => 20,
-			'city'      => 30,
-			'postcode'  => 40,
-			'address_1' => 50,
-			'address_2' => 60,
+			'first_name' => array( 'p' => 10, 'c' => 'form-row-first' ),
+			'last_name'  => array( 'p' => 11, 'c' => 'form-row-last' ),
+			'country'    => array( 'p' => 20, 'c' => 'form-row-first' ),
+			'state'      => array( 'p' => 21, 'c' => 'form-row-last' ),
+			'city'       => array( 'p' => 30, 'c' => 'form-row-first' ),
+			'postcode'   => array( 'p' => 31, 'c' => 'form-row-last' ),
+			'address_1'  => array( 'p' => 40, 'c' => 'form-row-wide' ),
+			'address_2'  => array( 'p' => 41, 'c' => 'form-row-wide' ),
 		);
 
 		foreach ( array( 'billing', 'shipping' ) as $type ) {
 			if ( isset( $fields[ $type ] ) ) {
-				foreach ( $order as $key => $priority ) {
+				foreach ( $order as $key => $info ) {
 					$field_key = $type . '_' . $key;
 					if ( isset( $fields[ $type ][ $field_key ] ) ) {
-						$fields[ $type ][ $field_key ]['priority'] = $priority;
+						$fields[ $type ][ $field_key ]['priority'] = $info['p'];
+						$fields[ $type ][ $field_key ]['class']    = array( $info['c'] );
 					}
 				}
 			}

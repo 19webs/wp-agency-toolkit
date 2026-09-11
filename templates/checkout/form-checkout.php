@@ -177,10 +177,14 @@ if ( function_exists( 'WC' ) && WC()->cart && WC()->cart->is_empty() ) {
 				<div class="wpat-card-box wpat-shop-section-shipping" style="margin-top: 20px;">
 					<h3 class="wpat-card-title">Métodos de envío</h3>
 					<div class="wpat-shipping-methods-container">
-						<?php if ( WC()->cart->needs_shipping() && WC()->cart->show_shipping() ) : ?>
-							<?php wc_cart_totals_shipping_html(); ?>
+						<?php if ( WC()->cart->needs_shipping() ) : ?>
+							<table class="wpat-shipping-table woocommerce-checkout-review-order-table" style="width:100%;">
+								<tbody>
+									<?php wc_cart_totals_shipping_html(); ?>
+								</tbody>
+							</table>
 						<?php else : ?>
-							<p style="font-size: 13px; color: #64748b;">Ingresa tu dirección de envío para ver los métodos disponibles.</p>
+							<p style="font-size: 13px; color: #64748b;">No se requieren opciones de envío especiales para este pedido.</p>
 						<?php endif; ?>
 					</div>
 				</div>

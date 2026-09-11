@@ -62,7 +62,6 @@ jQuery(document).ready(function($) {
 		var $cityField = $('#' + type + '_city');
 		if (!$cityField.length) return;
 
-		// Si ya es un select o un input, construimos las opciones
 		var nameAttr = $cityField.attr('name') || (type + '_city');
 		var idAttr = $cityField.attr('id') || (type + '_city');
 
@@ -92,7 +91,7 @@ jQuery(document).ready(function($) {
 			$cityField.replaceWith($select);
 		} else if ($cityField.is('select')) {
 			$cityField.html($select.html());
-			if (currentVal && foundMatch) {
+			if (currentVal) {
 				$cityField.val(currentVal);
 			}
 		}
@@ -160,7 +159,7 @@ jQuery(document).ready(function($) {
 			var towns = wpatAutofillOptions.spain_province_cities ? wpatAutofillOptions.spain_province_cities[pCode] : null;
 			var currentCityVal = $('#' + type + '_city').val();
 
-			// 1B. Detectar ciudad específica si tenemos 3 o 5 dígitos de CP (ej: 114 -> Jerez de la Frontera)
+			// 1B. Detectar ciudad específica si tenemos 3 dígitos de CP (ej: 114 -> Jerez de la Frontera)
 			var prefix3 = cp.substring(0, 3);
 			var matchedCity = wpatAutofillOptions.spain_prefix_to_city ? wpatAutofillOptions.spain_prefix_to_city[prefix3] : null;
 
@@ -196,13 +195,11 @@ jQuery(document).ready(function($) {
 
 		isProgrammatic = true;
 
-		// Si se cambió la provincia pero no la ciudad, cargar desplegable de la provincia
+		// Si se cambió la provincia, cargar desplegable de las poblaciones de la provincia
 		if (pCode && wpatAutofillOptions.spain_province_cities && wpatAutofillOptions.spain_province_cities[pCode]) {
-			if ($cityField.is('input') || !$cityField.find('option[value="' + cityVal + '"]').length) {
-				var towns = wpatAutofillOptions.spain_province_cities[pCode];
-				convertCityToSelect(type, towns, cityVal);
-				$cityField = $('#' + type + '_city');
-			}
+			var towns = wpatAutofillOptions.spain_province_cities[pCode];
+			convertCityToSelect(type, towns, cityVal);
+			$cityField = $('#' + type + '_city');
 		}
 
 		// Buscar el Código Postal correspondiente a la población elegida

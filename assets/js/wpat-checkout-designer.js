@@ -183,6 +183,50 @@ jQuery(document).ready(function($) {
 		});
 	}
 
+	// --- 5.1 CHECKOUT ITEM QUANTITY CONTROLS (+ / - / ×) ---
+	$(document).on('click', '.wpat-checkout-qty-btn, .wpat-checkout-remove-btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var cartKey = $btn.data('cart-key') || $btn.attr('data-cart-key');
+		if (!cartKey) return;
+
+		var isPlus = $btn.hasClass('wpat-checkout-qty-plus');
+		var isMinus = $btn.hasClass('wpat-checkout-qty-minus');
+		var isRemove = $btn.hasClass('wpat-checkout-remove-btn');
+
+		var $controls = $btn.closest('.wpat-checkout-qty-controls');
+		var $valSpan = $controls.find('.wpat-checkout-qty-val');
+		var currentQty = parseInt($valSpan.text(), 10) || 1;
+		var newQty = currentQty;
+
+		if (isPlus) {
+			newQty = currentQty + 1;
+		} else if (isMinus) {
+			newQty = Math.max(0, currentQty - 1);
+		} else if (isRemove) {
+			newQty = 0;
+		}
+
+		$controls.css('opacity', '0.4');
+
+		$.ajax({
+			type: 'POST',
+			url: typeof wpatCheckoutOptions !== 'undefined' ? wpatCheckoutOptions.ajax_url : '/wp-admin/admin-ajax.php',
+			data: {
+				action: 'wpat_update_checkout_qty',
+				security: typeof wpatCheckoutOptions !== 'undefined' ? wpatCheckoutOptions.nonce : '',
+				cart_key: cartKey,
+				qty: newQty
+			},
+			success: function(response) {
+				$(document.body).trigger('update_checkout');
+			},
+			error: function() {
+				$(document.body).trigger('update_checkout');
+			}
+		});
+	});
+
 	// --- 6. CART DESIGNER: QUANTITY BUTTONS (+ / -) & AUTO-UPDATE CART ---
 	var cartAutoUpdateTimer = null;
 

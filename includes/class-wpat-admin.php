@@ -747,6 +747,7 @@ class WPAT_Admin {
 			$new_settings['woo_cart_designer_layout']            = isset( $input_settings['woo_cart_designer_layout'] ) && in_array( $input_settings['woo_cart_designer_layout'], array( 'wpat-cart-classic', 'wpat-cart-modern', 'wpat-cart-drawer' ), true ) ? $input_settings['woo_cart_designer_layout'] : 'wpat-cart-classic';
 			$new_settings['woo_cart_free_shipping_bar']          = isset( $input_settings['woo_cart_free_shipping_bar'] ) && '1' === $input_settings['woo_cart_free_shipping_bar'] ? '1' : '0';
 			$new_settings['woo_cart_free_shipping_min_amount']   = isset( $input_settings['woo_cart_free_shipping_min_amount'] ) ? max( 0, floatval( $input_settings['woo_cart_free_shipping_min_amount'] ) ) : 50;
+			self::sync_wpat_min_amount_to_woocommerce( $new_settings['woo_cart_free_shipping_min_amount'] );
 			$new_settings['woo_cart_drawer_auto_open']           = isset( $input_settings['woo_cart_drawer_auto_open'] ) && '1' === $input_settings['woo_cart_drawer_auto_open'] ? '1' : '0';
 			$new_settings['woo_cart_show_shipping_calculator']  = isset( $input_settings['woo_cart_show_shipping_calculator'] ) && '1' === $input_settings['woo_cart_show_shipping_calculator'] ? '1' : '0';
 		}
@@ -6827,6 +6828,41 @@ class WPAT_Admin {
 		}
 
 		wp_send_json_error( array( 'message' => 'No se puede eliminar el país nativo o no fue encontrado.' ) );
+	}
+
+	/**
+	 * Sincroniza el importe mínimo configurado en WPAT con las zonas de envío de WooCommerce.
+	 */
+	public static function sync_wpat_min_amount_to_woocommerce( $min_amount ) {
+		$min_amount = max( 0, floatval( $min_amount ) );
+		if ( $min_amount <= 0 ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WC_Shipping_Zones' ) ) {
+			return;
+		}
+
+		$zones     = WC_Shipping_Zones::get_zones();
+		$rest_zone = new WC_Shipping_Zone( 0 );
+		$zones[]   = array( 'shipping_methods' => $rest_zone->get_shipping_methods() );
+
+		foreach ( $zones as $zone_data ) {
+			$methods = isset( $zone_data['shipping_methods'] ) ? $zone_data['shipping_methods'] : array();
+			foreach ( $methods as $method ) {
+				if ( isset( $method->id ) && 'free_shipping' === $method->id && isset( $method->instance_id ) ) {
+					$option_key = 'woocommerce_free_shipping_' . $method->instance_id . '_settings';
+					$opts       = get_option( $option_key, array() );
+					if ( is_array( $opts ) ) {
+						$opts['min_amount'] = $min_amount;
+						if ( empty( $opts['requires'] ) || 'coupon' === $opts['requires'] ) {
+							$opts['requires'] = 'min_amount';
+						}
+						update_option( $option_key, $opts );
+					}
+				}
+			}
+		}
 	}
 
 }

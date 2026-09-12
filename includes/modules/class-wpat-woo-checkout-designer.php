@@ -51,20 +51,28 @@ class WPAT_Woo_Checkout_Designer {
 		add_action( 'wp_footer', array( $this, 'render_drawer_cart_footer' ) );
 		add_filter( 'woocommerce_add_to_cart_fragments', array( $this, 'add_to_cart_fragments' ) );
 
-		// Filtros para las miniaturas y clases de body
+		// Filtros para las miniaturas, controles de cantidad y clases de body
 		add_filter( 'woocommerce_cart_item_name', array( $this, 'add_product_thumbnail_to_checkout' ), 10, 3 );
+		add_filter( 'woocommerce_checkout_cart_item_quantity', array( $this, 'add_checkout_qty_controls' ), 10, 3 );
 		add_filter( 'body_class', array( $this, 'add_body_class' ) );
+
+		// Acciones AJAX para actualizar cantidades y eliminar productos desde el checkout
+		add_action( 'wp_ajax_wpat_update_checkout_qty', array( $this, 'ajax_update_checkout_qty' ) );
+		add_action( 'wp_ajax_nopriv_wpat_update_checkout_qty', array( $this, 'ajax_update_checkout_qty' ) );
 
 		// Reordenar campos de dirección (País -> Provincia -> Población -> CP -> Dirección)
 		add_filter( 'woocommerce_default_address_fields', array( $this, 'custom_default_address_fields_order' ), 9999 );
 		add_filter( 'woocommerce_checkout_fields', array( $this, 'custom_checkout_fields_order' ), 9999 );
 
-		// Control de Envío Gratuito y Ocultar Calculadora
-		add_filter( 'woocommerce_package_rates', array( $this, 'auto_select_free_shipping_and_hide_paid' ), 9999, 2 );
+		// Control de Calculadora de Envíos en Carrito
 		add_filter( 'option_woocommerce_calc_shipping', array( $this, 'toggle_calc_shipping_option' ), 9999 );
 		add_filter( 'option_woocommerce_enable_shipping_calc', array( $this, 'toggle_shipping_calculator_option' ), 9999 );
 		add_filter( 'woocommerce_shipping_calculator_enable', array( $this, 'filter_shipping_calculator_enable' ), 9999 );
 		add_action( 'woocommerce_cart_totals_before_order_total', array( $this, 'ensure_shipping_calculator_in_cart_totals' ), 10 );
+
+		// Sincronizar automáticamente cambios de importe mínimo desde WooCommerce hacia WPAT
+		add_action( 'updated_option', array( $this, 'sync_woocommerce_free_shipping_to_wpat' ), 10, 3 );
+		add_action( 'added_option', array( $this, 'sync_woocommerce_free_shipping_to_wpat' ), 10, 3 );
 
 		// Fragmento AJAX para actualización de métodos de envío en checkout (Shop-Style / Multi-Step)
 		add_filter( 'woocommerce_update_order_review_fragments', array( $this, 'update_shipping_methods_fragment' ), 9999 );
@@ -209,6 +217,22 @@ class WPAT_Woo_Checkout_Designer {
 		}
 
 		return $content;
+	}
+
+	/**
+	 * Sincroniza automáticamente los cambios de importe mínimo de envío gratis desde WooCommerce hacia WPAT.
+	 */
+	public function sync_woocommerce_free_shipping_to_wpat( $option_name, $old_value = null, $value = null ) {
+		if ( strpos( $option_name, 'woocommerce_free_shipping_' ) === 0 && is_array( $value ) && isset( $value['min_amount'] ) ) {
+			$min_amount = max( 0, floatval( $value['min_amount'] ) );
+			if ( $min_amount > 0 ) {
+				$settings = WPAT_Main::get_instance()->get_settings();
+				if ( ! isset( $settings['woo_cart_free_shipping_min_amount'] ) || floatval( $settings['woo_cart_free_shipping_min_amount'] ) !== $min_amount ) {
+					$settings['woo_cart_free_shipping_min_amount'] = $min_amount;
+					update_option( 'wpat_settings', $settings );
+				}
+			}
+		}
 	}
 
 	/**
@@ -464,6 +488,7 @@ class WPAT_Woo_Checkout_Designer {
 			'spain_provinces'      => $spain_provinces,
 			'mobile_summary_label' => __( 'Resumen del pedido', 'wp-agency-toolkit' ),
 			'ajax_url'             => admin_url( 'admin-ajax.php' ),
+			'nonce'                => wp_create_nonce( 'wpat-checkout-nonce' ),
 		) );
 	}
 
@@ -493,6 +518,57 @@ class WPAT_Woo_Checkout_Designer {
 		}
 
 		return $product_name;
+	}
+
+	/**
+	 * Añade controles interactivos de cantidad (+/-) y botón de eliminar (x) en los productos del checkout.
+	 */
+	public function add_checkout_qty_controls( $quantity_html, $cart_item, $cart_item_key ) {
+		if ( ! $this->is_checkout_page() && ! wp_doing_ajax() ) {
+			return $quantity_html;
+		}
+
+		$qty = isset( $cart_item['quantity'] ) ? absint( $cart_item['quantity'] ) : 1;
+
+		ob_start();
+		?>
+		<div class="wpat-checkout-qty-controls" data-cart-key="<?php echo esc_attr( $cart_item_key ); ?>">
+			<div class="wpat-checkout-qty-selector">
+				<button type="button" class="wpat-checkout-qty-btn wpat-checkout-qty-minus" data-cart-key="<?php echo esc_attr( $cart_item_key ); ?>">-</button>
+				<span class="wpat-checkout-qty-val"><?php echo esc_html( $qty ); ?></span>
+				<button type="button" class="wpat-checkout-qty-btn wpat-checkout-qty-plus" data-cart-key="<?php echo esc_attr( $cart_item_key ); ?>">+</button>
+			</div>
+			<a href="#" class="wpat-checkout-remove-btn" data-cart-key="<?php echo esc_attr( $cart_item_key ); ?>" title="<?php esc_attr_e( 'Eliminar del pedido', 'woocommerce' ); ?>">&times;</a>
+		</div>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * AJAX handler para actualizar la cantidad o eliminar un producto desde el checkout.
+	 */
+	public function ajax_update_checkout_qty() {
+		check_ajax_referer( 'wpat-checkout-nonce', 'security' );
+
+		$cart_key = isset( $_POST['cart_key'] ) ? sanitize_text_field( $_POST['cart_key'] ) : '';
+		$new_qty  = isset( $_POST['qty'] ) ? intval( $_POST['qty'] ) : 0;
+
+		if ( ! empty( $cart_key ) && function_exists( 'WC' ) && WC()->cart ) {
+			if ( $new_qty <= 0 ) {
+				WC()->cart->remove_cart_item( $cart_key );
+			} else {
+				WC()->cart->set_quantity( $cart_key, $new_qty, true );
+			}
+
+			WC()->cart->calculate_totals();
+
+			wp_send_json_success( array(
+				'cart_count' => WC()->cart->get_cart_contents_count(),
+				'cart_total' => WC()->cart->get_total(),
+			) );
+		}
+
+		wp_send_json_error( array( 'message' => 'No se pudo actualizar el producto.' ) );
 	}
 
 	/**
@@ -582,34 +658,6 @@ class WPAT_Woo_Checkout_Designer {
 	 * @return array
 	 */
 	public function auto_select_free_shipping_and_hide_paid( $rates, $package ) {
-		if ( empty( $rates ) || ! is_array( $rates ) ) {
-			return $rates;
-		}
-
-		$has_free_shipping = false;
-		$free_rate_id      = '';
-
-		foreach ( $rates as $rate_id => $rate ) {
-			if ( 'free_shipping' === $rate->method_id ) {
-				$has_free_shipping = true;
-				$free_rate_id      = $rate_id;
-				break;
-			}
-		}
-
-		if ( $has_free_shipping ) {
-			if ( function_exists( 'WC' ) && WC()->session ) {
-				$chosen_methods = WC()->session->get( 'chosen_shipping_methods' );
-				if ( empty( $chosen_methods ) || ( is_array( $chosen_methods ) && isset( $chosen_methods[0] ) && strpos( $chosen_methods[0], 'free_shipping' ) === false ) ) {
-					WC()->session->set( 'chosen_shipping_methods', array( $free_rate_id ) );
-				}
-			}
-
-			$free_rates = array();
-			$free_rates[ $free_rate_id ] = $rates[ $free_rate_id ];
-			return $free_rates;
-		}
-
 		return $rates;
 	}
 

@@ -157,24 +157,70 @@ jQuery(document).ready(function($) {
 		});
 	}
 
-	// --- 6. CART DESIGNER: QUANTITY BUTTONS (+ / -) ---
+	// --- 6. CART DESIGNER: QUANTITY BUTTONS (+ / -) & UPDATE CART ---
+	function markCartUpdateAvailable() {
+		var $updateBtn = $('button[name="update_cart"], input[name="update_cart"], .wpat-cart-update-btn');
+		$updateBtn.prop('disabled', false).removeClass('disabled').removeAttr('disabled');
+	}
+
 	$(document).on('click', '.wpat-qty-plus', function(e) {
 		e.preventDefault();
-		var $input = $(this).siblings('input.qty');
+		var $box = $(this).closest('.wpat-cart-table-qty-box, .wpat-cart-modern-qty-box, .quantity, td.product-quantity');
+		var $input = $box.find('input.qty');
+		if (!$input.length) $input = $(this).siblings('.quantity').find('input.qty');
+		if (!$input.length) $input = $(this).siblings('input.qty');
+
 		var val = parseInt($input.val(), 10) || 1;
 		var max = parseInt($input.attr('max'), 10);
 		if (isNaN(max) || val < max) {
 			$input.val(val + 1).trigger('change');
+			markCartUpdateAvailable();
 		}
 	});
 
 	$(document).on('click', '.wpat-qty-minus', function(e) {
 		e.preventDefault();
-		var $input = $(this).siblings('input.qty');
+		var $box = $(this).closest('.wpat-cart-table-qty-box, .wpat-cart-modern-qty-box, .quantity, td.product-quantity');
+		var $input = $box.find('input.qty');
+		if (!$input.length) $input = $(this).siblings('.quantity').find('input.qty');
+		if (!$input.length) $input = $(this).siblings('input.qty');
+
 		var val = parseInt($input.val(), 10) || 1;
-		var min = parseInt($input.attr('min'), 10) || 1;
+		var min = parseInt($input.attr('min'), 10);
+		if (isNaN(min)) min = 1;
 		if (val > min) {
 			$input.val(val - 1).trigger('change');
+			markCartUpdateAvailable();
+		}
+	});
+
+	$(document).on('input change', 'input.qty', function() {
+		markCartUpdateAvailable();
+	});
+
+	// Enable update cart button before submit
+	$(document).on('click', '.wpat-cart-update-btn, button[name="update_cart"]', function() {
+		$(this).prop('disabled', false).removeAttr('disabled');
+	});
+
+	// --- 6.1 EMPTY COUPON VALIDATION ---
+	$(document).on('click', '.wpat-cart-coupon-btn, button[name="apply_coupon"]', function(e) {
+		var $input = $('#coupon_code, input[name="coupon_code"]');
+		var code = $input.val() ? $input.val().trim() : '';
+		if (!code) {
+			e.preventDefault();
+			e.stopPropagation();
+			$('.wpat-cart-coupon-notice').remove();
+			$input.css('border-color', '#ef4444').focus();
+
+			var $notice = $('<div class="wpat-cart-coupon-notice" style="color: #ef4444; font-size: 13px; font-weight: 600; margin-top: 6px;">Por favor, escribe un código de cupón antes de aplicar.</div>');
+			$input.parent().append($notice);
+
+			setTimeout(function() {
+				$notice.fadeOut(300, function() { $(this).remove(); });
+				$input.css('border-color', '');
+			}, 3500);
+			return false;
 		}
 	});
 

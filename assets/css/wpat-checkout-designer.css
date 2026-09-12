@@ -995,12 +995,68 @@
    ESTILOS DE DISEÑADOR DE CARRITO (HIGH-CONVERSION CART REDESIGN)
    ========================================================================== */
 
-.wpat-cart-container,
-.wpat-cart-builder-wrapper {
-	max-width: 1140px !important;
-	margin: 30px auto !important;
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif !important;
-	color: #0f172a !important;
+/* --- AVISOS Y MENSAJES DE CARRITO DE WOOCOMMERCE (REDISEÑO MODERNO) --- */
+.wpat-cart-container .woocommerce-message,
+.wpat-cart-container .woocommerce-info,
+.wpat-cart-container .woocommerce-error,
+.woocommerce-notices-wrapper .woocommerce-message,
+.woocommerce-notices-wrapper .woocommerce-info,
+.woocommerce-notices-wrapper .woocommerce-error {
+	border-top: none !important;
+	border-left: 4px solid #10b981 !important;
+	background: #f0fdf4 !important;
+	color: #065f46 !important;
+	border-radius: 12px !important;
+	padding: 14px 20px !important;
+	font-size: 14.5px !important;
+	font-weight: 500 !important;
+	box-shadow: 0 2px 10px rgba(0,0,0,0.04) !important;
+	margin-bottom: 25px !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	flex-wrap: wrap !important;
+	gap: 12px !important;
+	list-style: none !important;
+}
+
+.wpat-cart-container .woocommerce-info,
+.woocommerce-notices-wrapper .woocommerce-info {
+	border-left-color: #3b82f6 !important;
+	background: #eff6ff !important;
+	color: #1e40af !important;
+}
+
+.wpat-cart-container .woocommerce-error,
+.woocommerce-notices-wrapper .woocommerce-error {
+	border-left-color: #ef4444 !important;
+	background: #fef2f2 !important;
+	color: #991b1b !important;
+}
+
+.wpat-cart-container .woocommerce-message a.button,
+.wpat-cart-container .woocommerce-message a.restore-item,
+.wpat-cart-container .woocommerce-message .button,
+.woocommerce-notices-wrapper .woocommerce-message a.button,
+.woocommerce-notices-wrapper .woocommerce-message a.restore-item {
+	background: #10b981 !important;
+	color: #ffffff !important;
+	border: none !important;
+	padding: 6px 16px !important;
+	border-radius: 8px !important;
+	font-weight: 700 !important;
+	font-size: 13px !important;
+	text-decoration: none !important;
+	box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25) !important;
+	transition: all 0.2s ease !important;
+	display: inline-block !important;
+}
+
+.wpat-cart-container .woocommerce-message a.button:hover,
+.wpat-cart-container .woocommerce-message a.restore-item:hover,
+.woocommerce-notices-wrapper .woocommerce-message a.button:hover {
+	background: #059669 !important;
+	color: #ffffff !important;
 }
 
 .wpat-cart-layout-wrapper {
@@ -1343,17 +1399,137 @@
 	font-weight: 800 !important;
 }
 
+/* ==========================================================================
+   PLANTILLA 2: TARJETAS MODERNAS (WPAT MODERN CARDS CART)
+   ========================================================================== */
+.wpat-cart-container .wpat-cart-modern-cards-list {
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 16px !important;
+	margin-bottom: 20px !important;
+}
+
+.wpat-cart-container .wpat-cart-modern-card {
+	display: flex !important;
+	align-items: center !important;
+	gap: 20px !important;
+	background: #ffffff !important;
+	border: 1px solid #e2e8f0 !important;
+	border-radius: 14px !important;
+	padding: 20px !important;
+	box-shadow: 0 2px 10px rgba(0,0,0,0.03) !important;
+	transition: all 0.2s ease !important;
+}
+
+.wpat-cart-container .wpat-cart-modern-card:hover {
+	border-color: #cbd5e1 !important;
+	box-shadow: 0 4px 16px rgba(0,0,0,0.06) !important;
+}
+
+.wpat-cart-container .wpat-cart-modern-thumb {
+	width: 90px !important;
+	height: 90px !important;
+	flex-shrink: 0 !important;
+	border-radius: 10px !important;
+	overflow: hidden !important;
+	background: #f8fafc !important;
+	border: 1px solid #e2e8f0 !important;
+}
+
+.wpat-cart-container .wpat-cart-modern-thumb img {
+	width: 100% !important;
+	height: 100% !important;
+	object-fit: cover !important;
+	display: block !important;
+}
+
+.wpat-cart-container .wpat-cart-modern-details {
+	flex: 1 !important;
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 8px !important;
+}
+
+.wpat-cart-container .wpat-cart-modern-title-row {
+	display: flex !important;
+	justify-content: space-between !important;
+	align-items: flex-start !important;
+	gap: 12px !important;
+}
+
+.wpat-cart-container .wpat-cart-modern-title {
+	margin: 0 !important;
+	font-size: 16px !important;
+	font-weight: 700 !important;
+	color: #0f172a !important;
+	line-height: 1.3 !important;
+}
+
+.wpat-cart-container .wpat-cart-modern-title a {
+	color: #0f172a !important;
+	text-decoration: none !important;
+	transition: color 0.15s ease !important;
+}
+
+.wpat-cart-container .wpat-cart-modern-title a:hover {
+	color: #2563eb !important;
+}
+
+.wpat-cart-container .wpat-modern-remove-btn,
+.wpat-cart-container .wpat-cart-modern-remove a.remove {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	width: 28px !important;
+	height: 28px !important;
+	border-radius: 50% !important;
+	background: #f1f5f9 !important;
+	color: #64748b !important;
+	font-size: 18px !important;
+	text-decoration: none !important;
+	transition: all 0.2s ease !important;
+	line-height: 1 !important;
+}
+
+.wpat-cart-container .wpat-modern-remove-btn:hover,
+.wpat-cart-container .wpat-cart-modern-remove a.remove:hover {
+	background: #fee2e2 !important;
+	color: #ef4444 !important;
+}
+
+.wpat-cart-container .wpat-cart-modern-price-qty-row {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	flex-wrap: wrap !important;
+	gap: 15px !important;
+	margin-top: 6px !important;
+	padding-top: 10px !important;
+	border-top: 1px dashed #e2e8f0 !important;
+}
+
+.wpat-cart-container .wpat-cart-modern-price {
+	font-size: 14px !important;
+	color: #64748b !important;
+	font-weight: 500 !important;
+}
+
+.wpat-cart-container .wpat-cart-modern-subtotal {
+	font-size: 16px !important;
+	font-weight: 800 !important;
+	color: #0f172a !important;
+}
+
 /* Botón Finalizar Compra / Checkout */
 .wpat-cart-totals-card .checkout-button,
 .wpat-cart-totals-card a.checkout-button,
+.wpat-cart-totals-card .wc-proceed-to-checkout a,
 .wpat-cart-totals-card .wc-proceed-to-checkout a.checkout-button {
 	display: block !important;
 	width: 100% !important;
 	height: 48px !important;
 	line-height: 48px !important;
 	border-radius: 12px !important;
-	background: #2563eb !important;
-	color: #ffffff !important;
 	text-align: center !important;
 	font-weight: 700 !important;
 	font-size: 16px !important;
@@ -1368,9 +1544,8 @@
 
 .wpat-cart-totals-card .checkout-button:hover,
 .wpat-cart-totals-card a.checkout-button:hover,
+.wpat-cart-totals-card .wc-proceed-to-checkout a:hover,
 .wpat-cart-totals-card .wc-proceed-to-checkout a.checkout-button:hover {
-	background: #1d4ed8 !important;
-	color: #ffffff !important;
 	box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35) !important;
 }
 

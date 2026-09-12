@@ -341,6 +341,11 @@ class WPAT_Woo_Checkout_Designer {
 			.wpat-checkout-container button#place_order,
 			.wpat-checkout-container input[type='submit'].button.alt,
 			.wpat-cart-container .checkout-button,
+			.wpat-cart-container a.checkout-button,
+			.wpat-cart-container .wc-proceed-to-checkout a,
+			.wpat-cart-totals-card .checkout-button,
+			.wpat-cart-totals-card a.checkout-button,
+			.wpat-cart-totals-card .wc-proceed-to-checkout a,
 			.wpat-cart-drawer-checkout-btn {
 				background: {$btn_bg_color} !important;
 				color: {$btn_txt_color} !important;
@@ -351,6 +356,11 @@ class WPAT_Woo_Checkout_Designer {
 			.wpat-checkout-container button#place_order:hover,
 			.wpat-checkout-container input[type='submit'].button.alt:hover,
 			.wpat-cart-container .checkout-button:hover,
+			.wpat-cart-container a.checkout-button:hover,
+			.wpat-cart-container .wc-proceed-to-checkout a:hover,
+			.wpat-cart-totals-card .checkout-button:hover,
+			.wpat-cart-totals-card a.checkout-button:hover,
+			.wpat-cart-totals-card .wc-proceed-to-checkout a:hover,
 			.wpat-cart-drawer-checkout-btn:hover {
 				background: {$btn_hover_bg_color} !important;
 				color: {$btn_txt_color} !important;

@@ -5335,6 +5335,26 @@ class WPAT_Admin {
 									Abrir automáticamente el carrito deslizable (Drawer) al añadir un producto desde cualquier página de la tienda
 								</label>
 							</div>
+
+							<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
+
+							<div class="wpat-field-group">
+								<label style="font-weight: 700; display: block; margin-bottom: 12px;">Personalización de Colores de Botón de Finalizar Compra:</label>
+								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+									<div class="wpat-field-group">
+										<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color Fondo de Botón Principal:</label>
+										<input type="text" name="wpat_settings[woo_checkout_btn_bg_color]" value="<?php echo esc_attr( $btn_bg_color ); ?>" class="wpat-color-picker" data-default-color="#2563eb">
+									</div>
+									<div class="wpat-field-group">
+										<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color Fondo Al Pasar el Ratón (Hover):</label>
+										<input type="text" name="wpat_settings[woo_checkout_btn_hover_bg_color]" value="<?php echo esc_attr( $btn_hover_bg_color ); ?>" class="wpat-color-picker" data-default-color="#1d4ed8">
+									</div>
+									<div class="wpat-field-group">
+										<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color Texto de Botón Principal:</label>
+										<input type="text" name="wpat_settings[woo_checkout_btn_txt_color]" value="<?php echo esc_attr( $btn_txt_color ); ?>" class="wpat-color-picker" data-default-color="#ffffff">
+									</div>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>

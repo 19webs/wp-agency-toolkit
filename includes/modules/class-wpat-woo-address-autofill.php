@@ -69,10 +69,45 @@ class WPAT_Woo_Address_Autofill {
 	}
 
 	/**
+	 * Comprueba si la petición actual corresponde a la página del carrito.
+	 *
+	 * @return bool
+	 */
+	private function is_cart_page() {
+		if ( is_admin() ) {
+			return false;
+		}
+
+		if ( function_exists( 'is_cart' ) && is_cart() ) {
+			return true;
+		}
+
+		if ( function_exists( 'wc_get_page_id' ) ) {
+			$cart_id = wc_get_page_id( 'cart' );
+			if ( $cart_id && is_page( $cart_id ) ) {
+				return true;
+			}
+		}
+
+		global $post;
+		if ( is_a( $post, 'WP_Post' ) ) {
+			if ( has_shortcode( $post->post_content, 'woocommerce_cart' ) || has_block( 'woocommerce/cart', $post ) ) {
+				return true;
+			}
+		}
+
+		if ( isset( $_SERVER['REQUEST_URI'] ) && strpos( sanitize_text_field( $_SERVER['REQUEST_URI'] ), 'cart' ) !== false ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Encola los estilos y scripts del autocompletado de dirección.
 	 */
 	public function enqueue_autofill_assets() {
-		if ( ! $this->is_checkout_page() ) {
+		if ( ! $this->is_checkout_page() && ! $this->is_cart_page() ) {
 			return;
 		}
 

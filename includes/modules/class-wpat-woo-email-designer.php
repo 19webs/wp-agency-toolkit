@@ -127,9 +127,48 @@ class WPAT_Woo_Email_Designer {
 	}
 
 	/**
+	 * Obtiene el mensaje personalizado para un tipo de plantilla específico o recurre al ajuste global.
+	 *
+	 * @param string $type     Tipo de plantilla de correo.
+	 * @param string $field    Campo: 'welcome', 'intro', 'promo', 'footer'.
+	 * @param array  $settings Matriz de ajustes del plugin.
+	 * @return string
+	 */
+	public static function get_message_for_type( $type, $field, $settings = null ) {
+		if ( null === $settings ) {
+			$settings = WPAT_Main::get_instance()->get_settings();
+		}
+
+		if ( isset( $settings['woo_email_messages'][ $type ][ $field ] ) && '' !== $settings['woo_email_messages'][ $type ][ $field ] ) {
+			return $settings['woo_email_messages'][ $type ][ $field ];
+		}
+
+		$global_map = array(
+			'welcome' => 'woo_email_welcome_msg',
+			'intro'   => 'woo_email_body_intro',
+			'promo'   => 'woo_email_promo_text',
+			'footer'  => 'woo_email_footer_text',
+		);
+
+		if ( isset( $global_map[ $field ] ) && isset( $settings[ $global_map[ $field ] ] ) ) {
+			return $settings[ $global_map[ $field ] ];
+		}
+
+		return '';
+	}
+
+	/**
 	 * Reemplaza etiquetas dinámicas en el texto del pie de página de los correos.
 	 */
-	public function filter_email_footer_text( $text ) {
+	public function filter_email_footer_text( $text, $email = null ) {
+		$settings   = WPAT_Main::get_instance()->get_settings();
+		$email_type = ( $email && isset( $email->id ) ) ? $email->id : 'customer_processing_order';
+		$raw_footer = self::get_message_for_type( $email_type, 'footer', $settings );
+
+		if ( ! empty( $raw_footer ) ) {
+			$text = $raw_footer;
+		}
+
 		return $this->replace_email_placeholders( $text );
 	}
 
@@ -137,12 +176,15 @@ class WPAT_Woo_Email_Designer {
 	 * Muestra el mensaje de introducción al cuerpo del correo antes de la tabla del pedido.
 	 */
 	public function render_email_body_intro( $order = null, $sent_to_admin = false, $plain_text = false, $email = null ) {
-		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['woo_email_body_intro'] ) ) {
+		$settings   = WPAT_Main::get_instance()->get_settings();
+		$email_type = ( $email && isset( $email->id ) ) ? $email->id : 'customer_processing_order';
+		$raw_intro  = self::get_message_for_type( $email_type, 'intro', $settings );
+
+		if ( empty( $raw_intro ) ) {
 			return;
 		}
 
-		$intro_text = $this->replace_email_placeholders( $settings['woo_email_body_intro'], $order );
+		$intro_text = $this->replace_email_placeholders( $raw_intro, $order );
 
 		if ( $plain_text ) {
 			echo "\n" . esc_html( wp_strip_all_tags( $intro_text ) ) . "\n\n";
@@ -155,12 +197,15 @@ class WPAT_Woo_Email_Designer {
 	 * Muestra el bloque o banner promocional después de la tabla de detalles del pedido.
 	 */
 	public function render_email_promo_text( $order = null, $sent_to_admin = false, $plain_text = false, $email = null ) {
-		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['woo_email_promo_text'] ) ) {
+		$settings   = WPAT_Main::get_instance()->get_settings();
+		$email_type = ( $email && isset( $email->id ) ) ? $email->id : 'customer_processing_order';
+		$raw_promo  = self::get_message_for_type( $email_type, 'promo', $settings );
+
+		if ( empty( $raw_promo ) ) {
 			return;
 		}
 
-		$promo_text    = $this->replace_email_placeholders( $settings['woo_email_promo_text'], $order );
+		$promo_text    = $this->replace_email_placeholders( $raw_promo, $order );
 		$primary_color = isset( $settings['woo_email_primary_color'] ) ? $settings['woo_email_primary_color'] : '#2563eb';
 
 		if ( $plain_text ) {
@@ -274,9 +319,13 @@ class WPAT_Woo_Email_Designer {
 			$email_type = isset( $settings['woo_email_selected_type'] ) ? $settings['woo_email_selected_type'] : 'customer_processing_order';
 		}
 
-		$welcome_msg   = ! empty( $settings['woo_email_welcome_msg'] ) ? $this->replace_email_placeholders( $settings['woo_email_welcome_msg'] ) : '';
-		$body_intro    = ! empty( $settings['woo_email_body_intro'] ) ? $this->replace_email_placeholders( $settings['woo_email_body_intro'] ) : '';
-		$promo_text    = ! empty( $settings['woo_email_promo_text'] ) ? $this->replace_email_placeholders( $settings['woo_email_promo_text'] ) : '';
+		$raw_welcome   = self::get_message_for_type( $email_type, 'welcome', $settings );
+		$raw_intro     = self::get_message_for_type( $email_type, 'intro', $settings );
+		$raw_promo     = self::get_message_for_type( $email_type, 'promo', $settings );
+
+		$welcome_msg   = ! empty( $raw_welcome ) ? $this->replace_email_placeholders( $raw_welcome ) : '';
+		$body_intro    = ! empty( $raw_intro ) ? $this->replace_email_placeholders( $raw_intro ) : '';
+		$promo_text    = ! empty( $raw_promo ) ? $this->replace_email_placeholders( $raw_promo ) : '';
 		$primary_color = isset( $settings['woo_email_primary_color'] ) ? $settings['woo_email_primary_color'] : '#2563eb';
 
 		$titles = array(

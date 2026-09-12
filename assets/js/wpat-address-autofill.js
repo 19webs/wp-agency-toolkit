@@ -267,12 +267,15 @@ jQuery(document).ready(function($) {
 	// Initial load helper
 	function initAddressFields(type) {
 		var $stateField = $('#' + type + '_state');
+		if (!$stateField.length) return;
 		var stateVal = $.trim($stateField.val() || '');
-		var pCode = getProvinceCodeFromVal(stateVal);
+		var pCode = getProvinceCodeFromVal(type, stateVal);
 		var cityVal = $.trim($('#' + type + '_city').val() || '');
+		var cData = getCountryData(type);
+		if (!cData) return;
 
-		if (pCode && wpatAutofillOptions.spain_province_cities && wpatAutofillOptions.spain_province_cities[pCode]) {
-			var towns = wpatAutofillOptions.spain_province_cities[pCode];
+		if (pCode && cData.province_cities && cData.province_cities[pCode]) {
+			var towns = cData.province_cities[pCode];
 			convertCityToSelect(type, towns, cityVal);
 		}
 	}
@@ -286,6 +289,10 @@ jQuery(document).ready(function($) {
 		handlePostcodeChange('shipping');
 	});
 
+	$(document).on('input keyup blur change', '#calc_shipping_postcode', function() {
+		handlePostcodeChange('calc_shipping');
+	});
+
 	$(document).on('change', '#billing_state', function() {
 		handleStateChange('billing');
 	});
@@ -294,12 +301,20 @@ jQuery(document).ready(function($) {
 		handleStateChange('shipping');
 	});
 
+	$(document).on('change', '#calc_shipping_state', function() {
+		handleStateChange('calc_shipping');
+	});
+
 	$(document).on('change', '#billing_city', function() {
 		handleCityChange('billing');
 	});
 
 	$(document).on('change', '#shipping_city', function() {
 		handleCityChange('shipping');
+	});
+
+	$(document).on('change', '#calc_shipping_city', function() {
+		handleCityChange('calc_shipping');
 	});
 
 	$(document).on('change', '#ship-to-different-address-checkbox', function() {
@@ -314,5 +329,6 @@ jQuery(document).ready(function($) {
 	setTimeout(function() {
 		initAddressFields('billing');
 		initAddressFields('shipping');
+		initAddressFields('calc_shipping');
 	}, 400);
 });

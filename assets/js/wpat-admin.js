@@ -3703,6 +3703,162 @@ jQuery(document).ready(function($) {
 		});
 	});
 
+	// ==========================================
+	// DISEÑADOR DE PLANTILLAS DE EMAIL WOOCOMMERCE
+	// ==========================================
+	var lastActiveEmailField = null;
+
+	$(document).on('focus', '.wpat-email-input-field', function() {
+		lastActiveEmailField = this;
+	});
+
+	// Inserción de etiquetas dinámicas al pulsar las píldoras
+	$(document).on('click', '.wpat-tag-pill-btn', function(e) {
+		e.preventDefault();
+		var tag = $(this).data('tag');
+		if (!tag) return;
+
+		var targetField = lastActiveEmailField || $('#wpat_email_field_welcome')[0] || $('#wpat_email_field_intro')[0];
+		if (targetField) {
+			var $tf = $(targetField);
+			var val = $tf.val() || '';
+			var start = targetField.selectionStart !== undefined ? targetField.selectionStart : val.length;
+			var end = targetField.selectionEnd !== undefined ? targetField.selectionEnd : val.length;
+			var newVal = val.substring(0, start) + tag + val.substring(end);
+			$tf.val(newVal).trigger('input');
+			targetField.focus();
+			if (targetField.setSelectionRange) {
+				targetField.setSelectionRange(start + tag.length, start + tag.length);
+			}
+		}
+	});
+
+	// Sincronización del almacenamiento oculto per-template
+	var getActiveEmailType = function() {
+		return $('#wpat_email_type_selector').val() || 'customer_processing_order';
+	};
+
+	$(document).on('input keyup change', '.wpat-email-input-field', function() {
+		var $field = $(this);
+		var fieldId = $field.attr('id');
+		var currentType = getActiveEmailType();
+		var storeField = '';
+
+		if (fieldId === 'wpat_email_field_welcome') storeField = 'welcome';
+		else if (fieldId === 'wpat_email_field_intro') storeField = 'intro';
+		else if (fieldId === 'wpat_email_field_promo') storeField = 'promo';
+		else if (fieldId === 'wpat_email_field_footer') storeField = 'footer';
+
+		if (storeField) {
+			$('#wpat_store_' + storeField + '_' + currentType).val($field.val());
+		}
+	});
+
+	// Cambio de tipo de plantilla en el desplegable
+	$(document).on('change', '#wpat_email_type_selector', function() {
+		var selectedType = $(this).val();
+
+		// Cargar valores del tipo recién seleccionado
+		var wVal = $('#wpat_store_welcome_' + selectedType).val() || '';
+		var iVal = $('#wpat_store_intro_' + selectedType).val() || '';
+		var pVal = $('#wpat_store_promo_' + selectedType).val() || '';
+		var fVal = $('#wpat_store_footer_' + selectedType).val() || '';
+
+		$('#wpat_email_field_welcome').val(wVal);
+		$('#wpat_email_field_intro').val(iVal);
+		$('#wpat_email_field_promo').val(pVal);
+		$('#wpat_email_field_footer').val(fVal);
+	});
+
+	// Botón Vista Previa en Vivo
+	$(document).on('click', '#wpat_email_live_preview_btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var origText = $btn.html();
+		var emailType = getActiveEmailType();
+
+		$btn.html('⏳ Generando vista previa...').prop('disabled', true);
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_get_email_preview_html',
+				security: wpat_object.nonce,
+				email_type: emailType
+			},
+			success: function(response) {
+				$btn.html(origText).prop('disabled', false);
+				if (response.success && response.data && response.data.html) {
+					var $modal = $('#wpat_email_preview_modal');
+					if (!$modal.length) {
+						$modal = $('<div id="wpat_email_preview_modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.75); z-index:999999; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">' +
+							'<div style="background:#ffffff; width:100%; max-width:850px; height:90vh; border-radius:12px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">' +
+								'<div style="padding:16px 20px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">' +
+									'<h3 style="margin:0; font-size:16px; font-weight:700; color:#0f172a;">👁️ Vista Previa en Vivo de Email</h3>' +
+									'<button type="button" class="wpat-close-email-modal" style="background:none; border:none; font-size:22px; cursor:pointer; color:#64748b;">&times;</button>' +
+								'</div>' +
+								'<iframe id="wpat_email_preview_iframe" style="flex:1; width:100%; border:none;"></iframe>' +
+							'</div>' +
+						'</div>');
+						$('body').append($modal);
+					}
+					var iframe = $modal.find('#wpat_email_preview_iframe')[0];
+					$modal.fadeIn(200);
+					var doc = iframe.contentWindow || iframe.contentDocument.document || iframe.contentDocument;
+					if (doc.document) doc = doc.document;
+					doc.open();
+					doc.write(response.data.html);
+					doc.close();
+				} else {
+					showToast('Error al generar la vista previa', true);
+				}
+			},
+			error: function() {
+				$btn.html(origText).prop('disabled', false);
+				showToast('Error de conexión AJAX', true);
+			}
+		});
+	});
+
+	$(document).on('click', '.wpat-close-email-modal', function() {
+		$('#wpat_email_preview_modal').fadeOut(200);
+	});
+
+	// Botón Enviar Email de Prueba
+	$(document).on('click', '#wpat_send_test_email_btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var origText = $btn.html();
+		var recipient = $('#wpat_test_email_recipient').val();
+		var emailType = getActiveEmailType();
+
+		$btn.html('⏳ Enviando...').prop('disabled', true);
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_send_test_email',
+				security: wpat_object.nonce,
+				recipient: recipient,
+				email_type: emailType
+			},
+			success: function(response) {
+				$btn.html(origText).prop('disabled', false);
+				if (response.success) {
+					showToast(response.data.message, false);
+				} else {
+					showToast(response.data.message || 'Error al enviar el email de prueba', true);
+				}
+			},
+			error: function() {
+				$btn.html(origText).prop('disabled', false);
+				showToast('Error de conexión AJAX al enviar', true);
+			}
+		});
+	});
+
 });
 
 

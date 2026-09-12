@@ -771,6 +771,22 @@ class WPAT_Admin {
 			$new_settings['woo_email_social_web']     = isset( $input_settings['woo_email_social_web'] ) ? esc_url_raw( $input_settings['woo_email_social_web'] ) : '';
 			$new_settings['woo_email_selected_type']  = isset( $input_settings['woo_email_selected_type'] ) ? sanitize_key( $input_settings['woo_email_selected_type'] ) : 'customer_processing_order';
 			$new_settings['woo_email_test_recipient'] = isset( $input_settings['woo_email_test_recipient'] ) ? sanitize_email( $input_settings['woo_email_test_recipient'] ) : '';
+
+			if ( isset( $input_settings['woo_email_messages'] ) && is_array( $input_settings['woo_email_messages'] ) ) {
+				$clean_msgs = array();
+				foreach ( $input_settings['woo_email_messages'] as $t_key => $fields ) {
+					$clean_t_key = sanitize_key( $t_key );
+					if ( is_array( $fields ) ) {
+						$clean_msgs[ $clean_t_key ] = array(
+							'welcome' => isset( $fields['welcome'] ) ? sanitize_textarea_field( $fields['welcome'] ) : '',
+							'intro'   => isset( $fields['intro'] ) ? sanitize_textarea_field( $fields['intro'] ) : '',
+							'promo'   => isset( $fields['promo'] ) ? sanitize_textarea_field( $fields['promo'] ) : '',
+							'footer'  => isset( $fields['footer'] ) ? sanitize_textarea_field( $fields['footer'] ) : '',
+						);
+					}
+				}
+				$new_settings['woo_email_messages'] = $clean_msgs;
+			}
 		}
 
 		// Sanitizar Autocompletado de CP y Provincia (WooCommerce)
@@ -1977,12 +1993,6 @@ class WPAT_Admin {
 		}
 				if ( isset( $_GET['settings-updated'] ) && ( 'true' === $_GET['settings-updated'] || '1' === $_GET['settings-updated'] ) ) {
 			?>
-			<div class="notice notice-success is-dismissible wpat-settings-saved-notice" style="border-left-color: #10b981; padding: 12px 15px; margin-top: 15px; margin-bottom: 15px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-radius: 6px;">
-				<p style="margin: 0; font-weight: 600; font-size: 13.5px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-					<span class="dashicons dashicons-yes-alt" style="color: #10b981; font-size: 18px; width: 18px; height: 18px; line-height: 18px;"></span>
-					<?php esc_html_e( 'Cambios guardados correctamente.', 'wp-agency-toolkit' ); ?>
-				</p>
-			</div>
 			<script>
 			(function() {
 				function triggerSavedToast() {
@@ -5376,6 +5386,7 @@ class WPAT_Admin {
 				<?php
 				break;
 			case 'woo-email-designer':
+				require_once WPAT_PATH . 'includes/modules/class-wpat-woo-email-designer.php';
 				$email_style     = isset( $settings['woo_email_template_style'] ) ? $settings['woo_email_template_style'] : 'modern';
 				$email_type_sel  = isset( $settings['woo_email_selected_type'] ) ? $settings['woo_email_selected_type'] : 'customer_processing_order';
 				$email_logo      = isset( $settings['woo_email_logo_url'] ) ? $settings['woo_email_logo_url'] : '';
@@ -5393,6 +5404,24 @@ class WPAT_Admin {
 				$social_tw       = isset( $settings['woo_email_social_tw'] ) ? $settings['woo_email_social_tw'] : '';
 				$social_web      = isset( $settings['woo_email_social_web'] ) ? $settings['woo_email_social_web'] : '';
 				$test_recipient  = isset( $settings['woo_email_test_recipient'] ) && ! empty( $settings['woo_email_test_recipient'] ) ? $settings['woo_email_test_recipient'] : get_option( 'admin_email' );
+
+				$email_types = array(
+					'customer_processing_order' => '📦 Procesando pedido (Cliente)',
+					'customer_completed_order'  => '✅ Pedido completado (Cliente)',
+					'new_order'                 => '🔔 Nuevo pedido (Administrador)',
+					'customer_invoice'          => '📄 Factura / Detalles de pedido (Cliente)',
+					'customer_on_hold'          => '⏳ Pedido en espera (Cliente)',
+					'customer_reset_password'   => '🔑 Restablecer contraseña (Cliente)',
+					'customer_new_account'      => '👤 Nueva cuenta creada (Cliente)',
+				);
+
+				$email_msgs_saved = isset( $settings['woo_email_messages'] ) && is_array( $settings['woo_email_messages'] ) ? $settings['woo_email_messages'] : array();
+
+				// Valores actuales para la plantilla seleccionada
+				$cur_welcome = WPAT_Woo_Email_Designer::get_message_for_type( $email_type_sel, 'welcome', $settings );
+				$cur_intro   = WPAT_Woo_Email_Designer::get_message_for_type( $email_type_sel, 'intro', $settings );
+				$cur_promo   = WPAT_Woo_Email_Designer::get_message_for_type( $email_type_sel, 'promo', $settings );
+				$cur_footer  = WPAT_Woo_Email_Designer::get_message_for_type( $email_type_sel, 'footer', $settings );
 				?>
 				<div class="wpat-module-card">
 					<div class="wpat-module-header">
@@ -5403,20 +5432,6 @@ class WPAT_Admin {
 						<?php $this->render_module_toggle( 'woo-email-designer', $settings, true ); ?>
 					</div>
 					<div class="wpat-module-body" style="display: block;">
-						
-						<!-- Selector de Tipo de Email de WooCommerce -->
-						<div class="wpat-field-group" style="background: #f8fafc; padding: 15px 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 22px;">
-							<label style="font-weight: 700; display: block; margin-bottom: 6px; font-size: 14px; color: #0f172a;">Plantilla de Email a Personalizar / Previsualizar:</label>
-							<select id="wpat_email_type_selector" name="wpat_settings[woo_email_selected_type]" class="regular-text" style="width: 100%; max-width: 480px; font-weight: 600; padding: 6px 12px; border-radius: 6px;">
-								<option value="customer_processing_order" <?php selected( $email_type_sel, 'customer_processing_order' ); ?>>📦 Procesando pedido (Cliente)</option>
-								<option value="customer_completed_order" <?php selected( $email_type_sel, 'customer_completed_order' ); ?>>✅ Pedido completado (Cliente)</option>
-								<option value="new_order" <?php selected( $email_type_sel, 'new_order' ); ?>>🔔 Nuevo pedido (Administrador)</option>
-								<option value="customer_invoice" <?php selected( $email_type_sel, 'customer_invoice' ); ?>>📄 Factura / Detalles de pedido (Cliente)</option>
-								<option value="customer_on_hold" <?php selected( $email_type_sel, 'customer_on_hold' ); ?>>⏳ Pedido en espera (Cliente)</option>
-								<option value="customer_reset_password" <?php selected( $email_type_sel, 'customer_reset_password' ); ?>>🔑 Restablecer contraseña (Cliente)</option>
-								<option value="customer_new_account" <?php selected( $email_type_sel, 'customer_new_account' ); ?>>👤 Nueva cuenta creada (Cliente)</option>
-							</select>
-						</div>
 
 						<div class="wpat-field-group">
 							<label style="font-weight: 700; display: block; margin-bottom: 12px;">Selecciona el Estilo de Plantilla:</label>
@@ -5486,6 +5501,31 @@ class WPAT_Admin {
 
 						<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
 
+						<!-- Selector de Tipo de Email de WooCommerce (Reubicado encima de Mensajes) -->
+						<div class="wpat-field-group" style="background: #f8fafc; padding: 16px 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 22px;">
+							<label style="font-weight: 700; display: block; margin-bottom: 6px; font-size: 14px; color: #0f172a;">Plantilla de Email a Personalizar / Previsualizar:</label>
+							<select id="wpat_email_type_selector" name="wpat_settings[woo_email_selected_type]" class="regular-text" style="width: 100%; max-width: 480px; font-weight: 600; padding: 6px 12px; border-radius: 6px;">
+								<?php foreach ( $email_types as $t_key => $t_label ) : ?>
+									<option value="<?php echo esc_attr( $t_key ); ?>" <?php selected( $email_type_sel, $t_key ); ?>><?php echo esc_html( $t_label ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						</div>
+
+						<!-- Almacén de valores ocultos per-template para envío POST completo -->
+						<div id="wpat_email_messages_store_container" style="display:none;">
+							<?php foreach ( $email_types as $t_key => $t_label ) :
+								$w_val = WPAT_Woo_Email_Designer::get_message_for_type( $t_key, 'welcome', $settings );
+								$i_val = WPAT_Woo_Email_Designer::get_message_for_type( $t_key, 'intro', $settings );
+								$p_val = WPAT_Woo_Email_Designer::get_message_for_type( $t_key, 'promo', $settings );
+								$f_val = WPAT_Woo_Email_Designer::get_message_for_type( $t_key, 'footer', $settings );
+								?>
+								<input type="hidden" name="wpat_settings[woo_email_messages][<?php echo esc_attr( $t_key ); ?>][welcome]" id="wpat_store_welcome_<?php echo esc_attr( $t_key ); ?>" class="wpat-msg-store" data-type="<?php echo esc_attr( $t_key ); ?>" data-field="welcome" value="<?php echo esc_attr( $w_val ); ?>">
+								<input type="hidden" name="wpat_settings[woo_email_messages][<?php echo esc_attr( $t_key ); ?>][intro]" id="wpat_store_intro_<?php echo esc_attr( $t_key ); ?>" class="wpat-msg-store" data-type="<?php echo esc_attr( $t_key ); ?>" data-field="intro" value="<?php echo esc_attr( $i_val ); ?>">
+								<input type="hidden" name="wpat_settings[woo_email_messages][<?php echo esc_attr( $t_key ); ?>][promo]" id="wpat_store_promo_<?php echo esc_attr( $t_key ); ?>" class="wpat-msg-store" data-type="<?php echo esc_attr( $t_key ); ?>" data-field="promo" value="<?php echo esc_attr( $p_val ); ?>">
+								<input type="hidden" name="wpat_settings[woo_email_messages][<?php echo esc_attr( $t_key ); ?>][footer]" id="wpat_store_footer_<?php echo esc_attr( $t_key ); ?>" class="wpat-msg-store" data-type="<?php echo esc_attr( $t_key ); ?>" data-field="footer" value="<?php echo esc_attr( $f_val ); ?>">
+							<?php endforeach; ?>
+						</div>
+
 						<!-- Contenido Personalizado y Etiquetas Dinámicas -->
 						<div class="wpat-field-group">
 							<label style="font-weight: 700; display: block; margin-bottom: 6px;">Mensajes de Contenido Dinámico:</label>
@@ -5504,17 +5544,17 @@ class WPAT_Admin {
 							<div style="display: flex; flex-direction: column; gap: 16px;">
 								<div>
 									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Mensaje de Bienvenida en Cabecera (Opcional):</label>
-									<input type="text" id="wpat_email_field_welcome" name="wpat_settings[woo_email_welcome_msg]" value="<?php echo esc_attr( $email_welcome ); ?>" class="regular-text wpat-email-input-field" style="width: 100%;" placeholder="Ej: ¡Gracias por tu pedido en {site_title}!">
+									<input type="text" id="wpat_email_field_welcome" name="wpat_settings[woo_email_welcome_msg]" value="<?php echo esc_attr( $cur_welcome ); ?>" class="regular-text wpat-email-input-field" style="width: 100%;" placeholder="Ej: ¡Gracias por tu pedido en {site_title}!">
 								</div>
 
 								<div>
 									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Mensaje / Introducción Principal del Cuerpo (Opcional):</label>
-									<textarea id="wpat_email_field_intro" name="wpat_settings[woo_email_body_intro]" rows="2" class="large-text wpat-email-input-field" style="width: 100%;" placeholder="Ej: Hola {customer_name}, hemos recibido tu pedido #{order_number} del {order_date}. ¡Lo estamos preparando con mucho cuidado!"><?php echo esc_textarea( $email_intro ); ?></textarea>
+									<textarea id="wpat_email_field_intro" name="wpat_settings[woo_email_body_intro]" rows="2" class="large-text wpat-email-input-field" style="width: 100%;" placeholder="Ej: Hola {customer_name}, hemos recibido tu pedido #{order_number} del {order_date}. ¡Lo estamos preparando con mucho cuidado!"><?php echo esc_textarea( $cur_intro ); ?></textarea>
 								</div>
 
 								<div>
 									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Bloque Promocional o Banner Destacado (Opcional):</label>
-									<input type="text" id="wpat_email_field_promo" name="wpat_settings[woo_email_promo_text]" value="<?php echo esc_attr( $email_promo ); ?>" class="regular-text wpat-email-input-field" style="width: 100%;" placeholder="Ej: 🎁 ¡Usa el cupón GRACIAS10 en tu próxima compra para un 10% DTO!">
+									<input type="text" id="wpat_email_field_promo" name="wpat_settings[woo_email_promo_text]" value="<?php echo esc_attr( $cur_promo ); ?>" class="regular-text wpat-email-input-field" style="width: 100%;" placeholder="Ej: 🎁 ¡Usa el cupón GRACIAS10 en tu próxima compra para un 10% DTO!">
 								</div>
 							</div>
 						</div>
@@ -5524,7 +5564,7 @@ class WPAT_Admin {
 						<!-- Pie de Página y Redes Sociales -->
 						<div class="wpat-field-group">
 							<label style="font-weight: 700; display: block; margin-bottom: 6px;">Texto de Pie de Página (Copyright / Aviso Legal):</label>
-							<textarea name="wpat_settings[woo_email_footer_text]" rows="2" class="large-text" style="width: 100%;"><?php echo esc_textarea( $email_footer ); ?></textarea>
+							<textarea id="wpat_email_field_footer" name="wpat_settings[woo_email_footer_text]" rows="2" class="large-text wpat-email-input-field" style="width: 100%;"><?php echo esc_textarea( $cur_footer ); ?></textarea>
 						</div>
 
 						<div class="wpat-field-group" style="margin-top: 15px;">

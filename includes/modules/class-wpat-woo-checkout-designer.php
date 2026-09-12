@@ -324,12 +324,23 @@ class WPAT_Woo_Checkout_Designer {
 	 * Añade clases al body para checkout y carrito.
 	 */
 	public function add_body_class( $classes ) {
+		if ( ! is_array( $classes ) ) {
+			$classes = array();
+		}
+
 		if ( $this->is_checkout_page() ) {
 			$classes[] = 'wpat-checkout-designer-active';
 			$classes[] = 'wpat-standalone-checkout-page';
 		}
 		if ( $this->is_cart_page() ) {
 			$classes[] = 'wpat-cart-designer-active';
+
+			$settings           = WPAT_Main::get_instance()->get_settings();
+			$show_shipping_calc = isset( $settings['woo_cart_show_shipping_calculator'] ) && '1' === $settings['woo_cart_show_shipping_calculator'];
+
+			if ( ! $show_shipping_calc ) {
+				$classes[] = 'wpat-hide-shipping-calc';
+			}
 		}
 		return $classes;
 	}
@@ -549,26 +560,5 @@ class WPAT_Woo_Checkout_Designer {
 		}
 
 		return $fields;
-	}
-
-	/**
-	 * Añade clases al <body> para la página de carrito o checkout según la configuración del módulo.
-	 *
-	 * @param array $classes Clases existentes del body.
-	 * @return array
-	 */
-	public function add_body_class( $classes ) {
-		if ( ! is_array( $classes ) ) {
-			$classes = array();
-		}
-
-		$settings           = WPAT_Main::get_instance()->get_settings();
-		$show_shipping_calc = isset( $settings['woo_cart_show_shipping_calculator'] ) && '1' === $settings['woo_cart_show_shipping_calculator'];
-
-		if ( ! $show_shipping_calc && $this->is_cart_page() ) {
-			$classes[] = 'wpat-hide-shipping-calc';
-		}
-
-		return $classes;
 	}
 }

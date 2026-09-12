@@ -622,11 +622,7 @@ class WPAT_Woo_Checkout_Designer {
 		$settings           = WPAT_Main::get_instance()->get_settings();
 		$show_shipping_calc = isset( $settings['woo_cart_show_shipping_calculator'] ) && '1' === $settings['woo_cart_show_shipping_calculator'];
 
-		if ( ! $show_shipping_calc ) {
-			return 'no';
-		}
-
-		return $value;
+		return $show_shipping_calc ? 'yes' : 'no';
 	}
 
 	/**

@@ -3768,6 +3768,21 @@ jQuery(document).ready(function($) {
 		$('#wpat_email_field_intro').val(iVal);
 		$('#wpat_email_field_promo').val(pVal);
 		$('#wpat_email_field_footer').val(fVal);
+
+		// Actualizar los placeholders dinámicamente según la plantilla seleccionada
+		var defaultsMap = {};
+		try {
+			var jsonText = $('#wpat_email_defaults_data').text();
+			if (jsonText) defaultsMap = JSON.parse(jsonText);
+		} catch(err) {}
+
+		if (defaultsMap[selectedType]) {
+			var defs = defaultsMap[selectedType];
+			if (defs.welcome) $('#wpat_email_field_welcome').attr('placeholder', defs.welcome);
+			if (defs.intro) $('#wpat_email_field_intro').attr('placeholder', defs.intro);
+			if (defs.promo) $('#wpat_email_field_promo').attr('placeholder', defs.promo);
+			if (defs.footer) $('#wpat_email_field_footer').attr('placeholder', defs.footer);
+		}
 	});
 
 	// Botón Vista Previa en Vivo

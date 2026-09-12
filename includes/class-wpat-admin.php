@@ -5422,7 +5422,12 @@ class WPAT_Admin {
 				$cur_intro   = WPAT_Woo_Email_Designer::get_message_for_type( $email_type_sel, 'intro', $settings );
 				$cur_promo   = WPAT_Woo_Email_Designer::get_message_for_type( $email_type_sel, 'promo', $settings );
 				$cur_footer  = WPAT_Woo_Email_Designer::get_message_for_type( $email_type_sel, 'footer', $settings );
+				$email_defaults_map = WPAT_Woo_Email_Designer::get_default_messages_map();
+				$cur_defaults       = isset( $email_defaults_map[ $email_type_sel ] ) ? $email_defaults_map[ $email_type_sel ] : array();
 				?>
+				<script id="wpat_email_defaults_data" type="application/json">
+				<?php echo wp_json_encode( $email_defaults_map ); ?>
+				</script>
 				<div class="wpat-module-card">
 					<div class="wpat-module-header">
 						<div class="wpat-module-info">
@@ -5544,17 +5549,17 @@ class WPAT_Admin {
 							<div style="display: flex; flex-direction: column; gap: 16px;">
 								<div>
 									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Mensaje de Bienvenida en Cabecera (Opcional):</label>
-									<input type="text" id="wpat_email_field_welcome" name="wpat_settings[woo_email_welcome_msg]" value="<?php echo esc_attr( $cur_welcome ); ?>" class="regular-text wpat-email-input-field" style="width: 100%;" placeholder="Ej: ¡Gracias por tu pedido en {site_title}!">
+									<input type="text" id="wpat_email_field_welcome" name="wpat_settings[woo_email_welcome_msg]" value="<?php echo esc_attr( $cur_welcome ); ?>" class="regular-text wpat-email-input-field" style="width: 100%;" placeholder="<?php echo esc_attr( isset( $cur_defaults['welcome'] ) ? $cur_defaults['welcome'] : 'Ej: ¡Gracias por tu pedido en {site_title}!' ); ?>">
 								</div>
 
 								<div>
 									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Mensaje / Introducción Principal del Cuerpo (Opcional):</label>
-									<textarea id="wpat_email_field_intro" name="wpat_settings[woo_email_body_intro]" rows="2" class="large-text wpat-email-input-field" style="width: 100%;" placeholder="Ej: Hola {customer_name}, hemos recibido tu pedido #{order_number} del {order_date}. ¡Lo estamos preparando con mucho cuidado!"><?php echo esc_textarea( $cur_intro ); ?></textarea>
+									<textarea id="wpat_email_field_intro" name="wpat_settings[woo_email_body_intro]" rows="2" class="large-text wpat-email-input-field" style="width: 100%;" placeholder="<?php echo esc_attr( isset( $cur_defaults['intro'] ) ? $cur_defaults['intro'] : 'Ej: Hola {customer_name}...' ); ?>"><?php echo esc_textarea( $cur_intro ); ?></textarea>
 								</div>
 
 								<div>
 									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Bloque Promocional o Banner Destacado (Opcional):</label>
-									<input type="text" id="wpat_email_field_promo" name="wpat_settings[woo_email_promo_text]" value="<?php echo esc_attr( $cur_promo ); ?>" class="regular-text wpat-email-input-field" style="width: 100%;" placeholder="Ej: 🎁 ¡Usa el cupón GRACIAS10 en tu próxima compra para un 10% DTO!">
+									<input type="text" id="wpat_email_field_promo" name="wpat_settings[woo_email_promo_text]" value="<?php echo esc_attr( $cur_promo ); ?>" class="regular-text wpat-email-input-field" style="width: 100%;" placeholder="<?php echo esc_attr( isset( $cur_defaults['promo'] ) ? $cur_defaults['promo'] : 'Ej: 🎁 ¡Usa el cupón GRACIAS10...' ); ?>">
 								</div>
 							</div>
 						</div>
@@ -5564,7 +5569,7 @@ class WPAT_Admin {
 						<!-- Pie de Página y Redes Sociales -->
 						<div class="wpat-field-group">
 							<label style="font-weight: 700; display: block; margin-bottom: 6px;">Texto de Pie de Página (Copyright / Aviso Legal):</label>
-							<textarea id="wpat_email_field_footer" name="wpat_settings[woo_email_footer_text]" rows="2" class="large-text wpat-email-input-field" style="width: 100%;"><?php echo esc_textarea( $cur_footer ); ?></textarea>
+							<textarea id="wpat_email_field_footer" name="wpat_settings[woo_email_footer_text]" rows="2" class="large-text wpat-email-input-field" style="width: 100%;" placeholder="<?php echo esc_attr( isset( $cur_defaults['footer'] ) ? $cur_defaults['footer'] : '{site_title}' ); ?>"><?php echo esc_textarea( $cur_footer ); ?></textarea>
 						</div>
 
 						<div class="wpat-field-group" style="margin-top: 15px;">

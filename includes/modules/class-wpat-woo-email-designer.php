@@ -127,7 +127,59 @@ class WPAT_Woo_Email_Designer {
 	}
 
 	/**
-	 * Obtiene el mensaje personalizado para un tipo de plantilla específico o recurre al ajuste global.
+	 * Obtiene el mapa de mensajes predeterminados para cada tipo de plantilla de WooCommerce.
+	 *
+	 * @return array
+	 */
+	public static function get_default_messages_map() {
+		return array(
+			'customer_processing_order' => array(
+				'welcome' => '¡Gracias por tu pedido en {site_title}!',
+				'intro'   => 'Hola {customer_name}, hemos recibido tu pedido #{order_number} del {order_date}. ¡Lo estamos preparando con mucho cuidado!',
+				'promo'   => '🎁 ¡Usa el cupón GRACIAS10 en tu próxima compra para un 10% DTO!',
+				'footer'  => '{site_title} - Gracias por tu confianza.',
+			),
+			'customer_completed_order' => array(
+				'welcome' => '¡Tu pedido #{order_number} ha sido completado y enviado!',
+				'intro'   => 'Hola {customer_name}, nos complace informarte que tu pedido #{order_number} del {order_date} ha sido enviado con éxito. Tu número de seguimiento es {tracking_code}.',
+				'promo'   => '⭐ ¿Te ha gustado tu compra? ¡Déjanos tu valoración!',
+				'footer'  => '{site_title} - Gracias por comprar con nosotros.',
+			),
+			'new_order' => array(
+				'welcome' => '🔔 ¡Nuevo pedido recibido #{order_number}!',
+				'intro'   => 'Se ha registrado un nuevo pedido #{order_number} realizado por {customer_name} el {order_date} por un importe total de {order_total}.',
+				'promo'   => '',
+				'footer'  => '{site_title} - Notificación de administración.',
+			),
+			'customer_invoice' => array(
+				'welcome' => 'Factura y detalles de tu pedido #{order_number}',
+				'intro'   => 'Hola {customer_name}, adjuntamos la factura y los detalles correspondientes a tu pedido #{order_number} realizado el {order_date}.',
+				'promo'   => '',
+				'footer'  => '{site_title} - Información de facturación.',
+			),
+			'customer_on_hold' => array(
+				'welcome' => 'Tu pedido #{order_number} está en espera de pago',
+				'intro'   => 'Hola {customer_name}, tu pedido #{order_number} ha sido recibido y se encuentra actualmente en espera a la confirmación del pago.',
+				'promo'   => '',
+				'footer'  => '{site_title} - Soporte de pedidos.',
+			),
+			'customer_reset_password' => array(
+				'welcome' => 'Solicitud para restablecer tu contraseña',
+				'intro'   => 'Hola {customer_name}, hemos recibido una solicitud para restablecer la contraseña de tu cuenta en {site_title}. Si no realizaste esta solicitud, puedes ignorar este correo.',
+				'promo'   => '',
+				'footer'  => '{site_title} - Seguridad de la cuenta.',
+			),
+			'customer_new_account' => array(
+				'welcome' => '¡Bienvenido a {site_title}! Tu cuenta ha sido creada',
+				'intro'   => 'Hola {customer_name}, te damos la bienvenida a {site_title}. Tu cuenta se ha creado con éxito y ya puedes acceder a tu panel de cliente.',
+				'promo'   => '🎁 ¡Disfruta de un 5% de descuento en tu primer pedido con el código BIENVENIDO5!',
+				'footer'  => '{site_title} - Tu cuenta de usuario.',
+			),
+		);
+	}
+
+	/**
+	 * Obtiene el mensaje personalizado para un tipo de plantilla específico o recurre al ajuste por defecto específico de esa plantilla.
 	 *
 	 * @param string $type     Tipo de plantilla de correo.
 	 * @param string $field    Campo: 'welcome', 'intro', 'promo', 'footer'.
@@ -139,19 +191,26 @@ class WPAT_Woo_Email_Designer {
 			$settings = WPAT_Main::get_instance()->get_settings();
 		}
 
-		if ( isset( $settings['woo_email_messages'][ $type ][ $field ] ) && '' !== $settings['woo_email_messages'][ $type ][ $field ] ) {
+		if ( isset( $settings['woo_email_messages'][ $type ][ $field ] ) ) {
 			return $settings['woo_email_messages'][ $type ][ $field ];
 		}
 
-		$global_map = array(
-			'welcome' => 'woo_email_welcome_msg',
-			'intro'   => 'woo_email_body_intro',
-			'promo'   => 'woo_email_promo_text',
-			'footer'  => 'woo_email_footer_text',
-		);
+		// Fallback para pedidos procesando si existen ajustes globales legacy
+		if ( 'customer_processing_order' === $type ) {
+			$global_map = array(
+				'welcome' => 'woo_email_welcome_msg',
+				'intro'   => 'woo_email_body_intro',
+				'promo'   => 'woo_email_promo_text',
+				'footer'  => 'woo_email_footer_text',
+			);
+			if ( isset( $global_map[ $field ] ) && ! empty( $settings[ $global_map[ $field ] ] ) ) {
+				return $settings[ $global_map[ $field ] ];
+			}
+		}
 
-		if ( isset( $global_map[ $field ] ) && isset( $settings[ $global_map[ $field ] ] ) ) {
-			return $settings[ $global_map[ $field ] ];
+		$defaults = self::get_default_messages_map();
+		if ( isset( $defaults[ $type ][ $field ] ) ) {
+			return $defaults[ $type ][ $field ];
 		}
 
 		return '';

@@ -326,9 +326,14 @@ class WPAT_Woo_Checkout_Designer {
 
 		$settings              = WPAT_Main::get_instance()->get_settings();
 		$cart_designer_enabled = ! isset( $settings['woo_cart_designer_enabled'] ) || '1' === $settings['woo_cart_designer_enabled'];
-		$cart_layout            = isset( $settings['woo_cart_designer_layout'] ) ? $settings['woo_cart_designer_layout'] : 'wpat-cart-classic';
+		$cart_layout           = isset( $settings['woo_cart_designer_layout'] ) ? $settings['woo_cart_designer_layout'] : 'wpat-cart-classic';
+		$drawer_auto_open      = ! isset( $settings['woo_cart_drawer_auto_open'] ) || '1' === $settings['woo_cart_drawer_auto_open'];
 
-		if ( ! $cart_designer_enabled || 'wpat-cart-drawer' !== $cart_layout ) {
+		if ( ! $cart_designer_enabled ) {
+			return;
+		}
+
+		if ( 'wpat-cart-drawer' !== $cart_layout && ! $drawer_auto_open ) {
 			return;
 		}
 
@@ -344,9 +349,10 @@ class WPAT_Woo_Checkout_Designer {
 	public function add_to_cart_fragments( $fragments ) {
 		$settings              = WPAT_Main::get_instance()->get_settings();
 		$cart_designer_enabled = ! isset( $settings['woo_cart_designer_enabled'] ) || '1' === $settings['woo_cart_designer_enabled'];
-		$cart_layout            = isset( $settings['woo_cart_designer_layout'] ) ? $settings['woo_cart_designer_layout'] : 'wpat-cart-classic';
+		$cart_layout           = isset( $settings['woo_cart_designer_layout'] ) ? $settings['woo_cart_designer_layout'] : 'wpat-cart-classic';
+		$drawer_auto_open      = ! isset( $settings['woo_cart_drawer_auto_open'] ) || '1' === $settings['woo_cart_drawer_auto_open'];
 
-		if ( $cart_designer_enabled && 'wpat-cart-drawer' === $cart_layout ) {
+		if ( $cart_designer_enabled && ( 'wpat-cart-drawer' === $cart_layout || $drawer_auto_open ) ) {
 			ob_start();
 			$drawer_content_template = WPAT_PATH . 'templates/cart/cart-drawer-content.php';
 			if ( file_exists( $drawer_content_template ) ) {
@@ -396,13 +402,10 @@ class WPAT_Woo_Checkout_Designer {
 			return;
 		}
 
-		$settings    = WPAT_Main::get_instance()->get_settings();
-		$is_checkout = $this->is_checkout_page();
-		$is_cart     = $this->is_cart_page();
-		$cart_layout = isset( $settings['woo_cart_designer_layout'] ) ? $settings['woo_cart_designer_layout'] : 'wpat-cart-classic';
-		$is_drawer   = 'wpat-cart-drawer' === $cart_layout;
+		$settings              = WPAT_Main::get_instance()->get_settings();
+		$cart_designer_enabled = ! isset( $settings['woo_cart_designer_enabled'] ) || '1' === $settings['woo_cart_designer_enabled'];
 
-		if ( ! $is_checkout && ! $is_cart && ! $is_drawer ) {
+		if ( ! $cart_designer_enabled ) {
 			return;
 		}
 
@@ -468,8 +471,26 @@ class WPAT_Woo_Checkout_Designer {
 			true
 		);
 
-		$layout            = isset( $settings['woo_checkout_designer_layout'] ) ? $settings['woo_checkout_designer_layout'] : 'wpat-classic';
-		$drawer_auto_open  = ! isset( $settings['woo_cart_drawer_auto_open'] ) || '1' === $settings['woo_cart_drawer_auto_open'];
+		$layout           = isset( $settings['woo_checkout_designer_layout'] ) ? $settings['woo_checkout_designer_layout'] : 'wpat-classic';
+		$cart_layout      = isset( $settings['woo_cart_designer_layout'] ) ? $settings['woo_cart_designer_layout'] : 'wpat-cart-classic';
+		$drawer_auto_open = ! isset( $settings['woo_cart_drawer_auto_open'] ) || '1' === $settings['woo_cart_drawer_auto_open'];
+
+		$just_added = false;
+		if ( isset( $_REQUEST['add-to-cart'] ) || isset( $_POST['add-to-cart'] ) || isset( $_GET['add-to-cart'] ) ) {
+			$just_added = true;
+		}
+		if ( function_exists( 'wc_get_notices' ) ) {
+			$notices = wc_get_notices( 'success' );
+			if ( ! empty( $notices ) ) {
+				foreach ( $notices as $notice ) {
+					$notice_text = is_array( $notice ) ? ( isset( $notice['notice'] ) ? $notice['notice'] : '' ) : (string) $notice;
+					if ( strpos( $notice_text, 'añadido' ) !== false || strpos( $notice_text, 'added' ) !== false || strpos( $notice_text, 'carrito' ) !== false ) {
+						$just_added = true;
+						break;
+					}
+				}
+			}
+		}
 
 		$spain_provinces = array(
 			'01' => 'VI', '02' => 'AB', '03' => 'A',  '04' => 'AL', '05' => 'AV',
@@ -489,6 +510,7 @@ class WPAT_Woo_Checkout_Designer {
 			'layout'               => $layout,
 			'cart_layout'          => $cart_layout,
 			'drawer_auto_open'     => $drawer_auto_open ? '1' : '0',
+			'just_added'           => $just_added ? '1' : '0',
 			'email_autocorrect'    => isset( $settings['woo_checkout_designer_email_fix'] ) ? $settings['woo_checkout_designer_email_fix'] : '1',
 			'normalize_selects'    => isset( $settings['woo_checkout_designer_normalize_selects'] ) ? $settings['woo_checkout_designer_normalize_selects'] : '1',
 			'autofill_spain_cp'    => isset( $settings['woo_checkout_designer_autofill_spain_cp'] ) ? $settings['woo_checkout_designer_autofill_spain_cp'] : '1',

@@ -1127,13 +1127,20 @@
    ========================================================================== */
 
 /* --- AVISOS Y MENSAJES DE CARRITO DE WOOCOMMERCE (REDISEÑO MODERNO) --- */
-.wpat-cart-container .woocommerce-message,
-.wpat-cart-container .woocommerce-info,
-.wpat-cart-container .woocommerce-error,
+/* --- AVISOS Y MENSAJES DE CARRITO Y TIENDA WOOCOMMERCE (REDISEÑO HIGH-CONVERSION) --- */
+.woocommerce-message,
+.woocommerce-info,
+.woocommerce-error,
+.woocommerce-notice,
 .woocommerce-notices-wrapper .woocommerce-message,
 .woocommerce-notices-wrapper .woocommerce-info,
-.woocommerce-notices-wrapper .woocommerce-error {
+.woocommerce-notices-wrapper .woocommerce-error,
+.wpat-cart-container .woocommerce-message,
+.wpat-cart-container .woocommerce-info,
+.wpat-cart-container .woocommerce-error {
 	border-top: none !important;
+	border-right: 1px solid #dcfce7 !important;
+	border-bottom: 1px solid #dcfce7 !important;
 	border-left: 5px solid #10b981 !important;
 	background: #f0fdf4 !important;
 	color: #065f46 !important;
@@ -1141,73 +1148,103 @@
 	padding: 14px 20px !important;
 	font-size: 14.5px !important;
 	font-weight: 500 !important;
-	box-shadow: 0 2px 10px rgba(0,0,0,0.04) !important;
+	box-shadow: 0 4px 16px rgba(16, 185, 129, 0.1) !important;
+	margin-top: 15px !important;
 	margin-bottom: 25px !important;
 	display: flex !important;
 	align-items: center !important;
 	justify-content: space-between !important;
 	flex-wrap: wrap !important;
-	gap: 12px !important;
+	gap: 14px !important;
 	list-style: none !important;
 	position: relative !important;
+	clear: both !important;
+	outline: none !important;
 }
 
 /* Ocultar iconos flotantes absolutos antiguos del tema que se solapaban con el texto */
-.wpat-cart-container .woocommerce-message::before,
-.wpat-cart-container .woocommerce-info::before,
-.wpat-cart-container .woocommerce-error::before,
+.woocommerce-message::before,
+.woocommerce-info::before,
+.woocommerce-error::before,
+.woocommerce-message:before,
+.woocommerce-info:before,
+.woocommerce-error:before,
 .woocommerce-notices-wrapper .woocommerce-message::before,
 .woocommerce-notices-wrapper .woocommerce-info::before,
 .woocommerce-notices-wrapper .woocommerce-error::before,
-.wpat-cart-container .woocommerce-message:before,
-.wpat-cart-container .woocommerce-info:before,
-.wpat-cart-container .woocommerce-error:before,
 .woocommerce-notices-wrapper .woocommerce-message:before,
 .woocommerce-notices-wrapper .woocommerce-info:before,
-.woocommerce-notices-wrapper .woocommerce-error:before {
+.woocommerce-notices-wrapper .woocommerce-error:before,
+.wpat-cart-container .woocommerce-message::before,
+.wpat-cart-container .woocommerce-info::before,
+.wpat-cart-container .woocommerce-error::before {
 	display: none !important;
 	content: "" !important;
 }
 
-.wpat-cart-container .woocommerce-info,
-.woocommerce-notices-wrapper .woocommerce-info {
-	border-left-color: #3b82f6 !important;
+.woocommerce-info,
+.woocommerce-notices-wrapper .woocommerce-info,
+.wpat-cart-container .woocommerce-info {
+	border-right-color: #dbeafe !important;
+	border-bottom-color: #dbeafe !important;
+	border-left-color: #2563eb !important;
 	background: #eff6ff !important;
 	color: #1e40af !important;
+	box-shadow: 0 4px 16px rgba(37, 99, 235, 0.1) !important;
 }
 
-.wpat-cart-container .woocommerce-error,
-.woocommerce-notices-wrapper .woocommerce-error {
+.woocommerce-error,
+.woocommerce-notices-wrapper .woocommerce-error,
+.wpat-cart-container .woocommerce-error {
+	border-right-color: #fee2e2 !important;
+	border-bottom-color: #fee2e2 !important;
 	border-left-color: #ef4444 !important;
 	background: #fef2f2 !important;
 	color: #991b1b !important;
+	box-shadow: 0 4px 16px rgba(239, 68, 68, 0.1) !important;
 }
 
+.woocommerce-message a.button,
+.woocommerce-message a.wc-forward,
+.woocommerce-message a.restore-item,
+.woocommerce-message .button,
+.woocommerce-notices-wrapper .woocommerce-message a.button,
+.woocommerce-notices-wrapper .woocommerce-message a.wc-forward,
+.woocommerce-notices-wrapper .woocommerce-message a.restore-item,
 .wpat-cart-container .woocommerce-message a.button,
 .wpat-cart-container .woocommerce-message a.restore-item,
-.wpat-cart-container .woocommerce-message .button,
-.woocommerce-notices-wrapper .woocommerce-message a.button,
-.woocommerce-notices-wrapper .woocommerce-message a.restore-item {
+.wpat-cart-container .woocommerce-message .button {
 	order: 2 !important;
 	margin-left: auto !important;
-	background: #10b981 !important;
+	background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
 	color: #ffffff !important;
 	border: none !important;
-	padding: 6px 16px !important;
+	padding: 8px 20px !important;
 	border-radius: 8px !important;
 	font-weight: 700 !important;
-	font-size: 13px !important;
+	font-size: 13.5px !important;
 	text-decoration: none !important;
-	box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25) !important;
+	box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25) !important;
 	transition: all 0.2s ease !important;
-	display: inline-block !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	height: auto !important;
+	line-height: 1.4 !important;
+	text-transform: none !important;
 }
 
+.woocommerce-message a.button:hover,
+.woocommerce-message a.wc-forward:hover,
+.woocommerce-message a.restore-item:hover,
+.woocommerce-notices-wrapper .woocommerce-message a.button:hover,
+.woocommerce-notices-wrapper .woocommerce-message a.wc-forward:hover,
 .wpat-cart-container .woocommerce-message a.button:hover,
-.wpat-cart-container .woocommerce-message a.restore-item:hover,
-.woocommerce-notices-wrapper .woocommerce-message a.button:hover {
-	background: #059669 !important;
+.wpat-cart-container .woocommerce-message a.restore-item:hover {
+	background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
 	color: #ffffff !important;
+	box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;
+	transform: translateY(-1px) !important;
 }
 
 /* --- AVISOS DE CUPÓN EN CHECKOUT Y FORMULARIOS --- */

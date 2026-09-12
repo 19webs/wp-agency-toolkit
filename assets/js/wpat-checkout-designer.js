@@ -423,10 +423,34 @@ jQuery(document).ready(function($) {
 		openCartDrawer();
 	});
 
-	// Auto-abrir mini-carrito deslizable al añadir producto vía AJAX
+	// Auto-abrir mini-carrito deslizable al añadir producto (vía AJAX, recarga tras añadir o submit)
+	if (typeof wpatCheckoutOptions !== 'undefined' && wpatCheckoutOptions.drawer_auto_open === '1') {
+		if (wpatCheckoutOptions.just_added === '1') {
+			setTimeout(function() {
+				openCartDrawer();
+			}, 350);
+		}
+	}
+
 	$(document.body).on('added_to_cart', function(event, fragments, cart_hash, $button) {
-		if (typeof wpatCheckoutOptions !== 'undefined' && wpatCheckoutOptions.cart_layout === 'wpat-cart-drawer' && wpatCheckoutOptions.drawer_auto_open === '1') {
+		if (typeof wpatCheckoutOptions !== 'undefined' && wpatCheckoutOptions.drawer_auto_open === '1') {
+			if (fragments && fragments['div.wpat-drawer-cart-body']) {
+				$('.wpat-drawer-cart-body').replaceWith(fragments['div.wpat-drawer-cart-body']);
+			}
+			if (fragments && fragments['span.wpat-drawer-cart-count']) {
+				$('.wpat-drawer-cart-count').replaceWith(fragments['span.wpat-drawer-cart-count']);
+			}
 			openCartDrawer();
+		}
+	});
+
+	$(document).on('submit', 'form.cart', function() {
+		if (typeof wpatCheckoutOptions !== 'undefined' && wpatCheckoutOptions.drawer_auto_open === '1') {
+			$(document).one('ajaxComplete', function() {
+				setTimeout(function() {
+					openCartDrawer();
+				}, 400);
+			});
 		}
 	});
 });

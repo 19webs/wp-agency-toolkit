@@ -381,4 +381,3 @@ class WPAT_Woo_Email_Designer {
 		}
 	}
 }
-}

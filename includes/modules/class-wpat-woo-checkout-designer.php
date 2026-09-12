@@ -66,6 +66,9 @@ class WPAT_Woo_Checkout_Designer {
 		add_filter( 'woocommerce_cart_shipping_packages', array( $this, 'ensure_shipping_package_destination' ), 10 );
 		add_filter( 'option_woocommerce_shipping_cost_requires_address', array( $this, 'toggle_shipping_requires_address' ), 9999 );
 		add_action( 'woocommerce_before_cart', array( $this, 'force_customer_shipping_calculation' ) );
+		add_action( 'template_redirect', array( $this, 'force_customer_shipping_calculation' ) );
+		add_filter( 'woocommerce_cart_ready_to_calc_shipping', '__return_true', 9999 );
+		add_filter( 'woocommerce_shipping_method_full_label', array( $this, 'filter_shipping_method_full_label' ), 9999, 2 );
 
 		// Reordenar campos de dirección (País -> Provincia -> Población -> CP -> Dirección)
 		add_filter( 'woocommerce_default_address_fields', array( $this, 'custom_default_address_fields_order' ), 9999 );
@@ -644,13 +647,55 @@ class WPAT_Woo_Checkout_Designer {
 	 * Forzar que el cliente tenga calculados los envíos para la dirección por defecto al entrar al carrito.
 	 */
 	public function force_customer_shipping_calculation() {
-		if ( function_exists( 'WC' ) && WC()->customer ) {
+		if ( is_admin() && ! wp_doing_ajax() ) {
+			return;
+		}
+
+		if ( function_exists( 'WC' ) && WC()->customer && WC()->cart ) {
 			if ( ! WC()->customer->get_shipping_country() ) {
 				$base_country = function_exists( 'wc_get_base_location' ) ? wc_get_base_location()['country'] : 'ES';
 				WC()->customer->set_shipping_country( ! empty( $base_country ) ? $base_country : 'ES' );
 			}
 			WC()->customer->set_calculated_shipping( true );
+
+			if ( WC()->cart->needs_shipping() ) {
+				$packages = WC()->cart->get_shipping_packages();
+				if ( ! empty( $packages ) && is_array( $packages ) ) {
+					foreach ( $packages as $i => $package ) {
+						if ( empty( $package['destination']['country'] ) ) {
+							$packages[ $i ]['destination']['country'] = WC()->customer->get_shipping_country() ? WC()->customer->get_shipping_country() : 'ES';
+						}
+					}
+					WC()->shipping()->calculate_shipping( $packages );
+				}
+			}
 		}
+	}
+
+	/**
+	 * Formatea las etiquetas de métodos de envío para incluir el IVA si WooCommerce está configurado para mostrar precios sin IVA en carrito.
+	 *
+	 * @param string $label Etiqueta nativa del método de envío.
+	 * @param WC_Shipping_Rate $method Instancia de la tarifa de envío.
+	 * @return string
+	 */
+	public function filter_shipping_method_full_label( $label, $method ) {
+		if ( ! function_exists( 'wc_tax_enabled' ) || ! wc_tax_enabled() ) {
+			return $label;
+		}
+
+		if ( isset( $method->cost ) && floatval( $method->cost ) > 0 ) {
+			$taxes      = $method->get_taxes();
+			$tax_amount = ! empty( $taxes ) ? array_sum( $taxes ) : 0;
+
+			if ( $tax_amount > 0 && function_exists( 'WC' ) && WC()->cart && ! WC()->cart->display_prices_including_tax() ) {
+				$cost_incl_tax = floatval( $method->cost ) + floatval( $tax_amount );
+				$label_text    = $method->get_label();
+				$label         = $label_text . ': ' . wc_price( $cost_incl_tax );
+			}
+		}
+
+		return $label;
 	}
 
 	/**
@@ -833,6 +878,8 @@ class WPAT_Woo_Checkout_Designer {
 
 	/**
 	 * Callback para el filtro nativo woocommerce_shipping_calculator_enable.
+	 * Siempre devuelve true en el frontend para que wc_cart_totals_shipping_html() no bloquee la renderización de tarifas.
+	 * La visibilidad de la opción "Cambiar dirección" se controla mediante CSS (.wpat-hide-calc).
 	 *
 	 * @param bool $enabled Valor actual.
 	 * @return bool
@@ -842,10 +889,7 @@ class WPAT_Woo_Checkout_Designer {
 			return $enabled;
 		}
 
-		$settings           = WPAT_Main::get_instance()->get_settings();
-		$show_shipping_calc = isset( $settings['woo_cart_show_shipping_calculator'] ) && '1' === $settings['woo_cart_show_shipping_calculator'];
-
-		return (bool) $show_shipping_calc;
+		return true;
 	}
 
 	/**

@@ -9,9 +9,10 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$settings    = WPAT_Main::get_instance()->get_settings();
-$cart_layout = isset( $settings['woo_cart_designer_layout'] ) ? $settings['woo_cart_designer_layout'] : 'wpat-cart-classic';
-$designer    = WPAT_Woo_Checkout_Designer::get_instance();
+$settings           = WPAT_Main::get_instance()->get_settings();
+$cart_layout        = isset( $settings['woo_cart_designer_layout'] ) ? $settings['woo_cart_designer_layout'] : 'wpat-cart-classic';
+$show_shipping_calc = isset( $settings['woo_cart_show_shipping_calculator'] ) && '1' === $settings['woo_cart_show_shipping_calculator'];
+$designer           = WPAT_Woo_Checkout_Designer::get_instance();
 
 if ( function_exists( 'WC' ) && WC()->cart && WC()->cart->is_empty() ) {
 	?>
@@ -276,9 +277,13 @@ do_action( 'woocommerce_before_cart' ); ?>
 
 			<!-- Columna Secundaria: Resumen de Totales y Checkout (Sticky) -->
 			<div class="wpat-cart-sidebar-column">
-				<div class="wpat-cart-totals-card">
+				<div class="wpat-cart-totals-card <?php echo $show_shipping_calc ? 'wpat-show-calc' : 'wpat-hide-calc'; ?>">
 					<h3><?php esc_html_e( 'Resumen del Carrito', 'woocommerce' ); ?></h3>
 					<?php
+					if ( function_exists( 'WC' ) && WC()->cart && WC()->cart->needs_shipping() ) {
+						$packages = WC()->cart->get_shipping_packages();
+						WC()->shipping()->calculate_shipping( $packages );
+					}
 					/**
 					 * Cart totals template
 					 */

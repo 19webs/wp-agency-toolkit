@@ -378,7 +378,24 @@ jQuery(document).ready(function($) {
 		if ($cartForm.length) {
 			var remainingItems = $cartForm.find('.cart_item, .woocommerce-cart-form__cart-item, .wpat-cart-modern-card').length;
 			if (remainingItems === 0) {
-				window.location.reload();
+				$.ajax({
+					type: 'POST',
+					url: typeof wpatCheckoutOptions !== 'undefined' ? wpatCheckoutOptions.ajax_url : '/wp-admin/admin-ajax.php',
+					data: {
+						action: 'wpat_empty_cart_ajax',
+						security: typeof wpatCheckoutOptions !== 'undefined' ? wpatCheckoutOptions.nonce : ''
+					},
+					success: function(response) {
+						if (response && response.success && response.data.empty_html) {
+							$('.wpat-cart-container').replaceWith(response.data.empty_html);
+						} else {
+							window.location.reload();
+						}
+					},
+					error: function() {
+						window.location.reload();
+					}
+				});
 			}
 		}
 	});

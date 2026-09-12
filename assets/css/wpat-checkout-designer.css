@@ -2121,3 +2121,42 @@ body.wpat-show-shipping-calc .woocommerce-shipping-calculator {
 	font-weight: 600 !important;
 	padding: 8px 18px !important;
 }
+
+/* --- SHIPPING CALCULATOR VISIBILITY & SHIPPING METHODS FORMATTING --- */
+body.wpat-hide-shipping-calc .shipping-calculator-button,
+body.wpat-hide-shipping-calc .shipping-calculator-form,
+.wpat-cart-totals-card.wpat-hide-calc .shipping-calculator-button,
+.wpat-cart-totals-card.wpat-hide-calc .shipping-calculator-form {
+	display: none !important;
+}
+
+.wpat-cart-totals-card tr.shipping {
+	border-bottom: 1px solid #f1f5f9;
+}
+
+.wpat-cart-totals-card #shipping_method {
+	list-style: none !important;
+	padding: 0 !important;
+	margin: 0 0 10px 0 !important;
+}
+
+.wpat-cart-totals-card #shipping_method li {
+	display: flex !important;
+	align-items: center !important;
+	gap: 8px !important;
+	margin-bottom: 6px !important;
+	font-size: 13.5px !important;
+	color: #0f172a !important;
+	font-weight: 500 !important;
+}
+
+.wpat-cart-totals-card #shipping_method li input[type="radio"] {
+	margin: 0 !important;
+	cursor: pointer !important;
+}
+
+.wpat-cart-totals-card p.woocommerce-shipping-destination {
+	font-size: 12.5px !important;
+	color: #64748b !important;
+	margin: 6px 0 0 0 !important;
+}

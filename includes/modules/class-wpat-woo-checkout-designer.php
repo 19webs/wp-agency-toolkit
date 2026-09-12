@@ -62,8 +62,10 @@ class WPAT_Woo_Checkout_Designer {
 		add_action( 'wp_ajax_wpat_empty_cart_ajax', array( $this, 'ajax_empty_cart' ) );
 		add_action( 'wp_ajax_nopriv_wpat_empty_cart_ajax', array( $this, 'ajax_empty_cart' ) );
 
-		// Garantizar destino por defecto para cálculo de envíos desde el 1er producto
+		// Garantizar destino por defecto y mostrar envíos desde el 1er producto
 		add_filter( 'woocommerce_cart_shipping_packages', array( $this, 'ensure_shipping_package_destination' ), 10 );
+		add_filter( 'option_woocommerce_shipping_cost_requires_address', array( $this, 'toggle_shipping_requires_address' ), 9999 );
+		add_action( 'woocommerce_before_cart', array( $this, 'force_customer_shipping_calculation' ) );
 
 		// Reordenar campos de dirección (País -> Provincia -> Población -> CP -> Dirección)
 		add_filter( 'woocommerce_default_address_fields', array( $this, 'custom_default_address_fields_order' ), 9999 );
@@ -626,6 +628,29 @@ class WPAT_Woo_Checkout_Designer {
 		}
 
 		return $packages;
+	}
+
+	/**
+	 * Desactiva el ocultamiento de gastos de envío antes de dirección en el carrito.
+	 */
+	public function toggle_shipping_requires_address( $value ) {
+		if ( is_admin() && ! wp_doing_ajax() ) {
+			return $value;
+		}
+		return 'no';
+	}
+
+	/**
+	 * Forzar que el cliente tenga calculados los envíos para la dirección por defecto al entrar al carrito.
+	 */
+	public function force_customer_shipping_calculation() {
+		if ( function_exists( 'WC' ) && WC()->customer ) {
+			if ( ! WC()->customer->get_shipping_country() ) {
+				$base_country = function_exists( 'wc_get_base_location' ) ? wc_get_base_location()['country'] : 'ES';
+				WC()->customer->set_shipping_country( ! empty( $base_country ) ? $base_country : 'ES' );
+			}
+			WC()->customer->set_calculated_shipping( true );
+		}
 	}
 
 	/**

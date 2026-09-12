@@ -1529,6 +1529,27 @@
 	color: #0f172a !important;
 }
 
+.wpat-empty-cart-btn,
+.wpat-cart-container button.wpat-empty-cart-btn {
+	height: 42px !important;
+	padding: 0 18px !important;
+	border-radius: 10px !important;
+	background: #fef2f2 !important;
+	color: #ef4444 !important;
+	font-weight: 600 !important;
+	font-size: 13.5px !important;
+	border: 1px solid #fca5a5 !important;
+	cursor: pointer !important;
+	transition: all 0.2s !important;
+}
+
+.wpat-empty-cart-btn:hover,
+.wpat-cart-container button.wpat-empty-cart-btn:hover {
+	background: #fee2e2 !important;
+	border-color: #ef4444 !important;
+	color: #b91c1c !important;
+}
+
 /* --- TARJETA DE TOTALES DE RESUMEN (COLUMNA DERECHA) --- */
 .wpat-cart-totals-card {
 	background: #ffffff !important;

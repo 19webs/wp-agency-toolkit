@@ -266,7 +266,10 @@ do_action( 'woocommerce_before_cart' ); ?>
 						</div>
 					<?php } ?>
 
-					<button type="submit" class="button wpat-cart-update-btn" name="update_cart" value="<?php esc_attr_e( 'Actualizar carrito', 'woocommerce' ); ?>"><?php esc_html_e( 'Actualizar carrito', 'woocommerce' ); ?></button>
+					<div class="wpat-cart-btn-group" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+						<button type="submit" class="button wpat-cart-update-btn" name="update_cart" value="<?php esc_attr_e( 'Actualizar carrito', 'woocommerce' ); ?>"><?php esc_html_e( 'Actualizar carrito', 'woocommerce' ); ?></button>
+						<button type="button" class="button wpat-empty-cart-btn" id="wpat_empty_cart_btn"><?php esc_html_e( 'Vaciar carrito', 'wp-agency-toolkit' ); ?></button>
+					</div>
 					<?php wp_nonce_field( 'woocommerce-cart', 'woocommerce-cart-nonce' ); ?>
 				</div>
 			</div>

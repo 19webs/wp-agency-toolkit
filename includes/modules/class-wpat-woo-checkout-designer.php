@@ -56,9 +56,14 @@ class WPAT_Woo_Checkout_Designer {
 		add_filter( 'woocommerce_checkout_cart_item_quantity', array( $this, 'add_checkout_qty_controls' ), 10, 3 );
 		add_filter( 'body_class', array( $this, 'add_body_class' ) );
 
-		// Acciones AJAX para actualizar cantidades y eliminar productos desde el checkout
+		// Acciones AJAX para vaciar carrito, actualizar cantidades y eliminar productos
 		add_action( 'wp_ajax_wpat_update_checkout_qty', array( $this, 'ajax_update_checkout_qty' ) );
 		add_action( 'wp_ajax_nopriv_wpat_update_checkout_qty', array( $this, 'ajax_update_checkout_qty' ) );
+		add_action( 'wp_ajax_wpat_empty_cart_ajax', array( $this, 'ajax_empty_cart' ) );
+		add_action( 'wp_ajax_nopriv_wpat_empty_cart_ajax', array( $this, 'ajax_empty_cart' ) );
+
+		// Garantizar destino por defecto para cálculo de envíos desde el 1er producto
+		add_filter( 'woocommerce_cart_shipping_packages', array( $this, 'ensure_shipping_package_destination' ), 10 );
 
 		// Reordenar campos de dirección (País -> Provincia -> Población -> CP -> Dirección)
 		add_filter( 'woocommerce_default_address_fields', array( $this, 'custom_default_address_fields_order' ), 9999 );
@@ -566,6 +571,61 @@ class WPAT_Woo_Checkout_Designer {
 		}
 
 		wp_send_json_error( array( 'message' => 'No se pudo actualizar el producto.' ) );
+	}
+
+	/**
+	 * AJAX handler para vaciar todo el carrito.
+	 */
+	public function ajax_empty_cart() {
+		check_ajax_referer( 'wpat-checkout-nonce', 'security' );
+
+		if ( function_exists( 'WC' ) && WC()->cart ) {
+			WC()->cart->empty_cart();
+			WC()->cart->calculate_totals();
+
+			ob_start();
+			$settings    = WPAT_Main::get_instance()->get_settings();
+			$cart_layout = isset( $settings['woo_cart_designer_layout'] ) ? $settings['woo_cart_designer_layout'] : 'wpat-cart-classic';
+			?>
+			<div class="wpat-cart-container <?php echo esc_attr( $cart_layout ); ?>">
+				<div class="wpat-cart-empty-state" style="text-align: center; padding: 60px 20px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; margin: 20px auto; max-width: 600px;">
+					<span style="font-size: 54px; display: block; margin-bottom: 15px;">🛒</span>
+					<h2 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 700; color: #0f172a;"><?php esc_html_e( 'Tu carrito está vacío', 'woocommerce' ); ?></h2>
+					<p style="color: #64748b; font-size: 14px; margin-bottom: 25px;"><?php esc_html_e( 'Parece que aún no has añadido productos a tu carrito de compras.', 'wp-agency-toolkit' ); ?></p>
+					<a href="<?php echo esc_url( apply_filters( 'woocommerce_return_to_shop_redirect', wc_get_page_permalink( 'shop' ) ) ); ?>" class="button wpat-return-shop-btn" style="background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block;">
+						<?php esc_html_e( 'Volver a la tienda', 'woocommerce' ); ?> &rarr;
+					</a>
+				</div>
+			</div>
+			<?php
+			$empty_html = ob_get_clean();
+
+			wp_send_json_success( array(
+				'is_empty'   => true,
+				'empty_html' => $empty_html,
+			) );
+		}
+
+		wp_send_json_error( array( 'message' => 'No se pudo vaciar el carrito.' ) );
+	}
+
+	/**
+	 * Asegura que el paquete de envío de WooCommerce tenga un destino por defecto (España / Base)
+	 * para que las tarifas de envío se calculen e impriman desde el primer producto en el carrito.
+	 */
+	public function ensure_shipping_package_destination( $packages ) {
+		if ( empty( $packages ) || ! is_array( $packages ) ) {
+			return $packages;
+		}
+
+		foreach ( $packages as $i => $package ) {
+			if ( empty( $package['destination']['country'] ) ) {
+				$base_country = function_exists( 'wc_get_base_location' ) ? wc_get_base_location()['country'] : 'ES';
+				$packages[ $i ]['destination']['country'] = ! empty( $base_country ) ? $base_country : 'ES';
+			}
+		}
+
+		return $packages;
 	}
 
 	/**

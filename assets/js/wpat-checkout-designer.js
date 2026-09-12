@@ -341,6 +341,48 @@ jQuery(document).ready(function($) {
 		});
 	});
 
+	// --- 6.2 VACIAR CARRITO (EMPTY CART) AJAX ---
+	$(document).on('click', '#wpat_empty_cart_btn, .wpat-empty-cart-btn', function(e) {
+		e.preventDefault();
+		if (!confirm('¿Estás seguro de que deseas vaciar tu carrito?')) {
+			return false;
+		}
+
+		var $btn = $(this);
+		$btn.prop('disabled', true).text('Vaciando...');
+		$('.wpat-cart-layout-wrapper').css({ 'opacity': '0.4', 'pointer-events': 'none' });
+
+		$.ajax({
+			type: 'POST',
+			url: typeof wpatCheckoutOptions !== 'undefined' ? wpatCheckoutOptions.ajax_url : '/wp-admin/admin-ajax.php',
+			data: {
+				action: 'wpat_empty_cart_ajax',
+				security: typeof wpatCheckoutOptions !== 'undefined' ? wpatCheckoutOptions.nonce : ''
+			},
+			success: function(response) {
+				if (response && response.success && response.data.empty_html) {
+					$('.wpat-cart-container').replaceWith(response.data.empty_html);
+				} else {
+					window.location.reload();
+				}
+			},
+			error: function() {
+				window.location.reload();
+			}
+		});
+	});
+
+	// Detectar si la lista de items quedó a 0 tras actualizar/eliminar
+	$(document.body).on('updated_wc_div updated_cart_totals removed_from_cart', function() {
+		var $cartForm = $('.woocommerce-cart-form');
+		if ($cartForm.length) {
+			var remainingItems = $cartForm.find('.cart_item, .woocommerce-cart-form__cart-item, .wpat-cart-modern-card').length;
+			if (remainingItems === 0) {
+				window.location.reload();
+			}
+		}
+	});
+
 	// --- 7. CART DESIGNER: SLIDE-OUT DRAWER CART ---
 	function openCartDrawer() {
 		$('.wpat-cart-drawer-panel').addClass('open');

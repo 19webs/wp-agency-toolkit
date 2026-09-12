@@ -5357,9 +5357,9 @@ class WPAT_Admin {
 							<div class="wpat-field-group" style="margin-top: 12px;">
 								<label style="font-weight: 600;">
 									<input type="checkbox" name="wpat_settings[woo_cart_show_shipping_calculator]" value="1" <?php checked( $cart_show_shipping_calc ); ?>>
-									Mostrar la opción "Cambiar dirección" (Calculadora de Envíos) en la tarjeta de resumen del Carrito
+									Mostrar el botón "Cambiar dirección" (Formulario de Ubicación) en la tarjeta de resumen del Carrito
 								</label>
-								<p class="description" style="margin-left: 24px; margin-top: 3px; font-size: 12px;">Por defecto está desactivada para simplificar la vista del carrito y dejar la selección de dirección exclusivamente para la página de Checkout.</p>
+								<p class="description" style="margin-left: 24px; margin-top: 3px; font-size: 12px;">Los gastos y tarifas de envío siempre se muestran en el resumen del carrito. Activa esta casilla si deseas mostrar además el botón "Cambiar dirección" para permitir al cliente modificar su ubicación o CP manualmente antes del Checkout.</p>
 							</div>
 
 							<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />

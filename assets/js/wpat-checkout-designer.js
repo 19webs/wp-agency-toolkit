@@ -242,18 +242,22 @@ jQuery(document).ready(function($) {
 		$('.wpat-cart-layout-wrapper').css({ 'opacity': '0.5', 'pointer-events': 'none' });
 	});
 
-	// --- 6.1 EMPTY COUPON VALIDATION ---
+	// --- 6.1 CART COUPON SUBMIT (AJAX & NOTICES) ---
 	$(document).on('click', '.wpat-cart-coupon-btn, button[name="apply_coupon"]', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
 		var $input = $('#coupon_code, input[name="coupon_code"]');
 		var code = $input.val() ? $input.val().trim() : '';
-		if (!code) {
-			e.preventDefault();
-			e.stopPropagation();
-			$('.wpat-cart-coupon-notice').remove();
-			$input.css('border-color', '#ef4444').focus();
+		var $box = $btn.closest('.wpat-cart-coupon-box, .wpat-cart-actions-bar');
+		if (!$box.length) $box = $input.parent();
 
-			var $notice = $('<div class="wpat-cart-coupon-notice" style="color: #ef4444; font-size: 13px; font-weight: 600; margin-top: 6px;">Por favor, escribe un código de cupón antes de aplicar.</div>');
-			$input.parent().append($notice);
+		$('.wpat-cart-coupon-notice, .wpat-cart-coupon-response-notice').remove();
+		$('.wpat-cart-container .woocommerce-error, .wpat-cart-container .woocommerce-message').remove();
+
+		if (!code) {
+			$input.css('border-color', '#ef4444').focus();
+			var $notice = $('<div class="wpat-cart-coupon-notice" style="color: #ef4444; font-size: 13px; font-weight: 600; margin-top: 6px; width: 100%;">Por favor, escribe un código de cupón antes de aplicar.</div>');
+			$box.append($notice);
 
 			setTimeout(function() {
 				$notice.fadeOut(300, function() { $(this).remove(); });
@@ -261,6 +265,36 @@ jQuery(document).ready(function($) {
 			}, 3500);
 			return false;
 		}
+
+		var origText = $btn.text();
+		$btn.prop('disabled', true).text('Aplicando...');
+
+		$.ajax({
+			type: 'POST',
+			url: typeof wc_cart_params !== 'undefined' ? wc_cart_params.wc_ajax_url.toString().replace('%%endpoint%%', 'apply_coupon') : '/?wc-ajax=apply_coupon',
+			data: {
+				coupon_code: code,
+				security: typeof wc_cart_params !== 'undefined' ? wc_cart_params.apply_coupon_nonce : ''
+			},
+			success: function(response) {
+				$btn.prop('disabled', false).text(origText);
+				if (response) {
+					var $noticeWrapper = $('<div class="wpat-cart-coupon-response-notice" style="margin-top: 10px; width: 100%;">' + response + '</div>');
+					$box.append($noticeWrapper);
+					if (response.indexOf('woocommerce-error') !== -1 || response.indexOf('no existe') !== -1 || response.indexOf('no es válido') !== -1) {
+						$input.css('border-color', '#ef4444');
+					} else {
+						$input.val('');
+						$('.wpat-cart-layout-wrapper').css({ 'opacity': '0.5', 'pointer-events': 'none' });
+						window.location.reload();
+					}
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).text(origText);
+				window.location.reload();
+			}
+		});
 	});
 
 	// --- 7. CART DESIGNER: SLIDE-OUT DRAWER CART ---

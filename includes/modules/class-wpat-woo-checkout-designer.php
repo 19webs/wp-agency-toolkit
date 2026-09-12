@@ -217,11 +217,41 @@ class WPAT_Woo_Checkout_Designer {
 		}
 
 		$min_amount = isset( $settings['woo_cart_free_shipping_min_amount'] ) ? floatval( $settings['woo_cart_free_shipping_min_amount'] ) : 50;
+
+		// Intentar detectar si WooCommerce tiene una zona de envío gratuito con importe mínimo configurado
+		if ( class_exists( 'WC_Shipping_Zones' ) ) {
+			$zones     = WC_Shipping_Zones::get_zones();
+			$rest_zone = new WC_Shipping_Zone( 0 );
+			$zones[]   = array( 'shipping_methods' => $rest_zone->get_shipping_methods() );
+
+			foreach ( $zones as $zone ) {
+				$methods = isset( $zone['shipping_methods'] ) ? $zone['shipping_methods'] : array();
+				foreach ( $methods as $method ) {
+					if ( isset( $method->id ) && 'free_shipping' === $method->id && 'yes' === $method->enabled ) {
+						$wc_min = floatval( $method->get_option( 'min_amount' ) );
+						if ( $wc_min > 0 ) {
+							$min_amount = $wc_min;
+							break 2;
+						}
+					}
+				}
+			}
+		}
+
 		if ( $min_amount <= 0 ) {
 			return '';
 		}
 
-		$subtotal   = floatval( WC()->cart->get_subtotal() );
+		// Calcular subtotal visible
+		if ( method_exists( WC()->cart, 'get_displayed_subtotal' ) ) {
+			$subtotal = floatval( WC()->cart->get_displayed_subtotal() );
+		} else {
+			$subtotal = floatval( WC()->cart->get_subtotal() );
+			if ( WC()->cart->display_prices_including_tax() ) {
+				$subtotal += floatval( WC()->cart->get_subtotal_tax() );
+			}
+		}
+
 		$percentage = min( 100, max( 0, ( $subtotal / $min_amount ) * 100 ) );
 		$remaining  = max( 0, $min_amount - $subtotal );
 

@@ -1614,7 +1614,9 @@
 
 body.wpat-hide-shipping-calc .shipping-calculator-button,
 body.wpat-hide-shipping-calc .shipping-calculator-form,
-body.wpat-hide-shipping-calc .woocommerce-shipping-calculator {
+body.wpat-hide-shipping-calc .woocommerce-shipping-calculator,
+body.wpat-hide-shipping-calc .woocommerce-shipping-destination a,
+body.wpat-hide-shipping-calc form.woocommerce-shipping-calculator {
 	display: none !important;
 }
 

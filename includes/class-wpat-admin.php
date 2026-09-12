@@ -769,6 +769,7 @@ class WPAT_Admin {
 			$new_settings['woo_email_social_ig']      = isset( $input_settings['woo_email_social_ig'] ) ? esc_url_raw( $input_settings['woo_email_social_ig'] ) : '';
 			$new_settings['woo_email_social_tw']      = isset( $input_settings['woo_email_social_tw'] ) ? esc_url_raw( $input_settings['woo_email_social_tw'] ) : '';
 			$new_settings['woo_email_social_web']     = isset( $input_settings['woo_email_social_web'] ) ? esc_url_raw( $input_settings['woo_email_social_web'] ) : '';
+			$new_settings['woo_email_selected_type']  = isset( $input_settings['woo_email_selected_type'] ) ? sanitize_key( $input_settings['woo_email_selected_type'] ) : 'customer_processing_order';
 			$new_settings['woo_email_test_recipient'] = isset( $input_settings['woo_email_test_recipient'] ) ? sanitize_email( $input_settings['woo_email_test_recipient'] ) : '';
 		}
 
@@ -5376,6 +5377,7 @@ class WPAT_Admin {
 				break;
 			case 'woo-email-designer':
 				$email_style     = isset( $settings['woo_email_template_style'] ) ? $settings['woo_email_template_style'] : 'modern';
+				$email_type_sel  = isset( $settings['woo_email_selected_type'] ) ? $settings['woo_email_selected_type'] : 'customer_processing_order';
 				$email_logo      = isset( $settings['woo_email_logo_url'] ) ? $settings['woo_email_logo_url'] : '';
 				$email_logo_w    = isset( $settings['woo_email_logo_width'] ) ? $settings['woo_email_logo_width'] : 150;
 				$email_primary   = isset( $settings['woo_email_primary_color'] ) ? $settings['woo_email_primary_color'] : '#2563eb';
@@ -5401,6 +5403,21 @@ class WPAT_Admin {
 						<?php $this->render_module_toggle( 'woo-email-designer', $settings, true ); ?>
 					</div>
 					<div class="wpat-module-body" style="display: block;">
+						
+						<!-- Selector de Tipo de Email de WooCommerce -->
+						<div class="wpat-field-group" style="background: #f8fafc; padding: 15px 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 22px;">
+							<label style="font-weight: 700; display: block; margin-bottom: 6px; font-size: 14px; color: #0f172a;">Plantilla de Email a Personalizar / Previsualizar:</label>
+							<select id="wpat_email_type_selector" name="wpat_settings[woo_email_selected_type]" class="regular-text" style="width: 100%; max-width: 480px; font-weight: 600; padding: 6px 12px; border-radius: 6px;">
+								<option value="customer_processing_order" <?php selected( $email_type_sel, 'customer_processing_order' ); ?>>📦 Procesando pedido (Cliente)</option>
+								<option value="customer_completed_order" <?php selected( $email_type_sel, 'customer_completed_order' ); ?>>✅ Pedido completado (Cliente)</option>
+								<option value="new_order" <?php selected( $email_type_sel, 'new_order' ); ?>>🔔 Nuevo pedido (Administrador)</option>
+								<option value="customer_invoice" <?php selected( $email_type_sel, 'customer_invoice' ); ?>>📄 Factura / Detalles de pedido (Cliente)</option>
+								<option value="customer_on_hold" <?php selected( $email_type_sel, 'customer_on_hold' ); ?>>⏳ Pedido en espera (Cliente)</option>
+								<option value="customer_reset_password" <?php selected( $email_type_sel, 'customer_reset_password' ); ?>>🔑 Restablecer contraseña (Cliente)</option>
+								<option value="customer_new_account" <?php selected( $email_type_sel, 'customer_new_account' ); ?>>👤 Nueva cuenta creada (Cliente)</option>
+							</select>
+						</div>
+
 						<div class="wpat-field-group">
 							<label style="font-weight: 700; display: block; margin-bottom: 12px;">Selecciona el Estilo de Plantilla:</label>
 							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
@@ -5472,32 +5489,32 @@ class WPAT_Admin {
 						<!-- Contenido Personalizado y Etiquetas Dinámicas -->
 						<div class="wpat-field-group">
 							<label style="font-weight: 700; display: block; margin-bottom: 6px;">Mensajes de Contenido Dinámico:</label>
-							<div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
-								<span style="font-size: 12.5px; color: #1e40af; font-weight: 600; display: block; margin-bottom: 6px;">💡 Puedes insertar estas etiquetas dinámicas en los campos de texto:</span>
-								<div style="display: flex; flex-wrap: wrap; gap: 6px;">
-									<code style="background: #ffffff; color: #1d4ed8; padding: 3px 8px; border-radius: 4px; border: 1px solid #93c5fd; font-weight: 700; font-size: 12px;">{customer_name}</code>
-									<code style="background: #ffffff; color: #1d4ed8; padding: 3px 8px; border-radius: 4px; border: 1px solid #93c5fd; font-weight: 700; font-size: 12px;">{order_number}</code>
-									<code style="background: #ffffff; color: #1d4ed8; padding: 3px 8px; border-radius: 4px; border: 1px solid #93c5fd; font-weight: 700; font-size: 12px;">{order_date}</code>
-									<code style="background: #ffffff; color: #1d4ed8; padding: 3px 8px; border-radius: 4px; border: 1px solid #93c5fd; font-weight: 700; font-size: 12px;">{order_total}</code>
-									<code style="background: #ffffff; color: #1d4ed8; padding: 3px 8px; border-radius: 4px; border: 1px solid #93c5fd; font-weight: 700; font-size: 12px;">{site_title}</code>
-									<code style="background: #ffffff; color: #1d4ed8; padding: 3px 8px; border-radius: 4px; border: 1px solid #93c5fd; font-weight: 700; font-size: 12px;">{tracking_code}</code>
+							<div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px 18px; margin-bottom: 18px;">
+								<span style="font-size: 13px; color: #1e40af; font-weight: 700; display: block; margin-bottom: 8px;">💡 Haz clic sobre cualquier etiqueta para insertarla automáticamente en tu campo de texto:</span>
+								<div style="display: flex; flex-wrap: wrap; gap: 8px;" class="wpat-tag-pills-container">
+									<button type="button" class="wpat-tag-pill-btn" data-tag="{customer_name}" style="background: #ffffff; color: #1d4ed8; padding: 5px 12px; border-radius: 6px; border: 1px solid #93c5fd; font-weight: 700; font-size: 12.5px; cursor: pointer; transition: all 0.15s ease;">+ {customer_name}</button>
+									<button type="button" class="wpat-tag-pill-btn" data-tag="{order_number}" style="background: #ffffff; color: #1d4ed8; padding: 5px 12px; border-radius: 6px; border: 1px solid #93c5fd; font-weight: 700; font-size: 12.5px; cursor: pointer; transition: all 0.15s ease;">+ {order_number}</button>
+									<button type="button" class="wpat-tag-pill-btn" data-tag="{order_date}" style="background: #ffffff; color: #1d4ed8; padding: 5px 12px; border-radius: 6px; border: 1px solid #93c5fd; font-weight: 700; font-size: 12.5px; cursor: pointer; transition: all 0.15s ease;">+ {order_date}</button>
+									<button type="button" class="wpat-tag-pill-btn" data-tag="{order_total}" style="background: #ffffff; color: #1d4ed8; padding: 5px 12px; border-radius: 6px; border: 1px solid #93c5fd; font-weight: 700; font-size: 12.5px; cursor: pointer; transition: all 0.15s ease;">+ {order_total}</button>
+									<button type="button" class="wpat-tag-pill-btn" data-tag="{site_title}" style="background: #ffffff; color: #1d4ed8; padding: 5px 12px; border-radius: 6px; border: 1px solid #93c5fd; font-weight: 700; font-size: 12.5px; cursor: pointer; transition: all 0.15s ease;">+ {site_title}</button>
+									<button type="button" class="wpat-tag-pill-btn" data-tag="{tracking_code}" style="background: #ffffff; color: #1d4ed8; padding: 5px 12px; border-radius: 6px; border: 1px solid #93c5fd; font-weight: 700; font-size: 12.5px; cursor: pointer; transition: all 0.15s ease;">+ {tracking_code}</button>
 								</div>
 							</div>
 
 							<div style="display: flex; flex-direction: column; gap: 16px;">
 								<div>
 									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Mensaje de Bienvenida en Cabecera (Opcional):</label>
-									<input type="text" name="wpat_settings[woo_email_welcome_msg]" value="<?php echo esc_attr( $email_welcome ); ?>" class="regular-text" style="width: 100%;" placeholder="Ej: ¡Gracias por tu pedido en {site_title}!">
+									<input type="text" id="wpat_email_field_welcome" name="wpat_settings[woo_email_welcome_msg]" value="<?php echo esc_attr( $email_welcome ); ?>" class="regular-text wpat-email-input-field" style="width: 100%;" placeholder="Ej: ¡Gracias por tu pedido en {site_title}!">
 								</div>
 
 								<div>
 									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Mensaje / Introducción Principal del Cuerpo (Opcional):</label>
-									<textarea name="wpat_settings[woo_email_body_intro]" rows="2" class="large-text" style="width: 100%;" placeholder="Ej: Hola {customer_name}, hemos recibido tu pedido #{order_number} del {order_date}. ¡Lo estamos preparando con mucho cuidado!"><?php echo esc_textarea( $email_intro ); ?></textarea>
+									<textarea id="wpat_email_field_intro" name="wpat_settings[woo_email_body_intro]" rows="2" class="large-text wpat-email-input-field" style="width: 100%;" placeholder="Ej: Hola {customer_name}, hemos recibido tu pedido #{order_number} del {order_date}. ¡Lo estamos preparando con mucho cuidado!"><?php echo esc_textarea( $email_intro ); ?></textarea>
 								</div>
 
 								<div>
 									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Bloque Promocional o Banner Destacado (Opcional):</label>
-									<input type="text" name="wpat_settings[woo_email_promo_text]" value="<?php echo esc_attr( $email_promo ); ?>" class="regular-text" style="width: 100%;" placeholder="Ej: 🎁 ¡Usa el cupón GRACIAS10 en tu próxima compra para un 10% DTO!">
+									<input type="text" id="wpat_email_field_promo" name="wpat_settings[woo_email_promo_text]" value="<?php echo esc_attr( $email_promo ); ?>" class="regular-text wpat-email-input-field" style="width: 100%;" placeholder="Ej: 🎁 ¡Usa el cupón GRACIAS10 en tu próxima compra para un 10% DTO!">
 								</div>
 							</div>
 						</div>

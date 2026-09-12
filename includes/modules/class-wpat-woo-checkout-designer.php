@@ -58,6 +58,13 @@ class WPAT_Woo_Checkout_Designer {
 		// Reordenar campos de dirección (País -> Provincia -> Población -> CP -> Dirección)
 		add_filter( 'woocommerce_default_address_fields', array( $this, 'custom_default_address_fields_order' ), 9999 );
 		add_filter( 'woocommerce_checkout_fields', array( $this, 'custom_checkout_fields_order' ), 9999 );
+
+		// Control de Envío Gratuito y Ocultar Calculadora
+		add_filter( 'woocommerce_package_rates', array( $this, 'auto_select_free_shipping_and_hide_paid' ), 9999, 2 );
+		add_filter( 'option_woocommerce_enable_shipping_calc', array( $this, 'toggle_shipping_calculator_option' ), 9999 );
+
+		// Fragmento AJAX para actualización de métodos de envío en checkout (Shop-Style / Multi-Step)
+		add_filter( 'woocommerce_update_order_review_fragments', array( $this, 'update_shipping_methods_fragment' ), 9999 );
 	}
 
 	/**
@@ -560,5 +567,87 @@ class WPAT_Woo_Checkout_Designer {
 		}
 
 		return $fields;
+	}
+
+	/**
+	 * Auto-selecciona el envío gratuito y oculta/deshabilita las tarifas de pago al alcanzar el importe mínimo.
+	 *
+	 * @param array $rates Tarifas disponibles para el paquete.
+	 * @param array $package Paquete de envío.
+	 * @return array
+	 */
+	public function auto_select_free_shipping_and_hide_paid( $rates, $package ) {
+		if ( empty( $rates ) || ! is_array( $rates ) ) {
+			return $rates;
+		}
+
+		$has_free_shipping = false;
+		$free_rate_id      = '';
+
+		foreach ( $rates as $rate_id => $rate ) {
+			if ( 'free_shipping' === $rate->method_id ) {
+				$has_free_shipping = true;
+				$free_rate_id      = $rate_id;
+				break;
+			}
+		}
+
+		if ( $has_free_shipping ) {
+			if ( function_exists( 'WC' ) && WC()->session ) {
+				$chosen_methods = WC()->session->get( 'chosen_shipping_methods' );
+				if ( empty( $chosen_methods ) || ( is_array( $chosen_methods ) && isset( $chosen_methods[0] ) && strpos( $chosen_methods[0], 'free_shipping' ) === false ) ) {
+					WC()->session->set( 'chosen_shipping_methods', array( $free_rate_id ) );
+				}
+			}
+
+			$free_rates = array();
+			$free_rates[ $free_rate_id ] = $rates[ $free_rate_id ];
+			return $free_rates;
+		}
+
+		return $rates;
+	}
+
+	/**
+	 * Controla la deshabilitación de la calculadora de envíos en el carrito cuando la opción del panel está desmarcada.
+	 *
+	 * @param string $value Valor de la opción ('yes' o 'no').
+	 * @return string
+	 */
+	public function toggle_shipping_calculator_option( $value ) {
+		if ( is_admin() && ! wp_doing_ajax() ) {
+			return $value;
+		}
+
+		$settings           = WPAT_Main::get_instance()->get_settings();
+		$show_shipping_calc = isset( $settings['woo_cart_show_shipping_calculator'] ) && '1' === $settings['woo_cart_show_shipping_calculator'];
+
+		if ( ! $show_shipping_calc ) {
+			return 'no';
+		}
+
+		return $value;
+	}
+
+	/**
+	 * Actualiza el fragmento AJAX de la tarjeta de métodos de envío en el checkout.
+	 *
+	 * @param array $fragments Fragmentos AJAX de WooCommerce.
+	 * @return array
+	 */
+	public function update_shipping_methods_fragment( $fragments ) {
+		ob_start();
+		echo '<div class="wpat-shipping-methods-container">';
+		if ( function_exists( 'WC' ) && WC()->cart && WC()->cart->needs_shipping() ) {
+			echo '<table class="shop_table wpat-shop-style-shipping-table" style="width: 100%; border-collapse: collapse;"><tbody>';
+			wc_cart_totals_shipping_html();
+			echo '</tbody></table>';
+		} else {
+			echo '<p style="font-size: 13px; color: #64748b;">No se requieren opciones de envío para este pedido.</p>';
+		}
+		echo '</div>';
+
+		$fragments['div.wpat-shipping-methods-container'] = ob_get_clean();
+		return $fragments;
 	}
 }

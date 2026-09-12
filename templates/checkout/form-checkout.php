@@ -177,39 +177,14 @@ if ( function_exists( 'WC' ) && WC()->cart && WC()->cart->is_empty() ) {
 				<div class="wpat-card-box wpat-shop-section-shipping" style="margin-top: 20px;">
 					<h3 class="wpat-card-title">Métodos de envío</h3>
 					<div class="wpat-shipping-methods-container">
-						<?php if ( WC()->cart->needs_shipping() ) : ?>
+						<?php if ( function_exists( 'WC' ) && WC()->cart && WC()->cart->needs_shipping() ) : ?>
 							<table class="shop_table wpat-shop-style-shipping-table" style="width: 100%; border-collapse: collapse;">
 								<tbody>
-									<?php
-									$packages = WC()->shipping()->get_packages();
-									foreach ( $packages as $i => $package ) {
-										$chosen_method = isset( WC()->session->chosen_shipping_methods[ $i ] ) ? WC()->session->chosen_shipping_methods[ $i ] : '';
-										$product_names = array();
-										if ( count( $packages ) > 1 ) {
-											foreach ( $package['contents'] as $item_id => $values ) {
-												$product_names[ $item_id ] = $values['data']->get_name() . ' &times;' . $values['quantity'];
-											}
-										}
-										wc_get_template(
-											'cart/cart-shipping.php',
-											array(
-												'package'                  => $package,
-												'available_methods'        => $package['rates'],
-												'show_package_details'     => count( $packages ) > 1,
-												'package_details'          => implode( ', ', $product_names ),
-												'package_name'             => apply_filters( 'woocommerce_shipping_package_name', ( $i + 1 > 1 ) ? sprintf( _x( 'Shipping %d', 'shipping packages', 'woocommerce' ), ( $i + 1 ) ) : '', $i, $package ),
-												'index'                    => $i,
-												'chosen_method'            => $chosen_method,
-												'formatted_destination'    => WC()->countries->get_formatted_address( $package['destination'] ),
-												'has_calculated_shipping' => ! empty( $package['has_calculated_shipping'] ),
-											)
-										);
-									}
-									?>
+									<?php wc_cart_totals_shipping_html(); ?>
 								</tbody>
 							</table>
 						<?php else : ?>
-							<p style="font-size: 13px; color: #64748b;">No se requieren opciones de envío especiales para este pedido.</p>
+							<p style="font-size: 13px; color: #64748b;">No se requieren opciones de envío para este pedido.</p>
 						<?php endif; ?>
 					</div>
 				</div>

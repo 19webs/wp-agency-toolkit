@@ -96,6 +96,44 @@ jQuery(document).ready(function($) {
 		$(this).closest('.wpat-email-layout-card').addClass('active').css('border-color', '#2563eb');
 	});
 
+	// Rastreador del último campo de texto activo en el Diseñador de Emails
+	var lastFocusedEmailField = null;
+	$(document).on('focus', '.wpat-email-input-field, textarea[name="wpat_settings[woo_email_footer_text]"]', function() {
+		lastFocusedEmailField = this;
+	});
+
+	// Inserción interactiva con un solo clic de Etiquetas Dinámicas
+	$(document).on('click', '.wpat-tag-pill-btn', function(e) {
+		e.preventDefault();
+		var tag = $(this).data('tag');
+		var targetField = lastFocusedEmailField;
+
+		if (!targetField || !document.body.contains(targetField)) {
+			targetField = $('#wpat_email_field_intro')[0] || $('#wpat_email_field_welcome')[0];
+		}
+
+		if (targetField) {
+			var startPos = typeof targetField.selectionStart === 'number' ? targetField.selectionStart : targetField.value.length;
+			var endPos = typeof targetField.selectionEnd === 'number' ? targetField.selectionEnd : targetField.value.length;
+			var val = targetField.value;
+
+			targetField.value = val.substring(0, startPos) + tag + val.substring(endPos);
+			if (typeof targetField.selectionStart === 'number') {
+				targetField.selectionStart = targetField.selectionEnd = startPos + tag.length;
+			}
+			targetField.focus();
+			$(targetField).trigger('change');
+
+			var $tf = $(targetField);
+			$tf.css('transition', 'background-color 0.2s').css('background-color', '#ecfdf5');
+			setTimeout(function() {
+				$tf.css('background-color', '');
+			}, 400);
+
+			showToast('Etiqueta ' + tag + ' insertada', false);
+		}
+	});
+
 	// Carga de imágenes con wp.media (Subir Logotipo)
 	$(document).on('click', '.wpat-upload-image-btn', function(e) {
 		e.preventDefault();
@@ -130,6 +168,7 @@ jQuery(document).ready(function($) {
 		var origHtml = $btn.html();
 		var nonce = $('#wpat_settings_nonce').val();
 		var recipient = $('#wpat_test_email_recipient').val();
+		var emailType = $('#wpat_email_type_selector').val();
 
 		$btn.prop('disabled', true).html('⏳ Enviando...');
 
@@ -139,7 +178,8 @@ jQuery(document).ready(function($) {
 			data: {
 				action: 'wpat_send_test_email',
 				security: nonce,
-				recipient: recipient
+				recipient: recipient,
+				email_type: emailType
 			},
 			success: function(response) {
 				$btn.prop('disabled', false).html(origHtml);
@@ -162,6 +202,7 @@ jQuery(document).ready(function($) {
 		var $btn = $(this);
 		var origHtml = $btn.html();
 		var nonce = $('#wpat_settings_nonce').val();
+		var emailType = $('#wpat_email_type_selector').val();
 
 		$btn.prop('disabled', true).html('⏳ Generando...');
 
@@ -170,7 +211,8 @@ jQuery(document).ready(function($) {
 			type: 'POST',
 			data: {
 				action: 'wpat_get_email_preview_html',
-				security: nonce
+				security: nonce,
+				email_type: emailType
 			},
 			success: function(response) {
 				$btn.prop('disabled', false).html(origHtml);

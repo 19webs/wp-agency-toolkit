@@ -261,13 +261,35 @@ class WPAT_Woo_Email_Designer {
 	 *
 	 * @return string HTML del cuerpo.
 	 */
-	private function build_demo_email_body() {
+	/**
+	 * Genera el cuerpo del mensaje de correo de demostración según la plantilla seleccionada.
+	 *
+	 * @param string $email_type Tipo de plantilla de WooCommerce.
+	 * @return string HTML del cuerpo.
+	 */
+	private function build_demo_email_body( $email_type = '' ) {
 		$settings      = WPAT_Main::get_instance()->get_settings();
 		$user          = wp_get_current_user();
+		if ( empty( $email_type ) ) {
+			$email_type = isset( $settings['woo_email_selected_type'] ) ? $settings['woo_email_selected_type'] : 'customer_processing_order';
+		}
+
 		$welcome_msg   = ! empty( $settings['woo_email_welcome_msg'] ) ? $this->replace_email_placeholders( $settings['woo_email_welcome_msg'] ) : '';
 		$body_intro    = ! empty( $settings['woo_email_body_intro'] ) ? $this->replace_email_placeholders( $settings['woo_email_body_intro'] ) : '';
 		$promo_text    = ! empty( $settings['woo_email_promo_text'] ) ? $this->replace_email_placeholders( $settings['woo_email_promo_text'] ) : '';
 		$primary_color = isset( $settings['woo_email_primary_color'] ) ? $settings['woo_email_primary_color'] : '#2563eb';
+
+		$titles = array(
+			'customer_processing_order' => 'Gracias por tu pedido #9999',
+			'customer_completed_order'  => '¡Tu pedido #9999 ha sido completado!',
+			'new_order'                 => '[Nuevo Pedido] #9999',
+			'customer_invoice'          => 'Factura del pedido #9999',
+			'customer_on_hold'          => 'Pedido #9999 en espera',
+			'customer_reset_password'   => 'Solicitud para restablecer tu contraseña',
+			'customer_new_account'      => '¡Bienvenido a ' . get_bloginfo( 'name' ) . '!',
+		);
+
+		$type_title = isset( $titles[ $email_type ] ) ? $titles[ $email_type ] : 'Detalles del Pedido de Demostración #9999';
 
 		$content = '';
 
@@ -278,30 +300,50 @@ class WPAT_Woo_Email_Designer {
 		if ( $body_intro ) {
 			$content .= '<div style="margin-bottom: 20px; font-size: 14px; line-height: 1.6;">' . wp_kses_post( wpautop( $body_intro ) ) . '</div>';
 		} else {
-			$content .= '<p>¡Hola <strong>' . esc_html( $user->display_name ) . '</strong>!</p><p>Este es un correo de prueba generado dinámicamente por el módulo <strong>Diseñador de Plantillas de Email</strong> de WP Agency Toolkit.</p>';
+			$content .= '<p>¡Hola <strong>' . esc_html( $user->display_name ) . '</strong>!</p><p>Este es un correo de prueba generado para la plantilla <strong>' . esc_html( $type_title ) . '</strong> de WooCommerce.</p>';
 		}
 
-		$content .= '
-			<div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
-				<h3 style="margin-top:0; color:#0f172a; font-size: 15px;">Detalles del Pedido de Demostración #9999</h3>
-				<table style="width:100%; border-collapse:collapse; font-size: 13px;">
-					<thead>
-						<tr style="border-bottom:2px solid #cbd5e1; text-align:left;">
-							<th style="padding:8px 0; color:#475569;">Producto</th>
-							<th style="padding:8px 0; color:#475569; text-align:center;">Cant.</th>
-							<th style="padding:8px 0; color:#475569; text-align:right;">Precio</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr style="border-bottom:1px solid #e2e8f0;">
-							<td style="padding:10px 0; font-weight: 600;">Licencia Anual WP Agency Toolkit Pro</td>
-							<td style="padding:10px 0; text-align:center;">1</td>
-							<td style="padding:10px 0; text-align:right;">49,00 €</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
-		';
+		if ( in_array( $email_type, array( 'customer_reset_password', 'customer_new_account' ), true ) ) {
+			if ( 'customer_reset_password' === $email_type ) {
+				$content .= '
+					<div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0; text-align: center;">
+						<p style="margin-bottom: 15px;">Hemos recibido una solicitud para restablecer la contraseña de tu cuenta.</p>
+						<p><a href="#" class="wpat-email-btn" style="background:' . esc_attr( $primary_color ) . '; color:#ffffff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">Restablecer Contraseña &rarr;</a></p>
+					</div>
+				';
+			} else {
+				$content .= '
+					<div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
+						<h3 style="margin-top:0; color:#0f172a; font-size: 15px;">Tus datos de acceso</h3>
+						<p>Tu nombre de usuario es: <strong>' . esc_html( $user->user_login ) . '</strong></p>
+						<p>Puedes acceder a tu área de cliente para gestionar tus pedidos y datos personales.</p>
+						<p style="text-align:center; margin-top: 20px;"><a href="' . esc_url( function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'myaccount' ) : '#' ) . '" class="wpat-email-btn" style="background:' . esc_attr( $primary_color ) . '; color:#ffffff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">Acceder a Mi Cuenta &rarr;</a></p>
+					</div>
+				';
+			}
+		} else {
+			$content .= '
+				<div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
+					<h3 style="margin-top:0; color:#0f172a; font-size: 15px;">' . esc_html( $type_title ) . '</h3>
+					<table style="width:100%; border-collapse:collapse; font-size: 13px;">
+						<thead>
+							<tr style="border-bottom:2px solid #cbd5e1; text-align:left;">
+								<th style="padding:8px 0; color:#475569;">Producto</th>
+								<th style="padding:8px 0; color:#475569; text-align:center;">Cant.</th>
+								<th style="padding:8px 0; color:#475569; text-align:right;">Precio</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr style="border-bottom:1px solid #e2e8f0;">
+								<td style="padding:10px 0; font-weight: 600;">Advance Veterinary Diet Gastrointestinal 1.5kg</td>
+								<td style="padding:10px 0; text-align:center;">1</td>
+								<td style="padding:10px 0; text-align:right;">45,49 €</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			';
+		}
 
 		if ( $promo_text ) {
 			$content .= '<div style="margin-top: 24px; padding: 14px 18px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; color: #1e40af; font-weight: 600; font-size: 13.5px;">' . wp_kses_post( $promo_text ) . '</div>';
@@ -329,6 +371,7 @@ class WPAT_Woo_Email_Designer {
 		}
 
 		$recipient_input = isset( $_POST['recipient'] ) ? sanitize_email( $_POST['recipient'] ) : '';
+		$email_type      = isset( $_POST['email_type'] ) ? sanitize_key( $_POST['email_type'] ) : '';
 		$user            = wp_get_current_user();
 		$to              = ! empty( $recipient_input ) && is_email( $recipient_input ) ? $recipient_input : $user->user_email;
 
@@ -342,7 +385,7 @@ class WPAT_Woo_Email_Designer {
 
 		if ( function_exists( 'WC' ) ) {
 			$mailer  = WC()->mailer();
-			$content = $this->build_demo_email_body();
+			$content = $this->build_demo_email_body( $email_type );
 
 			$wrapped_email = $mailer->wrap_message( $subject, $content );
 			$sent          = $mailer->send( $to, $subject, $wrapped_email );
@@ -369,10 +412,12 @@ class WPAT_Woo_Email_Designer {
 			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
 		}
 
+		$email_type = isset( $_POST['email_type'] ) ? sanitize_key( $_POST['email_type'] ) : '';
+
 		if ( function_exists( 'WC' ) ) {
 			$mailer        = WC()->mailer();
 			$subject       = 'Vista Previa en Vivo - WooCommerce Email';
-			$content       = $this->build_demo_email_body();
+			$content       = $this->build_demo_email_body( $email_type );
 			$wrapped_email = $mailer->wrap_message( $subject, $content );
 
 			wp_send_json_success( array( 'html' => $wrapped_email ) );

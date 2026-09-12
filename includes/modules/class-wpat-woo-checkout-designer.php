@@ -64,6 +64,10 @@ class WPAT_Woo_Checkout_Designer {
 		add_filter( 'woocommerce_default_address_fields', array( $this, 'custom_default_address_fields_order' ), 9999 );
 		add_filter( 'woocommerce_checkout_fields', array( $this, 'custom_checkout_fields_order' ), 9999 );
 
+		// Control de Disponibilidad y Tarifas de Envío Gratuito (Cálculo CON IVA)
+		add_filter( 'woocommerce_shipping_free_shipping_is_available', array( $this, 'filter_free_shipping_is_available' ), 9999, 3 );
+		add_filter( 'woocommerce_package_rates', array( $this, 'filter_package_rates_for_free_shipping' ), 9999, 2 );
+
 		// Control de Calculadora de Envíos en Carrito
 		add_filter( 'option_woocommerce_calc_shipping', array( $this, 'toggle_calc_shipping_option' ), 9999 );
 		add_filter( 'option_woocommerce_enable_shipping_calc', array( $this, 'toggle_shipping_calculator_option' ), 9999 );
@@ -276,18 +280,11 @@ class WPAT_Woo_Checkout_Designer {
 			return '';
 		}
 
-		// Calcular subtotal visible
-		if ( method_exists( WC()->cart, 'get_displayed_subtotal' ) ) {
-			$subtotal = floatval( WC()->cart->get_displayed_subtotal() );
-		} else {
-			$subtotal = floatval( WC()->cart->get_subtotal() );
-			if ( WC()->cart->display_prices_including_tax() ) {
-				$subtotal += floatval( WC()->cart->get_subtotal_tax() );
-			}
-		}
+		// Calcular subtotal CON IVA
+		$subtotal_incl_tax = floatval( WC()->cart->get_subtotal() ) + floatval( WC()->cart->get_subtotal_tax() );
 
-		$percentage = min( 100, max( 0, ( $subtotal / $min_amount ) * 100 ) );
-		$remaining  = max( 0, $min_amount - $subtotal );
+		$percentage = min( 100, max( 0, ( $subtotal_incl_tax / $min_amount ) * 100 ) );
+		$remaining  = max( 0, $min_amount - $subtotal_incl_tax );
 
 		ob_start();
 		?>
@@ -651,13 +648,73 @@ class WPAT_Woo_Checkout_Designer {
 	}
 
 	/**
-	 * Auto-selecciona el envío gratuito y oculta/deshabilita las tarifas de pago al alcanzar el importe mínimo.
+	 * Evalúa si el envío gratuito está disponible basándose estrictamente en el subtotal acumulado CON IVA.
+	 *
+	 * @param bool $is_available Estado actual.
+	 * @param array $package Paquete de envío.
+	 * @param WC_Shipping_Method $shipping_method Método de envío.
+	 * @return bool
+	 */
+	public function filter_free_shipping_is_available( $is_available, $package, $shipping_method ) {
+		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+			return $is_available;
+		}
+
+		$min_amount = 0;
+		if ( is_object( $shipping_method ) && method_exists( $shipping_method, 'get_option' ) ) {
+			$min_amount = floatval( $shipping_method->get_option( 'min_amount' ) );
+		}
+
+		if ( $min_amount <= 0 ) {
+			$settings   = WPAT_Main::get_instance()->get_settings();
+			$min_amount = isset( $settings['woo_cart_free_shipping_min_amount'] ) ? floatval( $settings['woo_cart_free_shipping_min_amount'] ) : 0;
+		}
+
+		if ( $min_amount > 0 ) {
+			$cart_total_with_tax = floatval( WC()->cart->get_subtotal() ) + floatval( WC()->cart->get_subtotal_tax() );
+			return ( $cart_total_with_tax >= $min_amount );
+		}
+
+		return $is_available;
+	}
+
+	/**
+	 * Oculta las tarifas de pago cuando el Envío Gratuito está disponible (>= min_amount CON IVA),
+	 * y auto-selecciona el envío gratuito.
 	 *
 	 * @param array $rates Tarifas disponibles para el paquete.
 	 * @param array $package Paquete de envío.
 	 * @return array
 	 */
-	public function auto_select_free_shipping_and_hide_paid( $rates, $package ) {
+	public function filter_package_rates_for_free_shipping( $rates, $package ) {
+		if ( empty( $rates ) || ! is_array( $rates ) ) {
+			return $rates;
+		}
+
+		$free_shipping_rate = null;
+		$free_rate_id       = '';
+
+		foreach ( $rates as $rate_id => $rate ) {
+			if ( isset( $rate->method_id ) && 'free_shipping' === $rate->method_id ) {
+				$free_shipping_rate = $rate;
+				$free_rate_id       = $rate_id;
+				break;
+			}
+		}
+
+		if ( $free_shipping_rate ) {
+			if ( function_exists( 'WC' ) && WC()->session ) {
+				$chosen_methods = WC()->session->get( 'chosen_shipping_methods' );
+				if ( empty( $chosen_methods ) || ( is_array( $chosen_methods ) && isset( $chosen_methods[0] ) && strpos( $chosen_methods[0], 'free_shipping' ) === false ) ) {
+					WC()->session->set( 'chosen_shipping_methods', array( $free_rate_id ) );
+				}
+			}
+
+			$free_rates = array();
+			$free_rates[ $free_rate_id ] = $free_shipping_rate;
+			return $free_rates;
+		}
+
 		return $rates;
 	}
 
@@ -672,18 +729,11 @@ class WPAT_Woo_Checkout_Designer {
 			return $value;
 		}
 
-		$settings           = WPAT_Main::get_instance()->get_settings();
-		$show_shipping_calc = isset( $settings['woo_cart_show_shipping_calculator'] ) && '1' === $settings['woo_cart_show_shipping_calculator'];
-
-		if ( $show_shipping_calc ) {
-			return 'yes';
-		}
-
-		return $value;
+		return 'yes';
 	}
 
 	/**
-	 * Controla la deshabilitación de la calculadora de envíos en el carrito cuando la opción del panel está desmarcada.
+	 * Controla la presencia de la sección de envíos en el carrito.
 	 *
 	 * @param string $value Valor de la opción ('yes' o 'no').
 	 * @return string
@@ -693,10 +743,7 @@ class WPAT_Woo_Checkout_Designer {
 			return $value;
 		}
 
-		$settings           = WPAT_Main::get_instance()->get_settings();
-		$show_shipping_calc = isset( $settings['woo_cart_show_shipping_calculator'] ) && '1' === $settings['woo_cart_show_shipping_calculator'];
-
-		return $show_shipping_calc ? 'yes' : 'no';
+		return 'yes';
 	}
 
 	/**

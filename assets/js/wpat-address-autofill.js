@@ -325,6 +325,16 @@ jQuery(document).ready(function($) {
 		}
 	});
 
+	$(document.body).on('updated_cart_totals updated_wc_div', function() {
+		initAddressFields('calc_shipping');
+	});
+
+	$(document).on('click', '.shipping-calculator-button', function() {
+		setTimeout(function() {
+			initAddressFields('calc_shipping');
+		}, 100);
+	});
+
 	// Inicialización al cargar la página (respetando datos pre-rellenados)
 	setTimeout(function() {
 		initAddressFields('billing');

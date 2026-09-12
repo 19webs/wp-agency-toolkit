@@ -62,6 +62,7 @@ class WPAT_Woo_Checkout_Designer {
 		// Control de Envío Gratuito y Ocultar Calculadora
 		add_filter( 'woocommerce_package_rates', array( $this, 'auto_select_free_shipping_and_hide_paid' ), 9999, 2 );
 		add_filter( 'option_woocommerce_enable_shipping_calc', array( $this, 'toggle_shipping_calculator_option' ), 9999 );
+		add_filter( 'woocommerce_shipping_calculator_enable', array( $this, 'filter_shipping_calculator_enable' ), 9999 );
 
 		// Fragmento AJAX para actualización de métodos de envío en checkout (Shop-Style / Multi-Step)
 		add_filter( 'woocommerce_update_order_review_fragments', array( $this, 'update_shipping_methods_fragment' ), 9999 );
@@ -345,7 +346,9 @@ class WPAT_Woo_Checkout_Designer {
 			$settings           = WPAT_Main::get_instance()->get_settings();
 			$show_shipping_calc = isset( $settings['woo_cart_show_shipping_calculator'] ) && '1' === $settings['woo_cart_show_shipping_calculator'];
 
-			if ( ! $show_shipping_calc ) {
+			if ( $show_shipping_calc ) {
+				$classes[] = 'wpat-show-shipping-calc';
+			} else {
 				$classes[] = 'wpat-hide-shipping-calc';
 			}
 		}
@@ -623,6 +626,23 @@ class WPAT_Woo_Checkout_Designer {
 		$show_shipping_calc = isset( $settings['woo_cart_show_shipping_calculator'] ) && '1' === $settings['woo_cart_show_shipping_calculator'];
 
 		return $show_shipping_calc ? 'yes' : 'no';
+	}
+
+	/**
+	 * Callback para el filtro nativo woocommerce_shipping_calculator_enable.
+	 *
+	 * @param bool $enabled Valor actual.
+	 * @return bool
+	 */
+	public function filter_shipping_calculator_enable( $enabled ) {
+		if ( is_admin() && ! wp_doing_ajax() ) {
+			return $enabled;
+		}
+
+		$settings           = WPAT_Main::get_instance()->get_settings();
+		$show_shipping_calc = isset( $settings['woo_cart_show_shipping_calculator'] ) && '1' === $settings['woo_cart_show_shipping_calculator'];
+
+		return (bool) $show_shipping_calc;
 	}
 
 	/**

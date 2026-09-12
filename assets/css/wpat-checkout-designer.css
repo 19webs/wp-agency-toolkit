@@ -1620,6 +1620,11 @@ body.wpat-hide-shipping-calc form.woocommerce-shipping-calculator {
 	display: none !important;
 }
 
+body.wpat-show-shipping-calc .shipping-calculator-button,
+body.wpat-show-shipping-calc .woocommerce-shipping-calculator {
+	display: inline-block !important;
+}
+
 /* ==========================================================================
    PLANTILLA 2: TARJETAS MODERNAS (WPAT MODERN CARDS CART)
    ========================================================================== */

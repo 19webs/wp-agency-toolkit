@@ -61,8 +61,10 @@ class WPAT_Woo_Checkout_Designer {
 
 		// Control de Envío Gratuito y Ocultar Calculadora
 		add_filter( 'woocommerce_package_rates', array( $this, 'auto_select_free_shipping_and_hide_paid' ), 9999, 2 );
+		add_filter( 'option_woocommerce_calc_shipping', array( $this, 'toggle_calc_shipping_option' ), 9999 );
 		add_filter( 'option_woocommerce_enable_shipping_calc', array( $this, 'toggle_shipping_calculator_option' ), 9999 );
 		add_filter( 'woocommerce_shipping_calculator_enable', array( $this, 'filter_shipping_calculator_enable' ), 9999 );
+		add_action( 'woocommerce_cart_totals_before_order_total', array( $this, 'ensure_shipping_calculator_in_cart_totals' ), 10 );
 
 		// Fragmento AJAX para actualización de métodos de envío en checkout (Shop-Style / Multi-Step)
 		add_filter( 'woocommerce_update_order_review_fragments', array( $this, 'update_shipping_methods_fragment' ), 9999 );
@@ -612,6 +614,27 @@ class WPAT_Woo_Checkout_Designer {
 	}
 
 	/**
+	 * Habilita el cálculo de envíos en WooCommerce cuando la calculadora del carrito está activa.
+	 *
+	 * @param string $value Valor de la opción ('yes' o 'no').
+	 * @return string
+	 */
+	public function toggle_calc_shipping_option( $value ) {
+		if ( is_admin() && ! wp_doing_ajax() ) {
+			return $value;
+		}
+
+		$settings           = WPAT_Main::get_instance()->get_settings();
+		$show_shipping_calc = isset( $settings['woo_cart_show_shipping_calculator'] ) && '1' === $settings['woo_cart_show_shipping_calculator'];
+
+		if ( $show_shipping_calc ) {
+			return 'yes';
+		}
+
+		return $value;
+	}
+
+	/**
 	 * Controla la deshabilitación de la calculadora de envíos en el carrito cuando la opción del panel está desmarcada.
 	 *
 	 * @param string $value Valor de la opción ('yes' o 'no').
@@ -643,6 +666,36 @@ class WPAT_Woo_Checkout_Designer {
 		$show_shipping_calc = isset( $settings['woo_cart_show_shipping_calculator'] ) && '1' === $settings['woo_cart_show_shipping_calculator'];
 
 		return (bool) $show_shipping_calc;
+	}
+
+	/**
+	 * Renderiza la fila de envío con la calculadora de envíos en los totales del carrito
+	 * si WooCommerce no la imprimió (por ejemplo, si no hay dirección calculada o la plantilla del tema la omitió).
+	 */
+	public function ensure_shipping_calculator_in_cart_totals() {
+		$settings           = WPAT_Main::get_instance()->get_settings();
+		$show_shipping_calc = isset( $settings['woo_cart_show_shipping_calculator'] ) && '1' === $settings['woo_cart_show_shipping_calculator'];
+
+		if ( ! $show_shipping_calc ) {
+			return;
+		}
+
+		if ( ! function_exists( 'WC' ) || ! WC()->cart || ! WC()->cart->needs_shipping() ) {
+			return;
+		}
+
+		if ( WC()->cart->show_shipping() ) {
+			return;
+		}
+
+		?>
+		<tr class="shipping wpat-forced-shipping-calculator-row">
+			<th><?php esc_html_e( 'Envío', 'woocommerce' ); ?></th>
+			<td data-title="<?php esc_attr_e( 'Envío', 'woocommerce' ); ?>">
+				<?php woocommerce_shipping_calculator(); ?>
+			</td>
+		</tr>
+		<?php
 	}
 
 	/**

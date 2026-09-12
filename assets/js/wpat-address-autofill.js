@@ -20,7 +20,7 @@ jQuery(document).ready(function($) {
 			if (val) {
 				countryCode = val;
 			}
-		} else if (type === 'shipping') {
+		} else if (type === 'shipping' || type === 'calc_shipping') {
 			return getCountryData('billing');
 		}
 

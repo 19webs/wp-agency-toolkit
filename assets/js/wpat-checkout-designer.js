@@ -56,11 +56,27 @@ jQuery(document).ready(function($) {
 		goToStep(step);
 	});
 
-	// --- 3. CUSTOM CLEAN COUPON SUBMIT ---
+	// --- 3. CUSTOM CLEAN COUPON SUBMIT (CHECKOUT) ---
 	$(document).on('click', '#wpat_coupon_apply_btn', function(e) {
 		e.preventDefault();
-		var code = $('#wpat_coupon_code_field').val().trim();
-		if (!code) return;
+		var $input = $('#wpat_coupon_code_field');
+		var code = $input.val() ? $input.val().trim() : '';
+		var $box = $(this).closest('.wpat-custom-coupon-box, .wpat-coupon-input-group, .wpat-sidebar-card');
+		if (!$box.length) $box = $input.parent();
+
+		$('.wpat-checkout-coupon-notice, .wpat-checkout-coupon-response-notice').remove();
+		$('.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message').remove();
+
+		if (!code) {
+			$input.css('border-color', '#ef4444').focus();
+			var $notice = $('<div class="wpat-checkout-coupon-notice" style="color: #ef4444; font-size: 13px; font-weight: 600; margin-top: 8px; width: 100%;">Por favor, escribe un código de cupón antes de aplicar.</div>');
+			$box.append($notice);
+			setTimeout(function() {
+				$notice.fadeOut(300, function() { $(this).remove(); });
+				$input.css('border-color', '');
+			}, 3500);
+			return false;
+		}
 
 		var $btn = $(this);
 		var origText = $btn.text();
@@ -78,6 +94,16 @@ jQuery(document).ready(function($) {
 			data: data,
 			success: function(response) {
 				$btn.prop('disabled', false).text(origText);
+
+				if (response) {
+					var $noticeWrapper = $('<div class="wpat-checkout-coupon-response-notice" style="margin-top: 10px; width: 100%;">' + response + '</div>');
+					$box.append($noticeWrapper);
+					if (response.indexOf('woocommerce-error') !== -1 || response.indexOf('no existe') !== -1 || response.indexOf('no es válido') !== -1) {
+						$input.css('border-color', '#ef4444');
+					} else {
+						$input.val('');
+					}
+				}
 				$(document.body).trigger('update_checkout');
 			},
 			error: function() {
@@ -157,10 +183,20 @@ jQuery(document).ready(function($) {
 		});
 	}
 
-	// --- 6. CART DESIGNER: QUANTITY BUTTONS (+ / -) & UPDATE CART ---
-	function markCartUpdateAvailable() {
+	// --- 6. CART DESIGNER: QUANTITY BUTTONS (+ / -) & AUTO-UPDATE CART ---
+	var cartAutoUpdateTimer = null;
+
+	function triggerAutoCartUpdate() {
 		var $updateBtn = $('button[name="update_cart"], input[name="update_cart"], .wpat-cart-update-btn');
 		$updateBtn.prop('disabled', false).removeClass('disabled').removeAttr('disabled');
+
+		clearTimeout(cartAutoUpdateTimer);
+		cartAutoUpdateTimer = setTimeout(function() {
+			if ($updateBtn.length) {
+				$('.wpat-cart-layout-wrapper').css({ 'opacity': '0.5', 'pointer-events': 'none' });
+				$updateBtn.trigger('click');
+			}
+		}, 550);
 	}
 
 	$(document).on('click', '.wpat-qty-plus', function(e) {
@@ -174,7 +210,7 @@ jQuery(document).ready(function($) {
 		var max = parseInt($input.attr('max'), 10);
 		if (isNaN(max) || val < max) {
 			$input.val(val + 1).trigger('change');
-			markCartUpdateAvailable();
+			triggerAutoCartUpdate();
 		}
 	});
 
@@ -190,17 +226,20 @@ jQuery(document).ready(function($) {
 		if (isNaN(min)) min = 1;
 		if (val > min) {
 			$input.val(val - 1).trigger('change');
-			markCartUpdateAvailable();
+			triggerAutoCartUpdate();
 		}
 	});
 
-	$(document).on('input change', 'input.qty', function() {
-		markCartUpdateAvailable();
+	$(document).on('input change', 'input.qty', function(e) {
+		if (e.originalEvent) {
+			triggerAutoCartUpdate();
+		}
 	});
 
-	// Enable update cart button before submit
+	// Enable update cart button before submit and dim layout wrapper
 	$(document).on('click', '.wpat-cart-update-btn, button[name="update_cart"]', function() {
 		$(this).prop('disabled', false).removeAttr('disabled');
+		$('.wpat-cart-layout-wrapper').css({ 'opacity': '0.5', 'pointer-events': 'none' });
 	});
 
 	// --- 6.1 EMPTY COUPON VALIDATION ---

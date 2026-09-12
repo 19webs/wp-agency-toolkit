@@ -33,6 +33,8 @@ do_action( 'woocommerce_before_cart' ); ?>
 
 <div class="wpat-cart-container <?php echo esc_attr( $cart_layout ); ?>">
 
+	<?php if ( function_exists( 'wc_print_notices' ) ) { wc_print_notices(); } ?>
+
 	<?php echo $designer->get_free_shipping_progress_html(); ?>
 
 	<form class="woocommerce-cart-form" action="<?php echo esc_url( wc_get_cart_url() ); ?>" method="post">

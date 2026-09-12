@@ -1003,7 +1003,7 @@
 .woocommerce-notices-wrapper .woocommerce-info,
 .woocommerce-notices-wrapper .woocommerce-error {
 	border-top: none !important;
-	border-left: 4px solid #10b981 !important;
+	border-left: 5px solid #10b981 !important;
 	background: #f0fdf4 !important;
 	color: #065f46 !important;
 	border-radius: 12px !important;
@@ -1018,6 +1018,24 @@
 	flex-wrap: wrap !important;
 	gap: 12px !important;
 	list-style: none !important;
+	position: relative !important;
+}
+
+/* Ocultar iconos flotantes absolutos antiguos del tema que se solapaban con el texto */
+.wpat-cart-container .woocommerce-message::before,
+.wpat-cart-container .woocommerce-info::before,
+.wpat-cart-container .woocommerce-error::before,
+.woocommerce-notices-wrapper .woocommerce-message::before,
+.woocommerce-notices-wrapper .woocommerce-info::before,
+.woocommerce-notices-wrapper .woocommerce-error::before,
+.wpat-cart-container .woocommerce-message:before,
+.wpat-cart-container .woocommerce-info:before,
+.wpat-cart-container .woocommerce-error:before,
+.woocommerce-notices-wrapper .woocommerce-message:before,
+.woocommerce-notices-wrapper .woocommerce-info:before,
+.woocommerce-notices-wrapper .woocommerce-error:before {
+	display: none !important;
+	content: "" !important;
 }
 
 .wpat-cart-container .woocommerce-info,
@@ -1039,6 +1057,8 @@
 .wpat-cart-container .woocommerce-message .button,
 .woocommerce-notices-wrapper .woocommerce-message a.button,
 .woocommerce-notices-wrapper .woocommerce-message a.restore-item {
+	order: 2 !important;
+	margin-left: auto !important;
 	background: #10b981 !important;
 	color: #ffffff !important;
 	border: none !important;
@@ -1057,6 +1077,42 @@
 .woocommerce-notices-wrapper .woocommerce-message a.button:hover {
 	background: #059669 !important;
 	color: #ffffff !important;
+}
+
+/* --- AVISOS DE CUPÓN EN CHECKOUT Y FORMULARIOS --- */
+.wpat-checkout-coupon-response-notice .woocommerce-error,
+.wpat-checkout-coupon-response-notice ul.woocommerce-error,
+.wpat-checkout-container .woocommerce-error,
+.wpat-checkout-container ul.woocommerce-error {
+	border-top: none !important;
+	border-left: 4px solid #ef4444 !important;
+	background: #fef2f2 !important;
+	color: #991b1b !important;
+	border-radius: 10px !important;
+	padding: 10px 14px !important;
+	font-size: 13.5px !important;
+	font-weight: 600 !important;
+	margin-top: 10px !important;
+	margin-bottom: 10px !important;
+	list-style: none !important;
+	box-shadow: 0 2px 6px rgba(239, 68, 68, 0.08) !important;
+}
+
+.wpat-checkout-coupon-response-notice .woocommerce-message,
+.wpat-checkout-coupon-response-notice div.woocommerce-message,
+.wpat-checkout-container .woocommerce-message {
+	border-top: none !important;
+	border-left: 4px solid #10b981 !important;
+	background: #f0fdf4 !important;
+	color: #065f46 !important;
+	border-radius: 10px !important;
+	padding: 10px 14px !important;
+	font-size: 13.5px !important;
+	font-weight: 600 !important;
+	margin-top: 10px !important;
+	margin-bottom: 10px !important;
+	list-style: none !important;
+	box-shadow: 0 2px 6px rgba(16, 185, 129, 0.08) !important;
 }
 
 .wpat-cart-layout-wrapper {

@@ -748,6 +748,7 @@ class WPAT_Admin {
 			$new_settings['woo_cart_free_shipping_bar']          = isset( $input_settings['woo_cart_free_shipping_bar'] ) && '1' === $input_settings['woo_cart_free_shipping_bar'] ? '1' : '0';
 			$new_settings['woo_cart_free_shipping_min_amount']   = isset( $input_settings['woo_cart_free_shipping_min_amount'] ) ? max( 0, floatval( $input_settings['woo_cart_free_shipping_min_amount'] ) ) : 50;
 			$new_settings['woo_cart_drawer_auto_open']           = isset( $input_settings['woo_cart_drawer_auto_open'] ) && '1' === $input_settings['woo_cart_drawer_auto_open'] ? '1' : '0';
+			$new_settings['woo_cart_show_shipping_calculator']  = isset( $input_settings['woo_cart_show_shipping_calculator'] ) && '1' === $input_settings['woo_cart_show_shipping_calculator'] ? '1' : '0';
 		}
 
 		// Sanitizar Diseñador de Plantillas de Email
@@ -760,11 +761,15 @@ class WPAT_Admin {
 			$new_settings['woo_email_body_bg']        = isset( $input_settings['woo_email_body_bg'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_email_body_bg'] ) ? $input_settings['woo_email_body_bg'] : '#f8fafc';
 			$new_settings['woo_email_card_bg']        = isset( $input_settings['woo_email_card_bg'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_email_card_bg'] ) ? $input_settings['woo_email_card_bg'] : '#ffffff';
 			$new_settings['woo_email_text_color']     = isset( $input_settings['woo_email_text_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_email_text_color'] ) ? $input_settings['woo_email_text_color'] : '#1e293b';
+			$new_settings['woo_email_welcome_msg']    = isset( $input_settings['woo_email_welcome_msg'] ) ? sanitize_textarea_field( $input_settings['woo_email_welcome_msg'] ) : '';
+			$new_settings['woo_email_body_intro']     = isset( $input_settings['woo_email_body_intro'] ) ? sanitize_textarea_field( $input_settings['woo_email_body_intro'] ) : '';
+			$new_settings['woo_email_promo_text']     = isset( $input_settings['woo_email_promo_text'] ) ? sanitize_textarea_field( $input_settings['woo_email_promo_text'] ) : '';
 			$new_settings['woo_email_footer_text']    = isset( $input_settings['woo_email_footer_text'] ) ? sanitize_textarea_field( $input_settings['woo_email_footer_text'] ) : '';
 			$new_settings['woo_email_social_fb']      = isset( $input_settings['woo_email_social_fb'] ) ? esc_url_raw( $input_settings['woo_email_social_fb'] ) : '';
 			$new_settings['woo_email_social_ig']      = isset( $input_settings['woo_email_social_ig'] ) ? esc_url_raw( $input_settings['woo_email_social_ig'] ) : '';
 			$new_settings['woo_email_social_tw']      = isset( $input_settings['woo_email_social_tw'] ) ? esc_url_raw( $input_settings['woo_email_social_tw'] ) : '';
 			$new_settings['woo_email_social_web']     = isset( $input_settings['woo_email_social_web'] ) ? esc_url_raw( $input_settings['woo_email_social_web'] ) : '';
+			$new_settings['woo_email_test_recipient'] = isset( $input_settings['woo_email_test_recipient'] ) ? sanitize_email( $input_settings['woo_email_test_recipient'] ) : '';
 		}
 
 		// Sanitizar Autocompletado de CP y Provincia (WooCommerce)
@@ -5169,11 +5174,12 @@ class WPAT_Admin {
 				$step_accent_color   = isset( $settings['woo_checkout_step_accent_color'] ) ? $settings['woo_checkout_step_accent_color'] : '#2563eb';
 
 				// Ajustes de Carrito
-				$cart_designer_enabled  = ! isset( $settings['woo_cart_designer_enabled'] ) || '1' === $settings['woo_cart_designer_enabled'];
-				$cart_layout            = isset( $settings['woo_cart_designer_layout'] ) ? $settings['woo_cart_designer_layout'] : 'wpat-cart-classic';
-				$cart_free_shipping_bar = ! isset( $settings['woo_cart_free_shipping_bar'] ) || '1' === $settings['woo_cart_free_shipping_bar'];
-				$cart_free_shipping_min = isset( $settings['woo_cart_free_shipping_min_amount'] ) ? floatval( $settings['woo_cart_free_shipping_min_amount'] ) : 50;
-				$cart_drawer_auto_open  = ! isset( $settings['woo_cart_drawer_auto_open'] ) || '1' === $settings['woo_cart_drawer_auto_open'];
+				$cart_designer_enabled     = ! isset( $settings['woo_cart_designer_enabled'] ) || '1' === $settings['woo_cart_designer_enabled'];
+				$cart_layout               = isset( $settings['woo_cart_designer_layout'] ) ? $settings['woo_cart_designer_layout'] : 'wpat-cart-classic';
+				$cart_free_shipping_bar    = ! isset( $settings['woo_cart_free_shipping_bar'] ) || '1' === $settings['woo_cart_free_shipping_bar'];
+				$cart_free_shipping_min    = isset( $settings['woo_cart_free_shipping_min_amount'] ) ? floatval( $settings['woo_cart_free_shipping_min_amount'] ) : 50;
+				$cart_drawer_auto_open     = ! isset( $settings['woo_cart_drawer_auto_open'] ) || '1' === $settings['woo_cart_drawer_auto_open'];
+				$cart_show_shipping_calc   = isset( $settings['woo_cart_show_shipping_calculator'] ) && '1' === $settings['woo_cart_show_shipping_calculator'];
 
 				$active_subtab = isset( $_REQUEST['subtab'] ) ? sanitize_key( $_REQUEST['subtab'] ) : ( isset( $_POST['wpat_active_subtab'] ) ? sanitize_key( $_POST['wpat_active_subtab'] ) : 'checkout-designer' );
 				if ( ! in_array( $active_subtab, array( 'checkout-designer', 'cart-designer' ), true ) ) {
@@ -5336,6 +5342,14 @@ class WPAT_Admin {
 								</label>
 							</div>
 
+							<div class="wpat-field-group" style="margin-top: 12px;">
+								<label style="font-weight: 600;">
+									<input type="checkbox" name="wpat_settings[woo_cart_show_shipping_calculator]" value="1" <?php checked( $cart_show_shipping_calc ); ?>>
+									Mostrar la opción "Cambiar dirección" (Calculadora de Envíos) en la tarjeta de resumen del Carrito
+								</label>
+								<p class="description" style="margin-left: 24px; margin-top: 3px; font-size: 12px;">Por defecto está desactivada para simplificar la vista del carrito y dejar la selección de dirección exclusivamente para la página de Checkout.</p>
+							</div>
+
 							<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
 
 							<div class="wpat-field-group">
@@ -5368,11 +5382,15 @@ class WPAT_Admin {
 				$email_body_bg   = isset( $settings['woo_email_body_bg'] ) ? $settings['woo_email_body_bg'] : '#f8fafc';
 				$email_card_bg   = isset( $settings['woo_email_card_bg'] ) ? $settings['woo_email_card_bg'] : '#ffffff';
 				$email_text_col  = isset( $settings['woo_email_text_color'] ) ? $settings['woo_email_text_color'] : '#1e293b';
+				$email_welcome   = isset( $settings['woo_email_welcome_msg'] ) ? $settings['woo_email_welcome_msg'] : '';
+				$email_intro     = isset( $settings['woo_email_body_intro'] ) ? $settings['woo_email_body_intro'] : '';
+				$email_promo     = isset( $settings['woo_email_promo_text'] ) ? $settings['woo_email_promo_text'] : '';
 				$email_footer    = isset( $settings['woo_email_footer_text'] ) ? $settings['woo_email_footer_text'] : get_option( 'woocommerce_email_footer_text' );
 				$social_fb       = isset( $settings['woo_email_social_fb'] ) ? $settings['woo_email_social_fb'] : '';
 				$social_ig       = isset( $settings['woo_email_social_ig'] ) ? $settings['woo_email_social_ig'] : '';
 				$social_tw       = isset( $settings['woo_email_social_tw'] ) ? $settings['woo_email_social_tw'] : '';
 				$social_web      = isset( $settings['woo_email_social_web'] ) ? $settings['woo_email_social_web'] : '';
+				$test_recipient  = isset( $settings['woo_email_test_recipient'] ) && ! empty( $settings['woo_email_test_recipient'] ) ? $settings['woo_email_test_recipient'] : get_option( 'admin_email' );
 				?>
 				<div class="wpat-module-card">
 					<div class="wpat-module-header">
@@ -5414,7 +5432,7 @@ class WPAT_Admin {
 									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">URL del Logotipo:</label>
 									<div style="display: flex; gap: 8px;">
 										<input type="text" id="woo_email_logo_url_input" name="wpat_settings[woo_email_logo_url]" value="<?php echo esc_attr( $email_logo ); ?>" class="regular-text" style="flex: 1;" placeholder="https://tudominio.com/logo.png">
-										<button type="button" class="button wpat-upload-image-btn" data-target="#woo_email_logo_url_input">Subir Logotipo</button>
+										<button type="button" class="button wpat-upload-image-btn" data-target="#woo_email_logo_url_input">📷 Biblioteca / Subir Logo</button>
 									</div>
 								</div>
 								<div>
@@ -5451,6 +5469,41 @@ class WPAT_Admin {
 
 						<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
 
+						<!-- Contenido Personalizado y Etiquetas Dinámicas -->
+						<div class="wpat-field-group">
+							<label style="font-weight: 700; display: block; margin-bottom: 6px;">Mensajes de Contenido Dinámico:</label>
+							<div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
+								<span style="font-size: 12.5px; color: #1e40af; font-weight: 600; display: block; margin-bottom: 6px;">💡 Puedes insertar estas etiquetas dinámicas en los campos de texto:</span>
+								<div style="display: flex; flex-wrap: wrap; gap: 6px;">
+									<code style="background: #ffffff; color: #1d4ed8; padding: 3px 8px; border-radius: 4px; border: 1px solid #93c5fd; font-weight: 700; font-size: 12px;">{customer_name}</code>
+									<code style="background: #ffffff; color: #1d4ed8; padding: 3px 8px; border-radius: 4px; border: 1px solid #93c5fd; font-weight: 700; font-size: 12px;">{order_number}</code>
+									<code style="background: #ffffff; color: #1d4ed8; padding: 3px 8px; border-radius: 4px; border: 1px solid #93c5fd; font-weight: 700; font-size: 12px;">{order_date}</code>
+									<code style="background: #ffffff; color: #1d4ed8; padding: 3px 8px; border-radius: 4px; border: 1px solid #93c5fd; font-weight: 700; font-size: 12px;">{order_total}</code>
+									<code style="background: #ffffff; color: #1d4ed8; padding: 3px 8px; border-radius: 4px; border: 1px solid #93c5fd; font-weight: 700; font-size: 12px;">{site_title}</code>
+									<code style="background: #ffffff; color: #1d4ed8; padding: 3px 8px; border-radius: 4px; border: 1px solid #93c5fd; font-weight: 700; font-size: 12px;">{tracking_code}</code>
+								</div>
+							</div>
+
+							<div style="display: flex; flex-direction: column; gap: 16px;">
+								<div>
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Mensaje de Bienvenida en Cabecera (Opcional):</label>
+									<input type="text" name="wpat_settings[woo_email_welcome_msg]" value="<?php echo esc_attr( $email_welcome ); ?>" class="regular-text" style="width: 100%;" placeholder="Ej: ¡Gracias por tu pedido en {site_title}!">
+								</div>
+
+								<div>
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Mensaje / Introducción Principal del Cuerpo (Opcional):</label>
+									<textarea name="wpat_settings[woo_email_body_intro]" rows="2" class="large-text" style="width: 100%;" placeholder="Ej: Hola {customer_name}, hemos recibido tu pedido #{order_number} del {order_date}. ¡Lo estamos preparando con mucho cuidado!"><?php echo esc_textarea( $email_intro ); ?></textarea>
+								</div>
+
+								<div>
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Bloque Promocional o Banner Destacado (Opcional):</label>
+									<input type="text" name="wpat_settings[woo_email_promo_text]" value="<?php echo esc_attr( $email_promo ); ?>" class="regular-text" style="width: 100%;" placeholder="Ej: 🎁 ¡Usa el cupón GRACIAS10 en tu próxima compra para un 10% DTO!">
+								</div>
+							</div>
+						</div>
+
+						<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
+
 						<!-- Pie de Página y Redes Sociales -->
 						<div class="wpat-field-group">
 							<label style="font-weight: 700; display: block; margin-bottom: 6px;">Texto de Pie de Página (Copyright / Aviso Legal):</label>
@@ -5481,13 +5534,20 @@ class WPAT_Admin {
 
 						<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
 
-						<!-- Envío de Correo de Prueba -->
-						<div class="wpat-field-group" style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 15px 20px; border-radius: 10px; border: 1px solid #e2e8f0;">
+						<!-- Vista Previa en Vivo & Envío de Correo de Prueba -->
+						<div class="wpat-field-group" style="background: #f8fafc; padding: 18px 22px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 14px;">
 							<div>
-								<strong style="font-size: 14px; color: #0f172a; display: block;">¿Quieres comprobar cómo queda tu diseño?</strong>
-								<span style="font-size: 12px; color: #64748b;">Envía un correo de prueba de WooCommerce con el estilo actual a tu email personal.</span>
+								<strong style="font-size: 14.5px; color: #0f172a; display: block;">Comprobación de Diseño y Envíos de Prueba</strong>
+								<span style="font-size: 12.5px; color: #64748b;">Visualiza en tiempo real tu plantilla o envía un correo electrónico de demostración a la dirección seleccionada.</span>
 							</div>
-							<button type="button" class="button button-secondary" id="wpat_send_test_email_btn" style="height: 36px; padding: 0 20px; font-weight: 700;">📧 Enviar Email de Prueba</button>
+
+							<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+								<div style="flex: 1; min-width: 250px;">
+									<input type="email" id="wpat_test_email_recipient" name="wpat_settings[woo_email_test_recipient]" value="<?php echo esc_attr( $test_recipient ); ?>" class="regular-text" style="width: 100%; padding: 7px 12px;" placeholder="correo@ejemplo.com">
+								</div>
+								<button type="button" class="button button-secondary" id="wpat_email_live_preview_btn" style="height: 38px; padding: 0 18px; font-weight: 700; background: #ffffff; border-color: #cbd5e1; color: #1e293b;">👁️ Vista Previa en Vivo</button>
+								<button type="button" class="button button-primary" id="wpat_send_test_email_btn" style="height: 38px; padding: 0 20px; font-weight: 700;">📧 Enviar Email de Prueba</button>
+							</div>
 						</div>
 					</div>
 				</div>

@@ -35,9 +35,8 @@ do_action( 'woocommerce_before_cart' ); ?>
 
 	<?php if ( function_exists( 'wc_print_notices' ) ) { wc_print_notices(); } ?>
 
-	<?php echo $designer->get_free_shipping_progress_html(); ?>
-
 	<form class="woocommerce-cart-form" action="<?php echo esc_url( wc_get_cart_url() ); ?>" method="post">
+		<?php echo $designer->get_free_shipping_progress_html(); ?>
 		<?php do_action( 'woocommerce_before_cart_table' ); ?>
 
 		<div class="wpat-cart-layout-wrapper">

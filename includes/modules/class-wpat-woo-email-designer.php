@@ -37,10 +37,15 @@ class WPAT_Woo_Email_Designer {
 			add_filter( 'woocommerce_locate_template', array( $this, 'override_email_template' ), 9999, 3 );
 			add_filter( 'woocommerce_email_styles', array( $this, 'custom_email_styles' ), 9999, 2 );
 			add_filter( 'woocommerce_email_header_image', array( $this, 'custom_email_header_image' ), 9999 );
+			add_filter( 'woocommerce_email_footer_text', array( $this, 'filter_email_footer_text' ), 9999, 1 );
+
+			add_action( 'woocommerce_email_before_order_table', array( $this, 'render_email_body_intro' ), 10, 4 );
+			add_action( 'woocommerce_email_after_order_table', array( $this, 'render_email_promo_text' ), 20, 4 );
 		}
 
-		// AJAX handler para el correo de prueba (disponible para administradores siempre)
+		// AJAX handlers para envío de correo de prueba y vista previa en vivo (para administradores siempre)
 		add_action( 'wp_ajax_wpat_send_test_email', array( $this, 'ajax_send_test_email' ) );
+		add_action( 'wp_ajax_wpat_get_email_preview_html', array( $this, 'ajax_get_email_preview_html' ) );
 	}
 
 	/**
@@ -76,10 +81,100 @@ class WPAT_Woo_Email_Designer {
 	}
 
 	/**
+	 * Reemplaza las etiquetas dinámicas ({customer_name}, {order_number}, {order_date}, {order_total}, {site_title}, {tracking_code})
+	 *
+	 * @param string   $text  Texto con las etiquetas.
+	 * @param WC_Order $order Objeto del pedido opcional.
+	 * @return string
+	 */
+	public function replace_email_placeholders( $text, $order = null ) {
+		if ( empty( $text ) ) {
+			return '';
+		}
+
+		$site_title    = get_bloginfo( 'name' );
+		$customer_name = 'Juan Pérez';
+		$order_number  = '9999';
+		$order_date    = date_i18n( get_option( 'date_format' ) );
+		$order_total   = '49,00 €';
+		$tracking_code = 'ES123456789';
+
+		if ( $order && is_a( $order, 'WC_Order' ) ) {
+			$customer_name = $order->get_formatted_billing_full_name();
+			if ( empty( trim( $customer_name ) ) ) {
+				$customer_name = $order->get_billing_first_name() ? $order->get_billing_first_name() : 'Cliente';
+			}
+			$order_number  = $order->get_order_number();
+			$order_date    = wc_format_datetime( $order->get_date_created() );
+			$order_total   = $order->get_formatted_order_total();
+
+			$meta_tracking = $order->get_meta( '_tracking_number' );
+			if ( ! empty( $meta_tracking ) ) {
+				$tracking_code = $meta_tracking;
+			}
+		}
+
+		$replacements = array(
+			'{site_title}'    => $site_title,
+			'{customer_name}' => $customer_name,
+			'{order_number}'  => $order_number,
+			'{order_date}'    => $order_date,
+			'{order_total}'   => $order_total,
+			'{tracking_code}' => $tracking_code,
+		);
+
+		return str_replace( array_keys( $replacements ), array_values( $replacements ), $text );
+	}
+
+	/**
+	 * Reemplaza etiquetas dinámicas en el texto del pie de página de los correos.
+	 */
+	public function filter_email_footer_text( $text ) {
+		return $this->replace_email_placeholders( $text );
+	}
+
+	/**
+	 * Muestra el mensaje de introducción al cuerpo del correo antes de la tabla del pedido.
+	 */
+	public function render_email_body_intro( $order = null, $sent_to_admin = false, $plain_text = false, $email = null ) {
+		$settings = WPAT_Main::get_instance()->get_settings();
+		if ( empty( $settings['woo_email_body_intro'] ) ) {
+			return;
+		}
+
+		$intro_text = $this->replace_email_placeholders( $settings['woo_email_body_intro'], $order );
+
+		if ( $plain_text ) {
+			echo "\n" . esc_html( wp_strip_all_tags( $intro_text ) ) . "\n\n";
+		} else {
+			echo '<div style="margin-bottom: 24px; font-size: 14px; line-height: 1.6; color: inherit;">' . wp_kses_post( wpautop( $intro_text ) ) . '</div>';
+		}
+	}
+
+	/**
+	 * Muestra el bloque o banner promocional después de la tabla de detalles del pedido.
+	 */
+	public function render_email_promo_text( $order = null, $sent_to_admin = false, $plain_text = false, $email = null ) {
+		$settings = WPAT_Main::get_instance()->get_settings();
+		if ( empty( $settings['woo_email_promo_text'] ) ) {
+			return;
+		}
+
+		$promo_text    = $this->replace_email_placeholders( $settings['woo_email_promo_text'], $order );
+		$primary_color = isset( $settings['woo_email_primary_color'] ) ? $settings['woo_email_primary_color'] : '#2563eb';
+
+		if ( $plain_text ) {
+			echo "\n--- PROMO ---\n" . esc_html( wp_strip_all_tags( $promo_text ) ) . "\n\n";
+		} else {
+			echo '<div style="margin-top: 28px; padding: 16px 20px; background-color: #f1f5f9; border-left: 4px solid ' . esc_attr( $primary_color ) . '; border-radius: 6px; font-size: 13.5px; font-weight: 600; color: #0f172a;">' . wp_kses_post( $promo_text ) . '</div>';
+		}
+	}
+
+	/**
 	 * Inyecta CSS personalizado dinámico para los correos electrónicos de WooCommerce.
 	 */
 	public function custom_email_styles( $css, $email ) {
-		$settings     = WPAT_Main::get_instance()->get_settings();
+		$settings       = WPAT_Main::get_instance()->get_settings();
 		$template_style = isset( $settings['woo_email_template_style'] ) ? $settings['woo_email_template_style'] : 'modern';
 		$primary_color  = isset( $settings['woo_email_primary_color'] ) ? $settings['woo_email_primary_color'] : '#2563eb';
 		$body_bg        = isset( $settings['woo_email_body_bg'] ) ? $settings['woo_email_body_bg'] : '#f8fafc';
@@ -162,7 +257,67 @@ class WPAT_Woo_Email_Designer {
 	}
 
 	/**
-	 * Envía un correo electrónico transaccional de prueba al administrador actual.
+	 * Genera el cuerpo del mensaje de correo de demostración.
+	 *
+	 * @return string HTML del cuerpo.
+	 */
+	private function build_demo_email_body() {
+		$settings      = WPAT_Main::get_instance()->get_settings();
+		$user          = wp_get_current_user();
+		$welcome_msg   = ! empty( $settings['woo_email_welcome_msg'] ) ? $this->replace_email_placeholders( $settings['woo_email_welcome_msg'] ) : '';
+		$body_intro    = ! empty( $settings['woo_email_body_intro'] ) ? $this->replace_email_placeholders( $settings['woo_email_body_intro'] ) : '';
+		$promo_text    = ! empty( $settings['woo_email_promo_text'] ) ? $this->replace_email_placeholders( $settings['woo_email_promo_text'] ) : '';
+		$primary_color = isset( $settings['woo_email_primary_color'] ) ? $settings['woo_email_primary_color'] : '#2563eb';
+
+		$content = '';
+
+		if ( $welcome_msg ) {
+			$content .= '<div style="background: #f1f5f9; border-left: 4px solid ' . esc_attr( $primary_color ) . '; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px; font-weight: 700; color: #0f172a;">' . wp_kses_post( $welcome_msg ) . '</div>';
+		}
+
+		if ( $body_intro ) {
+			$content .= '<div style="margin-bottom: 20px; font-size: 14px; line-height: 1.6;">' . wp_kses_post( wpautop( $body_intro ) ) . '</div>';
+		} else {
+			$content .= '<p>¡Hola <strong>' . esc_html( $user->display_name ) . '</strong>!</p><p>Este es un correo de prueba generado dinámicamente por el módulo <strong>Diseñador de Plantillas de Email</strong> de WP Agency Toolkit.</p>';
+		}
+
+		$content .= '
+			<div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
+				<h3 style="margin-top:0; color:#0f172a; font-size: 15px;">Detalles del Pedido de Demostración #9999</h3>
+				<table style="width:100%; border-collapse:collapse; font-size: 13px;">
+					<thead>
+						<tr style="border-bottom:2px solid #cbd5e1; text-align:left;">
+							<th style="padding:8px 0; color:#475569;">Producto</th>
+							<th style="padding:8px 0; color:#475569; text-align:center;">Cant.</th>
+							<th style="padding:8px 0; color:#475569; text-align:right;">Precio</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr style="border-bottom:1px solid #e2e8f0;">
+							<td style="padding:10px 0; font-weight: 600;">Licencia Anual WP Agency Toolkit Pro</td>
+							<td style="padding:10px 0; text-align:center;">1</td>
+							<td style="padding:10px 0; text-align:right;">49,00 €</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		';
+
+		if ( $promo_text ) {
+			$content .= '<div style="margin-top: 24px; padding: 14px 18px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; color: #1e40af; font-weight: 600; font-size: 13.5px;">' . wp_kses_post( $promo_text ) . '</div>';
+		}
+
+		$content .= '
+			<p style="text-align:center; margin-top:28px;">
+				<a href="' . esc_url( admin_url( 'admin.php?page=wp-agency-toolkit' ) ) . '" class="wpat-email-btn" style="background:' . esc_attr( $primary_color ) . '; color:#ffffff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">Ver Ajustes en el Panel &rarr;</a>
+			</p>
+		';
+
+		return $content;
+	}
+
+	/**
+	 * Envía un correo electrónico transaccional de prueba a la dirección especificada o al administrador.
 	 */
 	public function ajax_send_test_email() {
 		if ( ! check_ajax_referer( 'wpat_save_settings_action', 'security', false ) ) {
@@ -173,58 +328,57 @@ class WPAT_Woo_Email_Designer {
 			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
 		}
 
-		$user = wp_get_current_user();
-		$to   = $user->user_email;
+		$recipient_input = isset( $_POST['recipient'] ) ? sanitize_email( $_POST['recipient'] ) : '';
+		$user            = wp_get_current_user();
+		$to              = ! empty( $recipient_input ) && is_email( $recipient_input ) ? $recipient_input : $user->user_email;
 
 		if ( empty( $to ) || ! is_email( $to ) ) {
-			wp_send_json_error( array( 'message' => 'No se encontró un correo válido para el envío.' ) );
+			wp_send_json_error( array( 'message' => 'Por favor, introduce una dirección de correo válida para el envío.' ) );
 		}
 
 		$settings       = WPAT_Main::get_instance()->get_settings();
 		$template_style = isset( $settings['woo_email_template_style'] ) ? ucfirst( $settings['woo_email_template_style'] ) : 'Modern';
 		$subject        = '📧 Correo de Prueba - WP Agency Toolkit (' . $template_style . ')';
 
-		// Cargar el emulador de correos de WooCommerce
 		if ( function_exists( 'WC' ) ) {
-			$mailer = WC()->mailer();
-
-			$content = '
-				<p>¡Hola <strong>' . esc_html( $user->display_name ) . '</strong>!</p>
-				<p>Este es un correo de prueba generado dinámicamente por el módulo <strong>Diseñador de Plantillas de Email</strong> de WP Agency Toolkit.</p>
-				<div style="background: #f1f5f9; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
-					<h3 style="margin-top:0; color:#0f172a;">Detalles del Pedido de Demostración #9999</h3>
-					<table style="width:100%; border-collapse:collapse;">
-						<thead>
-							<tr style="border-bottom:1px solid #cbd5e1; text-align:left;">
-								<th style="padding:8px 0;">Producto</th>
-								<th style="padding:8px 0;">Cantidad</th>
-								<th style="padding:8px 0;">Precio</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr style="border-bottom:1px solid #e2e8f0;">
-								<td style="padding:8px 0;">Licencia Anual WP Agency Toolkit Pro</td>
-								<td style="padding:8px 0;">1</td>
-								<td style="padding:8px 0;">49,00 €</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-				<p style="text-align:center; margin-top:25px;">
-					<a href="' . esc_url( admin_url( 'admin.php?page=wp-agency-toolkit' ) ) . '" class="wpat-email-btn" style="background:#2563eb; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">Ver Ajustes en el Panel &rarr;</a>
-				</p>
-			';
+			$mailer  = WC()->mailer();
+			$content = $this->build_demo_email_body();
 
 			$wrapped_email = $mailer->wrap_message( $subject, $content );
-			$sent = $mailer->send( $to, $subject, $wrapped_email );
+			$sent          = $mailer->send( $to, $subject, $wrapped_email );
 
 			if ( $sent ) {
 				wp_send_json_success( array( 'message' => '¡Correo de prueba enviado con éxito a ' . $to . '!' ) );
 			} else {
-				wp_send_json_error( array( 'message' => 'Error al enviar el correo vía WooCommerce Mailer. Verifica tu configuración SMTP.' ) );
+				wp_send_json_error( array( 'message' => 'Error al enviar el correo vía WooCommerce Mailer. Verifica tu configuración SMTP de WordPress.' ) );
 			}
 		} else {
 			wp_send_json_error( array( 'message' => 'WooCommerce no está activo.' ) );
 		}
 	}
+
+	/**
+	 * Devuelve la estructura HTML completa del correo para la Vista Previa en Vivo.
+	 */
+	public function ajax_get_email_preview_html() {
+		if ( ! check_ajax_referer( 'wpat_save_settings_action', 'security', false ) ) {
+			wp_send_json_error( array( 'message' => 'Error de seguridad (nonce inválido).' ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
+		}
+
+		if ( function_exists( 'WC' ) ) {
+			$mailer        = WC()->mailer();
+			$subject       = 'Vista Previa en Vivo - WooCommerce Email';
+			$content       = $this->build_demo_email_body();
+			$wrapped_email = $mailer->wrap_message( $subject, $content );
+
+			wp_send_json_success( array( 'html' => $wrapped_email ) );
+		} else {
+			wp_send_json_error( array( 'message' => 'WooCommerce no está activo.' ) );
+		}
+	}
+}
 }

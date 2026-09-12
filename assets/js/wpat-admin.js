@@ -96,12 +96,40 @@ jQuery(document).ready(function($) {
 		$(this).closest('.wpat-email-layout-card').addClass('active').css('border-color', '#2563eb');
 	});
 
+	// Carga de imágenes con wp.media (Subir Logotipo)
+	$(document).on('click', '.wpat-upload-image-btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var targetSelector = $btn.data('target');
+		var $input = $(targetSelector);
+
+		if (typeof wp !== 'undefined' && wp.media) {
+			var mediaUploader = wp.media({
+				title: 'Seleccionar Logotipo para Correos',
+				button: { text: 'Usar este logotipo' },
+				multiple: false
+			});
+
+			mediaUploader.on('select', function() {
+				var attachment = mediaUploader.state().get('selection').first().toJSON();
+				if (attachment && attachment.url) {
+					$input.val(attachment.url).trigger('change');
+				}
+			});
+
+			mediaUploader.open();
+		} else {
+			alert('El selector de medios de WordPress no está disponible.');
+		}
+	});
+
 	// Envío AJAX de correo electrónico de prueba (Diseñador de Emails)
 	$(document).on('click', '#wpat_send_test_email_btn', function(e) {
 		e.preventDefault();
 		var $btn = $(this);
 		var origHtml = $btn.html();
 		var nonce = $('#wpat_settings_nonce').val();
+		var recipient = $('#wpat_test_email_recipient').val();
 
 		$btn.prop('disabled', true).html('⏳ Enviando...');
 
@@ -110,7 +138,8 @@ jQuery(document).ready(function($) {
 			type: 'POST',
 			data: {
 				action: 'wpat_send_test_email',
-				security: nonce
+				security: nonce,
+				recipient: recipient
 			},
 			success: function(response) {
 				$btn.prop('disabled', false).html(origHtml);
@@ -126,6 +155,68 @@ jQuery(document).ready(function($) {
 			}
 		});
 	});
+
+	// Modal de Vista Previa en Vivo de Correo Electrónico
+	$(document).on('click', '#wpat_email_live_preview_btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var origHtml = $btn.html();
+		var nonce = $('#wpat_settings_nonce').val();
+
+		$btn.prop('disabled', true).html('⏳ Generando...');
+
+		$.ajax({
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : '/wp-admin/admin-ajax.php'),
+			type: 'POST',
+			data: {
+				action: 'wpat_get_email_preview_html',
+				security: nonce
+			},
+			success: function(response) {
+				$btn.prop('disabled', false).html(origHtml);
+				if (response.success && response.data.html) {
+					openEmailPreviewModal(response.data.html);
+				} else {
+					showToast('Error: ' + (response.data ? response.data.message : 'No se pudo generar la vista previa'), true);
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).html(origHtml);
+				showToast('Error de conexión al cargar la vista previa', true);
+			}
+		});
+	});
+
+	function openEmailPreviewModal(htmlContent) {
+		$('#wpat-email-preview-modal').remove();
+
+		var modalHtml = '<div id="wpat-email-preview-modal" style="position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">' +
+			'<div style="background: #ffffff; width: 100%; max-width: 820px; height: 88vh; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden;">' +
+				'<div style="padding: 16px 24px; background: #0f172a; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">' +
+					'<div style="display: flex; align-items: center; gap: 10px;">' +
+						'<span style="font-size: 18px;">📧</span>' +
+						'<h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #ffffff;">Vista Previa en Vivo - Plantilla de Email</h3>' +
+					'</div>' +
+					'<button type="button" class="wpat-close-modal-btn" style="background: rgba(255,255,255,0.15); border: none; color: #ffffff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 1; display: flex; align-items: center; justify-content: center;">&times;</button>' +
+				'</div>' +
+				'<div style="flex: 1; background: #f8fafc; position: relative;">' +
+					'<iframe id="wpat-email-iframe" style="width: 100%; height: 100%; border: none;"></iframe>' +
+				'</div>' +
+			'</div>' +
+		'</div>';
+
+		$('body').append(modalHtml);
+
+		var iframe = document.getElementById('wpat-email-iframe');
+		var iframedoc = iframe.contentDocument || iframe.contentWindow.document;
+		iframedoc.open();
+		iframedoc.write(htmlContent);
+		iframedoc.close();
+
+		$(document).on('click', '#wpat-email-preview-modal .wpat-close-modal-btn', function() {
+			$('#wpat-email-preview-modal').remove();
+		});
+	}
 	
 	// Restaurar pestaña activa guardada en localStorage (solo si no se pasó tab por URL)
 	var urlParams = new URLSearchParams(window.location.search);

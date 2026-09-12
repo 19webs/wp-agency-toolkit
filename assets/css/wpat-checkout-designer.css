@@ -991,6 +991,65 @@
 	display: none !important;
 }
 
+/* Estilos para la tabla de métodos de envío en WPAT Shop-Style Checkout */
+.wpat-shipping-methods-container table.wpat-shop-style-shipping-table {
+	width: 100% !important;
+	border-collapse: collapse !important;
+	border: none !important;
+}
+
+.wpat-shipping-methods-container table.wpat-shop-style-shipping-table td {
+	padding: 6px 0 !important;
+	border: none !important;
+	background: transparent !important;
+}
+
+.wpat-shipping-methods-container ul#shipping_method {
+	list-style: none !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 10px !important;
+}
+
+.wpat-shipping-methods-container ul#shipping_method li {
+	list-style: none !important;
+	margin: 0 !important;
+	padding: 12px 16px !important;
+	background: #f8fafc !important;
+	border: 1px solid #e2e8f0 !important;
+	border-radius: 10px !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	gap: 12px !important;
+	cursor: pointer !important;
+	transition: all 0.2s ease !important;
+}
+
+.wpat-shipping-methods-container ul#shipping_method li:hover {
+	border-color: #cbd5e1 !important;
+	background: #ffffff !important;
+}
+
+.wpat-shipping-methods-container ul#shipping_method li input[type="radio"] {
+	margin: 0 !important;
+	accent-color: #2563eb !important;
+	width: 18px !important;
+	height: 18px !important;
+	cursor: pointer !important;
+}
+
+.wpat-shipping-methods-container ul#shipping_method li label {
+	margin: 0 !important;
+	font-size: 14px !important;
+	font-weight: 600 !important;
+	color: #0f172a !important;
+	flex: 1 !important;
+	cursor: pointer !important;
+}
+
 /* ==========================================================================
    ESTILOS DE DISEÑADOR DE CARRITO (HIGH-CONVERSION CART REDESIGN)
    ========================================================================== */
@@ -1551,6 +1610,12 @@
 
 .wpat-cart-totals-card .shipping-calculator-button:hover {
 	text-decoration: underline !important;
+}
+
+body.wpat-hide-shipping-calc .shipping-calculator-button,
+body.wpat-hide-shipping-calc .shipping-calculator-form,
+body.wpat-hide-shipping-calc .woocommerce-shipping-calculator {
+	display: none !important;
 }
 
 /* ==========================================================================

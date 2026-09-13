@@ -649,6 +649,8 @@ class WPAT_Admin {
 			'woo-pdf-invoices',
 			'woo-live-search',
 			'woo-facets',
+			'woo-promotions',
+			'woo_promotions',
 			'post-csv-importer',
 			'anti-spam',
 			'silent-skin',
@@ -1050,6 +1052,78 @@ class WPAT_Admin {
 			if ( isset( $input_settings['facets_config'] ) ) {
 				$new_settings['facets_config'] = is_array( $input_settings['facets_config'] ) ? array_map( 'sanitize_key', $input_settings['facets_config'] ) : array( 'sort', 'price', 'category', 'stock', 'rating' );
 			}
+		}
+
+		// 20. Sanitizar Promociones Dinámicas y Descuentos de WooCommerce
+		if ( empty( $saving_module ) || 'woo-promotions' === $saving_module || 'woo_promotions' === $saving_module ) {
+			$promo_enabled                  = isset( $input_settings['woo-promotions'] ) && '1' === $input_settings['woo-promotions'] ? '1' : ( isset( $input_settings['woo_promotions'] ) && '1' === $input_settings['woo_promotions'] ? '1' : '0' );
+			$new_settings['woo-promotions'] = $promo_enabled;
+			$new_settings['woo_promotions'] = $promo_enabled;
+
+			$sanitized_rules = array();
+			if ( isset( $input_settings['woo_promotions_rules'] ) && is_array( $input_settings['woo_promotions_rules'] ) ) {
+				foreach ( $input_settings['woo_promotions_rules'] as $rule_raw ) {
+					if ( ! is_array( $rule_raw ) ) {
+						continue;
+					}
+
+					$rule_id = ! empty( $rule_raw['id'] ) ? sanitize_key( $rule_raw['id'] ) : 'rule_' . uniqid();
+					$title   = ! empty( $rule_raw['title'] ) ? sanitize_text_field( $rule_raw['title'] ) : '';
+					$active  = isset( $rule_raw['active'] ) && '1' === (string) $rule_raw['active'] ? '1' : '0';
+					$type    = ! empty( $rule_raw['type'] ) && in_array( $rule_raw['type'], array( 'tiered_spend', 'bxgy', 'bulk_qty', 'global_discount', 'payment_method' ), true ) ? sanitize_key( $rule_raw['type'] ) : 'global_discount';
+					$scope   = ! empty( $rule_raw['scope'] ) && in_array( $rule_raw['scope'], array( 'all', 'category', 'product' ), true ) ? sanitize_key( $rule_raw['scope'] ) : 'all';
+
+					$categories = array();
+					if ( isset( $rule_raw['categories'] ) ) {
+						$categories = is_array( $rule_raw['categories'] ) ? array_map( 'absint', $rule_raw['categories'] ) : array_values( array_filter( array_map( 'absint', explode( ',', (string) $rule_raw['categories'] ) ) ) );
+					}
+
+					$products = array();
+					if ( isset( $rule_raw['products'] ) ) {
+						$products = is_array( $rule_raw['products'] ) ? array_map( 'absint', $rule_raw['products'] ) : array_values( array_filter( array_map( 'absint', explode( ',', (string) $rule_raw['products'] ) ) ) );
+					}
+
+					$payment_methods = array();
+					if ( isset( $rule_raw['payment_methods'] ) ) {
+						$payment_methods = is_array( $rule_raw['payment_methods'] ) ? array_map( 'sanitize_text_field', $rule_raw['payment_methods'] ) : array_values( array_filter( array_map( 'sanitize_text_field', explode( ',', (string) $rule_raw['payment_methods'] ) ) ) );
+					}
+
+					$tiers = array();
+					if ( isset( $rule_raw['tiers'] ) && is_array( $rule_raw['tiers'] ) ) {
+						foreach ( $rule_raw['tiers'] as $tier_raw ) {
+							if ( ! is_array( $tier_raw ) ) {
+								continue;
+							}
+							$tiers[] = array(
+								'min_spend'      => isset( $tier_raw['min_spend'] ) ? max( 0, (float) $tier_raw['min_spend'] ) : 0.0,
+								'discount_type'  => ! empty( $tier_raw['discount_type'] ) && in_array( $tier_raw['discount_type'], array( 'percent', 'fixed' ), true ) ? $tier_raw['discount_type'] : 'percent',
+								'discount_value' => isset( $tier_raw['discount_value'] ) ? max( 0, (float) $tier_raw['discount_value'] ) : 0.0,
+							);
+						}
+					}
+
+					$sanitized_rules[] = array(
+						'id'              => $rule_id,
+						'title'           => $title,
+						'active'          => $active,
+						'type'            => $type,
+						'scope'           => $scope,
+						'categories'      => $categories,
+						'products'        => $products,
+						'ignore_on_sale'  => isset( $rule_raw['ignore_on_sale'] ) && '1' === (string) $rule_raw['ignore_on_sale'] ? '1' : '0',
+						'min_spend'       => isset( $rule_raw['min_spend'] ) ? max( 0, (float) $rule_raw['min_spend'] ) : 0.0,
+						'discount_type'   => ! empty( $rule_raw['discount_type'] ) && in_array( $rule_raw['discount_type'], array( 'percent', 'fixed', 'fixed_unit', 'fixed_total' ), true ) ? sanitize_key( $rule_raw['discount_type'] ) : 'percent',
+						'discount_value'  => isset( $rule_raw['discount_value'] ) ? max( 0, (float) $rule_raw['discount_value'] ) : 0.0,
+						'buy_qty'         => isset( $rule_raw['buy_qty'] ) ? max( 1, absint( $rule_raw['buy_qty'] ) ) : 3,
+						'get_qty'         => isset( $rule_raw['get_qty'] ) ? max( 1, absint( $rule_raw['get_qty'] ) ) : 1,
+						'min_qty'         => isset( $rule_raw['min_qty'] ) ? max( 1, absint( $rule_raw['min_qty'] ) ) : 1,
+						'payment_methods' => $payment_methods,
+						'tiers'           => $tiers,
+					);
+				}
+			}
+
+			$new_settings['woo_promotions_rules'] = $sanitized_rules;
 		}
 
 
@@ -2367,6 +2441,18 @@ class WPAT_Admin {
 				'keywords'    => 'badges oferta etiquetas descuento sale flash ribbon woocommerce'
 			),
 
+			array(
+				'id'          => 'woo-promotions',
+				'is_new'      => true,
+				'title'       => 'Promociones Dinámicas y Descuentos',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Crea reglas avanzadas de descuento en el carrito: tramos por gasto, 3x2, volumen, descuento global y por método de pago.',
+				'cat_class'   => 'cat-woocommerce cat-woo',
+				'icon'        => '🎁',
+				'icon_bg'     => 'woo',
+				'keywords'    => 'promociones descuentos 3x2 tramos volumen oferta pago woocommerce'
+			),
 			array(
 				'id'          => 'woo-checkout-designer',
 				'is_new'      => true,
@@ -4654,6 +4740,487 @@ class WPAT_Admin {
 
 					</div>
 				</div>
+				<?php
+				break;
+			case 'woo-promotions':
+			case 'woo_promotions':
+				$promo_rules  = isset( $settings['woo_promotions_rules'] ) && is_array( $settings['woo_promotions_rules'] ) ? $settings['woo_promotions_rules'] : array();
+				$product_cats = taxonomy_exists( 'product_cat' ) ? get_terms( array( 'taxonomy' => 'product_cat', 'hide_empty' => false ) ) : array();
+				$gateways     = function_exists( 'WC' ) && WC()->payment_gateways ? WC()->payment_gateways->get_available_payment_gateways() : array();
+				if ( empty( $gateways ) && function_exists( 'WC' ) && WC()->payment_gateways ) {
+					$gateways = WC()->payment_gateways->payment_gateways();
+				}
+				?>
+				<div class="wpat-module-card" style="margin-top: 20px;">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Promociones Dinámicas y Descuentos</h3>
+							<p>Crea y gestiona reglas de descuento inteligentes en el carrito: tramos de gasto, 3x2 / Compra X Paga Y, volumen por cantidad, descuento global y por método de pago.</p>
+						</div>
+						<?php $this->render_module_toggle( 'woo-promotions', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block;">
+
+						<div class="wpat-field-group" style="margin-top: 15px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 8px;">
+								<div style="display: flex; gap: 8px; align-items: center; flex-grow: 1;">
+									<input type="text" id="wpat_promo_search_input" placeholder="🔍 Buscar regla por título..." class="regular-text" style="font-size: 12.5px; height: 34px; max-width: 280px;" autocomplete="off" />
+									<button type="button" class="button button-small" id="wpat_promo_expand_all_btn">🔽 Desplegar Todas</button>
+									<button type="button" class="button button-small" id="wpat_promo_collapse_all_btn">🔼 Plegar Todas</button>
+								</div>
+								<button type="button" class="button button-primary" id="wpat_add_promo_rule_btn" style="background: var(--wpat-accent, #2563eb); border-color: #1d4ed8;">+ Añadir Nueva Regla Promocional</button>
+							</div>
+
+							<div id="wpat_promo_rules_container" style="display: flex; flex-direction: column; gap: 15px;">
+								<?php
+								if ( empty( $promo_rules ) ) :
+									?>
+									<div id="wpat_promo_empty_msg" style="text-align: center; padding: 30px; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px; color: #64748b;">
+										<p style="font-size: 15px; font-weight: 600; margin-bottom: 5px;">🎁 No hay reglas promocionales creadas todavía</p>
+										<p style="font-size: 13px; margin: 0;">Haz clic en el botón <strong>"+ Añadir Nueva Regla Promocional"</strong> para crear tu primera promoción.</p>
+									</div>
+									<?php
+								else :
+									foreach ( $promo_rules as $idx => $rule ) :
+										$r_id          = ! empty( $rule['id'] ) ? $rule['id'] : 'rule_' . $idx;
+										$r_title       = ! empty( $rule['title'] ) ? $rule['title'] : 'Regla Promocional #' . ( $idx + 1 );
+										$r_active      = isset( $rule['active'] ) && '1' === (string) $rule['active'];
+										$r_type        = ! empty( $rule['type'] ) ? $rule['type'] : 'global_discount';
+										$r_scope       = ! empty( $rule['scope'] ) ? $rule['scope'] : 'all';
+										$r_cats        = isset( $rule['categories'] ) && is_array( $rule['categories'] ) ? $rule['categories'] : array();
+										$r_prods       = isset( $rule['products'] ) && is_array( $rule['products'] ) ? implode( ', ', $rule['products'] ) : '';
+										$r_ignore_sale = ! empty( $rule['ignore_on_sale'] ) && '1' === (string) $rule['ignore_on_sale'];
+										$r_pay_methods = isset( $rule['payment_methods'] ) && is_array( $rule['payment_methods'] ) ? $rule['payment_methods'] : array();
+										$r_tiers       = isset( $rule['tiers'] ) && is_array( $rule['tiers'] ) ? $rule['tiers'] : array();
+										?>
+										<div class="wpat-promo-rule-card" data-rule-idx="<?php echo esc_attr( $idx ); ?>" style="border: 1px solid #cbd5e1; border-radius: 10px; background: #ffffff; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+											<input type="hidden" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][id]" value="<?php echo esc_attr( $r_id ); ?>" />
+											
+											<!-- Header de la Tarjeta de Regla -->
+											<div class="wpat-promo-rule-header" style="background: #f8fafc; padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border-bottom: 1px solid #e2e8f0; user-select: none;">
+												<div style="display: flex; align-items: center; gap: 10px; flex-grow: 1;">
+													<span style="font-size: 16px;">🎁</span>
+													<strong class="wpat-promo-rule-header-title" style="font-size: 14px; color: #0f172a;"><?php echo esc_html( $r_title ); ?></strong>
+													<span class="wpat-promo-type-badge" style="background: #e0f2fe; color: #0369a1; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px; text-transform: uppercase;">
+														<?php
+														$type_labels = array(
+															'tiered_spend'    => 'Tramos Gasto',
+															'bxgy'            => '3x2 / Compra X Paga Y',
+															'bulk_qty'        => 'Volumen',
+															'global_discount' => 'Descuento Global',
+															'payment_method'  => 'Método Pago',
+														);
+														echo esc_html( isset( $type_labels[ $r_type ] ) ? $type_labels[ $r_type ] : $r_type );
+														?>
+													</span>
+												</div>
+
+												<div style="display: flex; align-items: center; gap: 12px;" onclick="event.stopPropagation();">
+													<label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; margin: 0; cursor: pointer;">
+														<input type="checkbox" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][active]" value="1" <?php checked( $r_active ); ?> />
+														<span style="<?php echo $r_active ? 'color:#16a34a;' : 'color:#94a3b8;'; ?>"><?php echo $r_active ? 'Activa' : 'Inactiva'; ?></span>
+													</label>
+													<button type="button" class="wpat-promo-toggle-body-btn button button-small" style="font-size: 11px;">🔼 Plegar</button>
+													<button type="button" class="wpat-promo-delete-rule-btn button button-small" style="color: #ef4444; border-color: #fca5a5;">🗑️ Eliminar</button>
+												</div>
+											</div>
+
+											<!-- Cuerpo de la Tarjeta de Regla (Desplegable) -->
+											<div class="wpat-promo-rule-body" style="padding: 20px; display: block;">
+												
+												<!-- Fila 1: Título Público, Tipo de Promoción y Ámbito -->
+												<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px;">
+													<div>
+														<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Título Público (visible en carrito/checkout):</label>
+														<input type="text" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][title]" value="<?php echo esc_attr( $r_title ); ?>" class="wpat-promo-title-input regular-text" style="width: 100%;" required />
+													</div>
+													<div>
+														<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Tipo de Promoción:</label>
+														<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][type]" class="wpat-promo-type-select regular-text" style="width: 100%;">
+															<option value="tiered_spend" <?php selected( $r_type, 'tiered_spend' ); ?>>📊 Descuento por tramos de gasto</option>
+															<option value="bxgy" <?php selected( $r_type, 'bxgy' ); ?>>🛍️ Compra X, Paga Y (3x2)</option>
+															<option value="bulk_qty" <?php selected( $r_type, 'bulk_qty' ); ?>>📦 Descuento por volumen / cantidad</option>
+															<option value="global_discount" <?php selected( $r_type, 'global_discount' ); ?>>🏷️ Descuento porcentual o fijo global</option>
+															<option value="payment_method" <?php selected( $r_type, 'payment_method' ); ?>>💳 Descuento por método de pago</option>
+														</select>
+													</div>
+													<div>
+														<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Ámbito de Aplicación:</label>
+														<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][scope]" class="wpat-promo-scope-select regular-text" style="width: 100%;">
+															<option value="all" <?php selected( $r_scope, 'all' ); ?>>🌐 Toda la tienda</option>
+															<option value="category" <?php selected( $r_scope, 'category' ); ?>>🏷️ Categorías específicas</option>
+															<option value="product" <?php selected( $r_scope, 'product' ); ?>>📦 Productos / Variaciones específicas</option>
+														</select>
+													</div>
+												</div>
+
+												<!-- Fila 2: Categorías / Productos según Ámbito -->
+												<div class="wpat-promo-scope-categories-box" style="margin-bottom: 15px; <?php echo 'category' === $r_scope ? '' : 'display:none;'; ?> background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px;">
+													<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 6px;">Seleccionar Categorías de Producto Elegibles:</label>
+													<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; max-height: 140px; overflow-y: auto; padding: 5px;">
+														<?php
+														if ( ! empty( $product_cats ) && ! is_wp_error( $product_cats ) ) {
+															foreach ( $product_cats as $cat ) {
+																$is_checked = in_array( (int) $cat->term_id, array_map( 'intval', $r_cats ), true );
+																echo '<label style="font-size: 12px; font-weight: 500;"><input type="checkbox" name="wpat_settings[woo_promotions_rules][' . esc_attr( $idx ) . '][categories][]" value="' . esc_attr( $cat->term_id ) . '" ' . checked( $is_checked, true, false ) . '> ' . esc_html( $cat->name ) . '</label>';
+															}
+														} else {
+															echo '<span style="font-size: 12px; color: #94a3b8;">No se encontraron categorías de producto en WooCommerce.</span>';
+														}
+														?>
+													</div>
+												</div>
+
+												<div class="wpat-promo-scope-products-box" style="margin-bottom: 15px; <?php echo 'product' === $r_scope ? '' : 'display:none;'; ?> background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px;">
+													<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">IDs de Productos o Variaciones (separados por coma):</label>
+													<input type="text" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][products]" value="<?php echo esc_attr( $r_prods ); ?>" placeholder="Ej: 102, 105, 120" class="regular-text" style="width: 100%;" />
+													<p class="description" style="margin-top: 4px; font-size: 11px;">Introduce los IDs numéricos de los productos a los que se aplicará esta regla.</p>
+												</div>
+
+												<!-- Fila 3: Parámetros específicos por tipo -->
+												<!-- 3.1 Tiered Spend -->
+												<div class="wpat-promo-fields-tiered_spend" style="<?php echo 'tiered_spend' === $r_type ? '' : 'display:none;'; ?> background: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+													<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #1e40af;">📊 Tramos de Descuento por Gasto Acumulado en Carrito:</h4>
+													<div class="wpat-promo-tiers-list" style="display: flex; flex-direction: column; gap: 8px;">
+														<?php
+														if ( ! empty( $r_tiers ) ) :
+															foreach ( $r_tiers as $t_idx => $tier ) :
+																?>
+																<div class="wpat-promo-tier-row" style="display: flex; gap: 10px; align-items: center; background: #ffffff; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+																	<span style="font-size: 12px; font-weight: 600;">Subtotal Mínimo:</span>
+																	<input type="number" step="0.01" min="0" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][tiers][<?php echo esc_attr( $t_idx ); ?>][min_spend]" value="<?php echo esc_attr( isset( $tier['min_spend'] ) ? $tier['min_spend'] : 0 ); ?>" style="width: 90px;" placeholder="Ej: 100" /> €
+																	<span style="font-size: 12px; font-weight: 600; margin-left: 10px;">Descuento:</span>
+																	<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][tiers][<?php echo esc_attr( $t_idx ); ?>][discount_type]" style="width: 110px;">
+																		<option value="percent" <?php selected( isset( $tier['discount_type'] ) ? $tier['discount_type'] : 'percent', 'percent' ); ?>>Porcentaje %</option>
+																		<option value="fixed" <?php selected( isset( $tier['discount_type'] ) ? $tier['discount_type'] : '', 'fixed' ); ?>>Fijo €</option>
+																	</select>
+																	<input type="number" step="0.01" min="0" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][tiers][<?php echo esc_attr( $t_idx ); ?>][discount_value]" value="<?php echo esc_attr( isset( $tier['discount_value'] ) ? $tier['discount_value'] : 0 ); ?>" style="width: 80px;" placeholder="Ej: 10" />
+																	<button type="button" class="wpat-promo-delete-tier-btn button button-small" style="color: #ef4444; margin-left: auto;">× Eliminar Tramo</button>
+																</div>
+																<?php
+															endforeach;
+														endif;
+														?>
+													</div>
+													<button type="button" class="wpat-promo-add-tier-btn button button-small" style="margin-top: 10px;">+ Añadir Tramo</button>
+												</div>
+
+												<!-- 3.2 BXGY (3x2) -->
+												<div class="wpat-promo-fields-bxgy" style="<?php echo 'bxgy' === $r_type ? '' : 'display:none;'; ?> background: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+													<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #166534;">🛍️ Configuración de Compra X, Paga Y (ej. 3x2 / 2x1):</h4>
+													<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+														<div>
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Por cada (Comprar Qty):</label>
+															<input type="number" min="1" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][buy_qty]" value="<?php echo esc_attr( isset( $rule['buy_qty'] ) ? $rule['buy_qty'] : 3 ); ?>" style="width: 100%;" />
+														</div>
+														<div>
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Llevarte gratis / rebajado (Pagar Qty):</label>
+															<input type="number" min="1" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][get_qty]" value="<?php echo esc_attr( isset( $rule['get_qty'] ) ? $rule['get_qty'] : 1 ); ?>" style="width: 100%;" />
+														</div>
+														<div>
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">% Descuento en la(s) unidad(es) regalada(s):</label>
+															<input type="number" step="0.1" min="1" max="100" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][discount_value]" value="<?php echo esc_attr( isset( $rule['discount_value'] ) ? $rule['discount_value'] : 100 ); ?>" style="width: 100%;" placeholder="100 = Gratis" />
+														</div>
+													</div>
+													<p class="description" style="margin-top: 6px; font-size: 11px;">Nota: El motor descontará siempre el importe de las unidades de menor precio dentro del lote elegible.</p>
+												</div>
+
+												<!-- 3.3 Bulk Qty -->
+												<div class="wpat-promo-fields-bulk_qty" style="<?php echo 'bulk_qty' === $r_type ? '' : 'display:none;'; ?> background: #fefce8; border: 1px solid #fef08a; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+													<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #854d0e;">📦 Descuento por Volumen de Compra:</h4>
+													<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+														<div>
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">A partir de (Unidades mínimas):</label>
+															<input type="number" min="1" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][min_qty]" value="<?php echo esc_attr( isset( $rule['min_qty'] ) ? $rule['min_qty'] : 5 ); ?>" style="width: 100%;" />
+														</div>
+														<div>
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Tipo de Descuento:</label>
+															<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][discount_type]" style="width: 100%;">
+																<option value="percent" <?php selected( isset( $rule['discount_type'] ) ? $rule['discount_type'] : 'percent', 'percent' ); ?>>% Porcentual sobre subtotal</option>
+																<option value="fixed_unit" <?php selected( isset( $rule['discount_type'] ) ? $rule['discount_type'] : '', 'fixed_unit' ); ?>>€ Descuento fijo por unidad</option>
+																<option value="fixed_total" <?php selected( isset( $rule['discount_type'] ) ? $rule['discount_type'] : '', 'fixed_total' ); ?>>€ Descuento fijo total</option>
+															</select>
+														</div>
+														<div>
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Valor del Descuento:</label>
+															<input type="number" step="0.01" min="0" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][discount_value]" value="<?php echo esc_attr( isset( $rule['discount_value'] ) ? $rule['discount_value'] : 10 ); ?>" style="width: 100%;" />
+														</div>
+													</div>
+												</div>
+
+												<!-- 3.4 Global Discount -->
+												<div class="wpat-promo-fields-global_discount" style="<?php echo 'global_discount' === $r_type ? '' : 'display:none;'; ?> background: #faf5ff; border: 1px solid #e9d5ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+													<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #6b21a8;">🏷️ Descuento Directo Global o Filtrado:</h4>
+													<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+														<div>
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Tipo de Descuento:</label>
+															<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][discount_type]" style="width: 100%;">
+																<option value="percent" <?php selected( isset( $rule['discount_type'] ) ? $rule['discount_type'] : 'percent', 'percent' ); ?>>% Porcentual</option>
+																<option value="fixed" <?php selected( isset( $rule['discount_type'] ) ? $rule['discount_type'] : '', 'fixed' ); ?>>€ Fijo Directo</option>
+															</select>
+														</div>
+														<div>
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Valor del Descuento:</label>
+															<input type="number" step="0.01" min="0" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][discount_value]" value="<?php echo esc_attr( isset( $rule['discount_value'] ) ? $rule['discount_value'] : 10 ); ?>" style="width: 100%;" />
+														</div>
+													</div>
+												</div>
+
+												<!-- 3.5 Payment Method -->
+												<div class="wpat-promo-fields-payment_method" style="<?php echo 'payment_method' === $r_type ? '' : 'display:none;'; ?> background: #fff7ed; border: 1px solid #ffedd5; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+													<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #c2410c;">💳 Incentivo por Método de Pago Seleccionado:</h4>
+													<div style="margin-bottom: 10px;">
+														<label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px;">Pasarelas de Pago Elegibles:</label>
+														<div style="display: flex; flex-wrap: wrap; gap: 12px;">
+															<?php
+															if ( ! empty( $gateways ) ) {
+																foreach ( $gateways as $gw_id => $gw ) {
+																	$gw_title = is_object( $gw ) && isset( $gw->title ) ? $gw->title : $gw_id;
+																	$is_checked = in_array( $gw_id, $r_pay_methods, true );
+																	echo '<label style="font-size: 12px;"><input type="checkbox" name="wpat_settings[woo_promotions_rules][' . esc_attr( $idx ) . '][payment_methods][]" value="' . esc_attr( $gw_id ) . '" ' . checked( $is_checked, true, false ) . '> ' . esc_html( $gw_title ) . ' (<code>' . esc_html( $gw_id ) . '</code>)</label>';
+																}
+															} else {
+																echo '<label style="font-size: 12px;"><input type="checkbox" name="wpat_settings[woo_promotions_rules][' . esc_attr( $idx ) . '][payment_methods][]" value="bacs" ' . checked( in_array( 'bacs', $r_pay_methods, true ), true, false ) . '> Transferencia Bancaria (<code>bacs</code>)</label>';
+																echo '<label style="font-size: 12px;"><input type="checkbox" name="wpat_settings[woo_promotions_rules][' . esc_attr( $idx ) . '][payment_methods][]" value="cod" ' . checked( in_array( 'cod', $r_pay_methods, true ), true, false ) . '> Contrarreembolso (<code>cod</code>)</label>';
+															}
+															?>
+														</div>
+													</div>
+													<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+														<div>
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Tipo de Descuento:</label>
+															<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][discount_type]" style="width: 100%;">
+																<option value="percent" <?php selected( isset( $rule['discount_type'] ) ? $rule['discount_type'] : 'percent', 'percent' ); ?>>% Porcentual</option>
+																<option value="fixed" <?php selected( isset( $rule['discount_type'] ) ? $rule['discount_type'] : '', 'fixed' ); ?>>€ Fijo Directo</option>
+															</select>
+														</div>
+														<div>
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Valor del Descuento:</label>
+															<input type="number" step="0.01" min="0" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][discount_value]" value="<?php echo esc_attr( isset( $rule['discount_value'] ) ? $rule['discount_value'] : 5 ); ?>" style="width: 100%;" />
+														</div>
+													</div>
+												</div>
+
+												<!-- Fila 4: Opciones adicionales -->
+												<div style="border-top: 1px dashed #cbd5e1; padding-top: 12px; margin-top: 10px;">
+													<label style="font-size: 12.5px; font-weight: 600; cursor: pointer;">
+														<input type="checkbox" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][ignore_on_sale]" value="1" <?php checked( $r_ignore_sale ); ?> />
+														🚫 Excluir productos que ya tengan precio de oferta / rebaja activa (<code>$product->is_on_sale()</code>)
+													</label>
+												</div>
+
+											</div>
+										</div>
+										<?php
+									endforeach;
+								endif;
+								?>
+							</div>
+						</div>
+
+					</div>
+				</div>
+
+				<!-- Script controlador del Repeater de Promociones Dinámicas -->
+				<script>
+				jQuery(document).ready(function($) {
+					
+					// Cambiar visibilidad dinámica según Tipo de Promoción
+					$(document).on('change', '.wpat-promo-type-select', function() {
+						var $card = $(this).closest('.wpat-promo-rule-card');
+						var type = $(this).val();
+						
+						$card.find('.wpat-promo-fields-tiered_spend, .wpat-promo-fields-bxgy, .wpat-promo-fields-bulk_qty, .wpat-promo-fields-global_discount, .wpat-promo-fields-payment_method').hide();
+						$card.find('.wpat-promo-fields-' + type).show();
+
+						var labels = {
+							'tiered_spend': 'Tramos Gasto',
+							'bxgy': '3x2 / Compra X Paga Y',
+							'bulk_qty': 'Volumen',
+							'global_discount': 'Descuento Global',
+							'payment_method': 'Método Pago'
+						};
+						$card.find('.wpat-promo-type-badge').text(labels[type] || type);
+					});
+
+					// Cambiar visibilidad dinámica según Ámbito
+					$(document).on('change', '.wpat-promo-scope-select', function() {
+						var $card = $(this).closest('.wpat-promo-rule-card');
+						var scope = $(this).val();
+						
+						$card.find('.wpat-promo-scope-categories-box, .wpat-promo-scope-products-box').hide();
+						if (scope === 'category') {
+							$card.find('.wpat-promo-scope-categories-box').show();
+						} else if (scope === 'product') {
+							$card.find('.wpat-promo-scope-products-box').show();
+						}
+					});
+
+					// Actualizar título en cabecera al escribir
+					$(document).on('input', '.wpat-promo-title-input', function() {
+						var title = $(this).val() || 'Regla Promocional';
+						$(this).closest('.wpat-promo-rule-card').find('.wpat-promo-rule-header-title').text(title);
+					});
+
+					// Plegar / Desplegar tarjeta individual
+					$(document).on('click', '.wpat-promo-rule-header', function(e) {
+						var $card = $(this).closest('.wpat-promo-rule-card');
+						var $body = $card.find('.wpat-promo-rule-body');
+						var $btn = $card.find('.wpat-promo-toggle-body-btn');
+
+						$body.slideToggle(200, function() {
+							if ($body.is(':visible')) {
+								$btn.text('🔼 Plegar');
+							} else {
+								$btn.text('🔽 Desplegar');
+							}
+						});
+					});
+
+					// Desplegar todas
+					$('#wpat_promo_expand_all_btn').on('click', function() {
+						$('.wpat-promo-rule-body').slideDown(200);
+						$('.wpat-promo-toggle-body-btn').text('🔼 Plegar');
+					});
+
+					// Plegar todas
+					$('#wpat_promo_collapse_all_btn').on('click', function() {
+						$('.wpat-promo-rule-body').slideUp(200);
+						$('.wpat-promo-toggle-body-btn').text('🔽 Desplegar');
+					});
+
+					// Buscar regla por título
+					$('#wpat_promo_search_input').on('keyup', function() {
+						var q = $(this).val().toLowerCase();
+						$('.wpat-promo-rule-card').each(function() {
+							var title = $(this).find('.wpat-promo-rule-header-title').text().toLowerCase();
+							if (title.indexOf(q) !== -1) {
+								$(this).show();
+							} else {
+								$(this).hide();
+							}
+						});
+					});
+
+					// Añadir nueva regla
+					$('#wpat_add_promo_rule_btn').on('click', function() {
+						$('#wpat_promo_empty_msg').hide();
+						var idx = new Date().getTime();
+						var newCardHtml = `
+							<div class="wpat-promo-rule-card" data-rule-idx="${idx}" style="border: 1px solid #cbd5e1; border-radius: 10px; background: #ffffff; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+								<input type="hidden" name="wpat_settings[woo_promotions_rules][${idx}][id]" value="rule_${idx}" />
+								
+								<div class="wpat-promo-rule-header" style="background: #f8fafc; padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border-bottom: 1px solid #e2e8f0; user-select: none;">
+									<div style="display: flex; align-items: center; gap: 10px; flex-grow: 1;">
+										<span style="font-size: 16px;">🎁</span>
+										<strong class="wpat-promo-rule-header-title" style="font-size: 14px; color: #0f172a;">Nueva Regla Promocional</strong>
+										<span class="wpat-promo-type-badge" style="background: #e0f2fe; color: #0369a1; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px; text-transform: uppercase;">Descuento Global</span>
+									</div>
+									<div style="display: flex; align-items: center; gap: 12px;" onclick="event.stopPropagation();">
+										<label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; margin: 0; cursor: pointer;">
+											<input type="checkbox" name="wpat_settings[woo_promotions_rules][${idx}][active]" value="1" checked />
+											<span style="color:#16a34a;">Activa</span>
+										</label>
+										<button type="button" class="wpat-promo-toggle-body-btn button button-small" style="font-size: 11px;">🔼 Plegar</button>
+										<button type="button" class="wpat-promo-delete-rule-btn button button-small" style="color: #ef4444; border-color: #fca5a5;">🗑️ Eliminar</button>
+									</div>
+								</div>
+
+								<div class="wpat-promo-rule-body" style="padding: 20px; display: block;">
+									<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px;">
+										<div>
+											<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Título Público (visible en carrito):</label>
+											<input type="text" name="wpat_settings[woo_promotions_rules][${idx}][title]" value="Nueva Regla Promocional" class="wpat-promo-title-input regular-text" style="width: 100%;" required />
+										</div>
+										<div>
+											<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Tipo de Promoción:</label>
+											<select name="wpat_settings[woo_promotions_rules][${idx}][type]" class="wpat-promo-type-select regular-text" style="width: 100%;">
+												<option value="tiered_spend">📊 Descuento por tramos de gasto</option>
+												<option value="bxgy">🛍️ Compra X, Paga Y (3x2)</option>
+												<option value="bulk_qty">📦 Descuento por volumen / cantidad</option>
+												<option value="global_discount" selected>🏷️ Descuento porcentual o fijo global</option>
+												<option value="payment_method">💳 Descuento por método de pago</option>
+											</select>
+										</div>
+										<div>
+											<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Ámbito de Aplicación:</label>
+											<select name="wpat_settings[woo_promotions_rules][${idx}][scope]" class="wpat-promo-scope-select regular-text" style="width: 100%;">
+												<option value="all" selected>🌐 Toda la tienda</option>
+												<option value="category">🏷️ Categorías específicas</option>
+												<option value="product">📦 Productos / Variaciones específicas</option>
+											</select>
+										</div>
+									</div>
+
+									<div class="wpat-promo-fields-global_discount" style="background: #faf5ff; border: 1px solid #e9d5ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+										<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #6b21a8;">🏷️ Descuento Directo Global o Filtrado:</h4>
+										<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+											<div>
+												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Tipo de Descuento:</label>
+												<select name="wpat_settings[woo_promotions_rules][${idx}][discount_type]" style="width: 100%;">
+													<option value="percent" selected>% Porcentual</option>
+													<option value="fixed">€ Fijo Directo</option>
+												</select>
+											</div>
+											<div>
+												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Valor del Descuento:</label>
+												<input type="number" step="0.01" min="0" name="wpat_settings[woo_promotions_rules][${idx}][discount_value]" value="10" style="width: 100%;" />
+											</div>
+										</div>
+									</div>
+
+									<div style="border-top: 1px dashed #cbd5e1; padding-top: 12px; margin-top: 10px;">
+										<label style="font-size: 12.5px; font-weight: 600; cursor: pointer;">
+											<input type="checkbox" name="wpat_settings[woo_promotions_rules][${idx}][ignore_on_sale]" value="1" />
+											🚫 Excluir productos que ya tengan precio de oferta / rebaja activa ($product->is_on_sale())
+										</label>
+									</div>
+								</div>
+							</div>
+						`;
+
+						$('#wpat_promo_rules_container').append(newCardHtml);
+					});
+
+					// Eliminar regla
+					$(document).on('click', '.wpat-promo-delete-rule-btn', function(e) {
+						e.stopPropagation();
+						if (confirm('¿Estás seguro de que deseas eliminar esta regla promocional?')) {
+							$(this).closest('.wpat-promo-rule-card').remove();
+							if ($('.wpat-promo-rule-card').length === 0) {
+								$('#wpat_promo_empty_msg').show();
+							}
+						}
+					});
+
+					// Añadir tramo en Tiered Spend
+					$(document).on('click', '.wpat-promo-add-tier-btn', function() {
+						var $card = $(this).closest('.wpat-promo-rule-card');
+						var ruleIdx = $card.data('rule-idx');
+						var tierIdx = new Date().getTime();
+						var tierHtml = `
+							<div class="wpat-promo-tier-row" style="display: flex; gap: 10px; align-items: center; background: #ffffff; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+								<span style="font-size: 12px; font-weight: 600;">Subtotal Mínimo:</span>
+								<input type="number" step="0.01" min="0" name="wpat_settings[woo_promotions_rules][${ruleIdx}][tiers][${tierIdx}][min_spend]" value="100" style="width: 90px;" placeholder="Ej: 100" /> €
+								<span style="font-size: 12px; font-weight: 600; margin-left: 10px;">Descuento:</span>
+								<select name="wpat_settings[woo_promotions_rules][${ruleIdx}][tiers][${tierIdx}][discount_type]" style="width: 110px;">
+									<option value="percent" selected>Porcentaje %</option>
+									<option value="fixed">Fijo €</option>
+								</select>
+								<input type="number" step="0.01" min="0" name="wpat_settings[woo_promotions_rules][${ruleIdx}][tiers][${tierIdx}][discount_value]" value="10" style="width: 80px;" placeholder="Ej: 10" />
+								<button type="button" class="wpat-promo-delete-tier-btn button button-small" style="color: #ef4444; margin-left: auto;">× Eliminar Tramo</button>
+							</div>
+						`;
+						$card.find('.wpat-promo-tiers-list').append(tierHtml);
+					});
+
+					// Eliminar tramo
+					$(document).on('click', '.wpat-promo-delete-tier-btn', function() {
+						$(this).closest('.wpat-promo-tier-row').remove();
+					});
+
+				});
+				</script>
 				<?php
 				break;
 			case 'duplicator':

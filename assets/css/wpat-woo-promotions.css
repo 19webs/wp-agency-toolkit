@@ -1,0 +1,103 @@
+/**
+ * ESTILOS DE PROMOCIONES DINÁMICAS Y DESCUENTOS - WP AGENCY TOOLKIT
+ * Paleta WPAT: #2563eb, #10b981, #ffffff, #e2e8f0
+ */
+
+:root {
+	--wpat-promo-blue: #2563eb;
+	--wpat-promo-green: #10b981;
+	--wpat-promo-bg: #ffffff;
+	--wpat-promo-card-bg: #f8fafc;
+	--wpat-promo-border: #e2e8f0;
+	--wpat-promo-text: #0f172a;
+}
+
+/* --- TARJETA DE BARRA DE PROGRESO EN CARRITO --- */
+.wpat-tiered-progress-card {
+	background: var(--wpat-promo-card-bg) !important;
+	border: 1px solid var(--wpat-promo-border) !important;
+	border-radius: 12px !important;
+	padding: 16px 20px !important;
+	margin: 15px 0 22px 0 !important;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04) !important;
+	transition: all 0.3s ease !important;
+	box-sizing: border-box !important;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
+}
+
+.wpat-tiered-progress-card.wpat-completed {
+	background: #f0fdf4 !important;
+	border-color: #bbf7d0 !important;
+}
+
+.wpat-tiered-progress-header {
+	display: flex !important;
+	align-items: center !important;
+	gap: 12px !important;
+	margin-bottom: 12px !important;
+}
+
+.wpat-tiered-progress-icon {
+	font-size: 22px !important;
+	line-height: 1 !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	animation: wpat-gift-bounce 2s infinite ease-in-out;
+}
+
+@keyframes wpat-gift-bounce {
+	0%, 100% { transform: translateY(0); }
+	50% { transform: translateY(-3px); }
+}
+
+.wpat-tiered-progress-message {
+	font-size: 14px !important;
+	color: var(--wpat-promo-text) !important;
+	line-height: 1.45 !important;
+	flex-grow: 1 !important;
+}
+
+.wpat-tiered-progress-message strong {
+	color: var(--wpat-promo-blue) !important;
+	font-weight: 700 !important;
+}
+
+.wpat-completed .wpat-tiered-progress-message strong {
+	color: var(--wpat-promo-green) !important;
+}
+
+/* --- BARRA DE PROGRESO DE RELLENO --- */
+.wpat-tiered-progress-bar-bg {
+	background: #e2e8f0 !important;
+	border-radius: 20px !important;
+	height: 14px !important;
+	width: 100% !important;
+	overflow: hidden !important;
+	position: relative !important;
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+.wpat-tiered-progress-bar-fill {
+	background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%) !important;
+	height: 100% !important;
+	border-radius: 20px !important;
+	transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+	position: relative !important;
+}
+
+.wpat-completed .wpat-tiered-progress-bar-fill {
+	background: linear-gradient(90deg, #34d399 0%, #10b981 100%) !important;
+}
+
+.wpat-tiered-progress-pct-badge {
+	position: absolute !important;
+	right: 6px !important;
+	top: 50% !important;
+	transform: translateY(-50%) !important;
+	font-size: 9.5px !important;
+	font-weight: 800 !important;
+	color: #ffffff !important;
+	line-height: 1 !important;
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}

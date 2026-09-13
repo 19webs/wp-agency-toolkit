@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.55
+ * Version:     4.3.56
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.55' );
+define( 'WPAT_VERSION', '4.3.56' );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -183,6 +183,14 @@ class WPAT_Main {
 		'woo-email-designer' => array(
 			'file'  => 'includes/modules/class-wpat-woo-email-designer.php',
 			'class' => 'WPAT_Woo_Email_Designer',
+		),
+		'woo-promotions' => array(
+			'file'  => 'includes/modules/class-wpat-woo-promotions.php',
+			'class' => 'WPAT_Woo_Promotions',
+		),
+		'woo_promotions' => array(
+			'file'  => 'includes/modules/class-wpat-woo-promotions.php',
+			'class' => 'WPAT_Woo_Promotions',
 		),
 	);
 
@@ -416,6 +424,11 @@ class WPAT_Main {
 			'live_search_show_meta'           => 'sku',
 			'live_search_auto_replace'        => '0',
 			'live_search_placeholder'         => 'Buscar productos por nombre, SKU o categoría...',
+
+			// Opciones de Promociones Dinámicas y Descuentos (WooCommerce)
+			'woo-promotions'                  => '0',
+			'woo_promotions'                  => '0',
+			'woo_promotions_rules'            => array(),
 
 			// Opciones de Filtro por Facetas AJAX (WooCommerce)
 			'woo-facets'                      => '0',

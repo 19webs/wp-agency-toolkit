@@ -162,8 +162,18 @@ class WPAT_Woo_Promotions {
 		$parent_id    = $product->get_parent_id();
 		$effective_id = $parent_id ? $parent_id : $product_id;
 
+		$today = current_time( 'Y-m-d' );
+
 		foreach ( $rules as $rule ) {
 			if ( empty( $rule['active'] ) || '1' !== (string) $rule['active'] ) {
+				continue;
+			}
+
+			// Filtro por fecha de inicio y fin
+			if ( ! empty( $rule['start_date'] ) && $today < $rule['start_date'] ) {
+				continue;
+			}
+			if ( ! empty( $rule['end_date'] ) && $today > $rule['end_date'] ) {
 				continue;
 			}
 
@@ -321,17 +331,27 @@ class WPAT_Woo_Promotions {
 		}
 
 		$applied_meta_map = array();
+		$today            = current_time( 'Y-m-d' );
 
 		foreach ( $rules as $rule ) {
 			if ( empty( $rule['active'] ) || '1' !== (string) $rule['active'] ) {
 				continue;
 			}
 
-			$rule_id     = ! empty( $rule['id'] ) ? sanitize_key( $rule['id'] ) : 'rule_' . md5( serialize( $rule ) );
-			$rule_title  = ! empty( $rule['title'] ) ? sanitize_text_field( $rule['title'] ) : __( 'Descuento Promocional', 'wp-agency-toolkit' );
-			$rule_type   = ! empty( $rule['type'] ) ? sanitize_key( $rule['type'] ) : 'global_discount';
-			$scope       = ! empty( $rule['scope'] ) ? sanitize_key( $rule['scope'] ) : 'all';
-			$ignore_sale = ! empty( $rule['ignore_on_sale'] ) && '1' === (string) $rule['ignore_on_sale'];
+			// Filtro por fecha de inicio y fin
+			if ( ! empty( $rule['start_date'] ) && $today < $rule['start_date'] ) {
+				continue;
+			}
+			if ( ! empty( $rule['end_date'] ) && $today > $rule['end_date'] ) {
+				continue;
+			}
+
+			$rule_id       = ! empty( $rule['id'] ) ? sanitize_key( $rule['id'] ) : 'rule_' . md5( serialize( $rule ) );
+			$rule_title    = ! empty( $rule['title'] ) ? sanitize_text_field( $rule['title'] ) : __( 'Descuento Promocional', 'wp-agency-toolkit' );
+			$rule_type     = ! empty( $rule['type'] ) ? sanitize_key( $rule['type'] ) : 'global_discount';
+			$scope         = ! empty( $rule['scope'] ) ? sanitize_key( $rule['scope'] ) : 'all';
+			$ignore_sale   = ! empty( $rule['ignore_on_sale'] ) && '1' === (string) $rule['ignore_on_sale'];
+			$include_extra = ! empty( $rule['include_extra_options'] ) && '1' === (string) $rule['include_extra_options'];
 
 			// Si el descuento ya fue aplicado directamente en el precio del producto (global_discount), no duplicar como fee de carrito
 			if ( 'global_discount' === $rule_type ) {
@@ -378,11 +398,32 @@ class WPAT_Woo_Promotions {
 				}
 
 				if ( $matches_scope ) {
-					$item_qty             = max( 1, (int) ( isset( $item['quantity'] ) ? $item['quantity'] : 1 ) );
-					$line_subtotal        = isset( $item['line_subtotal'] ) && (float) $item['line_subtotal'] > 0
-						? (float) $item['line_subtotal']
-						: ( (float) $product->get_price() * $item_qty );
-					$qualifying_items[]   = $item;
+					$item_qty = max( 1, (int) ( isset( $item['quantity'] ) ? $item['quantity'] : 1 ) );
+
+					// Calcular recargo de campos extras si existen
+					$extra_surcharge = 0.0;
+					if ( isset( $product->wpat_extra_price ) && (float) $product->wpat_extra_price > 0 ) {
+						$extra_surcharge = (float) $product->wpat_extra_price;
+					} elseif ( ! empty( $item['wpat_extra_options'] ) && is_array( $item['wpat_extra_options'] ) ) {
+						foreach ( $item['wpat_extra_options'] as $opt ) {
+							if ( isset( $opt['price'] ) && (float) $opt['price'] > 0 ) {
+								$extra_surcharge += (float) $opt['price'];
+							}
+						}
+					}
+
+					$unit_price = (float) $product->get_price();
+					if ( ! $include_extra && $extra_surcharge > 0 ) {
+						$unit_price = max( 0, $unit_price - $extra_surcharge );
+					}
+
+					$line_subtotal        = $unit_price * $item_qty;
+					$qualifying_items[]   = array(
+						'cart_item'       => $item,
+						'unit_price'      => $unit_price,
+						'extra_surcharge' => $extra_surcharge,
+						'quantity'        => $item_qty,
+					);
 					$qualifying_subtotal += $line_subtotal;
 					$qualifying_qty      += $item_qty;
 				}
@@ -439,15 +480,11 @@ class WPAT_Woo_Promotions {
 
 					$unit_prices = array();
 					foreach ( $qualifying_items as $q_item ) {
-						/** @var WC_Product|null $p */
-						$p          = isset( $q_item['data'] ) ? $q_item['data'] : null;
-						$item_qty   = max( 1, (int) ( isset( $q_item['quantity'] ) ? $q_item['quantity'] : 1 ) );
-						$unit_price = isset( $q_item['line_subtotal'] ) && (float) $q_item['line_subtotal'] > 0
-							? ( (float) $q_item['line_subtotal'] / $item_qty )
-							: ( $p ? (float) $p->get_price() : 0.0 );
+						$u_price  = isset( $q_item['unit_price'] ) ? (float) $q_item['unit_price'] : 0.0;
+						$item_qty = isset( $q_item['quantity'] ) ? (int) $q_item['quantity'] : 1;
 
 						for ( $i = 0; $i < $item_qty; $i++ ) {
-							$unit_prices[] = $unit_price;
+							$unit_prices[] = $u_price;
 						}
 					}
 
@@ -539,9 +576,16 @@ class WPAT_Woo_Promotions {
 		$settings = WPAT_Main::get_instance()->get_settings();
 		$rules    = isset( $settings['woo_promotions_rules'] ) && is_array( $settings['woo_promotions_rules'] ) ? $settings['woo_promotions_rules'] : array();
 
+		$today       = current_time( 'Y-m-d' );
 		$target_rule = null;
 		foreach ( $rules as $rule ) {
 			if ( ! empty( $rule['active'] ) && '1' === (string) $rule['active'] && isset( $rule['type'] ) && 'tiered_spend' === $rule['type'] ) {
+				if ( ! empty( $rule['start_date'] ) && $today < $rule['start_date'] ) {
+					continue;
+				}
+				if ( ! empty( $rule['end_date'] ) && $today > $rule['end_date'] ) {
+					continue;
+				}
 				$target_rule = $rule;
 				break;
 			}
@@ -551,12 +595,13 @@ class WPAT_Woo_Promotions {
 			return null;
 		}
 
-		$cart        = WC()->cart;
-		$cart_items  = $cart->get_cart();
-		$scope       = ! empty( $target_rule['scope'] ) ? sanitize_key( $target_rule['scope'] ) : 'all';
-		$ignore_sale = ! empty( $target_rule['ignore_on_sale'] ) && '1' === (string) $target_rule['ignore_on_sale'];
-		$target_cats = isset( $target_rule['categories'] ) && is_array( $target_rule['categories'] ) ? array_map( 'absint', $target_rule['categories'] ) : array();
-		$target_prods = isset( $target_rule['products'] ) && is_array( $target_rule['products'] ) ? array_map( 'absint', $target_rule['products'] ) : array();
+		$cart          = WC()->cart;
+		$cart_items    = $cart->get_cart();
+		$scope         = ! empty( $target_rule['scope'] ) ? sanitize_key( $target_rule['scope'] ) : 'all';
+		$ignore_sale   = ! empty( $target_rule['ignore_on_sale'] ) && '1' === (string) $target_rule['ignore_on_sale'];
+		$include_extra = ! empty( $target_rule['include_extra_options'] ) && '1' === (string) $target_rule['include_extra_options'];
+		$target_cats   = isset( $target_rule['categories'] ) && is_array( $target_rule['categories'] ) ? array_map( 'absint', $target_rule['categories'] ) : array();
+		$target_prods  = isset( $target_rule['products'] ) && is_array( $target_rule['products'] ) ? array_map( 'absint', $target_rule['products'] ) : array();
 
 		$current_spend = 0.0;
 		foreach ( $cart_items as $item ) {
@@ -589,10 +634,24 @@ class WPAT_Woo_Promotions {
 			}
 
 			if ( $matches ) {
-				$item_qty       = max( 1, (int) ( isset( $item['quantity'] ) ? $item['quantity'] : 1 ) );
-				$current_spend += isset( $item['line_subtotal'] ) && (float) $item['line_subtotal'] > 0
-					? (float) $item['line_subtotal']
-					: ( (float) $product->get_price() * $item_qty );
+				$item_qty        = max( 1, (int) ( isset( $item['quantity'] ) ? $item['quantity'] : 1 ) );
+				$extra_surcharge = 0.0;
+				if ( isset( $product->wpat_extra_price ) && (float) $product->wpat_extra_price > 0 ) {
+					$extra_surcharge = (float) $product->wpat_extra_price;
+				} elseif ( ! empty( $item['wpat_extra_options'] ) && is_array( $item['wpat_extra_options'] ) ) {
+					foreach ( $item['wpat_extra_options'] as $opt ) {
+						if ( isset( $opt['price'] ) && (float) $opt['price'] > 0 ) {
+							$extra_surcharge += (float) $opt['price'];
+						}
+					}
+				}
+
+				$unit_price = (float) $product->get_price();
+				if ( ! $include_extra && $extra_surcharge > 0 ) {
+					$unit_price = max( 0, $unit_price - $extra_surcharge );
+				}
+
+				$current_spend += $unit_price * $item_qty;
 			}
 		}
 

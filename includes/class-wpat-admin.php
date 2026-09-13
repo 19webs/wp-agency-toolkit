@@ -1109,22 +1109,25 @@ class WPAT_Admin {
 					}
 
 					$sanitized_rules[] = array(
-						'id'              => $rule_id,
-						'title'           => $title,
-						'active'          => $active,
-						'type'            => $type,
-						'scope'           => $scope,
-						'categories'      => $categories,
-						'products'        => $products,
-						'ignore_on_sale'  => isset( $rule_raw['ignore_on_sale'] ) && '1' === (string) $rule_raw['ignore_on_sale'] ? '1' : '0',
-						'min_spend'       => isset( $rule_raw['min_spend'] ) ? max( 0, (float) $rule_raw['min_spend'] ) : 0.0,
-						'discount_type'   => ! empty( $rule_raw['discount_type'] ) && in_array( $rule_raw['discount_type'], array( 'percent', 'fixed', 'fixed_unit', 'fixed_total' ), true ) ? sanitize_key( $rule_raw['discount_type'] ) : 'percent',
-						'discount_value'  => isset( $rule_raw['discount_value'] ) ? max( 0, (float) $rule_raw['discount_value'] ) : 0.0,
-						'buy_qty'         => isset( $rule_raw['buy_qty'] ) ? max( 1, absint( $rule_raw['buy_qty'] ) ) : 3,
-						'get_qty'         => isset( $rule_raw['get_qty'] ) ? max( 1, absint( $rule_raw['get_qty'] ) ) : 1,
-						'min_qty'         => isset( $rule_raw['min_qty'] ) ? max( 1, absint( $rule_raw['min_qty'] ) ) : 1,
-						'payment_methods' => $payment_methods,
-						'tiers'           => $tiers,
+						'id'                    => $rule_id,
+						'title'                 => $title,
+						'active'                => $active,
+						'type'                  => $type,
+						'scope'                 => $scope,
+						'categories'            => $categories,
+						'products'              => $products,
+						'ignore_on_sale'        => isset( $rule_raw['ignore_on_sale'] ) && '1' === (string) $rule_raw['ignore_on_sale'] ? '1' : '0',
+						'include_extra_options' => isset( $rule_raw['include_extra_options'] ) && '1' === (string) $rule_raw['include_extra_options'] ? '1' : '0',
+						'start_date'            => ! empty( $rule_raw['start_date'] ) ? sanitize_text_field( $rule_raw['start_date'] ) : '',
+						'end_date'              => ! empty( $rule_raw['end_date'] ) ? sanitize_text_field( $rule_raw['end_date'] ) : '',
+						'min_spend'             => isset( $rule_raw['min_spend'] ) ? max( 0, (float) $rule_raw['min_spend'] ) : 0.0,
+						'discount_type'         => ! empty( $rule_raw['discount_type'] ) && in_array( $rule_raw['discount_type'], array( 'percent', 'fixed', 'fixed_unit', 'fixed_total' ), true ) ? sanitize_key( $rule_raw['discount_type'] ) : 'percent',
+						'discount_value'        => isset( $rule_raw['discount_value'] ) ? max( 0, (float) $rule_raw['discount_value'] ) : 0.0,
+						'buy_qty'               => isset( $rule_raw['buy_qty'] ) ? max( 1, absint( $rule_raw['buy_qty'] ) ) : 3,
+						'get_qty'               => isset( $rule_raw['get_qty'] ) ? max( 1, absint( $rule_raw['get_qty'] ) ) : 1,
+						'min_qty'               => isset( $rule_raw['min_qty'] ) ? max( 1, absint( $rule_raw['min_qty'] ) ) : 1,
+						'payment_methods'       => $payment_methods,
+						'tiers'                 => $tiers,
 					);
 				}
 			}
@@ -4807,8 +4810,11 @@ class WPAT_Admin {
 										$r_scope       = ! empty( $rule['scope'] ) ? $rule['scope'] : 'all';
 										$r_cats        = isset( $rule['categories'] ) && is_array( $rule['categories'] ) ? $rule['categories'] : array();
 										$r_prods       = isset( $rule['products'] ) && is_array( $rule['products'] ) ? implode( ', ', $rule['products'] ) : '';
-										$r_ignore_sale = ! empty( $rule['ignore_on_sale'] ) && '1' === (string) $rule['ignore_on_sale'];
-										$r_pay_methods = isset( $rule['payment_methods'] ) && is_array( $rule['payment_methods'] ) ? $rule['payment_methods'] : array();
+										$r_ignore_sale   = ! empty( $rule['ignore_on_sale'] ) && '1' === (string) $rule['ignore_on_sale'];
+										$r_include_extra = ! empty( $rule['include_extra_options'] ) && '1' === (string) $rule['include_extra_options'];
+										$r_start_date    = ! empty( $rule['start_date'] ) ? sanitize_text_field( $rule['start_date'] ) : '';
+										$r_end_date      = ! empty( $rule['end_date'] ) ? sanitize_text_field( $rule['end_date'] ) : '';
+										$r_pay_methods   = isset( $rule['payment_methods'] ) && is_array( $rule['payment_methods'] ) ? $rule['payment_methods'] : array();
 										$r_tiers       = isset( $rule['tiers'] ) && is_array( $rule['tiers'] ) ? $rule['tiers'] : array();
 										?>
 										<div class="wpat-promo-rule-card" data-rule-idx="<?php echo esc_attr( $idx ); ?>" style="border: 1px solid #cbd5e1; border-radius: 10px; background: #ffffff; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
@@ -5019,12 +5025,28 @@ class WPAT_Admin {
 													</div>
 												</div>
 
-												<!-- Fila 4: Opciones adicionales -->
-												<div style="border-top: 1px dashed #cbd5e1; padding-top: 12px; margin-top: 10px;">
-													<label style="font-size: 12.5px; font-weight: 600; cursor: pointer;">
-														<input type="checkbox" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][ignore_on_sale]" value="1" <?php checked( $r_ignore_sale ); ?> />
-														🚫 Excluir productos que ya tengan precio de oferta / rebaja activa (<code>$product->is_on_sale()</code>)
-													</label>
+												<!-- Fila 4: Opciones adicionales y Programación -->
+												<div style="border-top: 1px dashed #cbd5e1; padding-top: 12px; margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
+													<div style="display: flex; flex-wrap: wrap; gap: 20px;">
+														<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+															<input type="checkbox" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][ignore_on_sale]" value="1" <?php checked( $r_ignore_sale ); ?> />
+															🚫 Excluir productos que ya tengan precio de oferta / rebaja activa (<code>is_on_sale()</code>)
+														</label>
+														<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+															<input type="checkbox" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][include_extra_options]" value="1" <?php checked( $r_include_extra ); ?> />
+															🎨 Incluir recargos de Campos Extras en el cálculo del descuento
+														</label>
+													</div>
+													<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 4px;">
+														<div>
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha de Inicio (Opcional):</label>
+															<input type="date" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_date]" value="<?php echo esc_attr( $r_start_date ); ?>" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+														</div>
+														<div>
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha de Fin (Opcional):</label>
+															<input type="date" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_date]" value="<?php echo esc_attr( $r_end_date ); ?>" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+														</div>
+													</div>
 												</div>
 
 											</div>
@@ -5187,11 +5209,27 @@ class WPAT_Admin {
 										</div>
 									</div>
 
-									<div style="border-top: 1px dashed #cbd5e1; padding-top: 12px; margin-top: 10px;">
-										<label style="font-size: 12.5px; font-weight: 600; cursor: pointer;">
-											<input type="checkbox" name="wpat_settings[woo_promotions_rules][${idx}][ignore_on_sale]" value="1" />
-											🚫 Excluir productos que ya tengan precio de oferta / rebaja activa ($product->is_on_sale())
-										</label>
+									<div style="border-top: 1px dashed #cbd5e1; padding-top: 12px; margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
+										<div style="display: flex; flex-wrap: wrap; gap: 20px;">
+											<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+												<input type="checkbox" name="wpat_settings[woo_promotions_rules][${idx}][ignore_on_sale]" value="1" />
+												🚫 Excluir productos que ya tengan precio de oferta / rebaja activa (is_on_sale())
+											</label>
+											<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+												<input type="checkbox" name="wpat_settings[woo_promotions_rules][${idx}][include_extra_options]" value="1" />
+												🎨 Incluir recargos de Campos Extras en el cálculo del descuento
+											</label>
+										</div>
+										<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 4px;">
+											<div>
+												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha de Inicio (Opcional):</label>
+												<input type="date" name="wpat_settings[woo_promotions_rules][${idx}][start_date]" value="" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+											</div>
+											<div>
+												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha de Fin (Opcional):</label>
+												<input type="date" name="wpat_settings[woo_promotions_rules][${idx}][end_date]" value="" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+											</div>
+										</div>
 									</div>
 								</div>
 							</div>

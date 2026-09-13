@@ -790,6 +790,18 @@ class WPAT_Admin {
 			}
 		}
 
+		// Sanitizar Filtro por Facetas
+		if ( empty( $saving_module ) || 'woo-facets' === $saving_module ) {
+			$new_settings['woo-facets']                  = isset( $input_settings['woo-facets'] ) && '1' === $input_settings['woo-facets'] ? '1' : '0';
+			$new_settings['facets_config']               = isset( $input_settings['facets_config'] ) && is_array( $input_settings['facets_config'] ) ? array_map( 'sanitize_text_field', $input_settings['facets_config'] ) : array( 'sort', 'price', 'category', 'stock', 'rating' );
+			$new_settings['woo_facets_accent_color']    = isset( $input_settings['woo_facets_accent_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_facets_accent_color'] ) ? $input_settings['woo_facets_accent_color'] : '#2563eb';
+			$new_settings['woo_facets_card_bg']          = isset( $input_settings['woo_facets_card_bg'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_facets_card_bg'] ) ? $input_settings['woo_facets_card_bg'] : '#ffffff';
+			$new_settings['woo_facets_border_color']     = isset( $input_settings['woo_facets_border_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_facets_border_color'] ) ? $input_settings['woo_facets_border_color'] : '#e2e8f0';
+			$new_settings['woo_facets_badge_bg']         = isset( $input_settings['woo_facets_badge_bg'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_facets_badge_bg'] ) ? $input_settings['woo_facets_badge_bg'] : '#f1f5f9';
+			$new_settings['woo_facets_border_radius']    = isset( $input_settings['woo_facets_border_radius'] ) ? max( 0, min( 30, absint( $input_settings['woo_facets_border_radius'] ) ) ) : 12;
+			$new_settings['woo_facets_show_active_tags'] = isset( $input_settings['woo_facets_show_active_tags'] ) && '1' === $input_settings['woo_facets_show_active_tags'] ? '1' : '0';
+		}
+
 		// Sanitizar Autocompletado de CP y Provincia (WooCommerce)
 		if ( empty( $saving_module ) || 'woo-address-autofill' === $saving_module ) {
 			$new_settings['woo-address-autofill']     = isset( $input_settings['woo-address-autofill'] ) && '1' === $input_settings['woo-address-autofill'] ? '1' : '0';
@@ -2298,14 +2310,14 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'woo-facets',
-				'title'       => 'Filtros por Facetas',
+				'title'       => 'Filtro por Facetas',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
-				'desc'        => 'Filtros ultrarrápidos para catálogo por precio, stock, categorías y atributos tipo FacetWP.',
+				'desc'        => 'Filtros ultrarrápidos para catálogo por precio, stock, categorías, atributos u ordenación.',
 				'cat_class'   => 'cat-woocommerce cat-woo',
 				'icon'        => '⚡',
 				'icon_bg'     => 'woo',
-				'keywords'    => 'filtros facetas woocommerce facetwp catalogo'
+				'keywords'    => 'filtros facetas woocommerce catalogo'
 			),
 			array(
 				'id'          => 'woo-checkout-editor',
@@ -4537,60 +4549,99 @@ class WPAT_Admin {
 				<?php
 				break;
 			case 'woo-facets':
+				$facets_cfg          = isset( $settings['facets_config'] ) && is_array( $settings['facets_config'] ) ? $settings['facets_config'] : array( 'sort', 'price', 'category', 'stock', 'rating' );
+				$facets_accent_color = isset( $settings['woo_facets_accent_color'] ) ? $settings['woo_facets_accent_color'] : '#2563eb';
+				$facets_card_bg      = isset( $settings['woo_facets_card_bg'] ) ? $settings['woo_facets_card_bg'] : '#ffffff';
+				$facets_border_color = isset( $settings['woo_facets_border_color'] ) ? $settings['woo_facets_border_color'] : '#e2e8f0';
+				$facets_badge_bg     = isset( $settings['woo_facets_badge_bg'] ) ? $settings['woo_facets_badge_bg'] : '#f1f5f9';
+				$facets_radius       = isset( $settings['woo_facets_border_radius'] ) ? intval( $settings['woo_facets_border_radius'] ) : 12;
+				$facets_active_tags  = ! isset( $settings['woo_facets_show_active_tags'] ) || '1' === $settings['woo_facets_show_active_tags'];
 				?>
-<div class="wpat-module-card" style="margin-top: 20px;">
-								<div class="wpat-module-header">
-									<div class="wpat-module-info">
-										<h3>Filtro por Facetas AJAX para Productos (Estilo FacetWP)</h3>
-										<p>Permite a los usuarios filtrar productos instantáneamente por Precio, Atributos (Colores/Tallas), Categorías, Stock, Rating u Ordenación sin recargar la página (shortcode <code>[wpat_product_facets]</code>).</p>
-									</div>
-									<?php $this->render_module_toggle( 'woo-facets', $settings, true ); ?>
+				<div class="wpat-module-card" style="margin-top: 20px;">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Filtro por Facetas</h3>
+							<p>Permite a los usuarios filtrar productos instantáneamente por Precio, Atributos (Colores/Tallas), Categorías, Stock, Rating u Ordenación sin recargar la página (shortcode <code>[wpat_product_facets]</code>).</p>
+						</div>
+						<?php $this->render_module_toggle( 'woo-facets', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block;">
+
+						<div class="wpat-field-group" style="margin-top: 15px; background: #f8fafc; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 8px;">
+							<h4 style="margin: 0 0 10px 0; font-size: 13.5px; font-weight: 700;">🎛️ Facetas a Habilitar en el Widget / Sidebar:</h4>
+							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+								<label style="font-size: 13px; font-weight: 600;">
+									<input type="checkbox" name="wpat_settings[facets_config][]" value="sort" <?php checked( in_array( 'sort', $facets_cfg, true ) ); ?>>
+									🔃 Selector de Ordenación
+								</label>
+								<label style="font-size: 13px; font-weight: 600;">
+									<input type="checkbox" name="wpat_settings[facets_config][]" value="price" <?php checked( in_array( 'price', $facets_cfg, true ) ); ?>>
+									💰 Rango de Precio (€)
+								</label>
+								<label style="font-size: 13px; font-weight: 600;">
+									<input type="checkbox" name="wpat_settings[facets_config][]" value="category" <?php checked( in_array( 'category', $facets_cfg, true ) ); ?>>
+									🏷️ Categorías de Producto
+								</label>
+								<label style="font-size: 13px; font-weight: 600;">
+									<input type="checkbox" name="wpat_settings[facets_config][]" value="attribute" <?php checked( in_array( 'attribute', $facets_cfg, true ) ); ?>>
+									🎨 Atributos (Color, Talla...)
+								</label>
+								<label style="font-size: 13px; font-weight: 600;">
+									<input type="checkbox" name="wpat_settings[facets_config][]" value="stock" <?php checked( in_array( 'stock', $facets_cfg, true ) ); ?>>
+									📦 Stock y En Oferta
+								</label>
+								<label style="font-size: 13px; font-weight: 600;">
+									<input type="checkbox" name="wpat_settings[facets_config][]" value="rating" <?php checked( in_array( 'rating', $facets_cfg, true ) ); ?>>
+									⭐️ Valoración (Estrellas)
+								</label>
+							</div>
+						</div>
+
+						<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 20px 0;" />
+
+						<div class="wpat-field-group">
+							<h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700;">🎨 Personalización de Estilo y Colores del Widget:</h4>
+							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+								<div class="wpat-field-group">
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color de Acento / Selección:</label>
+									<input type="text" name="wpat_settings[woo_facets_accent_color]" value="<?php echo esc_attr( $facets_accent_color ); ?>" class="wpat-color-picker" data-default-color="#2563eb">
 								</div>
-								<div class="wpat-module-body" style="display: block;">
-									
-
-									<div class="wpat-field-group" style="margin-top: 15px; background: #f8fafc; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 6px;">
-										<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700;">🎛️ Facetas a Habilitar en el Widget / Sidebar:</h4>
-										<?php
-										$facets_cfg = isset( $settings['facets_config'] ) && is_array( $settings['facets_config'] ) ? $settings['facets_config'] : array( 'sort', 'price', 'category', 'stock', 'rating' );
-										?>
-										<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-											<label style="font-size: 12px;">
-												<input type="checkbox" name="wpat_settings[facets_config][]" value="sort" <?php checked( in_array( 'sort', $facets_cfg, true ) ); ?>>
-												🔃 Selector de Ordenación
-											</label>
-											<label style="font-size: 12px;">
-												<input type="checkbox" name="wpat_settings[facets_config][]" value="price" <?php checked( in_array( 'price', $facets_cfg, true ) ); ?>>
-												💰 Rango de Precio (€)
-											</label>
-											<label style="font-size: 12px;">
-												<input type="checkbox" name="wpat_settings[facets_config][]" value="category" <?php checked( in_array( 'category', $facets_cfg, true ) ); ?>>
-												🏷️ Categorías de Producto
-											</label>
-											<label style="font-size: 12px;">
-												<input type="checkbox" name="wpat_settings[facets_config][]" value="attribute" <?php checked( in_array( 'attribute', $facets_cfg, true ) ); ?>>
-												🎨 Atributos (Color, Talla...)
-											</label>
-											<label style="font-size: 12px;">
-												<input type="checkbox" name="wpat_settings[facets_config][]" value="stock" <?php checked( in_array( 'stock', $facets_cfg, true ) ); ?>>
-												📦 Stock y En Oferta
-											</label>
-											<label style="font-size: 12px;">
-												<input type="checkbox" name="wpat_settings[facets_config][]" value="rating" <?php checked( in_array( 'rating', $facets_cfg, true ) ); ?>>
-												⭐️ Valoración (Estrellas)
-											</label>
-										</div>
-									</div>
-
-									<div class="wpat-field-group" style="margin-top: 15px;">
-										<label style="font-weight: 600; display: block; margin-bottom: 5px;">Uso mediante Shortcode:</label>
-										<code>[wpat_product_facets title="Filtrar Productos"]</code>
-										<p class="description" style="margin-top: 4px;">Inserta este shortcode en la barra lateral (Sidebar) o plantilla de la tienda.</p>
-									</div>
-
-									
+								<div class="wpat-field-group">
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color Fondo del Widget:</label>
+									<input type="text" name="wpat_settings[woo_facets_card_bg]" value="<?php echo esc_attr( $facets_card_bg ); ?>" class="wpat-color-picker" data-default-color="#ffffff">
+								</div>
+								<div class="wpat-field-group">
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color del Borde:</label>
+									<input type="text" name="wpat_settings[woo_facets_border_color]" value="<?php echo esc_attr( $facets_border_color ); ?>" class="wpat-color-picker" data-default-color="#e2e8f0">
+								</div>
+								<div class="wpat-field-group">
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Color Fondo de Contadores (Badges):</label>
+									<input type="text" name="wpat_settings[woo_facets_badge_bg]" value="<?php echo esc_attr( $facets_badge_bg ); ?>" class="wpat-color-picker" data-default-color="#f1f5f9">
+								</div>
+								<div class="wpat-field-group">
+									<label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Radio de Bordes (px):</label>
+									<input type="number" min="0" max="30" name="wpat_settings[woo_facets_border_radius]" value="<?php echo esc_attr( $facets_radius ); ?>" class="regular-text" style="width: 100%;">
 								</div>
 							</div>
+
+							<div class="wpat-field-group" style="margin-top: 15px;">
+								<label style="font-weight: 600;">
+									<input type="checkbox" name="wpat_settings[woo_facets_show_active_tags]" value="1" <?php checked( $facets_active_tags ); ?>>
+									Mostrar barra de "Filtros Activos" con píldoras desmarcables (<code>×</code>) sobre el formulario
+								</label>
+							</div>
+						</div>
+
+						<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 20px 0;" />
+
+						<div class="wpat-field-group">
+							<label style="font-weight: 600; display: block; margin-bottom: 5px;">Uso mediante Shortcode:</label>
+							<code>[wpat_product_facets title="Filtrar Productos"]</code>
+							<p class="description" style="margin-top: 4px;">Inserta este shortcode en la barra lateral (Sidebar) o plantilla de la tienda.</p>
+						</div>
+
+					</div>
+				</div>
 				<?php
 				break;
 			case 'duplicator':

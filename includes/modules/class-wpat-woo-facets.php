@@ -54,9 +54,29 @@ class WPAT_Woo_Facets {
 		wp_enqueue_style( 'wpat-woo-facets', WPAT_URL . 'assets/css/wpat-woo-facets.css', array(), WPAT_VERSION );
 		wp_enqueue_script( 'wpat-woo-facets', WPAT_URL . 'assets/js/wpat-woo-facets.js', array( 'jquery' ), WPAT_VERSION, true );
 
+		$settings     = WPAT_Main::get_instance()->get_settings();
+		$accent_color = isset( $settings['woo_facets_accent_color'] ) ? $settings['woo_facets_accent_color'] : '#2563eb';
+		$card_bg      = isset( $settings['woo_facets_card_bg'] ) ? $settings['woo_facets_card_bg'] : '#ffffff';
+		$border_color = isset( $settings['woo_facets_border_color'] ) ? $settings['woo_facets_border_color'] : '#e2e8f0';
+		$badge_bg     = isset( $settings['woo_facets_badge_bg'] ) ? $settings['woo_facets_badge_bg'] : '#f1f5f9';
+		$radius       = isset( $settings['woo_facets_border_radius'] ) ? intval( $settings['woo_facets_border_radius'] ) : 12;
+
+		$custom_css = "
+			:root {
+				--wpat-facet-accent: {$accent_color};
+				--wpat-facet-bg: {$card_bg};
+				--wpat-facet-border: {$border_color};
+				--wpat-facet-badge-bg: {$badge_bg};
+				--wpat-facet-radius: {$radius}px;
+			}
+		";
+		wp_add_inline_style( 'wpat-woo-facets', $custom_css );
+
 		wp_localize_script( 'wpat-woo-facets', 'wpatWooFacets', array(
-			'ajaxurl' => admin_url( 'admin-ajax.php' ),
-			'loading' => __( 'Cargando productos...', 'wp-agency-toolkit' ),
+			'ajaxurl'            => admin_url( 'admin-ajax.php' ),
+			'loading'            => __( 'Cargando productos...', 'wp-agency-toolkit' ),
+			'active_filters_lbl' => __( 'Filtros Activos:', 'wp-agency-toolkit' ),
+			'clear_all_lbl'      => __( 'Limpiar todo', 'wp-agency-toolkit' ),
 		) );
 	}
 
@@ -72,14 +92,23 @@ class WPAT_Woo_Facets {
 			'facets' => 'price,category,stock,rating,sort',
 		), $atts, 'wpat_product_facets' );
 
-		$settings       = WPAT_Main::get_instance()->get_settings();
-		$enabled_facets = isset( $settings['facets_config'] ) && is_array( $settings['facets_config'] ) ? $settings['facets_config'] : explode( ',', $atts['facets'] );
+		$settings         = WPAT_Main::get_instance()->get_settings();
+		$enabled_facets   = isset( $settings['facets_config'] ) && is_array( $settings['facets_config'] ) ? $settings['facets_config'] : explode( ',', $atts['facets'] );
+		$show_active_tags = ! isset( $settings['woo_facets_show_active_tags'] ) || '1' === $settings['woo_facets_show_active_tags'];
 
 		ob_start();
 		?>
 		<div class="wpat-facets-wrapper">
 			<?php if ( ! empty( $atts['title'] ) ) : ?>
 				<h3 class="wpat-facets-main-title"><?php echo esc_html( $atts['title'] ); ?></h3>
+			<?php endif; ?>
+
+			<?php if ( $show_active_tags ) : ?>
+				<div class="wpat-facets-active-tags-bar" style="display: none;">
+					<span class="wpat-facets-active-label"><?php esc_html_e( 'Filtros Activos:', 'wp-agency-toolkit' ); ?></span>
+					<div class="wpat-facets-tags-list"></div>
+					<button type="button" class="wpat-clear-all-tags-btn"><?php esc_html_e( 'Limpiar todo', 'wp-agency-toolkit' ); ?></button>
+				</div>
 			<?php endif; ?>
 
 			<form class="wpat-facets-form">

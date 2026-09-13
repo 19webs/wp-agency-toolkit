@@ -78,9 +78,16 @@ class WPAT_Woo_Promotions {
 		add_action( 'woocommerce_before_cart_totals', array( $this, 'render_tiered_spend_progress_bar' ), 10 );
 		add_action( 'woocommerce_proceed_to_checkout', array( $this, 'render_tiered_spend_progress_bar' ), 5 );
 
-		// Hook para renderizar contador regresivo en la ficha de producto y en el catálogo de la tienda
+		// Hook para renderizar contador regresivo en la ficha de producto y catálogo de la tienda
 		add_action( 'woocommerce_single_product_summary', array( $this, 'render_product_countdown_banner' ), 25 );
+		add_action( 'woocommerce_before_add_to_cart_form', array( $this, 'render_product_countdown_banner' ), 10 );
+		add_action( 'woocommerce_after_add_to_cart_form', array( $this, 'render_product_countdown_banner' ), 10 );
+		add_action( 'woocommerce_product_meta_end', array( $this, 'render_product_countdown_banner' ), 10 );
+
 		add_action( 'woocommerce_after_shop_loop_item', array( $this, 'render_shop_loop_countdown_banner' ), 9 );
+		add_action( 'woocommerce_after_shop_loop_item_title', array( $this, 'render_shop_loop_countdown_banner' ), 15 );
+
+		add_shortcode( 'wpat_promo_countdown', array( $this, 'render_countdown_shortcode' ) );
 
 		// Filtros para mostrar el Título Público de la promoción en Carrito y Checkout
 		add_filter( 'woocommerce_cart_item_name', array( $this, 'display_promo_title_in_cart_and_checkout' ), 20, 3 );
@@ -91,6 +98,19 @@ class WPAT_Woo_Promotions {
 	}
 
 	/**
+	 * Shortcode [wpat_promo_countdown] para renderizar el contador en cualquier maquetador.
+	 */
+	public function render_countdown_shortcode() {
+		global $product;
+		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
+			return '';
+		}
+		ob_start();
+		$this->render_product_countdown_banner();
+		return ob_get_clean();
+	}
+
+	/**
 	 * Encola estilos y scripts para el frontend.
 	 */
 	public function enqueue_frontend_assets() {
@@ -98,34 +118,20 @@ class WPAT_Woo_Promotions {
 			return;
 		}
 
-		if ( is_cart() || is_checkout() || is_product() || is_shop() || is_product_taxonomy() ) {
-			wp_enqueue_style(
-				'wpat-woo-promotions',
-				WPAT_URL . 'assets/css/wpat-woo-promotions.css',
-				array(),
-				WPAT_VERSION
-			);
+		wp_enqueue_style(
+			'wpat-woo-promotions-css',
+			WPAT_PLUGIN_URL . 'assets/css/wpat-woo-promotions.css',
+			array(),
+			WPAT_VERSION
+		);
 
-			wp_enqueue_script(
-				'wpat-woo-promotions',
-				WPAT_URL . 'assets/js/wpat-woo-promotions.js',
-				array( 'jquery' ),
-				WPAT_VERSION,
-				true
-			);
-
-			$promo_data = $this->get_progress_bar_data();
-
-			wp_localize_script(
-				'wpat-woo-promotions',
-				'wpatPromoData',
-				array(
-					'ajaxurl'     => admin_url( 'admin-ajax.php' ),
-					'currency'    => function_exists( 'get_woocommerce_currency_symbol' ) ? get_woocommerce_currency_symbol() : '€',
-					'progressBar' => $promo_data,
-				)
-			);
-		}
+		wp_enqueue_script(
+			'wpat-woo-promotions-js',
+			WPAT_PLUGIN_URL . 'assets/js/wpat-woo-promotions.js',
+			array( 'jquery' ),
+			WPAT_VERSION,
+			true
+		);
 	}
 
 	/**
@@ -232,9 +238,12 @@ class WPAT_Woo_Promotions {
 			$scope       = ! empty( $rule['scope'] ) ? sanitize_key( $rule['scope'] ) : 'all';
 			$ignore_sale = ! empty( $rule['ignore_on_sale'] ) && '1' === (string) $rule['ignore_on_sale'];
 
-			// Si la regla ignora productos en oferta y el producto ya tenía rebaja nativa antes de la promo
-			if ( $ignore_sale && $product->is_on_sale() ) {
-				continue;
+			// Si la regla ignora productos en oferta y el producto ya tenía rebaja NATIVA previa
+			if ( $ignore_sale ) {
+				$native_sale_price = (float) $product->get_sale_price();
+				if ( $native_sale_price > 0 ) {
+					continue;
+				}
 			}
 
 			// Reglas de descuento directo de producto
@@ -1146,8 +1155,14 @@ class WPAT_Woo_Promotions {
 			return $name;
 		}
 
+		$icon_key = ! empty( $promo_rule['icon'] ) ? $promo_rule['icon'] : 'gift';
+		$symbol   = self::get_promo_icon_symbol( $icon_key );
+
 		$tag_html  = '<div class="wpat-cart-promo-tag" style="margin-top: 4px; font-size: 11.5px; font-weight: 700; color: #0369a1; background: #e0f2fe; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 10px; display: inline-flex; align-items: center; gap: 4px;">';
-		$tag_html .= '<span>🎁</span> <span>' . esc_html( $title ) . '</span>';
+		if ( ! empty( $symbol ) ) {
+			$tag_html .= '<span>' . esc_html( $symbol ) . '</span> ';
+		}
+		$tag_html .= '<span>' . esc_html( $title ) . '</span>';
 		$tag_html .= '</div>';
 
 		return $name . $tag_html;

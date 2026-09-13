@@ -4826,9 +4826,9 @@ class WPAT_Admin {
 						<div class="wpat-field-group" style="margin-top: 15px;">
 							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 8px;">
 								<div style="display: flex; gap: 8px; align-items: center; flex-grow: 1;">
-									<input type="text" id="wpat_promo_search_input" placeholder="🔍 Buscar regla por título..." class="regular-text" style="font-size: 12.5px; height: 34px; max-width: 280px;" autocomplete="off" />
-									<button type="button" class="button button-small" id="wpat_promo_expand_all_btn">🔽 Desplegar Todas</button>
-									<button type="button" class="button button-small" id="wpat_promo_collapse_all_btn">🔼 Plegar Todas</button>
+									<input type="text" id="wpat_promo_search_input" placeholder="Buscar regla por título..." class="regular-text" style="font-size: 12.5px; height: 34px; max-width: 280px;" autocomplete="off" />
+									<button type="button" class="button button-small" id="wpat_promo_expand_all_btn">Desplegar Todas</button>
+									<button type="button" class="button button-small" id="wpat_promo_collapse_all_btn">Plegar Todas</button>
 								</div>
 								<button type="button" class="button button-primary" id="wpat_add_promo_rule_btn" style="background: var(--wpat-accent, #2563eb); border-color: #1d4ed8;">+ Añadir Nueva Regla Promocional</button>
 							</div>
@@ -4838,7 +4838,7 @@ class WPAT_Admin {
 								if ( empty( $promo_rules ) ) :
 									?>
 									<div id="wpat_promo_empty_msg" style="text-align: center; padding: 30px; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px; color: #64748b;">
-										<p style="font-size: 15px; font-weight: 600; margin-bottom: 5px;">🎁 No hay reglas promocionales creadas todavía</p>
+										<p style="font-size: 15px; font-weight: 600; margin-bottom: 5px;">No hay reglas promocionales creadas todavía</p>
 										<p style="font-size: 13px; margin: 0;">Haz clic en el botón <strong>"+ Añadir Nueva Regla Promocional"</strong> para crear tu primera promoción.</p>
 									</div>
 									<?php
@@ -4915,8 +4915,8 @@ class WPAT_Admin {
 														<input type="checkbox" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][active]" value="1" <?php checked( $r_active ); ?> />
 														<span style="<?php echo $r_active ? 'color:#16a34a;' : 'color:#94a3b8;'; ?>"><?php echo $r_active ? 'Activa' : 'Inactiva'; ?></span>
 													</label>
-													<button type="button" class="wpat-promo-toggle-body-btn button button-small" style="font-size: 11px;">🔼 Plegar</button>
-													<button type="button" class="wpat-promo-delete-rule-btn button button-small" style="color: #ef4444; border-color: #fca5a5;">🗑️ Eliminar</button>
+													<button type="button" class="wpat-promo-toggle-body-btn button button-small" style="font-size: 11px;">Plegar</button>
+													<button type="button" class="wpat-promo-delete-rule-btn button button-small" style="color: #ef4444; border-color: #fca5a5;">Eliminar</button>
 												</div>
 											</div>
 
@@ -4926,7 +4926,7 @@ class WPAT_Admin {
 												<!-- Fila 1: Título Público, Icono, Tipo de Promoción y Ámbito -->
 												<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px;">
 													<div>
-														<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Título Público (visible en carrito):</label>
+														<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Título Público (visible en carrito/checkout):</label>
 														<input type="text" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][title]" value="<?php echo esc_attr( $r_title ); ?>" class="wpat-promo-title-input regular-text" style="width: 100%;" required />
 													</div>
 													<div>
@@ -4946,25 +4946,25 @@ class WPAT_Admin {
 															<option value="lightning" <?php selected( $r_icon, 'lightning' ); ?>>⚡ Relámpago</option>
 															<option value="sun" <?php selected( $r_icon, 'sun' ); ?>>☀️ Verano</option>
 															<option value="flower" <?php selected( $r_icon, 'flower' ); ?>>🌸 Primavera / Día de la Madre</option>
-															<option value="none" <?php selected( $r_icon, 'none' ); ?>>🚫 Sin icono (Desactivado)</option>
+															<option value="none" <?php selected( $r_icon, 'none' ); ?>>Sin icono (Desactivado)</option>
 														</select>
 													</div>
 													<div>
 														<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Tipo de Promoción:</label>
 														<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][type]" class="wpat-promo-type-select regular-text" style="width: 100%;">
-															<option value="tiered_spend" <?php selected( $r_type, 'tiered_spend' ); ?>>📊 Descuento por tramos de gasto</option>
-															<option value="bxgy" <?php selected( $r_type, 'bxgy' ); ?>>🛍️ Compra X, Paga Y (3x2)</option>
-															<option value="bulk_qty" <?php selected( $r_type, 'bulk_qty' ); ?>>📦 Descuento por volumen / cantidad</option>
-															<option value="global_discount" <?php selected( $r_type, 'global_discount' ); ?>>🏷️ Descuento porcentual o fijo global</option>
-															<option value="payment_method" <?php selected( $r_type, 'payment_method' ); ?>>💳 Descuento por método de pago</option>
+															<option value="tiered_spend" <?php selected( $r_type, 'tiered_spend' ); ?>>Descuento por tramos de gasto</option>
+															<option value="bxgy" <?php selected( $r_type, 'bxgy' ); ?>>Compra X, Paga Y (3x2)</option>
+															<option value="bulk_qty" <?php selected( $r_type, 'bulk_qty' ); ?>>Descuento por volumen / cantidad</option>
+															<option value="global_discount" <?php selected( $r_type, 'global_discount' ); ?>>Descuento porcentual o fijo global</option>
+															<option value="payment_method" <?php selected( $r_type, 'payment_method' ); ?>>Descuento por método de pago</option>
 														</select>
 													</div>
 													<div>
 														<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Ámbito de Aplicación:</label>
 														<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][scope]" class="wpat-promo-scope-select regular-text" style="width: 100%;">
-															<option value="all" <?php selected( $r_scope, 'all' ); ?>>🌐 Toda la tienda</option>
-															<option value="category" <?php selected( $r_scope, 'category' ); ?>>🏷️ Categorías específicas</option>
-															<option value="product" <?php selected( $r_scope, 'product' ); ?>>📦 Productos / Variaciones específicas</option>
+															<option value="all" <?php selected( $r_scope, 'all' ); ?>>Toda la tienda</option>
+															<option value="category" <?php selected( $r_scope, 'category' ); ?>>Categorías específicas</option>
+															<option value="product" <?php selected( $r_scope, 'product' ); ?>>Productos / Variaciones específicas</option>
 														</select>
 													</div>
 												</div>
@@ -4995,7 +4995,7 @@ class WPAT_Admin {
 												<!-- Fila 3: Parámetros específicos por tipo -->
 												<!-- 3.1 Tiered Spend -->
 												<div class="wpat-promo-fields-tiered_spend" style="<?php echo 'tiered_spend' === $r_type ? '' : 'display:none;'; ?> background: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-													<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #1e40af;">📊 Tramos de Descuento por Gasto Acumulado en Carrito:</h4>
+													<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #1e40af;">Tramos de Descuento por Gasto Acumulado en Carrito:</h4>
 													<div class="wpat-promo-tiers-list" style="display: flex; flex-direction: column; gap: 8px;">
 														<?php
 														if ( ! empty( $r_tiers ) ) :
@@ -5022,7 +5022,7 @@ class WPAT_Admin {
 
 												<!-- 3.2 BXGY (3x2) -->
 												<div class="wpat-promo-fields-bxgy" style="<?php echo 'bxgy' === $r_type ? '' : 'display:none;'; ?> background: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-													<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #166534;">🛍️ Configuración de Compra X, Paga Y (ej. 3x2 / 2x1):</h4>
+													<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #166534;">Configuración de Compra X, Paga Y (ej. 3x2 / 2x1):</h4>
 													<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
 														<div>
 															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Por cada (Comprar Qty):</label>
@@ -5042,7 +5042,7 @@ class WPAT_Admin {
 
 												<!-- 3.3 Bulk Qty -->
 												<div class="wpat-promo-fields-bulk_qty" style="<?php echo 'bulk_qty' === $r_type ? '' : 'display:none;'; ?> background: #fefce8; border: 1px solid #fef08a; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-													<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #854d0e;">📦 Descuento por Volumen de Compra:</h4>
+													<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #854d0e;">Descuento por Volumen de Compra:</h4>
 													<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
 														<div>
 															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">A partir de (Unidades mínimas):</label>
@@ -5065,7 +5065,7 @@ class WPAT_Admin {
 
 												<!-- 3.4 Global Discount -->
 												<div class="wpat-promo-fields-global_discount" style="<?php echo 'global_discount' === $r_type ? '' : 'display:none;'; ?> background: #faf5ff; border: 1px solid #e9d5ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-													<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #6b21a8;">🏷️ Descuento Directo Global o Filtrado:</h4>
+													<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #6b21a8;">Descuento Directo Global o Filtrado:</h4>
 													<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
 														<div>
 															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Tipo de Descuento:</label>
@@ -5083,7 +5083,7 @@ class WPAT_Admin {
 
 												<!-- 3.5 Payment Method -->
 												<div class="wpat-promo-fields-payment_method" style="<?php echo 'payment_method' === $r_type ? '' : 'display:none;'; ?> background: #fff7ed; border: 1px solid #ffedd5; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-													<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #c2410c;">💳 Incentivo por Método de Pago Seleccionado:</h4>
+													<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #c2410c;">Incentivo por Método de Pago Seleccionado:</h4>
 													<div style="margin-bottom: 10px;">
 														<label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px;">Pasarelas de Pago Elegibles:</label>
 														<div style="display: flex; flex-wrap: wrap; gap: 12px;">
@@ -5121,64 +5121,62 @@ class WPAT_Admin {
 													<div style="display: flex; flex-wrap: wrap; gap: 20px;">
 														<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
 															<input type="checkbox" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][ignore_on_sale]" value="1" <?php checked( $r_ignore_sale ); ?> />
-															🚫 Excluir productos que ya tengan precio de oferta / rebaja activa (<code>is_on_sale()</code>)
+															Excluir productos que ya tengan precio de oferta / rebaja activa
 														</label>
 														<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
 															<input type="checkbox" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][include_extra_options]" value="1" <?php checked( $r_include_extra ); ?> />
-															🎨 Incluir descuento en campos Extras en el cálculo del descuento
+															Incluir descuento en campos Extras en el cálculo del descuento
 														</label>
 														<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
 															<input type="checkbox" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][show_countdown]" value="1" <?php checked( $r_show_cd ); ?> />
-															⏰ Mostrar contador regresivo de tiempo (Countdown) en tienda y ficha de producto
+															Mostrar contador regresivo de tiempo (Countdown) en tienda y ficha de producto
 														</label>
 													</div>
-													<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 4px;">
-														<div>
-															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha de Inicio (Opcional):</label>
-															<input type="date" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_date]" value="<?php echo esc_attr( $r_start_date ); ?>" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
-														</div>
-														<div>
-															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">⏰ Hora de Inicio (00h:00m - 23h:59m):</label>
-															<div style="display: flex; align-items: center; gap: 4px;">
-																<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_hour]" class="wpat-time-select-hh" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 70px;">
-																	<?php for ( $h = 0; $h <= 23; $h++ ) : 
-																		$val = str_pad( (string) $h, 2, '0', STR_PAD_LEFT );
-																	?>
-																		<option value="<?php echo $val; ?>" <?php selected( $s_h, $val ); ?>><?php echo $val; ?>h</option>
-																	<?php endfor; ?>
-																</select>
-																<span style="font-weight: bold; color: #64748b;">:</span>
-																<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_minute]" class="wpat-time-select-mm" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 70px;">
-																	<?php for ( $m = 0; $m <= 59; $m++ ) : 
-																		$val = str_pad( (string) $m, 2, '0', STR_PAD_LEFT );
-																	?>
-																		<option value="<?php echo $val; ?>" <?php selected( $s_m, $val ); ?>><?php echo $val; ?>m</option>
-																	<?php endfor; ?>
-																</select>
+													<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 10px;">
+														<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px;">
+															<label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px; color: #334155;">Inicio de Promoción (Opcional):</label>
+															<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+																<input type="date" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_date]" value="<?php echo esc_attr( $r_start_date ); ?>" style="flex: 1; min-width: 130px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px;" />
+																<div style="display: flex; align-items: center; gap: 3px;">
+																	<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_hour]" class="wpat-time-select-hh" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
+																		<?php for ( $h = 0; $h <= 23; $h++ ) : 
+																			$val = str_pad( (string) $h, 2, '0', STR_PAD_LEFT );
+																		?>
+																			<option value="<?php echo $val; ?>" <?php selected( $s_h, $val ); ?>><?php echo $val; ?>h</option>
+																		<?php endfor; ?>
+																	</select>
+																	<span style="font-weight: bold; color: #64748b;">:</span>
+																	<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_minute]" class="wpat-time-select-mm" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
+																		<?php for ( $m = 0; $m <= 59; $m++ ) : 
+																			$val = str_pad( (string) $m, 2, '0', STR_PAD_LEFT );
+																		?>
+																			<option value="<?php echo $val; ?>" <?php selected( $s_m, $val ); ?>><?php echo $val; ?>m</option>
+																		<?php endfor; ?>
+																	</select>
+																</div>
 															</div>
 														</div>
-														<div>
-															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha de Fin (Opcional):</label>
-															<input type="date" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_date]" value="<?php echo esc_attr( $r_end_date ); ?>" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
-														</div>
-														<div>
-															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">⏰ Hora de Fin (00h:00m - 23h:59m):</label>
-															<div style="display: flex; align-items: center; gap: 4px;">
-																<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_hour]" class="wpat-time-select-hh" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 70px;">
-																	<?php for ( $h = 0; $h <= 23; $h++ ) : 
-																		$val = str_pad( (string) $h, 2, '0', STR_PAD_LEFT );
-																	?>
-																		<option value="<?php echo $val; ?>" <?php selected( $e_h, $val ); ?>><?php echo $val; ?>h</option>
-																	<?php endfor; ?>
-																</select>
-																<span style="font-weight: bold; color: #64748b;">:</span>
-																<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_minute]" class="wpat-time-select-mm" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 70px;">
-																	<?php for ( $m = 0; $m <= 59; $m++ ) : 
-																		$val = str_pad( (string) $m, 2, '0', STR_PAD_LEFT );
-																	?>
-																		<option value="<?php echo $val; ?>" <?php selected( $e_m, $val ); ?>><?php echo $val; ?>m</option>
-																	<?php endfor; ?>
-																</select>
+														<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px;">
+															<label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px; color: #334155;">Fin de Promoción (Opcional):</label>
+															<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+																<input type="date" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_date]" value="<?php echo esc_attr( $r_end_date ); ?>" style="flex: 1; min-width: 130px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px;" />
+																<div style="display: flex; align-items: center; gap: 3px;">
+																	<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_hour]" class="wpat-time-select-hh" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
+																		<?php for ( $h = 0; $h <= 23; $h++ ) : 
+																			$val = str_pad( (string) $h, 2, '0', STR_PAD_LEFT );
+																		?>
+																			<option value="<?php echo $val; ?>" <?php selected( $e_h, $val ); ?>><?php echo $val; ?>h</option>
+																		<?php endfor; ?>
+																	</select>
+																	<span style="font-weight: bold; color: #64748b;">:</span>
+																	<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_minute]" class="wpat-time-select-mm" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
+																		<?php for ( $m = 0; $m <= 59; $m++ ) : 
+																			$val = str_pad( (string) $m, 2, '0', STR_PAD_LEFT );
+																		?>
+																			<option value="<?php echo $val; ?>" <?php selected( $e_m, $val ); ?>><?php echo $val; ?>m</option>
+																		<?php endfor; ?>
+																	</select>
+																</div>
 															</div>
 														</div>
 													</div>
@@ -5273,9 +5271,9 @@ class WPAT_Admin {
 
 						$body.slideToggle(200, function() {
 							if ($body.is(':visible')) {
-								$btn.text('🔼 Plegar');
+								$btn.text('Plegar');
 							} else {
-								$btn.text('🔽 Desplegar');
+								$btn.text('Desplegar');
 							}
 						});
 					});
@@ -5290,9 +5288,9 @@ class WPAT_Admin {
 
 						$body.slideToggle(200, function() {
 							if ($body.is(':visible')) {
-								$btn.text('🔼 Plegar');
+								$btn.text('Plegar');
 							} else {
-								$btn.text('🔽 Desplegar');
+								$btn.text('Desplegar');
 							}
 						});
 					});
@@ -5312,13 +5310,13 @@ class WPAT_Admin {
 					// Desplegar todas
 					$('#wpat_promo_expand_all_btn').on('click', function() {
 						$('.wpat-promo-rule-body').slideDown(200);
-						$('.wpat-promo-toggle-body-btn').text('🔼 Plegar');
+						$('.wpat-promo-toggle-body-btn').text('Plegar');
 					});
 
 					// Plegar todas
 					$('#wpat_promo_collapse_all_btn').on('click', function() {
 						$('.wpat-promo-rule-body').slideUp(200);
-						$('.wpat-promo-toggle-body-btn').text('🔽 Desplegar');
+						$('.wpat-promo-toggle-body-btn').text('Desplegar');
 					});
 
 					// Buscar regla por título
@@ -5379,15 +5377,15 @@ class WPAT_Admin {
 											<input type="checkbox" name="wpat_settings[woo_promotions_rules][${idx}][active]" value="1" checked />
 											<span style="color:#16a34a;">Activa</span>
 										</label>
-										<button type="button" class="wpat-promo-toggle-body-btn button button-small" style="font-size: 11px;">🔼 Plegar</button>
-										<button type="button" class="wpat-promo-delete-rule-btn button button-small" style="color: #ef4444; border-color: #fca5a5;">🗑️ Eliminar</button>
+										<button type="button" class="wpat-promo-toggle-body-btn button button-small" style="font-size: 11px;">Plegar</button>
+										<button type="button" class="wpat-promo-delete-rule-btn button button-small" style="color: #ef4444; border-color: #fca5a5;">Eliminar</button>
 									</div>
 								</div>
 
 								<div class="wpat-promo-rule-body" style="padding: 20px; display: block;">
 									<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px;">
 										<div>
-											<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Título Público (visible en carrito):</label>
+											<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Título Público (visible en carrito/checkout):</label>
 											<input type="text" name="wpat_settings[woo_promotions_rules][${idx}][title]" value="Nueva Regla Promocional" class="wpat-promo-title-input regular-text" style="width: 100%;" required />
 										</div>
 										<div>
@@ -5407,31 +5405,31 @@ class WPAT_Admin {
 												<option value="lightning">⚡ Relámpago</option>
 												<option value="sun">☀️ Verano</option>
 												<option value="flower">🌸 Primavera / Día de la Madre</option>
-												<option value="none">🚫 Sin icono (Desactivado)</option>
+												<option value="none">Sin icono (Desactivado)</option>
 											</select>
 										</div>
 										<div>
 											<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Tipo de Promoción:</label>
 											<select name="wpat_settings[woo_promotions_rules][${idx}][type]" class="wpat-promo-type-select regular-text" style="width: 100%;">
-												<option value="tiered_spend">📊 Descuento por tramos de gasto</option>
-												<option value="bxgy">🛍️ Compra X, Paga Y (3x2)</option>
-												<option value="bulk_qty">📦 Descuento por volumen / cantidad</option>
-												<option value="global_discount" selected>🏷️ Descuento porcentual o fijo global</option>
-												<option value="payment_method">💳 Descuento por método de pago</option>
+												<option value="tiered_spend">Descuento por tramos de gasto</option>
+												<option value="bxgy">Compra X, Paga Y (3x2)</option>
+												<option value="bulk_qty">Descuento por volumen / cantidad</option>
+												<option value="global_discount" selected>Descuento porcentual o fijo global</option>
+												<option value="payment_method">Descuento por método de pago</option>
 											</select>
 										</div>
 										<div>
 											<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Ámbito de Aplicación:</label>
 											<select name="wpat_settings[woo_promotions_rules][${idx}][scope]" class="wpat-promo-scope-select regular-text" style="width: 100%;">
-												<option value="all" selected>🌐 Toda la tienda</option>
-												<option value="category">🏷️ Categorías específicas</option>
-												<option value="product">📦 Productos / Variaciones específicas</option>
+												<option value="all" selected>Toda la tienda</option>
+												<option value="category">Categorías específicas</option>
+												<option value="product">Productos / Variaciones específicas</option>
 											</select>
 										</div>
 									</div>
 
 									<div class="wpat-promo-fields-global_discount" style="background: #faf5ff; border: 1px solid #e9d5ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-										<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #6b21a8;">🏷️ Descuento Directo Global o Filtrado:</h4>
+										<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #6b21a8;">Descuento Directo Global o Filtrado:</h4>
 										<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
 											<div>
 												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Tipo de Descuento:</label>
@@ -5451,48 +5449,46 @@ class WPAT_Admin {
 										<div style="display: flex; flex-wrap: wrap; gap: 20px;">
 											<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
 												<input type="checkbox" name="wpat_settings[woo_promotions_rules][${idx}][ignore_on_sale]" value="1" />
-												🚫 Excluir productos que ya tengan precio de oferta / rebaja activa (is_on_sale())
+												Excluir productos que ya tengan precio de oferta / rebaja activa
 											</label>
 											<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
 												<input type="checkbox" name="wpat_settings[woo_promotions_rules][${idx}][include_extra_options]" value="1" />
-												🎨 Incluir descuento en campos Extras en el cálculo del descuento
+												Incluir descuento en campos Extras en el cálculo del descuento
 											</label>
 											<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
 												<input type="checkbox" name="wpat_settings[woo_promotions_rules][${idx}][show_countdown]" value="1" checked />
-												⏰ Mostrar contador regresivo de tiempo (Countdown) en tienda y ficha de producto
+												Mostrar contador regresivo de tiempo (Countdown) en tienda y ficha de producto
 											</label>
 										</div>
-										<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 4px;">
-											<div>
-												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha de Inicio (Opcional):</label>
-												<input type="date" name="wpat_settings[woo_promotions_rules][${idx}][start_date]" value="" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
-											</div>
-											<div>
-												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">⏰ Hora de Inicio (00h:00m - 23h:59m):</label>
-												<div style="display: flex; align-items: center; gap: 4px;">
-													<select name="wpat_settings[woo_promotions_rules][${idx}][start_hour]" class="wpat-time-select-hh" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 70px;">
-														${startHours}
-													</select>
-													<span style="font-weight: bold; color: #64748b;">:</span>
-													<select name="wpat_settings[woo_promotions_rules][${idx}][start_minute]" class="wpat-time-select-mm" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 70px;">
-														${startMins}
-													</select>
+										<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 10px;">
+											<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px;">
+												<label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px; color: #334155;">Inicio de Promoción (Opcional):</label>
+												<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+													<input type="date" name="wpat_settings[woo_promotions_rules][${idx}][start_date]" value="" style="flex: 1; min-width: 130px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px;" />
+													<div style="display: flex; align-items: center; gap: 3px;">
+														<select name="wpat_settings[woo_promotions_rules][${idx}][start_hour]" class="wpat-time-select-hh" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
+															${startHours}
+														</select>
+														<span style="font-weight: bold; color: #64748b;">:</span>
+														<select name="wpat_settings[woo_promotions_rules][${idx}][start_minute]" class="wpat-time-select-mm" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
+															${startMins}
+														</select>
+													</div>
 												</div>
 											</div>
-											<div>
-												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha de Fin (Opcional):</label>
-												<input type="date" name="wpat_settings[woo_promotions_rules][${idx}][end_date]" value="" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
-											</div>
-											<div>
-												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">⏰ Hora de Fin (00h:00m - 23h:59m):</label>
-												<div style="display: flex; align-items: center; gap: 4px;">
-													<select name="wpat_settings[woo_promotions_rules][${idx}][end_hour]" class="wpat-time-select-hh" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 70px;">
-														${endHours}
-													</select>
-													<span style="font-weight: bold; color: #64748b;">:</span>
-													<select name="wpat_settings[woo_promotions_rules][${idx}][end_minute]" class="wpat-time-select-mm" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 70px;">
-														${endMins}
-													</select>
+											<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px;">
+												<label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px; color: #334155;">Fin de Promoción (Opcional):</label>
+												<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+													<input type="date" name="wpat_settings[woo_promotions_rules][${idx}][end_date]" value="" style="flex: 1; min-width: 130px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px;" />
+													<div style="display: flex; align-items: center; gap: 3px;">
+														<select name="wpat_settings[woo_promotions_rules][${idx}][end_hour]" class="wpat-time-select-hh" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
+															${endHours}
+														</select>
+														<span style="font-weight: bold; color: #64748b;">:</span>
+														<select name="wpat_settings[woo_promotions_rules][${idx}][end_minute]" class="wpat-time-select-mm" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
+															${endMins}
+														</select>
+													</div>
 												</div>
 											</div>
 										</div>

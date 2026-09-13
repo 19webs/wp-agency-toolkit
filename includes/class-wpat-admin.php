@@ -800,6 +800,7 @@ class WPAT_Admin {
 			$new_settings['woo_facets_badge_bg']         = isset( $input_settings['woo_facets_badge_bg'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_facets_badge_bg'] ) ? $input_settings['woo_facets_badge_bg'] : '#f1f5f9';
 			$new_settings['woo_facets_border_radius']    = isset( $input_settings['woo_facets_border_radius'] ) ? max( 0, min( 30, absint( $input_settings['woo_facets_border_radius'] ) ) ) : 12;
 			$new_settings['woo_facets_show_active_tags'] = isset( $input_settings['woo_facets_show_active_tags'] ) && '1' === $input_settings['woo_facets_show_active_tags'] ? '1' : '0';
+			$new_settings['woo_facets_sticky']           = isset( $input_settings['woo_facets_sticky'] ) && '1' === $input_settings['woo_facets_sticky'] ? '1' : '0';
 		}
 
 		// Sanitizar Autocompletado de CP y Provincia (WooCommerce)
@@ -2310,6 +2311,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'woo-facets',
+				'is_updated'  => true,
 				'title'       => 'Filtro por Facetas',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -2733,7 +2735,8 @@ class WPAT_Admin {
 			$is_active = ( isset( $settings[ $mod['id'] ] ) && '1' === $settings[ $mod['id'] ] );
 			$has_settings = ! isset( $mod['has_settings'] ) || true === $mod['has_settings'];
 			$is_always_active = isset( $mod['always_active'] ) && true === $mod['always_active'];
-			$is_new = ! empty( $mod['is_new'] ) || $this->is_new_module( isset( $mod['id'] ) ? $mod['id'] : '' );
+			$is_new     = ! empty( $mod['is_new'] );
+			$is_updated = ! empty( $mod['is_updated'] );
 			$search_text = $mod['title'] . ' ' . $mod['desc'] . ' ' . ( isset( $mod['keywords'] ) ? $mod['keywords'] : '' ) . ' ' . $mod['id'] . ' ' . ( isset( $mod['badge'] ) ? $mod['badge'] : '' );
 
 			$is_visible = ( 'all' === $active_cat || strpos( $mod['cat_class'], 'cat-' . $active_cat ) !== false || strpos( $mod['cat_class'], $active_cat ) !== false );
@@ -2742,6 +2745,8 @@ class WPAT_Admin {
 			<div class="wpat-module-grid-card <?php echo esc_attr( $mod['cat_class'] ); ?>" <?php echo $card_style; ?> data-name="<?php echo esc_attr( isset( $mod['keywords'] ) ? $mod['keywords'] : '' ); ?>" data-search="<?php echo esc_attr( mb_strtolower( $search_text, 'UTF-8' ) ); ?>">
 				<?php if ( $is_new ) : ?>
 					<div class="wpat-card-badge-new">NUEVO</div>
+				<?php elseif ( $is_updated ) : ?>
+					<div class="wpat-card-badge-updated">ACTUALIZADO</div>
 				<?php endif; ?>
 				<div class="wpat-card-top">
 					<div class="wpat-card-icon-box <?php echo esc_attr( $mod['icon_bg'] ); ?>"><?php echo $mod['icon']; ?></div>
@@ -4556,6 +4561,7 @@ class WPAT_Admin {
 				$facets_badge_bg     = isset( $settings['woo_facets_badge_bg'] ) ? $settings['woo_facets_badge_bg'] : '#f1f5f9';
 				$facets_radius       = isset( $settings['woo_facets_border_radius'] ) ? intval( $settings['woo_facets_border_radius'] ) : 12;
 				$facets_active_tags  = ! isset( $settings['woo_facets_show_active_tags'] ) || '1' === $settings['woo_facets_show_active_tags'];
+				$facets_sticky       = ! empty( $settings['woo_facets_sticky'] ) && '1' === $settings['woo_facets_sticky'];
 				?>
 				<div class="wpat-module-card" style="margin-top: 20px;">
 					<div class="wpat-module-header">
@@ -4628,6 +4634,12 @@ class WPAT_Admin {
 								<label style="font-weight: 600;">
 									<input type="checkbox" name="wpat_settings[woo_facets_show_active_tags]" value="1" <?php checked( $facets_active_tags ); ?>>
 									Mostrar barra de "Filtros Activos" con píldoras desmarcables (<code>×</code>) sobre el formulario
+								</label>
+							</div>
+							<div class="wpat-field-group" style="margin-top: 10px;">
+								<label style="font-weight: 600;">
+									<input type="checkbox" name="wpat_settings[woo_facets_sticky]" value="1" <?php checked( $facets_sticky ); ?>>
+									Hacer la sección de facetas pegajosa (Sticky Sidebar) al hacer scroll por la lista de productos
 								</label>
 							</div>
 						</div>

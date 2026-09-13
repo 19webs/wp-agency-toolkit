@@ -273,3 +273,15 @@
 @keyframes wpat-facet-spin {
 	to { transform: translateX(-50%) rotate(360deg); }
 }
+
+/* --- STICKY SIDEBAR DE FACETAS EN DESKTOP --- */
+@media (min-width: 769px) {
+	.wpat-facets-wrapper.wpat-facets-sticky {
+		position: sticky !important;
+		top: 24px !important;
+		z-index: 90 !important;
+		max-height: calc(100vh - 40px) !important;
+		overflow-y: auto !important;
+	}
+}
+

@@ -95,10 +95,13 @@ class WPAT_Woo_Facets {
 		$settings         = WPAT_Main::get_instance()->get_settings();
 		$enabled_facets   = isset( $settings['facets_config'] ) && is_array( $settings['facets_config'] ) ? $settings['facets_config'] : explode( ',', $atts['facets'] );
 		$show_active_tags = ! isset( $settings['woo_facets_show_active_tags'] ) || '1' === $settings['woo_facets_show_active_tags'];
+		$is_sticky        = ! empty( $settings['woo_facets_sticky'] ) && '1' === $settings['woo_facets_sticky'];
+
+		$wrapper_classes = 'wpat-facets-wrapper' . ( $is_sticky ? ' wpat-facets-sticky' : '' );
 
 		ob_start();
 		?>
-		<div class="wpat-facets-wrapper">
+		<div class="<?php echo esc_attr( $wrapper_classes ); ?>">
 			<?php if ( ! empty( $atts['title'] ) ) : ?>
 				<h3 class="wpat-facets-main-title"><?php echo esc_html( $atts['title'] ); ?></h3>
 			<?php endif; ?>

@@ -1056,7 +1056,13 @@ class WPAT_Admin {
 
 		// 20. Sanitizar Promociones Dinámicas y Descuentos de WooCommerce
 		if ( empty( $saving_module ) || 'woo-promotions' === $saving_module || 'woo_promotions' === $saving_module ) {
-			$promo_enabled                  = isset( $input_settings['woo-promotions'] ) && '1' === $input_settings['woo-promotions'] ? '1' : ( isset( $input_settings['woo_promotions'] ) && '1' === $input_settings['woo_promotions'] ? '1' : '0' );
+			if ( isset( $input_settings['woo-promotions'] ) ) {
+				$promo_enabled = '1' === (string) $input_settings['woo-promotions'] ? '1' : '0';
+			} elseif ( isset( $input_settings['woo_promotions'] ) ) {
+				$promo_enabled = '1' === (string) $input_settings['woo_promotions'] ? '1' : '0';
+			} else {
+				$promo_enabled = isset( $current_settings['woo-promotions'] ) ? (string) $current_settings['woo-promotions'] : ( isset( $current_settings['woo_promotions'] ) ? (string) $current_settings['woo_promotions'] : '1' );
+			}
 			$new_settings['woo-promotions'] = $promo_enabled;
 			$new_settings['woo_promotions'] = $promo_enabled;
 

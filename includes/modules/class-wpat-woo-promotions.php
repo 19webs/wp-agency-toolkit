@@ -38,10 +38,13 @@ class WPAT_Woo_Promotions {
 	 */
 	private function __construct() {
 		$settings = WPAT_Main::get_instance()->get_settings();
-		$enabled  = ( ! empty( $settings['woo-promotions'] ) && '1' === (string) $settings['woo-promotions'] )
-				|| ( ! empty( $settings['woo_promotions'] ) && '1' === (string) $settings['woo_promotions'] );
 
-		if ( ! $enabled ) {
+		// Permitir ejecución si el módulo está marcado activo o si existen reglas configuradas
+		$has_rules = isset( $settings['woo_promotions_rules'] ) && is_array( $settings['woo_promotions_rules'] ) && ! empty( $settings['woo_promotions_rules'] );
+		$is_on     = ( isset( $settings['woo-promotions'] ) && '1' === (string) $settings['woo-promotions'] )
+				  || ( isset( $settings['woo_promotions'] ) && '1' === (string) $settings['woo_promotions'] );
+
+		if ( ! $is_on && ! $has_rules ) {
 			return;
 		}
 
@@ -123,6 +126,24 @@ class WPAT_Woo_Promotions {
 			return;
 		}
 
+		// Calcular subtotal acumulado de los items directamente en memoria
+		$all_items_subtotal = 0.0;
+		foreach ( $cart_items as $c_item ) {
+			/** @var WC_Product|null $prod */
+			$prod = isset( $c_item['data'] ) ? $c_item['data'] : null;
+			if ( $prod && is_a( $prod, 'WC_Product' ) ) {
+				$qty  = max( 1, (int) ( isset( $c_item['quantity'] ) ? $c_item['quantity'] : 1 ) );
+				$line = isset( $c_item['line_subtotal'] ) && (float) $c_item['line_subtotal'] > 0
+					? (float) $c_item['line_subtotal']
+					: ( (float) $prod->get_price() * $qty );
+				$all_items_subtotal += $line;
+			}
+		}
+
+		if ( $all_items_subtotal <= 0 ) {
+			return;
+		}
+
 		$chosen_payment_method = '';
 		if ( function_exists( 'WC' ) && WC()->session ) {
 			$chosen_payment_method = (string) WC()->session->get( 'chosen_payment_method' );
@@ -181,10 +202,13 @@ class WPAT_Woo_Promotions {
 				}
 
 				if ( $matches_scope ) {
-					$line_subtotal        = isset( $item['line_subtotal'] ) ? (float) $item['line_subtotal'] : 0.0;
+					$item_qty             = max( 1, (int) ( isset( $item['quantity'] ) ? $item['quantity'] : 1 ) );
+					$line_subtotal        = isset( $item['line_subtotal'] ) && (float) $item['line_subtotal'] > 0
+						? (float) $item['line_subtotal']
+						: ( (float) $product->get_price() * $item_qty );
 					$qualifying_items[]   = $item;
 					$qualifying_subtotal += $line_subtotal;
-					$qualifying_qty      += isset( $item['quantity'] ) ? (int) $item['quantity'] : 0;
+					$qualifying_qty      += $item_qty;
 				}
 			}
 
@@ -227,7 +251,7 @@ class WPAT_Woo_Promotions {
 							} else {
 								$discount_amount = $d_val;
 							}
-							break; // Aplicar el tramo más favorable alcanzado
+							break;
 						}
 					}
 					break;
@@ -238,17 +262,20 @@ class WPAT_Woo_Promotions {
 					$get_qty   = ! empty( $rule['get_qty'] ) ? max( 1, (int) $rule['get_qty'] ) : 1;
 					$d_percent = isset( $rule['discount_value'] ) && (float) $rule['discount_value'] > 0 ? (float) $rule['discount_value'] : 100.0;
 
-					// Extraer los precios unitarios de cada producto elegible
 					$unit_prices = array();
 					foreach ( $qualifying_items as $q_item ) {
-						$item_qty   = max( 1, (int) $q_item['quantity'] );
-						$unit_price = (float) $q_item['line_subtotal'] / $item_qty;
+						/** @var WC_Product|null $p */
+						$p          = isset( $q_item['data'] ) ? $q_item['data'] : null;
+						$item_qty   = max( 1, (int) ( isset( $q_item['quantity'] ) ? $q_item['quantity'] : 1 ) );
+						$unit_price = isset( $q_item['line_subtotal'] ) && (float) $q_item['line_subtotal'] > 0
+							? ( (float) $q_item['line_subtotal'] / $item_qty )
+							: ( $p ? (float) $p->get_price() : 0.0 );
+
 						for ( $i = 0; $i < $item_qty; $i++ ) {
 							$unit_prices[] = $unit_price;
 						}
 					}
 
-					// Ordenar de menor a mayor precio (descontar los de menor precio del lote)
 					sort( $unit_prices, SORT_NUMERIC );
 					$total_units    = count( $unit_prices );
 					$num_free_units = (int) ( floor( $total_units / $buy_qty ) * $get_qty );
@@ -295,7 +322,7 @@ class WPAT_Woo_Promotions {
 					if ( ! empty( $chosen_payment_method ) && in_array( $chosen_payment_method, $allowed_methods, true ) ) {
 						$d_type        = ! empty( $rule['discount_type'] ) ? $rule['discount_type'] : 'percent';
 						$d_val         = isset( $rule['discount_value'] ) ? (float) $rule['discount_value'] : 0.0;
-						$base_subtotal = $qualifying_subtotal > 0 ? $qualifying_subtotal : (float) $cart->get_subtotal();
+						$base_subtotal = $qualifying_subtotal > 0 ? $qualifying_subtotal : $all_items_subtotal;
 
 						if ( 'percent' === $d_type ) {
 							$discount_amount = $base_subtotal * ( $d_val / 100.0 );
@@ -306,12 +333,10 @@ class WPAT_Woo_Promotions {
 					break;
 			}
 
-			// Limitar el descuento al subtotal del carrito para evitar precios negativos
-			$cart_subtotal   = (float) $cart->get_subtotal();
-			$discount_amount = min( $discount_amount, $cart_subtotal );
+			// Limitar el descuento al subtotal calculado de la cesta
+			$discount_amount = min( $discount_amount, $all_items_subtotal );
 
 			if ( $discount_amount > 0.001 ) {
-				// Añadir la tarifa negativa a WooCommerce (taxable = true, tax_class = '')
 				$cart->add_fee( $rule_title, -$discount_amount, true, '' );
 
 				$slug_key                      = sanitize_title( $rule_title );
@@ -319,7 +344,6 @@ class WPAT_Woo_Promotions {
 			}
 		}
 
-		// Guardar mapa de reglas aplicadas en la sesión de WooCommerce
 		if ( ! empty( $applied_meta_map ) && function_exists( 'WC' ) && WC()->session ) {
 			WC()->session->set( 'wpat_promo_applied_fees', $applied_meta_map );
 		}
@@ -327,11 +351,6 @@ class WPAT_Woo_Promotions {
 
 	/**
 	 * Guarda la meta _wpat_promo_rule_id en los items de tarifa del pedido (HPOS / COT Compatible).
-	 *
-	 * @param WC_Order_Item_Fee $item     Objeto del item de tarifa.
-	 * @param string            $fee_key  Clave interna de la tarifa.
-	 * @param stdClass          $fee      Objeto tarifa.
-	 * @param WC_Order          $order    Objeto del pedido.
 	 */
 	public function save_fee_item_meta( $item, $fee_key, $fee, $order ) {
 		if ( ! function_exists( 'WC' ) || ! WC()->session ) {
@@ -348,8 +367,6 @@ class WPAT_Woo_Promotions {
 
 	/**
 	 * Obtiene los datos estructurados para la barra de progreso de tramos (tiered_spend).
-	 *
-	 * @return array|null Datos de la barra o null si no hay regla aplicable.
 	 */
 	public function get_progress_bar_data() {
 		if ( ! function_exists( 'WC' ) || ! WC()->cart || WC()->cart->is_empty() ) {
@@ -359,7 +376,6 @@ class WPAT_Woo_Promotions {
 		$settings = WPAT_Main::get_instance()->get_settings();
 		$rules    = isset( $settings['woo_promotions_rules'] ) && is_array( $settings['woo_promotions_rules'] ) ? $settings['woo_promotions_rules'] : array();
 
-		// Buscar la primera regla de tipo tiered_spend activa
 		$target_rule = null;
 		foreach ( $rules as $rule ) {
 			if ( ! empty( $rule['active'] ) && '1' === (string) $rule['active'] && isset( $rule['type'] ) && 'tiered_spend' === $rule['type'] ) {
@@ -410,7 +426,10 @@ class WPAT_Woo_Promotions {
 			}
 
 			if ( $matches ) {
-				$current_spend += isset( $item['line_subtotal'] ) ? (float) $item['line_subtotal'] : 0.0;
+				$item_qty       = max( 1, (int) ( isset( $item['quantity'] ) ? $item['quantity'] : 1 ) );
+				$current_spend += isset( $item['line_subtotal'] ) && (float) $item['line_subtotal'] > 0
+					? (float) $item['line_subtotal']
+					: ( (float) $product->get_price() * $item_qty );
 			}
 		}
 
@@ -429,14 +448,12 @@ class WPAT_Woo_Promotions {
 			return null;
 		}
 
-		// Ordenar tramos de menor a mayor gasto mínimo
 		usort( $tiers, function( $a, $b ) {
 			$val_a = isset( $a['min_spend'] ) ? (float) $a['min_spend'] : 0;
 			$val_b = isset( $b['min_spend'] ) ? (float) $b['min_spend'] : 0;
 			return ( $val_a <=> $val_b );
 		} );
 
-		// Determinar el tramo actual alcanzado y el siguiente tramo por alcanzar
 		$current_tier  = null;
 		$next_tier     = null;
 
@@ -449,8 +466,6 @@ class WPAT_Woo_Promotions {
 				break;
 			}
 		}
-
-		$symbol = function_exists( 'get_woocommerce_currency_symbol' ) ? get_woocommerce_currency_symbol() : '€';
 
 		if ( $next_tier ) {
 			$needed     = (float) $next_tier['min_spend'] - $current_spend;
@@ -476,7 +491,6 @@ class WPAT_Woo_Promotions {
 				'completed'     => false,
 			);
 		} else {
-			// Máximo tramo alcanzado
 			$d_type = ! empty( $current_tier['discount_type'] ) ? $current_tier['discount_type'] : 'percent';
 			$d_val  = isset( $current_tier['discount_value'] ) ? (float) $current_tier['discount_value'] : 0.0;
 			$reward = 'percent' === $d_type ? $d_val . '%' : wc_price( $d_val );

@@ -29,14 +29,17 @@ jQuery(document).ready(function($) {
 		showToast('Cambios guardados correctamente', false);
 	}
 
-	// Record scroll position when clicking module action buttons
-	$(document).on('click', '.wpat-remember-scroll-btn, .wpat-back-bar a', function() {
+	// Record scroll position when clicking module action buttons or submitting forms
+	$(document).on('click', '.wpat-remember-scroll-btn, .wpat-back-bar a, button[type="submit"], input[type="submit"]', function() {
+		sessionStorage.setItem('wpat_scroll_y', window.scrollY || window.pageYOffset);
+	});
+	$(document).on('submit', 'form', function() {
 		sessionStorage.setItem('wpat_scroll_y', window.scrollY || window.pageYOffset);
 	});
 
 	// Restore scroll position without jump on DOM ready
 	var savedScrollY = sessionStorage.getItem('wpat_scroll_y');
-	if (savedScrollY && $('#tab-modules').length) {
+	if (savedScrollY !== null && savedScrollY !== undefined) {
 		window.scrollTo(0, parseInt(savedScrollY, 10));
 		sessionStorage.removeItem('wpat_scroll_y');
 	}

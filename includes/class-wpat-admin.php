@@ -1130,6 +1130,10 @@ class WPAT_Admin {
 			}
 
 			$new_settings['woo_promotions_rules'] = $sanitized_rules;
+
+			if ( function_exists( 'wc_delete_product_transients' ) ) {
+				wc_delete_product_transients();
+			}
 		}
 
 

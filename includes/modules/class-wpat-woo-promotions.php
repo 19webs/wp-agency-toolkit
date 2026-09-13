@@ -22,6 +22,13 @@ class WPAT_Woo_Promotions {
 	private static $instance = null;
 
 	/**
+	 * Bandera estática para prevenir bucles infinitos de recursión en los filtros de precio.
+	 *
+	 * @var bool
+	 */
+	private static $in_price_filter = false;
+
+	/**
 	 * Obtiene la instancia única (Singleton).
 	 *
 	 * @return WPAT_Woo_Promotions
@@ -48,7 +55,20 @@ class WPAT_Woo_Promotions {
 			return;
 		}
 
-		// Hook principal para cálculo de tarifas/descuentos en carrito
+		// Filtros para modificar precios dinámicamente en catálogo, listas y fichas de producto
+		add_filter( 'woocommerce_product_get_sale_price', array( $this, 'filter_product_sale_price' ), 20, 2 );
+		add_filter( 'woocommerce_product_get_price', array( $this, 'filter_product_price' ), 20, 2 );
+		add_filter( 'woocommerce_product_variation_get_sale_price', array( $this, 'filter_product_sale_price' ), 20, 2 );
+		add_filter( 'woocommerce_product_variation_get_price', array( $this, 'filter_product_price' ), 20, 2 );
+
+		// Filtros para rangos de precio en productos variables
+		add_filter( 'woocommerce_variation_prices_sale_price', array( $this, 'filter_variation_price' ), 20, 3 );
+		add_filter( 'woocommerce_variation_prices_price', array( $this, 'filter_variation_price' ), 20, 3 );
+
+		// Filtro para marcar el producto en oferta (activa badges de WooCommerce y de WPAT Badges)
+		add_filter( 'woocommerce_product_is_on_sale', array( $this, 'filter_product_is_on_sale' ), 20, 2 );
+
+		// Hook principal para cálculo de tarifas/descuentos a nivel de carrito
 		add_action( 'woocommerce_cart_calculate_fees', array( $this, 'calculate_promotions_fees' ), 20, 1 );
 
 		// Trazabilidad contable en checkout / HPOS (Order Fee Item Meta)
@@ -101,7 +121,158 @@ class WPAT_Woo_Promotions {
 	}
 
 	/**
-	 * Calcula y aplica todas las tarifas promocionales negativas en el carrito.
+	 * Obtiene el precio promocional rebajado para un producto si coincide con reglas directas de producto.
+	 *
+	 * @param WC_Product $product Objeto producto.
+	 * @return float|false Precio rebajado o false si no aplica.
+	 */
+	public function get_promo_sale_price_for_product( $product ) {
+		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
+			return false;
+		}
+
+		if ( self::$in_price_filter ) {
+			return false;
+		}
+
+		self::$in_price_filter = true;
+
+		$regular_price = (float) $product->get_regular_price();
+		if ( $regular_price <= 0 ) {
+			$regular_price = (float) $product->get_price();
+		}
+
+		if ( $regular_price <= 0 ) {
+			self::$in_price_filter = false;
+			return false;
+		}
+
+		$settings = WPAT_Main::get_instance()->get_settings();
+		$rules    = isset( $settings['woo_promotions_rules'] ) && is_array( $settings['woo_promotions_rules'] ) ? $settings['woo_promotions_rules'] : array();
+
+		if ( empty( $rules ) ) {
+			self::$in_price_filter = false;
+			return false;
+		}
+
+		$lowest_price = $regular_price;
+		$applied      = false;
+
+		$product_id   = $product->get_id();
+		$parent_id    = $product->get_parent_id();
+		$effective_id = $parent_id ? $parent_id : $product_id;
+
+		foreach ( $rules as $rule ) {
+			if ( empty( $rule['active'] ) || '1' !== (string) $rule['active'] ) {
+				continue;
+			}
+
+			$rule_type   = ! empty( $rule['type'] ) ? sanitize_key( $rule['type'] ) : 'global_discount';
+			$scope       = ! empty( $rule['scope'] ) ? sanitize_key( $rule['scope'] ) : 'all';
+			$ignore_sale = ! empty( $rule['ignore_on_sale'] ) && '1' === (string) $rule['ignore_on_sale'];
+
+			// Si la regla ignora productos en oferta y el producto ya tenía rebaja nativa antes de la promo
+			if ( $ignore_sale && $product->is_on_sale() ) {
+				continue;
+			}
+
+			// Reglas de descuento directo de producto
+			if ( ! in_array( $rule_type, array( 'global_discount', 'bulk_qty' ), true ) ) {
+				continue;
+			}
+
+			$target_cats  = isset( $rule['categories'] ) && is_array( $rule['categories'] ) ? array_map( 'absint', $rule['categories'] ) : array();
+			$target_prods = isset( $rule['products'] ) && is_array( $rule['products'] ) ? array_map( 'absint', $rule['products'] ) : array();
+
+			$matches = false;
+			if ( 'all' === $scope ) {
+				$matches = true;
+			} elseif ( 'category' === $scope && ! empty( $target_cats ) ) {
+				$prod_cats = wc_get_product_term_ids( $effective_id, 'product_cat' );
+				if ( array_intersect( $target_cats, $prod_cats ) ) {
+					$matches = true;
+				}
+			} elseif ( 'product' === $scope && ! empty( $target_prods ) ) {
+				if ( in_array( $product_id, $target_prods, true ) || in_array( $effective_id, $target_prods, true ) ) {
+					$matches = true;
+				}
+			}
+
+			if ( $matches ) {
+				$d_type = ! empty( $rule['discount_type'] ) ? $rule['discount_type'] : 'percent';
+				$d_val  = isset( $rule['discount_value'] ) ? (float) $rule['discount_value'] : 0.0;
+
+				$calculated = $regular_price;
+				if ( 'percent' === $d_type ) {
+					$calculated = $regular_price - ( $regular_price * ( $d_val / 100.0 ) );
+				} else {
+					$calculated = $regular_price - $d_val;
+				}
+
+				$calculated = max( 0, $calculated );
+				if ( $calculated < $lowest_price ) {
+					$lowest_price = $calculated;
+					$applied      = true;
+				}
+			}
+		}
+
+		self::$in_price_filter = false;
+
+		return $applied ? $lowest_price : false;
+	}
+
+	/**
+	 * Filtra la propiedad is_on_sale para activar el icono/badge de oferta de WooCommerce y WPAT.
+	 */
+	public function filter_product_is_on_sale( $on_sale, $product ) {
+		if ( $on_sale ) {
+			return true;
+		}
+
+		$promo_price = $this->get_promo_sale_price_for_product( $product );
+		if ( false !== $promo_price && $promo_price < (float) $product->get_regular_price() ) {
+			return true;
+		}
+
+		return $on_sale;
+	}
+
+	/**
+	 * Filtra el precio de oferta del producto.
+	 */
+	public function filter_product_sale_price( $price, $product ) {
+		$promo_price = $this->get_promo_sale_price_for_product( $product );
+		if ( false !== $promo_price ) {
+			return (string) $promo_price;
+		}
+		return $price;
+	}
+
+	/**
+	 * Filtra el precio activo del producto.
+	 */
+	public function filter_product_price( $price, $product ) {
+		$promo_price = $this->get_promo_sale_price_for_product( $product );
+		if ( false !== $promo_price ) {
+			return (string) $promo_price;
+		}
+		return $price;
+	}
+
+	/**
+	 * Filtra los precios de variaciones para WooCommerce en catálogo.
+	 */
+	public function filter_variation_price( $price, $variation, $product ) {
+		$promo_price = $this->get_promo_sale_price_for_product( $variation );
+		if ( false !== $promo_price ) {
+			return (string) $promo_price;
+		}
+		return $price;
+	}
+
+	/**
+	 * Calcula y aplica todas las tarifas promocionales adicionales en el carrito (ej. tramos, 3x2, método de pago).
 	 *
 	 * @param WC_Cart $cart Objeto del carrito.
 	 */
@@ -161,6 +332,11 @@ class WPAT_Woo_Promotions {
 			$rule_type   = ! empty( $rule['type'] ) ? sanitize_key( $rule['type'] ) : 'global_discount';
 			$scope       = ! empty( $rule['scope'] ) ? sanitize_key( $rule['scope'] ) : 'all';
 			$ignore_sale = ! empty( $rule['ignore_on_sale'] ) && '1' === (string) $rule['ignore_on_sale'];
+
+			// Si el descuento ya fue aplicado directamente en el precio del producto (global_discount), no duplicar como fee de carrito
+			if ( 'global_discount' === $rule_type ) {
+				continue;
+			}
 
 			$target_cats  = isset( $rule['categories'] ) && is_array( $rule['categories'] ) ? array_map( 'absint', $rule['categories'] ) : array();
 			$target_prods = isset( $rule['products'] ) && is_array( $rule['products'] ) ? array_map( 'absint', $rule['products'] ) : array();
@@ -233,7 +409,6 @@ class WPAT_Woo_Promotions {
 						);
 					}
 
-					// Ordenar tramos de mayor a menor umbral de gasto
 					usort( $tiers, function( $a, $b ) {
 						$val_a = isset( $a['min_spend'] ) ? (float) $a['min_spend'] : 0;
 						$val_b = isset( $b['min_spend'] ) ? (float) $b['min_spend'] : 0;
@@ -304,19 +479,7 @@ class WPAT_Woo_Promotions {
 					}
 					break;
 
-				// 4. Descuento Porcentual / Fijo Global (global_discount)
-				case 'global_discount':
-					$d_type = ! empty( $rule['discount_type'] ) ? $rule['discount_type'] : 'percent';
-					$d_val  = isset( $rule['discount_value'] ) ? (float) $rule['discount_value'] : 0.0;
-
-					if ( 'percent' === $d_type ) {
-						$discount_amount = $qualifying_subtotal * ( $d_val / 100.0 );
-					} else {
-						$discount_amount = $d_val;
-					}
-					break;
-
-				// 5. Descuento por Método de Pago (payment_method)
+				// 4. Descuento por Método de Pago (payment_method)
 				case 'payment_method':
 					$allowed_methods = isset( $rule['payment_methods'] ) && is_array( $rule['payment_methods'] ) ? $rule['payment_methods'] : array();
 					if ( ! empty( $chosen_payment_method ) && in_array( $chosen_payment_method, $allowed_methods, true ) ) {

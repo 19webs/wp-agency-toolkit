@@ -1108,8 +1108,16 @@ class WPAT_Admin {
 						}
 					}
 
+					$allowed_icons = array( 'gift', 'fire', 'percent', 'heart', 'pumpkin', 'skull', 'tree', 'santa', 'shopping_bags', 'star', 'crown', 'lightning', 'sun', 'flower', 'none' );
+					$icon          = ! empty( $rule_raw['icon'] ) && in_array( $rule_raw['icon'], $allowed_icons, true ) ? sanitize_key( $rule_raw['icon'] ) : 'gift';
+
 					$s_date = ! empty( $rule_raw['start_date'] ) ? sanitize_text_field( $rule_raw['start_date'] ) : '';
 					$s_time = ! empty( $rule_raw['start_time'] ) ? sanitize_text_field( $rule_raw['start_time'] ) : '';
+					if ( isset( $rule_raw['start_hour'] ) && isset( $rule_raw['start_minute'] ) ) {
+						$s_h    = str_pad( (string) min( 23, max( 0, (int) $rule_raw['start_hour'] ) ), 2, '0', STR_PAD_LEFT );
+						$s_m    = str_pad( (string) min( 59, max( 0, (int) $rule_raw['start_minute'] ) ), 2, '0', STR_PAD_LEFT );
+						$s_time = $s_h . ':' . $s_m;
+					}
 					if ( ! empty( $s_date ) ) {
 						$s_parts     = explode( ' ', str_replace( 'T', ' ', $s_date ) );
 						$s_date_only = $s_parts[0];
@@ -1123,6 +1131,11 @@ class WPAT_Admin {
 
 					$e_date = ! empty( $rule_raw['end_date'] ) ? sanitize_text_field( $rule_raw['end_date'] ) : '';
 					$e_time = ! empty( $rule_raw['end_time'] ) ? sanitize_text_field( $rule_raw['end_time'] ) : '';
+					if ( isset( $rule_raw['end_hour'] ) && isset( $rule_raw['end_minute'] ) ) {
+						$e_h    = str_pad( (string) min( 23, max( 0, (int) $rule_raw['end_hour'] ) ), 2, '0', STR_PAD_LEFT );
+						$e_m    = str_pad( (string) min( 59, max( 0, (int) $rule_raw['end_minute'] ) ), 2, '0', STR_PAD_LEFT );
+						$e_time = $e_h . ':' . $e_m;
+					}
 					if ( ! empty( $e_date ) ) {
 						$e_parts     = explode( ' ', str_replace( 'T', ' ', $e_date ) );
 						$e_date_only = $e_parts[0];
@@ -1137,6 +1150,7 @@ class WPAT_Admin {
 					$sanitized_rules[] = array(
 						'id'                    => $rule_id,
 						'title'                 => $title,
+						'icon'                  => $icon,
 						'active'                => $active,
 						'type'                  => $type,
 						'scope'                 => $scope,
@@ -4840,25 +4854,34 @@ class WPAT_Admin {
 										$r_ignore_sale   = ! empty( $rule['ignore_on_sale'] ) && '1' === (string) $rule['ignore_on_sale'];
 										$r_include_extra = ! empty( $rule['include_extra_options'] ) && '1' === (string) $rule['include_extra_options'];
 										$r_show_cd       = ! empty( $rule['show_countdown'] ) && '1' === (string) $rule['show_countdown'];
+										$r_icon        = ! empty( $rule['icon'] ) ? $rule['icon'] : 'gift';
+										$r_icon_symbol = class_exists( 'WPAT_Woo_Promotions' ) ? WPAT_Woo_Promotions::get_promo_icon_symbol( $r_icon ) : '🎁';
+
 										$r_start_full = ! empty( $rule['start_date'] ) ? $rule['start_date'] : '';
 										$r_start_date = '';
-										$r_start_time = '';
+										$s_h          = '00';
+										$s_m          = '00';
 										if ( ! empty( $r_start_full ) ) {
 											$s_parts      = explode( ' ', str_replace( 'T', ' ', trim( $r_start_full ) ) );
 											$r_start_date = $s_parts[0];
 											if ( isset( $s_parts[1] ) ) {
-												$r_start_time = substr( $s_parts[1], 0, 5 );
+												$st_parts = explode( ':', $s_parts[1] );
+												$s_h      = isset( $st_parts[0] ) ? str_pad( (string) min( 23, max( 0, (int) $st_parts[0] ) ), 2, '0', STR_PAD_LEFT ) : '00';
+												$s_m      = isset( $st_parts[1] ) ? str_pad( (string) min( 59, max( 0, (int) $st_parts[1] ) ), 2, '0', STR_PAD_LEFT ) : '00';
 											}
 										}
 
 										$r_end_full = ! empty( $rule['end_date'] ) ? $rule['end_date'] : '';
 										$r_end_date = '';
-										$r_end_time = '';
+										$e_h        = '23';
+										$e_m        = '59';
 										if ( ! empty( $r_end_full ) ) {
 											$e_parts    = explode( ' ', str_replace( 'T', ' ', trim( $r_end_full ) ) );
 											$r_end_date = $e_parts[0];
 											if ( isset( $e_parts[1] ) ) {
-												$r_end_time = substr( $e_parts[1], 0, 5 );
+												$et_parts = explode( ':', $e_parts[1] );
+												$e_h      = isset( $et_parts[0] ) ? str_pad( (string) min( 23, max( 0, (int) $et_parts[0] ) ), 2, '0', STR_PAD_LEFT ) : '23';
+												$e_m      = isset( $et_parts[1] ) ? str_pad( (string) min( 59, max( 0, (int) $et_parts[1] ) ), 2, '0', STR_PAD_LEFT ) : '59';
 											}
 										}
 
@@ -4871,7 +4894,7 @@ class WPAT_Admin {
 											<!-- Header de la Tarjeta de Regla -->
 											<div class="wpat-promo-rule-header" style="background: #f8fafc; padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border-bottom: 1px solid #e2e8f0; user-select: none;">
 												<div style="display: flex; align-items: center; gap: 10px; flex-grow: 1;">
-													<span style="font-size: 16px;">🎁</span>
+													<span class="wpat-promo-icon-display" style="font-size: 16px; min-width: 20px;"><?php echo esc_html( $r_icon_symbol ); ?></span>
 													<strong class="wpat-promo-rule-header-title" style="font-size: 14px; color: #0f172a;"><?php echo esc_html( $r_title ); ?></strong>
 													<span class="wpat-promo-type-badge" style="background: #e0f2fe; color: #0369a1; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px; text-transform: uppercase;">
 														<?php
@@ -4887,7 +4910,7 @@ class WPAT_Admin {
 													</span>
 												</div>
 
-												<div style="display: flex; align-items: center; gap: 12px;" onclick="event.stopPropagation();">
+												<div style="display: flex; align-items: center; gap: 12px;">
 													<label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; margin: 0; cursor: pointer;">
 														<input type="checkbox" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][active]" value="1" <?php checked( $r_active ); ?> />
 														<span style="<?php echo $r_active ? 'color:#16a34a;' : 'color:#94a3b8;'; ?>"><?php echo $r_active ? 'Activa' : 'Inactiva'; ?></span>
@@ -4900,11 +4923,31 @@ class WPAT_Admin {
 											<!-- Cuerpo de la Tarjeta de Regla (Desplegable) -->
 											<div class="wpat-promo-rule-body" style="padding: 20px; display: block;">
 												
-												<!-- Fila 1: Título Público, Tipo de Promoción y Ámbito -->
-												<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px;">
+												<!-- Fila 1: Título Público, Icono, Tipo de Promoción y Ámbito -->
+												<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px;">
 													<div>
-														<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Título Público (visible en carrito/checkout):</label>
+														<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Título Público (visible en carrito):</label>
 														<input type="text" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][title]" value="<?php echo esc_attr( $r_title ); ?>" class="wpat-promo-title-input regular-text" style="width: 100%;" required />
+													</div>
+													<div>
+														<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Icono de Promoción (Opcional):</label>
+														<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][icon]" class="wpat-promo-icon-select regular-text" style="width: 100%;">
+															<option value="gift" <?php selected( $r_icon, 'gift' ); ?>>🎁 Regalo (Genérico)</option>
+															<option value="fire" <?php selected( $r_icon, 'fire' ); ?>>🔥 Oferta Flash / Tendencia</option>
+															<option value="percent" <?php selected( $r_icon, 'percent' ); ?>>🏷️ Descuento % (Black Friday / Cyber)</option>
+															<option value="heart" <?php selected( $r_icon, 'heart' ); ?>>❤️ Corazón (San Valentín)</option>
+															<option value="pumpkin" <?php selected( $r_icon, 'pumpkin' ); ?>>🎃 Calabaza (Halloween)</option>
+															<option value="skull" <?php selected( $r_icon, 'skull' ); ?>>💀 Calavera / Esqueleto (Halloween)</option>
+															<option value="tree" <?php selected( $r_icon, 'tree' ); ?>>🎄 Árbol de Navidad (Navidad)</option>
+															<option value="santa" <?php selected( $r_icon, 'santa' ); ?>>🎅 Papá Noel (Navidad)</option>
+															<option value="shopping_bags" <?php selected( $r_icon, 'shopping_bags' ); ?>>🛍️ Compras (Rebajas)</option>
+															<option value="star" <?php selected( $r_icon, 'star' ); ?>>⭐ Estrella (Especial)</option>
+															<option value="crown" <?php selected( $r_icon, 'crown' ); ?>>👑 VIP / Exclusivo</option>
+															<option value="lightning" <?php selected( $r_icon, 'lightning' ); ?>>⚡ Relámpago</option>
+															<option value="sun" <?php selected( $r_icon, 'sun' ); ?>>☀️ Verano</option>
+															<option value="flower" <?php selected( $r_icon, 'flower' ); ?>>🌸 Primavera / Día de la Madre</option>
+															<option value="none" <?php selected( $r_icon, 'none' ); ?>>🚫 Sin icono (Desactivado)</option>
+														</select>
 													</div>
 													<div>
 														<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Tipo de Promoción:</label>
@@ -5095,16 +5138,48 @@ class WPAT_Admin {
 															<input type="date" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_date]" value="<?php echo esc_attr( $r_start_date ); ?>" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
 														</div>
 														<div>
-															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">⏰ Hora de Inicio (00:00 - 23:59):</label>
-															<input type="time" min="00:00" max="23:59" step="60" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_time]" value="<?php echo esc_attr( $r_start_time ); ?>" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">⏰ Hora de Inicio (00h:00m - 23h:59m):</label>
+															<div style="display: flex; align-items: center; gap: 4px;">
+																<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_hour]" class="wpat-time-select-hh" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 70px;">
+																	<?php for ( $h = 0; $h <= 23; $h++ ) : 
+																		$val = str_pad( (string) $h, 2, '0', STR_PAD_LEFT );
+																	?>
+																		<option value="<?php echo $val; ?>" <?php selected( $s_h, $val ); ?>><?php echo $val; ?>h</option>
+																	<?php endfor; ?>
+																</select>
+																<span style="font-weight: bold; color: #64748b;">:</span>
+																<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_minute]" class="wpat-time-select-mm" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 70px;">
+																	<?php for ( $m = 0; $m <= 59; $m++ ) : 
+																		$val = str_pad( (string) $m, 2, '0', STR_PAD_LEFT );
+																	?>
+																		<option value="<?php echo $val; ?>" <?php selected( $s_m, $val ); ?>><?php echo $val; ?>m</option>
+																	<?php endfor; ?>
+																</select>
+															</div>
 														</div>
 														<div>
 															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha de Fin (Opcional):</label>
 															<input type="date" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_date]" value="<?php echo esc_attr( $r_end_date ); ?>" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
 														</div>
 														<div>
-															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">⏰ Hora de Fin (00:00 - 23:59):</label>
-															<input type="time" min="00:00" max="23:59" step="60" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_time]" value="<?php echo esc_attr( $r_end_time ); ?>" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">⏰ Hora de Fin (00h:00m - 23h:59m):</label>
+															<div style="display: flex; align-items: center; gap: 4px;">
+																<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_hour]" class="wpat-time-select-hh" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 70px;">
+																	<?php for ( $h = 0; $h <= 23; $h++ ) : 
+																		$val = str_pad( (string) $h, 2, '0', STR_PAD_LEFT );
+																	?>
+																		<option value="<?php echo $val; ?>" <?php selected( $e_h, $val ); ?>><?php echo $val; ?>h</option>
+																	<?php endfor; ?>
+																</select>
+																<span style="font-weight: bold; color: #64748b;">:</span>
+																<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_minute]" class="wpat-time-select-mm" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 70px;">
+																	<?php for ( $m = 0; $m <= 59; $m++ ) : 
+																		$val = str_pad( (string) $m, 2, '0', STR_PAD_LEFT );
+																	?>
+																		<option value="<?php echo $val; ?>" <?php selected( $e_m, $val ); ?>><?php echo $val; ?>m</option>
+																	<?php endfor; ?>
+																</select>
+															</div>
 														</div>
 													</div>
 												</div>
@@ -5125,6 +5200,31 @@ class WPAT_Admin {
 				<script>
 				jQuery(document).ready(function($) {
 					
+					var iconSymbols = {
+						'gift': '🎁',
+						'fire': '🔥',
+						'percent': '🏷️',
+						'heart': '❤️',
+						'pumpkin': '🎃',
+						'skull': '💀',
+						'tree': '🎄',
+						'santa': '🎅',
+						'shopping_bags': '🛍️',
+						'star': '⭐',
+						'crown': '👑',
+						'lightning': '⚡',
+						'sun': '☀️',
+						'flower': '🌸',
+						'none': ''
+					};
+
+					// Cambiar icono en cabecera al cambiar select de icono
+					$(document).on('change', '.wpat-promo-icon-select', function() {
+						var iconKey = $(this).val();
+						var symbol = iconSymbols[iconKey] !== undefined ? iconSymbols[iconKey] : '🎁';
+						$(this).closest('.wpat-promo-rule-card').find('.wpat-promo-icon-display').text(symbol);
+					});
+
 					// Cambiar visibilidad dinámica según Tipo de Promoción
 					$(document).on('change', '.wpat-promo-type-select', function() {
 						var $card = $(this).closest('.wpat-promo-rule-card');
@@ -5162,8 +5262,11 @@ class WPAT_Admin {
 						$(this).closest('.wpat-promo-rule-card').find('.wpat-promo-rule-header-title').text(title);
 					});
 
-					// Plegar / Desplegar tarjeta individual
+					// Plegar / Desplegar al hacer clic en cabecera (ignorando botones, inputs, labels)
 					$(document).on('click', '.wpat-promo-rule-header', function(e) {
+						if ($(e.target).closest('button, input, label, select').length > 0) {
+							return;
+						}
 						var $card = $(this).closest('.wpat-promo-rule-card');
 						var $body = $card.find('.wpat-promo-rule-body');
 						var $btn = $card.find('.wpat-promo-toggle-body-btn');
@@ -5175,6 +5278,35 @@ class WPAT_Admin {
 								$btn.text('🔽 Desplegar');
 							}
 						});
+					});
+
+					// Handler específico para el Botón Plegar / Desplegar
+					$(document).on('click', '.wpat-promo-toggle-body-btn', function(e) {
+						e.preventDefault();
+						e.stopPropagation();
+						var $card = $(this).closest('.wpat-promo-rule-card');
+						var $body = $card.find('.wpat-promo-rule-body');
+						var $btn = $(this);
+
+						$body.slideToggle(200, function() {
+							if ($body.is(':visible')) {
+								$btn.text('🔼 Plegar');
+							} else {
+								$btn.text('🔽 Desplegar');
+							}
+						});
+					});
+
+					// Handler específico para el Botón Eliminar Regla
+					$(document).on('click', '.wpat-promo-delete-rule-btn', function(e) {
+						e.preventDefault();
+						e.stopPropagation();
+						if (confirm('¿Estás seguro de que deseas eliminar esta regla promocional?')) {
+							$(this).closest('.wpat-promo-rule-card').remove();
+							if ($('.wpat-promo-rule-card').length === 0) {
+								$('#wpat_promo_empty_msg').show();
+							}
+						}
 					});
 
 					// Desplegar todas
@@ -5202,21 +5334,47 @@ class WPAT_Admin {
 						});
 					});
 
+					// Generar opciones de horas y minutos en HTML
+					function buildHourOptions(selectedVal) {
+						var html = '';
+						for (var h = 0; h <= 23; h++) {
+							var val = (h < 10 ? '0' : '') + h;
+							var sel = (val === selectedVal) ? ' selected' : '';
+							html += '<option value="' + val + '"' + sel + '>' + val + 'h</option>';
+						}
+						return html;
+					}
+
+					function buildMinuteOptions(selectedVal) {
+						var html = '';
+						for (var m = 0; m <= 59; m++) {
+							var val = (m < 10 ? '0' : '') + m;
+							var sel = (val === selectedVal) ? ' selected' : '';
+							html += '<option value="' + val + '"' + sel + '>' + val + 'm</option>';
+						}
+						return html;
+					}
+
 					// Añadir nueva regla
 					$('#wpat_add_promo_rule_btn').on('click', function() {
 						$('#wpat_promo_empty_msg').hide();
 						var idx = new Date().getTime();
+						var startHours = buildHourOptions('00');
+						var startMins  = buildMinuteOptions('00');
+						var endHours   = buildHourOptions('23');
+						var endMins    = buildMinuteOptions('59');
+
 						var newCardHtml = `
 							<div class="wpat-promo-rule-card" data-rule-idx="${idx}" style="border: 1px solid #cbd5e1; border-radius: 10px; background: #ffffff; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
 								<input type="hidden" name="wpat_settings[woo_promotions_rules][${idx}][id]" value="rule_${idx}" />
 								
 								<div class="wpat-promo-rule-header" style="background: #f8fafc; padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border-bottom: 1px solid #e2e8f0; user-select: none;">
 									<div style="display: flex; align-items: center; gap: 10px; flex-grow: 1;">
-										<span style="font-size: 16px;">🎁</span>
+										<span class="wpat-promo-icon-display" style="font-size: 16px; min-width: 20px;">🎁</span>
 										<strong class="wpat-promo-rule-header-title" style="font-size: 14px; color: #0f172a;">Nueva Regla Promocional</strong>
 										<span class="wpat-promo-type-badge" style="background: #e0f2fe; color: #0369a1; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px; text-transform: uppercase;">Descuento Global</span>
 									</div>
-									<div style="display: flex; align-items: center; gap: 12px;" onclick="event.stopPropagation();">
+									<div style="display: flex; align-items: center; gap: 12px;">
 										<label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; margin: 0; cursor: pointer;">
 											<input type="checkbox" name="wpat_settings[woo_promotions_rules][${idx}][active]" value="1" checked />
 											<span style="color:#16a34a;">Activa</span>
@@ -5227,10 +5385,30 @@ class WPAT_Admin {
 								</div>
 
 								<div class="wpat-promo-rule-body" style="padding: 20px; display: block;">
-									<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px;">
+									<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px;">
 										<div>
 											<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Título Público (visible en carrito):</label>
 											<input type="text" name="wpat_settings[woo_promotions_rules][${idx}][title]" value="Nueva Regla Promocional" class="wpat-promo-title-input regular-text" style="width: 100%;" required />
+										</div>
+										<div>
+											<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Icono de Promoción (Opcional):</label>
+											<select name="wpat_settings[woo_promotions_rules][${idx}][icon]" class="wpat-promo-icon-select regular-text" style="width: 100%;">
+												<option value="gift" selected>🎁 Regalo (Genérico)</option>
+												<option value="fire">🔥 Oferta Flash / Tendencia</option>
+												<option value="percent">🏷️ Descuento % (Black Friday / Cyber)</option>
+												<option value="heart">❤️ Corazón (San Valentín)</option>
+												<option value="pumpkin">🎃 Calabaza (Halloween)</option>
+												<option value="skull">💀 Calavera / Esqueleto (Halloween)</option>
+												<option value="tree">🎄 Árbol de Navidad</option>
+												<option value="santa">🎅 Papá Noel (Navidad)</option>
+												<option value="shopping_bags">🛍️ Compras (Rebajas)</option>
+												<option value="star">⭐ Estrella (Especial)</option>
+												<option value="crown">👑 VIP / Exclusivo</option>
+												<option value="lightning">⚡ Relámpago</option>
+												<option value="sun">☀️ Verano</option>
+												<option value="flower">🌸 Primavera / Día de la Madre</option>
+												<option value="none">🚫 Sin icono (Desactivado)</option>
+											</select>
 										</div>
 										<div>
 											<label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 5px;">Tipo de Promoción:</label>
@@ -5290,16 +5468,32 @@ class WPAT_Admin {
 												<input type="date" name="wpat_settings[woo_promotions_rules][${idx}][start_date]" value="" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
 											</div>
 											<div>
-												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">⏰ Hora de Inicio (00:00 - 23:59):</label>
-												<input type="time" min="00:00" max="23:59" step="60" name="wpat_settings[woo_promotions_rules][${idx}][start_time]" value="00:00" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">⏰ Hora de Inicio (00h:00m - 23h:59m):</label>
+												<div style="display: flex; align-items: center; gap: 4px;">
+													<select name="wpat_settings[woo_promotions_rules][${idx}][start_hour]" class="wpat-time-select-hh" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 70px;">
+														${startHours}
+													</select>
+													<span style="font-weight: bold; color: #64748b;">:</span>
+													<select name="wpat_settings[woo_promotions_rules][${idx}][start_minute]" class="wpat-time-select-mm" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 70px;">
+														${startMins}
+													</select>
+												</div>
 											</div>
 											<div>
 												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha de Fin (Opcional):</label>
 												<input type="date" name="wpat_settings[woo_promotions_rules][${idx}][end_date]" value="" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
 											</div>
 											<div>
-												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">⏰ Hora de Fin (00:00 - 23:59):</label>
-												<input type="time" min="00:00" max="23:59" step="60" name="wpat_settings[woo_promotions_rules][${idx}][end_time]" value="23:59" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">⏰ Hora de Fin (00h:00m - 23h:59m):</label>
+												<div style="display: flex; align-items: center; gap: 4px;">
+													<select name="wpat_settings[woo_promotions_rules][${idx}][end_hour]" class="wpat-time-select-hh" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 70px;">
+														${endHours}
+													</select>
+													<span style="font-weight: bold; color: #64748b;">:</span>
+													<select name="wpat_settings[woo_promotions_rules][${idx}][end_minute]" class="wpat-time-select-mm" style="padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 70px;">
+														${endMins}
+													</select>
+												</div>
 											</div>
 										</div>
 									</div>
@@ -5308,17 +5502,6 @@ class WPAT_Admin {
 						`;
 
 						$('#wpat_promo_rules_container').append(newCardHtml);
-					});
-
-					// Eliminar regla
-					$(document).on('click', '.wpat-promo-delete-rule-btn', function(e) {
-						e.stopPropagation();
-						if (confirm('¿Estás seguro de que deseas eliminar esta regla promocional?')) {
-							$(this).closest('.wpat-promo-rule-card').remove();
-							if ($('.wpat-promo-rule-card').length === 0) {
-								$('#wpat_promo_empty_msg').show();
-							}
-						}
 					});
 
 					// Añadir tramo en Tiered Spend

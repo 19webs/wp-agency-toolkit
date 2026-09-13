@@ -151,10 +151,18 @@ class WPAT_Woo_Promotions {
 			$date_str = "$year-$month-$day $time";
 		} elseif ( preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_str ) ) {
 			$date_str .= $is_end_date ? ' 23:59:59' : ' 00:00:00';
+		} elseif ( preg_match( '/^\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{2}$/', $date_str ) ) {
+			$date_str .= $is_end_date ? ':59' : ':00';
 		}
 
-		$ts = strtotime( $date_str );
-		return $ts ? $ts : 0;
+		try {
+			$tz = function_exists( 'wp_timezone' ) ? wp_timezone() : new DateTimeZone( 'UTC' );
+			$dt = new DateTime( $date_str, $tz );
+			return $dt->getTimestamp();
+		} catch ( Exception $e ) {
+			$ts = strtotime( $date_str );
+			return $ts ? $ts : 0;
+		}
 	}
 
 	/**
@@ -199,7 +207,7 @@ class WPAT_Woo_Promotions {
 		$parent_id    = $product->get_parent_id();
 		$effective_id = $parent_id ? $parent_id : $product_id;
 
-		$now_ts = current_time( 'timestamp' );
+		$now_ts = time();
 
 		foreach ( $rules as $rule ) {
 			if ( empty( $rule['active'] ) || '1' !== (string) $rule['active'] ) {
@@ -214,7 +222,7 @@ class WPAT_Woo_Promotions {
 				}
 			}
 			if ( ! empty( $rule['end_date'] ) ) {
-				$end_ts = self::parse_date_to_timestamp( $rule['end_date'] );
+				$end_ts = self::parse_date_to_timestamp( $rule['end_date'], true );
 				if ( $end_ts && $now_ts > $end_ts ) {
 					continue;
 				}
@@ -398,7 +406,7 @@ class WPAT_Woo_Promotions {
 		}
 
 		$applied_meta_map = array();
-		$now_ts           = current_time( 'timestamp' );
+		$now_ts           = time();
 
 		foreach ( $rules as $rule ) {
 			if ( empty( $rule['active'] ) || '1' !== (string) $rule['active'] ) {
@@ -413,7 +421,7 @@ class WPAT_Woo_Promotions {
 				}
 			}
 			if ( ! empty( $rule['end_date'] ) ) {
-				$end_ts = self::parse_date_to_timestamp( $rule['end_date'] );
+				$end_ts = self::parse_date_to_timestamp( $rule['end_date'], true );
 				if ( $end_ts && $now_ts > $end_ts ) {
 					continue;
 				}
@@ -865,7 +873,7 @@ class WPAT_Woo_Promotions {
 		$product_id   = $product->get_id();
 		$parent_id    = $product->get_parent_id();
 		$effective_id = $parent_id ? $parent_id : $product_id;
-		$now_ts       = current_time( 'timestamp' );
+		$now_ts       = time();
 
 		foreach ( $rules as $rule ) {
 			if ( empty( $rule['active'] ) || '1' !== (string) $rule['active'] ) {
@@ -876,16 +884,20 @@ class WPAT_Woo_Promotions {
 				continue;
 			}
 
-			if ( empty( $rule['end_date'] ) ) {
-				continue;
-			}
-
 			$rule_start = ! empty( $rule['start_date'] ) ? self::parse_date_to_timestamp( $rule['start_date'] ) : 0;
 			if ( $rule_start > 0 && $now_ts < $rule_start ) {
 				continue;
 			}
 
-			$rule_end = self::parse_date_to_timestamp( $rule['end_date'] );
+			if ( ! empty( $rule['end_date'] ) ) {
+				$rule_end = self::parse_date_to_timestamp( $rule['end_date'], true );
+			} else {
+				// Si la opción de contador está activa pero no se especificó fecha de fin, usar el final del día de hoy como límite por defecto
+				$tz        = function_exists( 'wp_timezone' ) ? wp_timezone() : new DateTimeZone( 'UTC' );
+				$today_end = new DateTime( 'today 23:59:59', $tz );
+				$rule_end  = $today_end->getTimestamp();
+			}
+
 			if ( ! $rule_end || $now_ts > $rule_end ) {
 				continue;
 			}
@@ -925,7 +937,34 @@ class WPAT_Woo_Promotions {
 	}
 
 	/**
-	 * Renderiza el banner de la cuenta regresiva en la ficha de producto.
+	 * Mapea una clave de icono de promoción a su símbolo emoji correspondiente.
+	 *
+	 * @param string $icon_key Clave del icono (ej. 'gift', 'pumpkin', 'none').
+	 * @return string Emoji o cadena vacía si está desactivado ('none').
+	 */
+	public static function get_promo_icon_symbol( $icon_key ) {
+		$icons = array(
+			'gift'          => '🎁',
+			'fire'          => '🔥',
+			'percent'       => '🏷️',
+			'heart'         => '❤️',
+			'pumpkin'       => '🎃',
+			'skull'         => '💀',
+			'tree'          => '🎄',
+			'santa'         => '🎅',
+			'shopping_bags' => '🛍️',
+			'star'          => '⭐',
+			'crown'         => '👑',
+			'lightning'     => '⚡',
+			'sun'           => '☀️',
+			'flower'        => '🌸',
+			'none'          => '',
+		);
+		return isset( $icons[ $icon_key ] ) ? $icons[ $icon_key ] : '🎁';
+	}
+
+	/**
+	 * Renderiza la tarjeta de cuenta regresiva en la página de producto individual.
 	 */
 	public function render_product_countdown_banner() {
 		static $rendered_ids = array();
@@ -945,11 +984,15 @@ class WPAT_Woo_Promotions {
 
 		$rendered_ids[] = $product->get_id();
 		$title          = ! empty( $data['rule']['title'] ) ? $data['rule']['title'] : __( 'Oferta por tiempo limitado', 'wp-agency-toolkit' );
+		$icon_key       = ! empty( $data['rule']['icon'] ) ? $data['rule']['icon'] : 'lightning';
+		$symbol         = self::get_promo_icon_symbol( $icon_key );
 
 		?>
 		<div class="wpat-promo-countdown-card" data-end-timestamp="<?php echo esc_attr( $data['end_ts'] ); ?>">
 			<div class="wpat-promo-countdown-header">
-				<span class="wpat-promo-countdown-icon">⚡</span>
+				<?php if ( ! empty( $symbol ) ) : ?>
+					<span class="wpat-promo-countdown-icon"><?php echo esc_html( $symbol ); ?></span>
+				<?php endif; ?>
 				<span class="wpat-promo-countdown-title"><?php echo esc_html( $title ); ?> — <strong>¡La oferta termina en!</strong></span>
 			</div>
 			<div class="wpat-promo-countdown-timer">
@@ -979,10 +1022,15 @@ class WPAT_Woo_Promotions {
 			return;
 		}
 
+		$icon_key = ! empty( $data['rule']['icon'] ) ? $data['rule']['icon'] : 'lightning';
+		$symbol   = self::get_promo_icon_symbol( $icon_key );
+
 		?>
 		<div class="wpat-promo-countdown-card wpat-promo-shop-loop-card" data-end-timestamp="<?php echo esc_attr( $data['end_ts'] ); ?>" style="margin: 8px 0 !important; padding: 8px 10px !important;">
 			<div class="wpat-promo-countdown-header" style="margin-bottom: 4px; gap: 5px;">
-				<span class="wpat-promo-countdown-icon" style="font-size: 14px;">⚡</span>
+				<?php if ( ! empty( $symbol ) ) : ?>
+					<span class="wpat-promo-countdown-icon" style="font-size: 14px;"><?php echo esc_html( $symbol ); ?></span>
+				<?php endif; ?>
 				<span class="wpat-promo-countdown-title" style="font-size: 11px; font-weight: 700; color: #9a3412;">¡Oferta termina en!</span>
 			</div>
 			<div class="wpat-promo-countdown-timer" style="gap: 3px; justify-content: center;">

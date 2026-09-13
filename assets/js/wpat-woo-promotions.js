@@ -36,7 +36,12 @@
 		function initCountdownTimers() {
 			$('.wpat-promo-countdown-card').each(function() {
 				var $card = $(this);
-				var endTimestamp = parseInt($card.data('end-timestamp'), 10);
+				if ($card.data('wpat-timer-active')) {
+					return;
+				}
+				$card.data('wpat-timer-active', true);
+
+				var endTimestamp = parseInt($card.attr('data-end-timestamp'), 10);
 				if (!endTimestamp || isNaN(endTimestamp)) {
 					return;
 				}
@@ -76,6 +81,10 @@
 		}
 
 		initCountdownTimers();
+
+		$(document.body).on('updated_cart_totals updated_checkout post-load yith_infs_added_elem', function() {
+			initCountdownTimers();
+		});
 
 	});
 

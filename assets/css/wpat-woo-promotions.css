@@ -101,3 +101,84 @@
 	line-height: 1 !important;
 	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
 }
+
+/* --- TARJETA DE CONTADOR REGRESIVO (COUNTDOWN TIMER) --- */
+.wpat-promo-countdown-card {
+	background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%) !important;
+	border: 1px solid #fed7aa !important;
+	border-radius: 12px !important;
+	padding: 14px 18px !important;
+	margin: 15px 0 20px 0 !important;
+	box-shadow: 0 4px 14px rgba(249, 115, 22, 0.08) !important;
+	box-sizing: border-box !important;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
+}
+
+.wpat-promo-countdown-header {
+	display: flex !important;
+	align-items: center !important;
+	gap: 8px !important;
+	margin-bottom: 10px !important;
+}
+
+.wpat-promo-countdown-icon {
+	font-size: 20px !important;
+	line-height: 1 !important;
+	animation: wpat-lightning-pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes wpat-lightning-pulse {
+	0%, 100% { transform: scale(1); opacity: 1; }
+	50% { transform: scale(1.2); opacity: 0.85; }
+}
+
+.wpat-promo-countdown-title {
+	font-size: 13.5px !important;
+	color: #9a3412 !important;
+	line-height: 1.4 !important;
+}
+
+.wpat-promo-countdown-title strong {
+	color: #c2410c !important;
+}
+
+.wpat-promo-countdown-timer {
+	display: flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+}
+
+.wpat-cd-block {
+	background: #ffffff !important;
+	border: 1px solid #fdba74 !important;
+	border-radius: 8px !important;
+	padding: 6px 10px !important;
+	min-width: 48px !important;
+	text-align: center !important;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+.wpat-cd-val {
+	display: block !important;
+	font-size: 16px !important;
+	font-weight: 800 !important;
+	color: #ea580c !important;
+	line-height: 1.1 !important;
+}
+
+.wpat-cd-lbl {
+	display: block !important;
+	font-size: 9px !important;
+	font-weight: 700 !important;
+	color: #9a3412 !important;
+	text-transform: uppercase !important;
+	margin-top: 2px !important;
+	letter-spacing: 0.5px !important;
+}
+
+.wpat-cd-sep {
+	font-size: 16px !important;
+	font-weight: 800 !important;
+	color: #ea580c !important;
+	line-height: 1 !important;
+}

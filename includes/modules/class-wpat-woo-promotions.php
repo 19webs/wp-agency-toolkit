@@ -78,6 +78,9 @@ class WPAT_Woo_Promotions {
 		add_action( 'woocommerce_before_cart_totals', array( $this, 'render_tiered_spend_progress_bar' ), 10 );
 		add_action( 'woocommerce_proceed_to_checkout', array( $this, 'render_tiered_spend_progress_bar' ), 5 );
 
+		// Hook para renderizar contador regresivo en la ficha de producto
+		add_action( 'woocommerce_single_product_summary', array( $this, 'render_product_countdown_banner' ), 25 );
+
 		// Carga de assets frontend
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
 	}
@@ -86,11 +89,11 @@ class WPAT_Woo_Promotions {
 	 * Encola estilos y scripts para el frontend.
 	 */
 	public function enqueue_frontend_assets() {
-		if ( ! function_exists( 'is_cart' ) || ! function_exists( 'is_checkout' ) ) {
+		if ( ! function_exists( 'is_cart' ) || ! function_exists( 'is_checkout' ) || ! function_exists( 'is_product' ) ) {
 			return;
 		}
 
-		if ( is_cart() || is_checkout() ) {
+		if ( is_cart() || is_checkout() || is_product() || is_shop() || is_product_taxonomy() ) {
 			wp_enqueue_style(
 				'wpat-woo-promotions',
 				WPAT_URL . 'assets/css/wpat-woo-promotions.css',
@@ -162,19 +165,25 @@ class WPAT_Woo_Promotions {
 		$parent_id    = $product->get_parent_id();
 		$effective_id = $parent_id ? $parent_id : $product_id;
 
-		$today = current_time( 'Y-m-d' );
+		$now_ts = current_time( 'timestamp' );
 
 		foreach ( $rules as $rule ) {
 			if ( empty( $rule['active'] ) || '1' !== (string) $rule['active'] ) {
 				continue;
 			}
 
-			// Filtro por fecha de inicio y fin
-			if ( ! empty( $rule['start_date'] ) && $today < $rule['start_date'] ) {
-				continue;
+			// Filtro por fecha/hora de inicio y fin
+			if ( ! empty( $rule['start_date'] ) ) {
+				$start_ts = strtotime( $rule['start_date'] );
+				if ( $start_ts && $now_ts < $start_ts ) {
+					continue;
+				}
 			}
-			if ( ! empty( $rule['end_date'] ) && $today > $rule['end_date'] ) {
-				continue;
+			if ( ! empty( $rule['end_date'] ) ) {
+				$end_ts = strtotime( $rule['end_date'] );
+				if ( $end_ts && $now_ts > $end_ts ) {
+					continue;
+				}
 			}
 
 			$rule_type   = ! empty( $rule['type'] ) ? sanitize_key( $rule['type'] ) : 'global_discount';
@@ -331,19 +340,25 @@ class WPAT_Woo_Promotions {
 		}
 
 		$applied_meta_map = array();
-		$today            = current_time( 'Y-m-d' );
+		$now_ts           = current_time( 'timestamp' );
 
 		foreach ( $rules as $rule ) {
 			if ( empty( $rule['active'] ) || '1' !== (string) $rule['active'] ) {
 				continue;
 			}
 
-			// Filtro por fecha de inicio y fin
-			if ( ! empty( $rule['start_date'] ) && $today < $rule['start_date'] ) {
-				continue;
+			// Filtro por fecha/hora de inicio y fin
+			if ( ! empty( $rule['start_date'] ) ) {
+				$start_ts = strtotime( $rule['start_date'] );
+				if ( $start_ts && $now_ts < $start_ts ) {
+					continue;
+				}
 			}
-			if ( ! empty( $rule['end_date'] ) && $today > $rule['end_date'] ) {
-				continue;
+			if ( ! empty( $rule['end_date'] ) ) {
+				$end_ts = strtotime( $rule['end_date'] );
+				if ( $end_ts && $now_ts > $end_ts ) {
+					continue;
+				}
 			}
 
 			$rule_id       = ! empty( $rule['id'] ) ? sanitize_key( $rule['id'] ) : 'rule_' . md5( serialize( $rule ) );
@@ -576,15 +591,21 @@ class WPAT_Woo_Promotions {
 		$settings = WPAT_Main::get_instance()->get_settings();
 		$rules    = isset( $settings['woo_promotions_rules'] ) && is_array( $settings['woo_promotions_rules'] ) ? $settings['woo_promotions_rules'] : array();
 
-		$today       = current_time( 'Y-m-d' );
+		$now_ts      = current_time( 'timestamp' );
 		$target_rule = null;
 		foreach ( $rules as $rule ) {
 			if ( ! empty( $rule['active'] ) && '1' === (string) $rule['active'] && isset( $rule['type'] ) && 'tiered_spend' === $rule['type'] ) {
-				if ( ! empty( $rule['start_date'] ) && $today < $rule['start_date'] ) {
-					continue;
+				if ( ! empty( $rule['start_date'] ) ) {
+					$start_ts = strtotime( $rule['start_date'] );
+					if ( $start_ts && $now_ts < $start_ts ) {
+						continue;
+					}
 				}
-				if ( ! empty( $rule['end_date'] ) && $today > $rule['end_date'] ) {
-					continue;
+				if ( ! empty( $rule['end_date'] ) ) {
+					$end_ts = strtotime( $rule['end_date'] );
+					if ( $end_ts && $now_ts > $end_ts ) {
+						continue;
+					}
 				}
 				$target_rule = $rule;
 				break;
@@ -760,6 +781,108 @@ class WPAT_Woo_Promotions {
 				<div class="wpat-tiered-progress-bar-fill" style="width: <?php echo esc_attr( $data['percentage'] ); ?>%;">
 					<span class="wpat-tiered-progress-pct-badge"><?php echo esc_html( round( $data['percentage'] ) ); ?>%</span>
 				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Renderiza el banner de la cuenta regresiva en la ficha de producto.
+	 */
+	public function render_product_countdown_banner() {
+		global $product;
+		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
+			return;
+		}
+
+		$settings = WPAT_Main::get_instance()->get_settings();
+		$rules    = isset( $settings['woo_promotions_rules'] ) && is_array( $settings['woo_promotions_rules'] ) ? $settings['woo_promotions_rules'] : array();
+
+		if ( empty( $rules ) ) {
+			return;
+		}
+
+		$product_id   = $product->get_id();
+		$parent_id    = $product->get_parent_id();
+		$effective_id = $parent_id ? $parent_id : $product_id;
+		$now_ts       = current_time( 'timestamp' );
+
+		$target_rule = null;
+		$end_ts      = 0;
+
+		foreach ( $rules as $rule ) {
+			if ( empty( $rule['active'] ) || '1' !== (string) $rule['active'] ) {
+				continue;
+			}
+
+			if ( empty( $rule['show_countdown'] ) || '1' !== (string) $rule['show_countdown'] ) {
+				continue;
+			}
+
+			if ( empty( $rule['end_date'] ) ) {
+				continue;
+			}
+
+			$rule_start = ! empty( $rule['start_date'] ) ? strtotime( $rule['start_date'] ) : 0;
+			if ( $rule_start > 0 && $now_ts < $rule_start ) {
+				continue;
+			}
+
+			$rule_end = strtotime( $rule['end_date'] );
+			if ( ! $rule_end || $now_ts > $rule_end ) {
+				continue;
+			}
+
+			$ignore_sale = ! empty( $rule['ignore_on_sale'] ) && '1' === (string) $rule['ignore_on_sale'];
+			if ( $ignore_sale && $product->is_on_sale() ) {
+				continue;
+			}
+
+			$scope        = ! empty( $rule['scope'] ) ? sanitize_key( $rule['scope'] ) : 'all';
+			$target_cats  = isset( $rule['categories'] ) && is_array( $rule['categories'] ) ? array_map( 'absint', $rule['categories'] ) : array();
+			$target_prods = isset( $rule['products'] ) && is_array( $rule['products'] ) ? array_map( 'absint', $rule['products'] ) : array();
+
+			$matches = false;
+			if ( 'all' === $scope ) {
+				$matches = true;
+			} elseif ( 'category' === $scope && ! empty( $target_cats ) ) {
+				$prod_cats = wc_get_product_term_ids( $effective_id, 'product_cat' );
+				if ( array_intersect( $target_cats, $prod_cats ) ) {
+					$matches = true;
+				}
+			} elseif ( 'product' === $scope && ! empty( $target_prods ) ) {
+				if ( in_array( $product_id, $target_prods, true ) || in_array( $effective_id, $target_prods, true ) ) {
+					$matches = true;
+				}
+			}
+
+			if ( $matches ) {
+				$target_rule = $rule;
+				$end_ts      = $rule_end;
+				break;
+			}
+		}
+
+		if ( ! $target_rule || ! $end_ts ) {
+			return;
+		}
+
+		$title = ! empty( $target_rule['title'] ) ? $target_rule['title'] : __( 'Oferta por tiempo limitado', 'wp-agency-toolkit' );
+
+		?>
+		<div class="wpat-promo-countdown-card" data-end-timestamp="<?php echo esc_attr( $end_ts ); ?>">
+			<div class="wpat-promo-countdown-header">
+				<span class="wpat-promo-countdown-icon">⚡</span>
+				<span class="wpat-promo-countdown-title"><?php echo esc_html( $title ); ?> — <strong>¡La oferta termina en!</strong></span>
+			</div>
+			<div class="wpat-promo-countdown-timer">
+				<div class="wpat-cd-block"><span class="wpat-cd-val wpat-cd-days">00</span><span class="wpat-cd-lbl">Días</span></div>
+				<div class="wpat-cd-sep">:</div>
+				<div class="wpat-cd-block"><span class="wpat-cd-val wpat-cd-hours">00</span><span class="wpat-cd-lbl">Horas</span></div>
+				<div class="wpat-cd-sep">:</div>
+				<div class="wpat-cd-block"><span class="wpat-cd-val wpat-cd-mins">00</span><span class="wpat-cd-lbl">Min</span></div>
+				<div class="wpat-cd-sep">:</div>
+				<div class="wpat-cd-block"><span class="wpat-cd-val wpat-cd-secs">00</span><span class="wpat-cd-lbl">Seg</span></div>
 			</div>
 		</div>
 		<?php

@@ -1118,6 +1118,7 @@ class WPAT_Admin {
 						'products'              => $products,
 						'ignore_on_sale'        => isset( $rule_raw['ignore_on_sale'] ) && '1' === (string) $rule_raw['ignore_on_sale'] ? '1' : '0',
 						'include_extra_options' => isset( $rule_raw['include_extra_options'] ) && '1' === (string) $rule_raw['include_extra_options'] ? '1' : '0',
+						'show_countdown'        => isset( $rule_raw['show_countdown'] ) && '1' === (string) $rule_raw['show_countdown'] ? '1' : '0',
 						'start_date'            => ! empty( $rule_raw['start_date'] ) ? sanitize_text_field( $rule_raw['start_date'] ) : '',
 						'end_date'              => ! empty( $rule_raw['end_date'] ) ? sanitize_text_field( $rule_raw['end_date'] ) : '',
 						'min_spend'             => isset( $rule_raw['min_spend'] ) ? max( 0, (float) $rule_raw['min_spend'] ) : 0.0,
@@ -4812,6 +4813,7 @@ class WPAT_Admin {
 										$r_prods       = isset( $rule['products'] ) && is_array( $rule['products'] ) ? implode( ', ', $rule['products'] ) : '';
 										$r_ignore_sale   = ! empty( $rule['ignore_on_sale'] ) && '1' === (string) $rule['ignore_on_sale'];
 										$r_include_extra = ! empty( $rule['include_extra_options'] ) && '1' === (string) $rule['include_extra_options'];
+										$r_show_cd       = ! empty( $rule['show_countdown'] ) && '1' === (string) $rule['show_countdown'];
 										$r_start_date    = ! empty( $rule['start_date'] ) ? sanitize_text_field( $rule['start_date'] ) : '';
 										$r_end_date      = ! empty( $rule['end_date'] ) ? sanitize_text_field( $rule['end_date'] ) : '';
 										$r_pay_methods   = isset( $rule['payment_methods'] ) && is_array( $rule['payment_methods'] ) ? $rule['payment_methods'] : array();
@@ -5036,15 +5038,19 @@ class WPAT_Admin {
 															<input type="checkbox" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][include_extra_options]" value="1" <?php checked( $r_include_extra ); ?> />
 															🎨 Incluir recargos de Campos Extras en el cálculo del descuento
 														</label>
+														<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+															<input type="checkbox" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][show_countdown]" value="1" <?php checked( $r_show_cd ); ?> />
+															⏰ Mostrar contador regresivo de tiempo (Countdown) en tienda y ficha de producto
+														</label>
 													</div>
-													<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 4px;">
+													<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 4px;">
 														<div>
-															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha de Inicio (Opcional):</label>
-															<input type="date" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_date]" value="<?php echo esc_attr( $r_start_date ); ?>" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha y Hora de Inicio (Opcional):</label>
+															<input type="datetime-local" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_date]" value="<?php echo esc_attr( $r_start_date ); ?>" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
 														</div>
 														<div>
-															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha de Fin (Opcional):</label>
-															<input type="date" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_date]" value="<?php echo esc_attr( $r_end_date ); ?>" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha y Hora de Fin (Opcional):</label>
+															<input type="datetime-local" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_date]" value="<?php echo esc_attr( $r_end_date ); ?>" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
 														</div>
 													</div>
 												</div>
@@ -5219,15 +5225,19 @@ class WPAT_Admin {
 												<input type="checkbox" name="wpat_settings[woo_promotions_rules][${idx}][include_extra_options]" value="1" />
 												🎨 Incluir recargos de Campos Extras en el cálculo del descuento
 											</label>
+											<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+												<input type="checkbox" name="wpat_settings[woo_promotions_rules][${idx}][show_countdown]" value="1" checked />
+												⏰ Mostrar contador regresivo de tiempo (Countdown) en tienda y ficha de producto
+											</label>
 										</div>
-										<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 4px;">
+										<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 4px;">
 											<div>
-												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha de Inicio (Opcional):</label>
-												<input type="date" name="wpat_settings[woo_promotions_rules][${idx}][start_date]" value="" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha y Hora de Inicio (Opcional):</label>
+												<input type="datetime-local" name="wpat_settings[woo_promotions_rules][${idx}][start_date]" value="" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
 											</div>
 											<div>
-												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha de Fin (Opcional):</label>
-												<input type="date" name="wpat_settings[woo_promotions_rules][${idx}][end_date]" value="" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha y Hora de Fin (Opcional):</label>
+												<input type="datetime-local" name="wpat_settings[woo_promotions_rules][${idx}][end_date]" value="" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
 											</div>
 										</div>
 									</div>

@@ -1159,8 +1159,16 @@ class WPAT_Admin {
 						'ignore_on_sale'        => isset( $rule_raw['ignore_on_sale'] ) && '1' === (string) $rule_raw['ignore_on_sale'] ? '1' : '0',
 						'include_extra_options' => isset( $rule_raw['include_extra_options'] ) && '1' === (string) $rule_raw['include_extra_options'] ? '1' : '0',
 						'show_countdown'        => isset( $rule_raw['show_countdown'] ) && '1' === (string) $rule_raw['show_countdown'] ? '1' : '0',
+						'enable_schedule'       => isset( $rule_raw['enable_schedule'] ) && '1' === (string) $rule_raw['enable_schedule'] ? '1' : '0',
 						'start_date'            => $start_date_full,
 						'end_date'              => $end_date_full,
+						'countdown_title'        => ! empty( $rule_raw['countdown_title'] ) ? sanitize_text_field( $rule_raw['countdown_title'] ) : '',
+						'countdown_bg_color'     => ! empty( $rule_raw['countdown_bg_color'] ) ? sanitize_hex_color( $rule_raw['countdown_bg_color'] ) : '#fff7ed',
+						'countdown_border_color' => ! empty( $rule_raw['countdown_border_color'] ) ? sanitize_hex_color( $rule_raw['countdown_border_color'] ) : '#fed7aa',
+						'countdown_text_color'   => ! empty( $rule_raw['countdown_text_color'] ) ? sanitize_hex_color( $rule_raw['countdown_text_color'] ) : '#9a3412',
+						'countdown_digit_bg'     => ! empty( $rule_raw['countdown_digit_bg'] ) ? sanitize_hex_color( $rule_raw['countdown_digit_bg'] ) : '#ffffff',
+						'countdown_digit_color'  => ! empty( $rule_raw['countdown_digit_color'] ) ? sanitize_hex_color( $rule_raw['countdown_digit_color'] ) : '#ea580c',
+						'countdown_font_size'    => ! empty( $rule_raw['countdown_font_size'] ) ? absint( $rule_raw['countdown_font_size'] ) : 14,
 						'min_spend'             => isset( $rule_raw['min_spend'] ) ? max( 0, (float) $rule_raw['min_spend'] ) : 0.0,
 						'discount_type'         => ! empty( $rule_raw['discount_type'] ) && in_array( $rule_raw['discount_type'], array( 'percent', 'fixed', 'fixed_unit', 'fixed_total' ), true ) ? sanitize_key( $rule_raw['discount_type'] ) : 'percent',
 						'discount_value'        => isset( $rule_raw['discount_value'] ) ? max( 0, (float) $rule_raw['discount_value'] ) : 0.0,
@@ -5116,6 +5124,16 @@ class WPAT_Admin {
 													</div>
 												</div>
 
+												<?php
+												$r_enable_sched = isset( $rule['enable_schedule'] ) ? ( '1' === (string) $rule['enable_schedule'] ) : ( ! empty( $rule['start_date'] ) || ! empty( $rule['end_date'] ) );
+												$r_cd_title     = ! empty( $rule['countdown_title'] ) ? $rule['countdown_title'] : '¡La oferta termina en!';
+												$r_cd_bg        = ! empty( $rule['countdown_bg_color'] ) ? $rule['countdown_bg_color'] : '#fff7ed';
+												$r_cd_border    = ! empty( $rule['countdown_border_color'] ) ? $rule['countdown_border_color'] : '#fed7aa';
+												$r_cd_text      = ! empty( $rule['countdown_text_color'] ) ? $rule['countdown_text_color'] : '#9a3412';
+												$r_cd_digit_bg  = ! empty( $rule['countdown_digit_bg'] ) ? $rule['countdown_digit_bg'] : '#ffffff';
+												$r_cd_digit_col = ! empty( $rule['countdown_digit_color'] ) ? $rule['countdown_digit_color'] : '#ea580c';
+												$r_cd_size      = ! empty( $rule['countdown_font_size'] ) ? absint( $rule['countdown_font_size'] ) : 14;
+												?>
 												<!-- Fila 4: Opciones adicionales y Programación -->
 												<div style="border-top: 1px dashed #cbd5e1; padding-top: 12px; margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
 													<div style="display: flex; flex-wrap: wrap; gap: 20px;">
@@ -5128,54 +5146,97 @@ class WPAT_Admin {
 															Incluir descuento en campos Extras en el cálculo del descuento
 														</label>
 														<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-															<input type="checkbox" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][show_countdown]" value="1" <?php checked( $r_show_cd ); ?> />
+															<input type="checkbox" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][show_countdown]" value="1" class="wpat-show-countdown-toggle" <?php checked( $r_show_cd ); ?> />
 															Mostrar contador regresivo de tiempo (Countdown) en tienda y ficha de producto
 														</label>
+														<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+															<input type="checkbox" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][enable_schedule]" value="1" class="wpat-enable-schedule-toggle" <?php checked( $r_enable_sched ); ?> />
+															Programar inicio y fin de la promoción (Opcional)
+														</label>
 													</div>
-													<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 10px;">
-														<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px;">
-															<label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px; color: #334155;">Inicio de Promoción (Opcional):</label>
-															<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-																<input type="date" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_date]" value="<?php echo esc_attr( $r_start_date ); ?>" style="flex: 1; min-width: 130px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px;" />
-																<div style="display: flex; align-items: center; gap: 3px;">
-																	<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_hour]" class="wpat-time-select-hh" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
-																		<?php for ( $h = 0; $h <= 23; $h++ ) : 
-																			$val = str_pad( (string) $h, 2, '0', STR_PAD_LEFT );
-																		?>
-																			<option value="<?php echo $val; ?>" <?php selected( $s_h, $val ); ?>><?php echo $val; ?>h</option>
-																		<?php endfor; ?>
-																	</select>
-																	<span style="font-weight: bold; color: #64748b;">:</span>
-																	<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_minute]" class="wpat-time-select-mm" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
-																		<?php for ( $m = 0; $m <= 59; $m++ ) : 
-																			$val = str_pad( (string) $m, 2, '0', STR_PAD_LEFT );
-																		?>
-																			<option value="<?php echo $val; ?>" <?php selected( $s_m, $val ); ?>><?php echo $val; ?>m</option>
-																		<?php endfor; ?>
-																	</select>
-																</div>
+
+													<!-- Caja de Diseño del Contador Regresivo -->
+													<div class="wpat-promo-cd-design-box" style="background: #fff7ed; border: 1px solid #fed7aa; padding: 12px; border-radius: 8px; margin-top: 6px; <?php echo $r_show_cd ? '' : 'display:none;'; ?>">
+														<strong style="font-size: 12.5px; color: #9a3412; display: block; margin-bottom: 8px;">Ajustes de Diseño del Contador Regresivo:</strong>
+														<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+															<div>
+																<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 3px;">Texto del Contador:</label>
+																<input type="text" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][countdown_title]" value="<?php echo esc_attr( $r_cd_title ); ?>" placeholder="¡La oferta termina en!" style="width: 100%; font-size: 12px; height: 32px;" />
+															</div>
+															<div>
+																<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 3px;">Color Fondo:</label>
+																<input type="color" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][countdown_bg_color]" value="<?php echo esc_attr( $r_cd_bg ); ?>" style="width: 100%; height: 32px; padding: 1px; cursor: pointer;" />
+															</div>
+															<div>
+																<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 3px;">Color Borde:</label>
+																<input type="color" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][countdown_border_color]" value="<?php echo esc_attr( $r_cd_border ); ?>" style="width: 100%; height: 32px; padding: 1px; cursor: pointer;" />
+															</div>
+															<div>
+																<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 3px;">Color Texto:</label>
+																<input type="color" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][countdown_text_color]" value="<?php echo esc_attr( $r_cd_text ); ?>" style="width: 100%; height: 32px; padding: 1px; cursor: pointer;" />
+															</div>
+															<div>
+																<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 3px;">Fondo Números:</label>
+																<input type="color" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][countdown_digit_bg]" value="<?php echo esc_attr( $r_cd_digit_bg ); ?>" style="width: 100%; height: 32px; padding: 1px; cursor: pointer;" />
+															</div>
+															<div>
+																<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 3px;">Color Números:</label>
+																<input type="color" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][countdown_digit_color]" value="<?php echo esc_attr( $r_cd_digit_col ); ?>" style="width: 100%; height: 32px; padding: 1px; cursor: pointer;" />
+															</div>
+															<div>
+																<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 3px;">Tamaño Texto (px):</label>
+																<input type="number" min="10" max="30" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][countdown_font_size]" value="<?php echo esc_attr( $r_cd_size ); ?>" style="width: 100%; font-size: 12px; height: 32px;" />
 															</div>
 														</div>
-														<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px;">
-															<label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px; color: #334155;">Fin de Promoción (Opcional):</label>
-															<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-																<input type="date" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_date]" value="<?php echo esc_attr( $r_end_date ); ?>" style="flex: 1; min-width: 130px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px;" />
-																<div style="display: flex; align-items: center; gap: 3px;">
-																	<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_hour]" class="wpat-time-select-hh" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
-																		<?php for ( $h = 0; $h <= 23; $h++ ) : 
-																			$val = str_pad( (string) $h, 2, '0', STR_PAD_LEFT );
-																		?>
-																			<option value="<?php echo $val; ?>" <?php selected( $e_h, $val ); ?>><?php echo $val; ?>h</option>
-																		<?php endfor; ?>
-																	</select>
-																	<span style="font-weight: bold; color: #64748b;">:</span>
-																	<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_minute]" class="wpat-time-select-mm" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
-																		<?php for ( $m = 0; $m <= 59; $m++ ) : 
-																			$val = str_pad( (string) $m, 2, '0', STR_PAD_LEFT );
-																		?>
-																			<option value="<?php echo $val; ?>" <?php selected( $e_m, $val ); ?>><?php echo $val; ?>m</option>
-																		<?php endfor; ?>
-																	</select>
+													</div>
+
+													<!-- Caja de Programación de Fechas -->
+													<div class="wpat-promo-schedule-box" style="margin-top: 6px; <?php echo $r_enable_sched ? '' : 'opacity: 0.5; pointer-events: none;'; ?>">
+														<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+															<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px;">
+																<label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px; color: #334155;">Inicio de Promoción (Opcional):</label>
+																<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+																	<input type="date" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_date]" value="<?php echo esc_attr( $r_start_date ); ?>" style="flex: 1; min-width: 130px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px;" />
+																	<div style="display: flex; align-items: center; gap: 3px;">
+																		<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_hour]" class="wpat-time-select-hh" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
+																			<?php for ( $h = 0; $h <= 23; $h++ ) : 
+																				$val = str_pad( (string) $h, 2, '0', STR_PAD_LEFT );
+																			?>
+																				<option value="<?php echo $val; ?>" <?php selected( $s_h, $val ); ?>><?php echo $val; ?>h</option>
+																			<?php endfor; ?>
+																		</select>
+																		<span style="font-weight: bold; color: #64748b;">:</span>
+																		<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_minute]" class="wpat-time-select-mm" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
+																			<?php for ( $m = 0; $m <= 59; $m++ ) : 
+																				$val = str_pad( (string) $m, 2, '0', STR_PAD_LEFT );
+																			?>
+																				<option value="<?php echo $val; ?>" <?php selected( $s_m, $val ); ?>><?php echo $val; ?>m</option>
+																			<?php endfor; ?>
+																		</select>
+																	</div>
+																</div>
+															</div>
+															<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px;">
+																<label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px; color: #334155;">Fin de Promoción (Opcional):</label>
+																<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+																	<input type="date" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_date]" value="<?php echo esc_attr( $r_end_date ); ?>" style="flex: 1; min-width: 130px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px;" />
+																	<div style="display: flex; align-items: center; gap: 3px;">
+																		<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_hour]" class="wpat-time-select-hh" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
+																			<?php for ( $h = 0; $h <= 23; $h++ ) : 
+																				$val = str_pad( (string) $h, 2, '0', STR_PAD_LEFT );
+																			?>
+																				<option value="<?php echo $val; ?>" <?php selected( $e_h, $val ); ?>><?php echo $val; ?>h</option>
+																			<?php endfor; ?>
+																		</select>
+																		<span style="font-weight: bold; color: #64748b;">:</span>
+																		<select name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_minute]" class="wpat-time-select-mm" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
+																			<?php for ( $m = 0; $m <= 59; $m++ ) : 
+																				$val = str_pad( (string) $m, 2, '0', STR_PAD_LEFT );
+																			?>
+																				<option value="<?php echo $val; ?>" <?php selected( $e_m, $val ); ?>><?php echo $val; ?>m</option>
+																			<?php endfor; ?>
+																		</select>
+																	</div>
 																</div>
 															</div>
 														</div>
@@ -5215,6 +5276,25 @@ class WPAT_Admin {
 						'flower': '🌸',
 						'none': ''
 					};
+
+					// Mostrar/Ocultar diseño de contador y programación de fechas
+					$(document).on('change', '.wpat-show-countdown-toggle', function() {
+						var $box = $(this).closest('.wpat-promo-rule-card').find('.wpat-promo-cd-design-box');
+						if ($(this).is(':checked')) {
+							$box.slideDown(200);
+						} else {
+							$box.slideUp(200);
+						}
+					});
+
+					$(document).on('change', '.wpat-enable-schedule-toggle', function() {
+						var $box = $(this).closest('.wpat-promo-rule-card').find('.wpat-promo-schedule-box');
+						if ($(this).is(':checked')) {
+							$box.css({ opacity: 1, 'pointer-events': 'auto' });
+						} else {
+							$box.css({ opacity: 0.5, 'pointer-events': 'none' });
+						}
+					});
 
 					// Cambiar icono en cabecera al cambiar select de icono
 					$(document).on('change', '.wpat-promo-icon-select', function() {
@@ -5456,38 +5536,79 @@ class WPAT_Admin {
 												Incluir descuento en campos Extras en el cálculo del descuento
 											</label>
 											<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-												<input type="checkbox" name="wpat_settings[woo_promotions_rules][${idx}][show_countdown]" value="1" checked />
+												<input type="checkbox" name="wpat_settings[woo_promotions_rules][${idx}][show_countdown]" value="1" class="wpat-show-countdown-toggle" checked />
 												Mostrar contador regresivo de tiempo (Countdown) en tienda y ficha de producto
 											</label>
+											<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+												<input type="checkbox" name="wpat_settings[woo_promotions_rules][${idx}][enable_schedule]" value="1" class="wpat-enable-schedule-toggle" />
+												Programar inicio y fin de la promoción (Opcional)
+											</label>
 										</div>
-										<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 10px;">
-											<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px;">
-												<label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px; color: #334155;">Inicio de Promoción (Opcional):</label>
-												<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-													<input type="date" name="wpat_settings[woo_promotions_rules][${idx}][start_date]" value="" style="flex: 1; min-width: 130px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px;" />
-													<div style="display: flex; align-items: center; gap: 3px;">
-														<select name="wpat_settings[woo_promotions_rules][${idx}][start_hour]" class="wpat-time-select-hh" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
-															${startHours}
-														</select>
-														<span style="font-weight: bold; color: #64748b;">:</span>
-														<select name="wpat_settings[woo_promotions_rules][${idx}][start_minute]" class="wpat-time-select-mm" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
-															${startMins}
-														</select>
-													</div>
+
+										<div class="wpat-promo-cd-design-box" style="background: #fff7ed; border: 1px solid #fed7aa; padding: 12px; border-radius: 8px; margin-top: 6px;">
+											<strong style="font-size: 12.5px; color: #9a3412; display: block; margin-bottom: 8px;">Ajustes de Diseño del Contador Regresivo:</strong>
+											<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+												<div>
+													<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 3px;">Texto del Contador:</label>
+													<input type="text" name="wpat_settings[woo_promotions_rules][${idx}][countdown_title]" value="¡La oferta termina en!" placeholder="¡La oferta termina en!" style="width: 100%; font-size: 12px; height: 32px;" />
+												</div>
+												<div>
+													<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 3px;">Color Fondo:</label>
+													<input type="color" name="wpat_settings[woo_promotions_rules][${idx}][countdown_bg_color]" value="#fff7ed" style="width: 100%; height: 32px; padding: 1px; cursor: pointer;" />
+												</div>
+												<div>
+													<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 3px;">Color Borde:</label>
+													<input type="color" name="wpat_settings[woo_promotions_rules][${idx}][countdown_border_color]" value="#fed7aa" style="width: 100%; height: 32px; padding: 1px; cursor: pointer;" />
+												</div>
+												<div>
+													<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 3px;">Color Texto:</label>
+													<input type="color" name="wpat_settings[woo_promotions_rules][${idx}][countdown_text_color]" value="#9a3412" style="width: 100%; height: 32px; padding: 1px; cursor: pointer;" />
+												</div>
+												<div>
+													<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 3px;">Fondo Números:</label>
+													<input type="color" name="wpat_settings[woo_promotions_rules][${idx}][countdown_digit_bg]" value="#ffffff" style="width: 100%; height: 32px; padding: 1px; cursor: pointer;" />
+												</div>
+												<div>
+													<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 3px;">Color Números:</label>
+													<input type="color" name="wpat_settings[woo_promotions_rules][${idx}][countdown_digit_color]" value="#ea580c" style="width: 100%; height: 32px; padding: 1px; cursor: pointer;" />
+												</div>
+												<div>
+													<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 3px;">Tamaño Texto (px):</label>
+													<input type="number" min="10" max="30" name="wpat_settings[woo_promotions_rules][${idx}][countdown_font_size]" value="14" style="width: 100%; font-size: 12px; height: 32px;" />
 												</div>
 											</div>
-											<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px;">
-												<label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px; color: #334155;">Fin de Promoción (Opcional):</label>
-												<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-													<input type="date" name="wpat_settings[woo_promotions_rules][${idx}][end_date]" value="" style="flex: 1; min-width: 130px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px;" />
-													<div style="display: flex; align-items: center; gap: 3px;">
-														<select name="wpat_settings[woo_promotions_rules][${idx}][end_hour]" class="wpat-time-select-hh" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
-															${endHours}
-														</select>
-														<span style="font-weight: bold; color: #64748b;">:</span>
-														<select name="wpat_settings[woo_promotions_rules][${idx}][end_minute]" class="wpat-time-select-mm" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
-															${endMins}
-														</select>
+										</div>
+
+										<div class="wpat-promo-schedule-box" style="margin-top: 6px; opacity: 0.5; pointer-events: none;">
+											<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+												<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px;">
+													<label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px; color: #334155;">Inicio de Promoción (Opcional):</label>
+													<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+														<input type="date" name="wpat_settings[woo_promotions_rules][${idx}][start_date]" value="" style="flex: 1; min-width: 130px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px;" />
+														<div style="display: flex; align-items: center; gap: 3px;">
+															<select name="wpat_settings[woo_promotions_rules][${idx}][start_hour]" class="wpat-time-select-hh" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
+																${startHours}
+															</select>
+															<span style="font-weight: bold; color: #64748b;">:</span>
+															<select name="wpat_settings[woo_promotions_rules][${idx}][start_minute]" class="wpat-time-select-mm" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
+																${startMins}
+															</select>
+														</div>
+													</div>
+												</div>
+												<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px;">
+													<label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px; color: #334155;">Fin de Promoción (Opcional):</label>
+													<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+														<input type="date" name="wpat_settings[woo_promotions_rules][${idx}][end_date]" value="" style="flex: 1; min-width: 130px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px;" />
+														<div style="display: flex; align-items: center; gap: 3px;">
+															<select name="wpat_settings[woo_promotions_rules][${idx}][end_hour]" class="wpat-time-select-hh" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
+																${endHours}
+															</select>
+															<span style="font-weight: bold; color: #64748b;">:</span>
+															<select name="wpat_settings[woo_promotions_rules][${idx}][end_minute]" class="wpat-time-select-mm" style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 34px; width: 55px;">
+																${endMins}
+															</select>
+														</div>
 													</div>
 												</div>
 											</div>

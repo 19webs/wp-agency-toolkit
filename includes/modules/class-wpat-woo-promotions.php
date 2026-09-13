@@ -138,6 +138,23 @@ class WPAT_Woo_Promotions {
 	}
 
 	/**
+	 * Comprueba si un producto tiene un precio de oferta nativo en WooCommerce (antes de promociones WPAT).
+	 *
+	 * @param WC_Product $product Objeto producto.
+	 * @return bool True si tiene rebaja nativa previa en WooCommerce.
+	 */
+	public static function is_product_natively_on_sale( $product ) {
+		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
+			return false;
+		}
+		$sale_price = (float) $product->get_sale_price( 'edit' );
+		if ( $sale_price <= 0 ) {
+			$sale_price = (float) $product->get_sale_price();
+		}
+		return $sale_price > 0;
+	}
+
+	/**
 	 * Convierte cualquier formato de fecha/hora (ISO, datetime-local, DD/MM/YYYY) a timestamp Unix.
 	 *
 	 * @param string $date_str Cadena de fecha.
@@ -175,7 +192,19 @@ class WPAT_Woo_Promotions {
 	}
 
 	/**
-	 * Obtiene el precio promocional rebajado para un producto si coincide con reglas directas de producto.
+	 * Filtra el precio directo del producto cuando aplica una regla global o por volumen.
+	 *
+	 * @param float      $price Precio actual.
+	 * @param WC_Product $product Objeto producto.
+	 * @return float Precio filtrado o precio original.
+	 */
+	public function filter_product_price( $price, $product ) {
+		$promo_price = $this->get_promo_sale_price_for_product( $product );
+		return false !== $promo_price ? $promo_price : $price;
+	}
+
+	/**
+	 * Obtiene el precio de oferta promocional dinámico para un producto.
 	 *
 	 * @param WC_Product $product Objeto producto.
 	 * @return float|false Precio rebajado o false si no aplica.
@@ -223,17 +252,19 @@ class WPAT_Woo_Promotions {
 				continue;
 			}
 
-			// Filtro por fecha/hora de inicio y fin
-			if ( ! empty( $rule['start_date'] ) ) {
-				$start_ts = self::parse_date_to_timestamp( $rule['start_date'] );
-				if ( $start_ts && $now_ts < $start_ts ) {
-					continue;
+			$enable_sched = isset( $rule['enable_schedule'] ) ? ( '1' === (string) $rule['enable_schedule'] ) : ( ! empty( $rule['start_date'] ) || ! empty( $rule['end_date'] ) );
+			if ( $enable_sched ) {
+				if ( ! empty( $rule['start_date'] ) ) {
+					$start_ts = self::parse_date_to_timestamp( $rule['start_date'] );
+					if ( $start_ts && $now_ts < $start_ts ) {
+						continue;
+					}
 				}
-			}
-			if ( ! empty( $rule['end_date'] ) ) {
-				$end_ts = self::parse_date_to_timestamp( $rule['end_date'], true );
-				if ( $end_ts && $now_ts > $end_ts ) {
-					continue;
+				if ( ! empty( $rule['end_date'] ) ) {
+					$end_ts = self::parse_date_to_timestamp( $rule['end_date'], true );
+					if ( $end_ts && $now_ts > $end_ts ) {
+						continue;
+					}
 				}
 			}
 
@@ -241,15 +272,10 @@ class WPAT_Woo_Promotions {
 			$scope       = ! empty( $rule['scope'] ) ? sanitize_key( $rule['scope'] ) : 'all';
 			$ignore_sale = ! empty( $rule['ignore_on_sale'] ) && '1' === (string) $rule['ignore_on_sale'];
 
-			// Si la regla ignora productos en oferta y el producto ya tenía rebaja NATIVA previa
-			if ( $ignore_sale ) {
-				$native_sale_price = (float) $product->get_sale_price();
-				if ( $native_sale_price > 0 ) {
-					continue;
-				}
+			if ( $ignore_sale && self::is_product_natively_on_sale( $product ) ) {
+				continue;
 			}
 
-			// Reglas de descuento directo de producto
 			if ( ! in_array( $rule_type, array( 'global_discount', 'bulk_qty' ), true ) ) {
 				continue;
 			}
@@ -321,35 +347,23 @@ class WPAT_Woo_Promotions {
 
 	/**
 	 * Filtra la propiedad is_on_sale para activar el icono/badge de oferta de WooCommerce y WPAT.
+	 *
+	 * @param bool       $on_sale Estado de oferta actual.
+	 * @param WC_Product $product Objeto producto.
+	 * @return bool True si tiene descuento de promoción o rebaja previa.
 	 */
 	public function filter_product_is_on_sale( $on_sale, $product ) {
 		if ( $on_sale ) {
 			return true;
 		}
-
 		$promo_price = $this->get_promo_sale_price_for_product( $product );
-		if ( false !== $promo_price && $promo_price < (float) $product->get_regular_price() ) {
-			return true;
-		}
-
-		return $on_sale;
+		return false !== $promo_price;
 	}
 
 	/**
 	 * Filtra el precio de oferta del producto.
 	 */
 	public function filter_product_sale_price( $price, $product ) {
-		$promo_price = $this->get_promo_sale_price_for_product( $product );
-		if ( false !== $promo_price ) {
-			return (string) $promo_price;
-		}
-		return $price;
-	}
-
-	/**
-	 * Filtra el precio activo del producto.
-	 */
-	public function filter_product_price( $price, $product ) {
 		$promo_price = $this->get_promo_sale_price_for_product( $product );
 		if ( false !== $promo_price ) {
 			return (string) $promo_price;
@@ -369,16 +383,16 @@ class WPAT_Woo_Promotions {
 	}
 
 	/**
-	 * Calcula y aplica todas las tarifas promocionales adicionales en el carrito (ej. tramos, 3x2, método de pago).
+	 * Aplica descuentos en el carrito para reglas basadas en tramos de gasto o método de pago.
 	 *
-	 * @param WC_Cart $cart Objeto del carrito.
+	 * @param WC_Cart $cart Objeto carrito de WooCommerce.
 	 */
 	public function calculate_promotions_fees( $cart ) {
 		if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
 			return;
 		}
 
-		if ( ! $cart || $cart->is_empty() ) {
+		if ( ! $cart || ! is_a( $cart, 'WC_Cart' ) ) {
 			return;
 		}
 
@@ -394,48 +408,28 @@ class WPAT_Woo_Promotions {
 			return;
 		}
 
-		// Calcular subtotal acumulado de los items directamente en memoria
-		$all_items_subtotal = 0.0;
-		foreach ( $cart_items as $c_item ) {
-			/** @var WC_Product|null $prod */
-			$prod = isset( $c_item['data'] ) ? $c_item['data'] : null;
-			if ( $prod && is_a( $prod, 'WC_Product' ) ) {
-				$qty  = max( 1, (int) ( isset( $c_item['quantity'] ) ? $c_item['quantity'] : 1 ) );
-				$line = isset( $c_item['line_subtotal'] ) && (float) $c_item['line_subtotal'] > 0
-					? (float) $c_item['line_subtotal']
-					: ( (float) $prod->get_price() * $qty );
-				$all_items_subtotal += $line;
-			}
-		}
-
-		if ( $all_items_subtotal <= 0 ) {
-			return;
-		}
-
-		$chosen_payment_method = '';
-		if ( function_exists( 'WC' ) && WC()->session ) {
-			$chosen_payment_method = (string) WC()->session->get( 'chosen_payment_method' );
-		}
-
-		$applied_meta_map = array();
-		$now_ts           = time();
+		$now_ts          = time();
+		$chosen_gateways = WC()->session ? (array) WC()->session->get( 'chosen_payment_method' ) : array();
+		$chosen_gw       = ! empty( $chosen_gateways ) ? reset( $chosen_gateways ) : '';
 
 		foreach ( $rules as $rule ) {
 			if ( empty( $rule['active'] ) || '1' !== (string) $rule['active'] ) {
 				continue;
 			}
 
-			// Filtro por fecha/hora de inicio y fin
-			if ( ! empty( $rule['start_date'] ) ) {
-				$start_ts = self::parse_date_to_timestamp( $rule['start_date'] );
-				if ( $start_ts && $now_ts < $start_ts ) {
-					continue;
+			$enable_sched = isset( $rule['enable_schedule'] ) ? ( '1' === (string) $rule['enable_schedule'] ) : ( ! empty( $rule['start_date'] ) || ! empty( $rule['end_date'] ) );
+			if ( $enable_sched ) {
+				if ( ! empty( $rule['start_date'] ) ) {
+					$start_ts = self::parse_date_to_timestamp( $rule['start_date'] );
+					if ( $start_ts && $now_ts < $start_ts ) {
+						continue;
+					}
 				}
-			}
-			if ( ! empty( $rule['end_date'] ) ) {
-				$end_ts = self::parse_date_to_timestamp( $rule['end_date'], true );
-				if ( $end_ts && $now_ts > $end_ts ) {
-					continue;
+				if ( ! empty( $rule['end_date'] ) ) {
+					$end_ts = self::parse_date_to_timestamp( $rule['end_date'], true );
+					if ( $end_ts && $now_ts > $end_ts ) {
+						continue;
+					}
 				}
 			}
 
@@ -446,7 +440,6 @@ class WPAT_Woo_Promotions {
 			$ignore_sale   = ! empty( $rule['ignore_on_sale'] ) && '1' === (string) $rule['ignore_on_sale'];
 			$include_extra = ! empty( $rule['include_extra_options'] ) && '1' === (string) $rule['include_extra_options'];
 
-			// Si el descuento ya fue aplicado directamente en el precio del producto (global_discount), no duplicar como fee de carrito
 			if ( 'global_discount' === $rule_type ) {
 				continue;
 			}
@@ -454,7 +447,6 @@ class WPAT_Woo_Promotions {
 			$target_cats  = isset( $rule['categories'] ) && is_array( $rule['categories'] ) ? array_map( 'absint', $rule['categories'] ) : array();
 			$target_prods = isset( $rule['products'] ) && is_array( $rule['products'] ) ? array_map( 'absint', $rule['products'] ) : array();
 
-			// Filtrar items del carrito elegibles para esta regla
 			$qualifying_items    = array();
 			$qualifying_subtotal = 0.0;
 			$qualifying_qty      = 0;
@@ -466,8 +458,7 @@ class WPAT_Woo_Promotions {
 					continue;
 				}
 
-				// Exclusión de productos en oferta
-				if ( $ignore_sale && $product->is_on_sale() ) {
+				if ( $ignore_sale && self::is_product_natively_on_sale( $product ) ) {
 					continue;
 				}
 
@@ -475,50 +466,28 @@ class WPAT_Woo_Promotions {
 				$parent_id    = $product->get_parent_id();
 				$effective_id = $parent_id ? $parent_id : $product_id;
 
-				$matches_scope = false;
-
+				$matches = false;
 				if ( 'all' === $scope ) {
-					$matches_scope = true;
+					$matches = true;
 				} elseif ( 'category' === $scope && ! empty( $target_cats ) ) {
 					$prod_cats = wc_get_product_term_ids( $effective_id, 'product_cat' );
 					if ( array_intersect( $target_cats, $prod_cats ) ) {
-						$matches_scope = true;
+						$matches = true;
 					}
 				} elseif ( 'product' === $scope && ! empty( $target_prods ) ) {
 					if ( in_array( $product_id, $target_prods, true ) || in_array( $effective_id, $target_prods, true ) ) {
-						$matches_scope = true;
+						$matches = true;
 					}
 				}
 
-				if ( $matches_scope ) {
-					$item_qty = max( 1, (int) ( isset( $item['quantity'] ) ? $item['quantity'] : 1 ) );
-
-					// Calcular recargo de campos extras si existen
-					$extra_surcharge = 0.0;
-					if ( isset( $product->wpat_extra_price ) && (float) $product->wpat_extra_price > 0 ) {
-						$extra_surcharge = (float) $product->wpat_extra_price;
-					} elseif ( ! empty( $item['wpat_extra_options'] ) && is_array( $item['wpat_extra_options'] ) ) {
-						foreach ( $item['wpat_extra_options'] as $opt ) {
-							if ( isset( $opt['price'] ) && (float) $opt['price'] > 0 ) {
-								$extra_surcharge += (float) $opt['price'];
-							}
-						}
+				if ( $matches ) {
+					$item_price = (float) $item['line_subtotal'];
+					if ( $include_extra && ! empty( $item['wpat_extra_options'] ) ) {
+						$item_price = (float) $item['line_total'];
 					}
-
-					$unit_price = (float) $product->get_price();
-					if ( ! $include_extra && $extra_surcharge > 0 ) {
-						$unit_price = max( 0, $unit_price - $extra_surcharge );
-					}
-
-					$line_subtotal        = $unit_price * $item_qty;
-					$qualifying_items[]   = array(
-						'cart_item'       => $item,
-						'unit_price'      => $unit_price,
-						'extra_surcharge' => $extra_surcharge,
-						'quantity'        => $item_qty,
-					);
-					$qualifying_subtotal += $line_subtotal;
-					$qualifying_qty      += $item_qty;
+					$qualifying_items[]   = $item;
+					$qualifying_subtotal += $item_price;
+					$qualifying_qty      += (int) $item['quantity'];
 				}
 			}
 
@@ -528,117 +497,86 @@ class WPAT_Woo_Promotions {
 
 			$discount_amount = 0.0;
 
-			switch ( $rule_type ) {
-
-				// 1. Descuento por tramos de gasto (tiered_spend)
-				case 'tiered_spend':
-					$tiers = isset( $rule['tiers'] ) && is_array( $rule['tiers'] ) ? $rule['tiers'] : array();
-					if ( empty( $tiers ) && ! empty( $rule['min_spend'] ) ) {
-						$tiers = array(
-							array(
-								'min_spend'      => (float) $rule['min_spend'],
-								'discount_type'  => ! empty( $rule['discount_type'] ) ? $rule['discount_type'] : 'percent',
-								'discount_value' => ! empty( $rule['discount_value'] ) ? (float) $rule['discount_value'] : 0.0,
-							),
-						);
+			if ( 'tiered_spend' === $rule_type ) {
+				$tiers = isset( $rule['tiers'] ) && is_array( $rule['tiers'] ) ? $rule['tiers'] : array();
+				usort(
+					$tiers,
+					function( $a, $b ) {
+						return (float) ( isset( $b['min_spend'] ) ? $b['min_spend'] : 0 ) <=> (float) ( isset( $a['min_spend'] ) ? $a['min_spend'] : 0 );
 					}
+				);
 
-					usort( $tiers, function( $a, $b ) {
-						$val_a = isset( $a['min_spend'] ) ? (float) $a['min_spend'] : 0;
-						$val_b = isset( $b['min_spend'] ) ? (float) $b['min_spend'] : 0;
-						return ( $val_b <=> $val_a );
-					} );
+				foreach ( $tiers as $tier ) {
+					$min_spend = isset( $tier['min_spend'] ) ? (float) $tier['min_spend'] : 0.0;
+					if ( $qualifying_subtotal >= $min_spend ) {
+						$t_type = isset( $tier['discount_type'] ) ? $tier['discount_type'] : 'percent';
+						$t_val  = isset( $tier['discount_value'] ) ? (float) $tier['discount_value'] : 0.0;
 
-					foreach ( $tiers as $tier ) {
-						$min_spend = isset( $tier['min_spend'] ) ? (float) $tier['min_spend'] : 0.0;
-						if ( $qualifying_subtotal >= $min_spend && $min_spend > 0 ) {
-							$d_type = ! empty( $tier['discount_type'] ) ? $tier['discount_type'] : 'percent';
-							$d_val  = isset( $tier['discount_value'] ) ? (float) $tier['discount_value'] : 0.0;
-
-							if ( 'percent' === $d_type ) {
-								$discount_amount = $qualifying_subtotal * ( $d_val / 100.0 );
-							} else {
-								$discount_amount = $d_val;
-							}
-							break;
+						if ( 'percent' === $t_type ) {
+							$discount_amount = $qualifying_subtotal * ( $t_val / 100.0 );
+						} else {
+							$discount_amount = $t_val;
 						}
+						break;
 					}
-					break;
+				}
+			} elseif ( 'bxgy' === $rule_type ) {
+				$buy_qty = isset( $rule['buy_qty'] ) ? max( 1, (int) $rule['buy_qty'] ) : 3;
+				$get_qty = isset( $rule['get_qty'] ) ? max( 1, (int) $rule['get_qty'] ) : 1;
+				$d_val   = isset( $rule['discount_value'] ) ? (float) $rule['discount_value'] : 100.0;
 
-				// 2. Compra X, Paga Y / 3x2 (bxgy)
-				case 'bxgy':
-					$buy_qty   = ! empty( $rule['buy_qty'] ) ? max( 1, (int) $rule['buy_qty'] ) : 3;
-					$get_qty   = ! empty( $rule['get_qty'] ) ? max( 1, (int) $rule['get_qty'] ) : 1;
-					$d_percent = isset( $rule['discount_value'] ) && (float) $rule['discount_value'] > 0 ? (float) $rule['discount_value'] : 100.0;
-
+				if ( $qualifying_qty >= $buy_qty ) {
 					$unit_prices = array();
-					foreach ( $qualifying_items as $q_item ) {
-						$u_price  = isset( $q_item['unit_price'] ) ? (float) $q_item['unit_price'] : 0.0;
-						$item_qty = isset( $q_item['quantity'] ) ? (int) $q_item['quantity'] : 1;
-
-						for ( $i = 0; $i < $item_qty; $i++ ) {
-							$unit_prices[] = $u_price;
+					foreach ( $qualifying_items as $item ) {
+						$qty   = (int) $item['quantity'];
+						$price = (float) $item['data']->get_price();
+						for ( $i = 0; $i < $qty; $i++ ) {
+							$unit_prices[] = $price;
 						}
 					}
+					sort( $unit_prices );
 
-					sort( $unit_prices, SORT_NUMERIC );
-					$total_units    = count( $unit_prices );
-					$num_free_units = (int) ( floor( $total_units / $buy_qty ) * $get_qty );
+					$sets           = (int) floor( $qualifying_qty / $buy_qty );
+					$free_units_cnt = $sets * $get_qty;
 
-					if ( $num_free_units > 0 ) {
-						for ( $i = 0; $i < $num_free_units && $i < $total_units; $i++ ) {
-							$discount_amount += $unit_prices[ $i ] * ( $d_percent / 100.0 );
-						}
+					for ( $i = 0; $i < min( $free_units_cnt, count( $unit_prices ) ); $i++ ) {
+						$discount_amount += $unit_prices[ $i ] * ( $d_val / 100.0 );
 					}
-					break;
+				}
+			} elseif ( 'bulk_qty' === $rule_type ) {
+				$min_qty = isset( $rule['min_qty'] ) ? max( 1, (int) $rule['min_qty'] ) : 5;
+				if ( $qualifying_qty >= $min_qty ) {
+					$d_type = isset( $rule['discount_type'] ) ? $rule['discount_type'] : 'percent';
+					$d_val  = isset( $rule['discount_value'] ) ? (float) $rule['discount_value'] : 0.0;
 
-				// 3. Descuento por volumen (bulk_qty)
-				case 'bulk_qty':
-					$min_qty = ! empty( $rule['min_qty'] ) ? max( 1, (int) $rule['min_qty'] ) : 1;
-					if ( $qualifying_qty >= $min_qty ) {
-						$d_type = ! empty( $rule['discount_type'] ) ? $rule['discount_type'] : 'percent';
-						$d_val  = isset( $rule['discount_value'] ) ? (float) $rule['discount_value'] : 0.0;
-
-						if ( 'percent' === $d_type ) {
-							$discount_amount = $qualifying_subtotal * ( $d_val / 100.0 );
-						} elseif ( 'fixed_unit' === $d_type ) {
-							$discount_amount = $qualifying_qty * $d_val;
-						} else {
-							$discount_amount = $d_val;
-						}
+					if ( 'percent' === $d_type ) {
+						$discount_amount = $qualifying_subtotal * ( $d_val / 100.0 );
+					} elseif ( 'fixed_unit' === $d_type ) {
+						$discount_amount = $qualifying_qty * $d_val;
+					} else {
+						$discount_amount = $d_val;
 					}
-					break;
+				}
+			} elseif ( 'payment_method' === $rule_type ) {
+				$eligible_gateways = isset( $rule['payment_methods'] ) && is_array( $rule['payment_methods'] ) ? $rule['payment_methods'] : array();
+				if ( ! empty( $chosen_gw ) && in_array( $chosen_gw, $eligible_gateways, true ) ) {
+					$d_type         = isset( $rule['discount_type'] ) ? $rule['discount_type'] : 'percent';
+					$d_val          = isset( $rule['discount_value'] ) ? (float) $rule['discount_value'] : 0.0;
+					$cart_subtotal  = (float) $cart->get_subtotal();
 
-				// 4. Descuento por Método de Pago (payment_method)
-				case 'payment_method':
-					$allowed_methods = isset( $rule['payment_methods'] ) && is_array( $rule['payment_methods'] ) ? $rule['payment_methods'] : array();
-					if ( ! empty( $chosen_payment_method ) && in_array( $chosen_payment_method, $allowed_methods, true ) ) {
-						$d_type        = ! empty( $rule['discount_type'] ) ? $rule['discount_type'] : 'percent';
-						$d_val         = isset( $rule['discount_value'] ) ? (float) $rule['discount_value'] : 0.0;
-						$base_subtotal = $qualifying_subtotal > 0 ? $qualifying_subtotal : $all_items_subtotal;
-
-						if ( 'percent' === $d_type ) {
-							$discount_amount = $base_subtotal * ( $d_val / 100.0 );
-						} else {
-							$discount_amount = $d_val;
-						}
+					if ( 'percent' === $d_type ) {
+						$discount_amount = $cart_subtotal * ( $d_val / 100.0 );
+					} else {
+						$discount_amount = $d_val;
 					}
-					break;
+				}
 			}
 
-			// Limitar el descuento al subtotal calculado de la cesta
-			$discount_amount = min( $discount_amount, $all_items_subtotal );
-
-			if ( $discount_amount > 0.001 ) {
+			if ( $discount_amount > 0 ) {
+				$discount_amount = min( $discount_amount, (float) $cart->get_subtotal() );
+				$fee_id          = 'wpat_promo_' . $rule_id;
 				$cart->add_fee( $rule_title, -$discount_amount, true, '' );
-
-				$slug_key                      = sanitize_title( $rule_title );
-				$applied_meta_map[ $slug_key ] = $rule_id;
 			}
-		}
-
-		if ( ! empty( $applied_meta_map ) && function_exists( 'WC' ) && WC()->session ) {
-			WC()->session->set( 'wpat_promo_applied_fees', $applied_meta_map );
 		}
 	}
 
@@ -659,39 +597,92 @@ class WPAT_Woo_Promotions {
 	}
 
 	/**
-	 * Obtiene los datos estructurados para la barra de progreso de tramos (tiered_spend).
+	 * Genera barra de progreso dinámica para promociones por tramos de gasto en carrito.
 	 */
-	public function get_progress_bar_data() {
-		if ( ! function_exists( 'WC' ) || ! WC()->cart || WC()->cart->is_empty() ) {
-			return null;
+	public function render_tiered_spend_progress_bar() {
+		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+			return;
 		}
 
 		$settings = WPAT_Main::get_instance()->get_settings();
 		$rules    = isset( $settings['woo_promotions_rules'] ) && is_array( $settings['woo_promotions_rules'] ) ? $settings['woo_promotions_rules'] : array();
 
-		$now_ts      = current_time( 'timestamp' );
+		if ( empty( $rules ) ) {
+			return;
+		}
+
 		$target_rule = null;
 		foreach ( $rules as $rule ) {
-			if ( ! empty( $rule['active'] ) && '1' === (string) $rule['active'] && isset( $rule['type'] ) && 'tiered_spend' === $rule['type'] ) {
-				if ( ! empty( $rule['start_date'] ) ) {
-					$start_ts = strtotime( $rule['start_date'] );
-					if ( $start_ts && $now_ts < $start_ts ) {
-						continue;
-					}
-				}
-				if ( ! empty( $rule['end_date'] ) ) {
-					$end_ts = strtotime( $rule['end_date'] );
-					if ( $end_ts && $now_ts > $end_ts ) {
-						continue;
-					}
-				}
+			if ( ! empty( $rule['active'] ) && isset( $rule['type'] ) && 'tiered_spend' === $rule['type'] ) {
 				$target_rule = $rule;
 				break;
 			}
 		}
 
-		if ( ! $target_rule ) {
-			return null;
+		if ( ! $target_rule || empty( $target_rule['tiers'] ) ) {
+			return;
+		}
+
+		$tiers = (array) $target_rule['tiers'];
+		usort(
+			$tiers,
+			function( $a, $b ) {
+				return (float) ( isset( $a['min_spend'] ) ? $a['min_spend'] : 0 ) <=> (float) ( isset( $b['min_spend'] ) ? $b['min_spend'] : 0 );
+			}
+		);
+
+		$current_spend = $this->calc_tiered_spend_qualifying_amount( $target_rule );
+		$next_tier     = null;
+
+		foreach ( $tiers as $tier ) {
+			$min_spend = isset( $tier['min_spend'] ) ? (float) $tier['min_spend'] : 0.0;
+			if ( $current_spend < $min_spend ) {
+				$next_tier = $tier;
+				break;
+			}
+		}
+
+		$icon_key = ! empty( $target_rule['icon'] ) ? $target_rule['icon'] : 'gift';
+		$symbol   = self::get_promo_icon_symbol( $icon_key );
+		if ( empty( $symbol ) ) {
+			$symbol = '🎁';
+		}
+
+		if ( ! $next_tier ) {
+			$last_tier = end( $tiers );
+			$d_val     = isset( $last_tier['discount_value'] ) ? $last_tier['discount_value'] : 0;
+			$d_type    = isset( $last_tier['discount_type'] ) && 'fixed' === $last_tier['discount_type'] ? '€' : '%';
+
+			echo '<div class="wpat-tiered-progress-card wpat-completed">';
+			echo '<div class="wpat-tiered-progress-header">';
+			echo '<span class="wpat-tiered-progress-icon">' . esc_html( $symbol ) . '</span>';
+			echo '<span class="wpat-tiered-progress-message">¡Felicidades! Has alcanzado el máximo descuento de <strong>' . esc_html( $d_val . $d_type ) . '</strong> en tu pedido.</span>';
+			echo '</div>';
+			echo '<div class="wpat-tiered-progress-bar-bg"><div class="wpat-tiered-progress-bar-fill" style="width: 100%;"><span class="wpat-tiered-progress-pct-badge">100%</span></div></div>';
+			echo '</div>';
+		} else {
+			$needed_spend = (float) $next_tier['min_spend'];
+			$diff         = max( 0, $needed_spend - $current_spend );
+			$pct          = min( 100, max( 0, round( ( $current_spend / $needed_spend ) * 100 ) ) );
+			$d_val        = isset( $next_tier['discount_value'] ) ? $next_tier['discount_value'] : 0;
+			$d_type       = isset( $next_tier['discount_type'] ) && 'fixed' === $next_tier['discount_type'] ? '€' : '%';
+
+			echo '<div class="wpat-tiered-progress-card">';
+			echo '<div class="wpat-tiered-progress-header">';
+			echo '<span class="wpat-tiered-progress-icon">' . esc_html( $symbol ) . '</span>';
+			echo '<span class="wpat-tiered-progress-message">¡Te faltan <strong>' . wc_price( $diff ) . '</strong> para conseguir un <strong>' . esc_html( $d_val . $d_type ) . ' de descuento</strong>!</span>';
+			echo '</div>';
+			echo '<div class="wpat-tiered-progress-bar-bg"><div class="wpat-tiered-progress-bar-fill" style="width: ' . esc_attr( $pct ) . '%;"><span class="wpat-tiered-progress-pct-badge">' . esc_html( $pct ) . '%</span></div></div>';
+			echo '</div>';
+		}
+	}
+
+	/**
+	 * Calcula el subtotal acumulado elegible para la regla de tramos en el carrito.
+	 */
+	private function calc_tiered_spend_qualifying_amount( $target_rule ) {
+		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+			return 0.0;
 		}
 
 		$cart          = WC()->cart;
@@ -710,7 +701,7 @@ class WPAT_Woo_Promotions {
 				continue;
 			}
 
-			if ( $ignore_sale && $product->is_on_sale() ) {
+			if ( $ignore_sale && self::is_product_natively_on_sale( $product ) ) {
 				continue;
 			}
 
@@ -733,139 +724,19 @@ class WPAT_Woo_Promotions {
 			}
 
 			if ( $matches ) {
-				$item_qty        = max( 1, (int) ( isset( $item['quantity'] ) ? $item['quantity'] : 1 ) );
-				$extra_surcharge = 0.0;
-				if ( isset( $product->wpat_extra_price ) && (float) $product->wpat_extra_price > 0 ) {
-					$extra_surcharge = (float) $product->wpat_extra_price;
-				} elseif ( ! empty( $item['wpat_extra_options'] ) && is_array( $item['wpat_extra_options'] ) ) {
-					foreach ( $item['wpat_extra_options'] as $opt ) {
-						if ( isset( $opt['price'] ) && (float) $opt['price'] > 0 ) {
-							$extra_surcharge += (float) $opt['price'];
-						}
-					}
+				$item_price = (float) $item['line_subtotal'];
+				if ( $include_extra && ! empty( $item['wpat_extra_options'] ) ) {
+					$item_price = (float) $item['line_total'];
 				}
-
-				$unit_price = (float) $product->get_price();
-				if ( ! $include_extra && $extra_surcharge > 0 ) {
-					$unit_price = max( 0, $unit_price - $extra_surcharge );
-				}
-
-				$current_spend += $unit_price * $item_qty;
+				$current_spend += $item_price;
 			}
 		}
 
-		$tiers = isset( $target_rule['tiers'] ) && is_array( $target_rule['tiers'] ) ? $target_rule['tiers'] : array();
-		if ( empty( $tiers ) && ! empty( $target_rule['min_spend'] ) ) {
-			$tiers = array(
-				array(
-					'min_spend'      => (float) $target_rule['min_spend'],
-					'discount_type'  => ! empty( $target_rule['discount_type'] ) ? $target_rule['discount_type'] : 'percent',
-					'discount_value' => ! empty( $target_rule['discount_value'] ) ? (float) $target_rule['discount_value'] : 0.0,
-				),
-			);
-		}
-
-		if ( empty( $tiers ) ) {
-			return null;
-		}
-
-		usort( $tiers, function( $a, $b ) {
-			$val_a = isset( $a['min_spend'] ) ? (float) $a['min_spend'] : 0;
-			$val_b = isset( $b['min_spend'] ) ? (float) $b['min_spend'] : 0;
-			return ( $val_a <=> $val_b );
-		} );
-
-		$current_tier  = null;
-		$next_tier     = null;
-
-		foreach ( $tiers as $tier ) {
-			$threshold = (float) $tier['min_spend'];
-			if ( $current_spend >= $threshold ) {
-				$current_tier = $tier;
-			} else {
-				$next_tier = $tier;
-				break;
-			}
-		}
-
-		if ( $next_tier ) {
-			$needed     = (float) $next_tier['min_spend'] - $current_spend;
-			$target_val = (float) $next_tier['min_spend'];
-			$pct        = min( 100, max( 0, ( $current_spend / $target_val ) * 100 ) );
-
-			$d_type  = ! empty( $next_tier['discount_type'] ) ? $next_tier['discount_type'] : 'percent';
-			$d_val   = (float) $next_tier['discount_value'];
-			$reward  = 'percent' === $d_type ? $d_val . '%' : wc_price( $d_val );
-
-			$message = sprintf(
-				__( '¡Añade %s más para conseguir un %s de descuento!', 'wp-agency-toolkit' ),
-				'<strong>' . wc_price( $needed ) . '</strong>',
-				'<strong>' . $reward . '</strong>'
-			);
-
-			return array(
-				'percentage'    => round( $pct, 1 ),
-				'current_spend' => $current_spend,
-				'target_spend'  => $target_val,
-				'needed_spend'  => $needed,
-				'message'       => $message,
-				'completed'     => false,
-			);
-		} else {
-			$d_type = ! empty( $current_tier['discount_type'] ) ? $current_tier['discount_type'] : 'percent';
-			$d_val  = isset( $current_tier['discount_value'] ) ? (float) $current_tier['discount_value'] : 0.0;
-			$reward = 'percent' === $d_type ? $d_val . '%' : wc_price( $d_val );
-
-			$message = sprintf(
-				__( '🎉 ¡Felicidades! Has alcanzado el máximo descuento del %s', 'wp-agency-toolkit' ),
-				'<strong>' . $reward . '</strong>'
-			);
-
-			return array(
-				'percentage'    => 100,
-				'current_spend' => $current_spend,
-				'target_spend'  => $current_spend,
-				'needed_spend'  => 0,
-				'message'       => $message,
-				'completed'     => true,
-			);
-		}
+		return $current_spend;
 	}
 
 	/**
-	 * Renderiza el widget de la barra de progreso en la página de carrito.
-	 */
-	public function render_tiered_spend_progress_bar() {
-		static $rendered = false;
-		if ( $rendered ) {
-			return;
-		}
-
-		$data = $this->get_progress_bar_data();
-		if ( ! $data ) {
-			return;
-		}
-
-		$rendered = true;
-		?>
-		<div id="wpat-tiered-progress-container" class="wpat-tiered-progress-card <?php echo $data['completed'] ? 'wpat-completed' : ''; ?>">
-			<div class="wpat-tiered-progress-header">
-				<span class="wpat-tiered-progress-icon">🎁</span>
-				<div class="wpat-tiered-progress-message">
-					<?php echo wp_kses_post( $data['message'] ); ?>
-				</div>
-			</div>
-			<div class="wpat-tiered-progress-bar-bg">
-				<div class="wpat-tiered-progress-bar-fill" style="width: <?php echo esc_attr( $data['percentage'] ); ?>%;">
-					<span class="wpat-tiered-progress-pct-badge"><?php echo esc_html( round( $data['percentage'] ) ); ?>%</span>
-				</div>
-			</div>
-		</div>
-		<?php
-	}
-
-	/**
-	 * Busca la regla promocional activa con cuenta regresiva habilitada para un producto.
+	 * Encuentra la regla activa de mayor prioridad con contador de tiempo habilitado para un producto.
 	 *
 	 * @param WC_Product $product Objeto producto.
 	 * @return array|null Datos de la regla y timestamp de expiración o null.
@@ -896,26 +767,26 @@ class WPAT_Woo_Promotions {
 				continue;
 			}
 
-			$rule_start = ! empty( $rule['start_date'] ) ? self::parse_date_to_timestamp( $rule['start_date'] ) : 0;
-			if ( $rule_start > 0 && $now_ts < $rule_start ) {
-				continue;
-			}
+			$enable_sched = isset( $rule['enable_schedule'] ) ? ( '1' === (string) $rule['enable_schedule'] ) : ( ! empty( $rule['start_date'] ) || ! empty( $rule['end_date'] ) );
 
-			if ( ! empty( $rule['end_date'] ) ) {
-				$rule_end = self::parse_date_to_timestamp( $rule['end_date'], true );
-			} else {
-				// Si la opción de contador está activa pero no se especificó fecha de fin, usar el final del día de hoy como límite por defecto
-				$tz        = function_exists( 'wp_timezone' ) ? wp_timezone() : new DateTimeZone( 'UTC' );
-				$today_end = new DateTime( 'today 23:59:59', $tz );
-				$rule_end  = $today_end->getTimestamp();
-			}
+			if ( $enable_sched ) {
+				if ( ! empty( $rule['start_date'] ) ) {
+					$start_ts = self::parse_date_to_timestamp( $rule['start_date'] );
+					if ( $start_ts && $now_ts < $start_ts ) {
+						continue;
+					}
+				}
 
-			if ( ! $rule_end || $now_ts > $rule_end ) {
-				continue;
+				if ( ! empty( $rule['end_date'] ) ) {
+					$end_ts = self::parse_date_to_timestamp( $rule['end_date'], true );
+					if ( $end_ts && $now_ts > $end_ts ) {
+						continue;
+					}
+				}
 			}
 
 			$ignore_sale = ! empty( $rule['ignore_on_sale'] ) && '1' === (string) $rule['ignore_on_sale'];
-			if ( $ignore_sale && $product->is_on_sale() ) {
+			if ( $ignore_sale && self::is_product_natively_on_sale( $product ) ) {
 				continue;
 			}
 
@@ -938,6 +809,14 @@ class WPAT_Woo_Promotions {
 			}
 
 			if ( $matches ) {
+				if ( ! empty( $rule['end_date'] ) ) {
+					$rule_end = self::parse_date_to_timestamp( $rule['end_date'], true );
+				} else {
+					$tz        = function_exists( 'wp_timezone' ) ? wp_timezone() : new DateTimeZone( 'UTC' );
+					$today_end = new DateTime( 'today 23:59:59', $tz );
+					$rule_end  = $today_end->getTimestamp();
+				}
+
 				return array(
 					'rule'   => $rule,
 					'end_ts' => $rule_end,
@@ -995,26 +874,35 @@ class WPAT_Woo_Promotions {
 		}
 
 		$rendered_ids[] = $product->get_id();
-		$title          = ! empty( $data['rule']['title'] ) ? $data['rule']['title'] : __( 'Oferta por tiempo limitado', 'wp-agency-toolkit' );
-		$icon_key       = ! empty( $data['rule']['icon'] ) ? $data['rule']['icon'] : 'lightning';
+		$rule           = $data['rule'];
+		$title          = ! empty( $rule['title'] ) ? $rule['title'] : __( 'Oferta por tiempo limitado', 'wp-agency-toolkit' );
+		$icon_key       = ! empty( $rule['icon'] ) ? $rule['icon'] : 'lightning';
 		$symbol         = self::get_promo_icon_symbol( $icon_key );
 
+		$cd_title   = ! empty( $rule['countdown_title'] ) ? $rule['countdown_title'] : __( '¡La oferta termina en!', 'wp-agency-toolkit' );
+		$bg_color   = ! empty( $rule['countdown_bg_color'] ) ? $rule['countdown_bg_color'] : '#fff7ed';
+		$border_col = ! empty( $rule['countdown_border_color'] ) ? $rule['countdown_border_color'] : '#fed7aa';
+		$text_color = ! empty( $rule['countdown_text_color'] ) ? $rule['countdown_text_color'] : '#9a3412';
+		$digit_bg   = ! empty( $rule['countdown_digit_bg'] ) ? $rule['countdown_digit_bg'] : '#ffffff';
+		$digit_col  = ! empty( $rule['countdown_digit_color'] ) ? $rule['countdown_digit_color'] : '#ea580c';
+		$font_size  = ! empty( $rule['countdown_font_size'] ) ? absint( $rule['countdown_font_size'] ) : 14;
+
 		?>
-		<div class="wpat-promo-countdown-card" data-end-timestamp="<?php echo esc_attr( $data['end_ts'] ); ?>">
+		<div class="wpat-promo-countdown-card" data-end-timestamp="<?php echo esc_attr( $data['end_ts'] ); ?>" style="background: <?php echo esc_attr( $bg_color ); ?> !important; border: 1px solid <?php echo esc_attr( $border_col ); ?> !important;">
 			<div class="wpat-promo-countdown-header">
 				<?php if ( ! empty( $symbol ) ) : ?>
 					<span class="wpat-promo-countdown-icon"><?php echo esc_html( $symbol ); ?></span>
 				<?php endif; ?>
-				<span class="wpat-promo-countdown-title"><?php echo esc_html( $title ); ?> — <strong>¡La oferta termina en!</strong></span>
+				<span class="wpat-promo-countdown-title" style="color: <?php echo esc_attr( $text_color ); ?> !important; font-size: <?php echo esc_attr( $font_size ); ?>px !important;"><?php echo esc_html( $title ); ?> — <strong><?php echo esc_html( $cd_title ); ?></strong></span>
 			</div>
 			<div class="wpat-promo-countdown-timer">
-				<div class="wpat-cd-block"><span class="wpat-cd-val wpat-cd-days">00</span><span class="wpat-cd-lbl">Días</span></div>
-				<div class="wpat-cd-sep">:</div>
-				<div class="wpat-cd-block"><span class="wpat-cd-val wpat-cd-hours">00</span><span class="wpat-cd-lbl">Horas</span></div>
-				<div class="wpat-cd-sep">:</div>
-				<div class="wpat-cd-block"><span class="wpat-cd-val wpat-cd-mins">00</span><span class="wpat-cd-lbl">Min</span></div>
-				<div class="wpat-cd-sep">:</div>
-				<div class="wpat-cd-block"><span class="wpat-cd-val wpat-cd-secs">00</span><span class="wpat-cd-lbl">Seg</span></div>
+				<div class="wpat-cd-block" style="background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-days" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="color: <?php echo esc_attr( $text_color ); ?> !important;">Días</span></div>
+				<div class="wpat-cd-sep" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
+				<div class="wpat-cd-block" style="background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-hours" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="color: <?php echo esc_attr( $text_color ); ?> !important;">Horas</span></div>
+				<div class="wpat-cd-sep" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
+				<div class="wpat-cd-block" style="background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-mins" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="color: <?php echo esc_attr( $text_color ); ?> !important;">Min</span></div>
+				<div class="wpat-cd-sep" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
+				<div class="wpat-cd-block" style="background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-secs" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="color: <?php echo esc_attr( $text_color ); ?> !important;">Seg</span></div>
 			</div>
 		</div>
 		<?php
@@ -1034,25 +922,33 @@ class WPAT_Woo_Promotions {
 			return;
 		}
 
-		$icon_key = ! empty( $data['rule']['icon'] ) ? $data['rule']['icon'] : 'lightning';
+		$rule     = $data['rule'];
+		$icon_key = ! empty( $rule['icon'] ) ? $rule['icon'] : 'lightning';
 		$symbol   = self::get_promo_icon_symbol( $icon_key );
 
+		$cd_title   = ! empty( $rule['countdown_title'] ) ? $rule['countdown_title'] : __( '¡Oferta termina en!', 'wp-agency-toolkit' );
+		$bg_color   = ! empty( $rule['countdown_bg_color'] ) ? $rule['countdown_bg_color'] : '#fff7ed';
+		$border_col = ! empty( $rule['countdown_border_color'] ) ? $rule['countdown_border_color'] : '#fed7aa';
+		$text_color = ! empty( $rule['countdown_text_color'] ) ? $rule['countdown_text_color'] : '#9a3412';
+		$digit_bg   = ! empty( $rule['countdown_digit_bg'] ) ? $rule['countdown_digit_bg'] : '#ffffff';
+		$digit_col  = ! empty( $rule['countdown_digit_color'] ) ? $rule['countdown_digit_color'] : '#ea580c';
+
 		?>
-		<div class="wpat-promo-countdown-card wpat-promo-shop-loop-card" data-end-timestamp="<?php echo esc_attr( $data['end_ts'] ); ?>" style="margin: 8px 0 !important; padding: 8px 10px !important;">
+		<div class="wpat-promo-countdown-card wpat-promo-shop-loop-card" data-end-timestamp="<?php echo esc_attr( $data['end_ts'] ); ?>" style="margin: 8px 0 !important; padding: 8px 10px !important; background: <?php echo esc_attr( $bg_color ); ?> !important; border: 1px solid <?php echo esc_attr( $border_col ); ?> !important;">
 			<div class="wpat-promo-countdown-header" style="margin-bottom: 4px; gap: 5px;">
 				<?php if ( ! empty( $symbol ) ) : ?>
 					<span class="wpat-promo-countdown-icon" style="font-size: 14px;"><?php echo esc_html( $symbol ); ?></span>
 				<?php endif; ?>
-				<span class="wpat-promo-countdown-title" style="font-size: 11px; font-weight: 700; color: #9a3412;">¡Oferta termina en!</span>
+				<span class="wpat-promo-countdown-title" style="font-size: 11px; font-weight: 700; color: <?php echo esc_attr( $text_color ); ?> !important;"><?php echo esc_html( $cd_title ); ?></span>
 			</div>
 			<div class="wpat-promo-countdown-timer" style="gap: 3px; justify-content: center;">
-				<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px;"><span class="wpat-cd-val wpat-cd-days" style="font-size: 12px;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px;">Días</span></div>
-				<div class="wpat-cd-sep" style="font-size: 11px;">:</div>
-				<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px;"><span class="wpat-cd-val wpat-cd-hours" style="font-size: 12px;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px;">Horas</span></div>
-				<div class="wpat-cd-sep" style="font-size: 11px;">:</div>
-				<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px;"><span class="wpat-cd-val wpat-cd-mins" style="font-size: 12px;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px;">Min</span></div>
-				<div class="wpat-cd-sep" style="font-size: 11px;">:</div>
-				<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px;"><span class="wpat-cd-val wpat-cd-secs" style="font-size: 12px;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px;">Seg</span></div>
+				<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px; background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-days" style="font-size: 12px; color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px; color: <?php echo esc_attr( $text_color ); ?> !important;">Días</span></div>
+				<div class="wpat-cd-sep" style="font-size: 11px; color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
+				<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px; background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-hours" style="font-size: 12px; color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px; color: <?php echo esc_attr( $text_color ); ?> !important;">Horas</span></div>
+				<div class="wpat-cd-sep" style="font-size: 11px; color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
+				<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px; background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-mins" style="font-size: 12px; color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px; color: <?php echo esc_attr( $text_color ); ?> !important;">Min</span></div>
+				<div class="wpat-cd-sep" style="font-size: 11px; color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
+				<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px; background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-secs" style="font-size: 12px; color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px; color: <?php echo esc_attr( $text_color ); ?> !important;">Seg</span></div>
 			</div>
 		</div>
 		<?php
@@ -1079,29 +975,33 @@ class WPAT_Woo_Promotions {
 		$product_id   = $product->get_id();
 		$parent_id    = $product->get_parent_id();
 		$effective_id = $parent_id ? $parent_id : $product_id;
-		$now_ts       = current_time( 'timestamp' );
+		$now_ts       = time();
 
 		foreach ( $rules as $rule ) {
 			if ( empty( $rule['active'] ) || '1' !== (string) $rule['active'] ) {
 				continue;
 			}
 
-			if ( ! empty( $rule['start_date'] ) ) {
-				$start_ts = self::parse_date_to_timestamp( $rule['start_date'] );
-				if ( $start_ts && $now_ts < $start_ts ) {
-					continue;
-				}
-			}
+			$enable_sched = isset( $rule['enable_schedule'] ) ? ( '1' === (string) $rule['enable_schedule'] ) : ( ! empty( $rule['start_date'] ) || ! empty( $rule['end_date'] ) );
 
-			if ( ! empty( $rule['end_date'] ) ) {
-				$end_ts = self::parse_date_to_timestamp( $rule['end_date'], true );
-				if ( $end_ts && $now_ts > $end_ts ) {
-					continue;
+			if ( $enable_sched ) {
+				if ( ! empty( $rule['start_date'] ) ) {
+					$start_ts = self::parse_date_to_timestamp( $rule['start_date'] );
+					if ( $start_ts && $now_ts < $start_ts ) {
+						continue;
+					}
+				}
+
+				if ( ! empty( $rule['end_date'] ) ) {
+					$end_ts = self::parse_date_to_timestamp( $rule['end_date'], true );
+					if ( $end_ts && $now_ts > $end_ts ) {
+						continue;
+					}
 				}
 			}
 
 			$ignore_sale = ! empty( $rule['ignore_on_sale'] ) && '1' === (string) $rule['ignore_on_sale'];
-			if ( $ignore_sale && $product->is_on_sale() ) {
+			if ( $ignore_sale && self::is_product_natively_on_sale( $product ) ) {
 				continue;
 			}
 

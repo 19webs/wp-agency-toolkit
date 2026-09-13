@@ -349,10 +349,21 @@ class WPAT_Woo_Extra_Options {
 		}
 
 		// Bloque de Total Dinámico en Vivo
-		$base_prod_price = floatval( $product->get_price() );
+		$base_prod_price    = floatval( $product->get_price() );
+		$promo_discount_pct = 0.0;
+
+		if ( class_exists( 'WPAT_Woo_Promotions' ) ) {
+			$promo_rule = WPAT_Woo_Promotions::get_instance()->get_matching_promo_rule_for_product( $product );
+			if ( $promo_rule && ! empty( $promo_rule['include_extra_options'] ) && '1' === (string) $promo_rule['include_extra_options'] ) {
+				if ( isset( $promo_rule['discount_type'] ) && 'percent' === $promo_rule['discount_type'] && isset( $promo_rule['discount_value'] ) ) {
+					$promo_discount_pct = (float) $promo_rule['discount_value'];
+				}
+			}
+		}
+
 		echo '<div class="wpat-live-price-box" style="margin-top: 18px; padding: 12px 16px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">';
 		echo '<span style="font-weight: 600; color: #0369a1; font-size: 14px;">Precio Total Estimado:</span>';
-		echo '<span id="wpat-live-total-amount" style="font-weight: 700; color: #0284c7; font-size: 18px;" data-base-price="' . esc_attr( $base_prod_price ) . '">' . wc_price( $base_prod_price ) . '</span>';
+		echo '<span id="wpat-live-total-amount" style="font-weight: 700; color: #0284c7; font-size: 18px;" data-base-price="' . esc_attr( $base_prod_price ) . '" data-promo-discount-pct="' . esc_attr( $promo_discount_pct ) . '">' . wc_price( $base_prod_price ) . '</span>';
 		echo '</div>';
 
 		echo '</div>';
@@ -365,7 +376,8 @@ class WPAT_Woo_Extra_Options {
 			if (!wrapper) return;
 
 			var liveTotalEl = document.getElementById('wpat-live-total-amount');
-			var basePrice = liveTotalEl ? parseFloat(liveTotalEl.getAttribute('data-base-price') || 0) : 0;
+			var basePrice   = liveTotalEl ? parseFloat(liveTotalEl.getAttribute('data-base-price') || 0) : 0;
+			var promoPct    = liveTotalEl ? parseFloat(liveTotalEl.getAttribute('data-promo-discount-pct') || 0) : 0;
 
 			function updateLiveTotal() {
 				if (!liveTotalEl) return;
@@ -418,6 +430,10 @@ class WPAT_Woo_Extra_Options {
 						}
 					}
 				});
+
+				if (promoPct > 0 && extraSum > 0) {
+					extraSum = extraSum * (1 - (promoPct / 100));
+				}
 
 				var total = basePrice + extraSum;
 				// Formatear precio de forma aproximada y rápida para live preview
@@ -577,7 +593,14 @@ class WPAT_Woo_Extra_Options {
 			$target_id = $variation_id ? $variation_id : $product_id;
 			$prod_obj  = wc_get_product( $target_id );
 			if ( $prod_obj ) {
-				$cart_item_data['wpat_base_price'] = floatval( $prod_obj->get_price() );
+				$unfiltered_price = (float) $prod_obj->get_regular_price();
+				if ( $unfiltered_price <= 0 ) {
+					$unfiltered_price = (float) $prod_obj->get_price( 'edit' );
+				}
+				if ( $unfiltered_price <= 0 ) {
+					$unfiltered_price = (float) $prod_obj->get_price();
+				}
+				$cart_item_data['wpat_base_price'] = $unfiltered_price;
 			}
 		}
 

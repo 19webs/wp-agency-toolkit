@@ -118,18 +118,21 @@ class WPAT_Woo_Promotions {
 			return;
 		}
 
+		$plugin_url = defined( 'WPAT_URL' ) ? WPAT_URL : plugin_dir_url( dirname( __DIR__ ) );
+		$version    = defined( 'WPAT_VERSION' ) ? WPAT_VERSION : '1.0.0';
+
 		wp_enqueue_style(
 			'wpat-woo-promotions-css',
-			WPAT_PLUGIN_URL . 'assets/css/wpat-woo-promotions.css',
+			$plugin_url . 'assets/css/wpat-woo-promotions.css',
 			array(),
-			WPAT_VERSION
+			$version
 		);
 
 		wp_enqueue_script(
 			'wpat-woo-promotions-js',
-			WPAT_PLUGIN_URL . 'assets/js/wpat-woo-promotions.js',
+			$plugin_url . 'assets/js/wpat-woo-promotions.js',
 			array( 'jquery' ),
-			WPAT_VERSION,
+			$version,
 			true
 		);
 	}

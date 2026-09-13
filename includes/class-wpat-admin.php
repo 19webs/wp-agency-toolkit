@@ -1108,6 +1108,32 @@ class WPAT_Admin {
 						}
 					}
 
+					$s_date = ! empty( $rule_raw['start_date'] ) ? sanitize_text_field( $rule_raw['start_date'] ) : '';
+					$s_time = ! empty( $rule_raw['start_time'] ) ? sanitize_text_field( $rule_raw['start_time'] ) : '';
+					if ( ! empty( $s_date ) ) {
+						$s_parts     = explode( ' ', str_replace( 'T', ' ', $s_date ) );
+						$s_date_only = $s_parts[0];
+						if ( empty( $s_time ) && isset( $s_parts[1] ) ) {
+							$s_time = substr( $s_parts[1], 0, 5 );
+						}
+						$start_date_full = trim( $s_date_only . ( ! empty( $s_time ) ? ' ' . $s_time : '' ) );
+					} else {
+						$start_date_full = '';
+					}
+
+					$e_date = ! empty( $rule_raw['end_date'] ) ? sanitize_text_field( $rule_raw['end_date'] ) : '';
+					$e_time = ! empty( $rule_raw['end_time'] ) ? sanitize_text_field( $rule_raw['end_time'] ) : '';
+					if ( ! empty( $e_date ) ) {
+						$e_parts     = explode( ' ', str_replace( 'T', ' ', $e_date ) );
+						$e_date_only = $e_parts[0];
+						if ( empty( $e_time ) && isset( $e_parts[1] ) ) {
+							$e_time = substr( $e_parts[1], 0, 5 );
+						}
+						$end_date_full = trim( $e_date_only . ( ! empty( $e_time ) ? ' ' . $e_time : '' ) );
+					} else {
+						$end_date_full = '';
+					}
+
 					$sanitized_rules[] = array(
 						'id'                    => $rule_id,
 						'title'                 => $title,
@@ -1119,8 +1145,8 @@ class WPAT_Admin {
 						'ignore_on_sale'        => isset( $rule_raw['ignore_on_sale'] ) && '1' === (string) $rule_raw['ignore_on_sale'] ? '1' : '0',
 						'include_extra_options' => isset( $rule_raw['include_extra_options'] ) && '1' === (string) $rule_raw['include_extra_options'] ? '1' : '0',
 						'show_countdown'        => isset( $rule_raw['show_countdown'] ) && '1' === (string) $rule_raw['show_countdown'] ? '1' : '0',
-						'start_date'            => ! empty( $rule_raw['start_date'] ) ? sanitize_text_field( $rule_raw['start_date'] ) : '',
-						'end_date'              => ! empty( $rule_raw['end_date'] ) ? sanitize_text_field( $rule_raw['end_date'] ) : '',
+						'start_date'            => $start_date_full,
+						'end_date'              => $end_date_full,
 						'min_spend'             => isset( $rule_raw['min_spend'] ) ? max( 0, (float) $rule_raw['min_spend'] ) : 0.0,
 						'discount_type'         => ! empty( $rule_raw['discount_type'] ) && in_array( $rule_raw['discount_type'], array( 'percent', 'fixed', 'fixed_unit', 'fixed_total' ), true ) ? sanitize_key( $rule_raw['discount_type'] ) : 'percent',
 						'discount_value'        => isset( $rule_raw['discount_value'] ) ? max( 0, (float) $rule_raw['discount_value'] ) : 0.0,
@@ -4814,9 +4840,29 @@ class WPAT_Admin {
 										$r_ignore_sale   = ! empty( $rule['ignore_on_sale'] ) && '1' === (string) $rule['ignore_on_sale'];
 										$r_include_extra = ! empty( $rule['include_extra_options'] ) && '1' === (string) $rule['include_extra_options'];
 										$r_show_cd       = ! empty( $rule['show_countdown'] ) && '1' === (string) $rule['show_countdown'];
-										$r_start_date    = ! empty( $rule['start_date'] ) ? sanitize_text_field( $rule['start_date'] ) : '';
-										$r_end_date      = ! empty( $rule['end_date'] ) ? sanitize_text_field( $rule['end_date'] ) : '';
-										$r_pay_methods   = isset( $rule['payment_methods'] ) && is_array( $rule['payment_methods'] ) ? $rule['payment_methods'] : array();
+										$r_start_full = ! empty( $rule['start_date'] ) ? $rule['start_date'] : '';
+										$r_start_date = '';
+										$r_start_time = '';
+										if ( ! empty( $r_start_full ) ) {
+											$s_parts      = explode( ' ', str_replace( 'T', ' ', trim( $r_start_full ) ) );
+											$r_start_date = $s_parts[0];
+											if ( isset( $s_parts[1] ) ) {
+												$r_start_time = substr( $s_parts[1], 0, 5 );
+											}
+										}
+
+										$r_end_full = ! empty( $rule['end_date'] ) ? $rule['end_date'] : '';
+										$r_end_date = '';
+										$r_end_time = '';
+										if ( ! empty( $r_end_full ) ) {
+											$e_parts    = explode( ' ', str_replace( 'T', ' ', trim( $r_end_full ) ) );
+											$r_end_date = $e_parts[0];
+											if ( isset( $e_parts[1] ) ) {
+												$r_end_time = substr( $e_parts[1], 0, 5 );
+											}
+										}
+
+										$r_pay_methods = isset( $rule['payment_methods'] ) && is_array( $rule['payment_methods'] ) ? $rule['payment_methods'] : array();
 										$r_tiers       = isset( $rule['tiers'] ) && is_array( $rule['tiers'] ) ? $rule['tiers'] : array();
 										?>
 										<div class="wpat-promo-rule-card" data-rule-idx="<?php echo esc_attr( $idx ); ?>" style="border: 1px solid #cbd5e1; border-radius: 10px; background: #ffffff; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
@@ -5036,21 +5082,29 @@ class WPAT_Admin {
 														</label>
 														<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
 															<input type="checkbox" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][include_extra_options]" value="1" <?php checked( $r_include_extra ); ?> />
-															🎨 Incluir recargos de Campos Extras en el cálculo del descuento
+															🎨 Incluir descuento en campos Extras en el cálculo del descuento
 														</label>
 														<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
 															<input type="checkbox" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][show_countdown]" value="1" <?php checked( $r_show_cd ); ?> />
 															⏰ Mostrar contador regresivo de tiempo (Countdown) en tienda y ficha de producto
 														</label>
 													</div>
-													<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 4px;">
+													<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 4px;">
 														<div>
-															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha y Hora de Inicio (Opcional):</label>
-															<input type="datetime-local" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_date]" value="<?php echo esc_attr( $r_start_date ); ?>" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha de Inicio (Opcional):</label>
+															<input type="date" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_date]" value="<?php echo esc_attr( $r_start_date ); ?>" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
 														</div>
 														<div>
-															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha y Hora de Fin (Opcional):</label>
-															<input type="datetime-local" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_date]" value="<?php echo esc_attr( $r_end_date ); ?>" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">⏰ Hora de Inicio (00:00 - 23:59):</label>
+															<input type="time" min="00:00" max="23:59" step="60" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][start_time]" value="<?php echo esc_attr( $r_start_time ); ?>" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+														</div>
+														<div>
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha de Fin (Opcional):</label>
+															<input type="date" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_date]" value="<?php echo esc_attr( $r_end_date ); ?>" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+														</div>
+														<div>
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">⏰ Hora de Fin (00:00 - 23:59):</label>
+															<input type="time" min="00:00" max="23:59" step="60" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][end_time]" value="<?php echo esc_attr( $r_end_time ); ?>" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
 														</div>
 													</div>
 												</div>
@@ -5223,21 +5277,29 @@ class WPAT_Admin {
 											</label>
 											<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
 												<input type="checkbox" name="wpat_settings[woo_promotions_rules][${idx}][include_extra_options]" value="1" />
-												🎨 Incluir recargos de Campos Extras en el cálculo del descuento
+												🎨 Incluir descuento en campos Extras en el cálculo del descuento
 											</label>
 											<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
 												<input type="checkbox" name="wpat_settings[woo_promotions_rules][${idx}][show_countdown]" value="1" checked />
 												⏰ Mostrar contador regresivo de tiempo (Countdown) en tienda y ficha de producto
 											</label>
 										</div>
-										<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 4px;">
+										<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 4px;">
 											<div>
-												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha y Hora de Inicio (Opcional):</label>
-												<input type="datetime-local" name="wpat_settings[woo_promotions_rules][${idx}][start_date]" value="" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha de Inicio (Opcional):</label>
+												<input type="date" name="wpat_settings[woo_promotions_rules][${idx}][start_date]" value="" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
 											</div>
 											<div>
-												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha y Hora de Fin (Opcional):</label>
-												<input type="datetime-local" name="wpat_settings[woo_promotions_rules][${idx}][end_date]" value="" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">⏰ Hora de Inicio (00:00 - 23:59):</label>
+												<input type="time" min="00:00" max="23:59" step="60" name="wpat_settings[woo_promotions_rules][${idx}][start_time]" value="00:00" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+											</div>
+											<div>
+												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">📅 Fecha de Fin (Opcional):</label>
+												<input type="date" name="wpat_settings[woo_promotions_rules][${idx}][end_date]" value="" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+											</div>
+											<div>
+												<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">⏰ Hora de Fin (00:00 - 23:59):</label>
+												<input type="time" min="00:00" max="23:59" step="60" name="wpat_settings[woo_promotions_rules][${idx}][end_time]" value="23:59" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;" />
 											</div>
 										</div>
 									</div>

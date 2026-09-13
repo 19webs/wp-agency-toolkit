@@ -182,3 +182,19 @@
 	color: #ea580c !important;
 	line-height: 1 !important;
 }
+
+/* --- ETIQUETA DE TÍTULO PÚBLICO DE PROMOCIÓN EN CARRITO / CHECKOUT --- */
+.wpat-cart-promo-tag {
+	margin-top: 4px;
+	font-size: 11.5px;
+	font-weight: 700;
+	color: #0369a1;
+	background: #e0f2fe;
+	border: 1px solid #bae6fd;
+	padding: 2px 8px;
+	border-radius: 10px;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+

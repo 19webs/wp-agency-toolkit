@@ -78,8 +78,13 @@ class WPAT_Woo_Promotions {
 		add_action( 'woocommerce_before_cart_totals', array( $this, 'render_tiered_spend_progress_bar' ), 10 );
 		add_action( 'woocommerce_proceed_to_checkout', array( $this, 'render_tiered_spend_progress_bar' ), 5 );
 
-		// Hook para renderizar contador regresivo en la ficha de producto
+		// Hook para renderizar contador regresivo en la ficha de producto y en el catálogo de la tienda
 		add_action( 'woocommerce_single_product_summary', array( $this, 'render_product_countdown_banner' ), 25 );
+		add_action( 'woocommerce_after_shop_loop_item', array( $this, 'render_shop_loop_countdown_banner' ), 9 );
+
+		// Filtros para mostrar el Título Público de la promoción en Carrito y Checkout
+		add_filter( 'woocommerce_cart_item_name', array( $this, 'display_promo_title_in_cart_and_checkout' ), 20, 3 );
+		add_action( 'woocommerce_checkout_create_order_line_item', array( $this, 'save_line_item_promo_meta' ), 10, 4 );
 
 		// Carga de assets frontend
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
@@ -121,6 +126,35 @@ class WPAT_Woo_Promotions {
 				)
 			);
 		}
+	}
+
+	/**
+	 * Convierte cualquier formato de fecha/hora (ISO, datetime-local, DD/MM/YYYY) a timestamp Unix.
+	 *
+	 * @param string $date_str Cadena de fecha.
+	 * @param bool   $is_end_date Si es fecha de fin sin hora explícita.
+	 * @return int Timestamp Unix o 0.
+	 */
+	public static function parse_date_to_timestamp( $date_str, $is_end_date = false ) {
+		if ( empty( $date_str ) ) {
+			return 0;
+		}
+
+		$date_str = str_replace( 'T', ' ', trim( $date_str ) );
+
+		if ( preg_match( '/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/', $date_str, $m ) ) {
+			$day   = sprintf( '%02d', $m[1] );
+			$month = sprintf( '%02d', $m[2] );
+			$year  = $m[3];
+			$has_t = isset( $m[4] ) && isset( $m[5] );
+			$time  = $has_t ? sprintf( '%02d:%02d:00', $m[4], $m[5] ) : ( $is_end_date ? '23:59:59' : '00:00:00' );
+			$date_str = "$year-$month-$day $time";
+		} elseif ( preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_str ) ) {
+			$date_str .= $is_end_date ? ' 23:59:59' : ' 00:00:00';
+		}
+
+		$ts = strtotime( $date_str );
+		return $ts ? $ts : 0;
 	}
 
 	/**
@@ -174,13 +208,13 @@ class WPAT_Woo_Promotions {
 
 			// Filtro por fecha/hora de inicio y fin
 			if ( ! empty( $rule['start_date'] ) ) {
-				$start_ts = strtotime( $rule['start_date'] );
+				$start_ts = self::parse_date_to_timestamp( $rule['start_date'] );
 				if ( $start_ts && $now_ts < $start_ts ) {
 					continue;
 				}
 			}
 			if ( ! empty( $rule['end_date'] ) ) {
-				$end_ts = strtotime( $rule['end_date'] );
+				$end_ts = self::parse_date_to_timestamp( $rule['end_date'] );
 				if ( $end_ts && $now_ts > $end_ts ) {
 					continue;
 				}
@@ -218,14 +252,34 @@ class WPAT_Woo_Promotions {
 			}
 
 			if ( $matches ) {
-				$d_type = ! empty( $rule['discount_type'] ) ? $rule['discount_type'] : 'percent';
-				$d_val  = isset( $rule['discount_value'] ) ? (float) $rule['discount_value'] : 0.0;
+				$d_type        = ! empty( $rule['discount_type'] ) ? $rule['discount_type'] : 'percent';
+				$d_val         = isset( $rule['discount_value'] ) ? (float) $rule['discount_value'] : 0.0;
+				$include_extra = ! empty( $rule['include_extra_options'] ) && '1' === (string) $rule['include_extra_options'];
 
-				$calculated = $regular_price;
-				if ( 'percent' === $d_type ) {
-					$calculated = $regular_price - ( $regular_price * ( $d_val / 100.0 ) );
+				$extra_price = ( is_object( $product ) && isset( $product->wpat_extra_price ) ) ? floatval( $product->wpat_extra_price ) : 0.0;
+				$base_price  = ( is_object( $product ) && isset( $product->wpat_base_price ) && floatval( $product->wpat_base_price ) > 0 ) ? floatval( $product->wpat_base_price ) : $regular_price;
+
+				if ( $extra_price > 0 ) {
+					if ( $include_extra ) {
+						$total_base = $base_price + $extra_price;
+						if ( 'percent' === $d_type ) {
+							$calculated = $total_base - ( $total_base * ( $d_val / 100.0 ) );
+						} else {
+							$calculated = $total_base - $d_val;
+						}
+					} else {
+						if ( 'percent' === $d_type ) {
+							$calculated = ( $base_price - ( $base_price * ( $d_val / 100.0 ) ) ) + $extra_price;
+						} else {
+							$calculated = ( $base_price - $d_val ) + $extra_price;
+						}
+					}
 				} else {
-					$calculated = $regular_price - $d_val;
+					if ( 'percent' === $d_type ) {
+						$calculated = $regular_price - ( $regular_price * ( $d_val / 100.0 ) );
+					} else {
+						$calculated = $regular_price - $d_val;
+					}
 				}
 
 				$calculated = max( 0, $calculated );
@@ -234,6 +288,10 @@ class WPAT_Woo_Promotions {
 					$applied      = true;
 				}
 			}
+		}
+
+		if ( $applied && is_object( $product ) ) {
+			$product->wpat_promo_applied = true;
 		}
 
 		self::$in_price_filter = false;
@@ -349,13 +407,13 @@ class WPAT_Woo_Promotions {
 
 			// Filtro por fecha/hora de inicio y fin
 			if ( ! empty( $rule['start_date'] ) ) {
-				$start_ts = strtotime( $rule['start_date'] );
+				$start_ts = self::parse_date_to_timestamp( $rule['start_date'] );
 				if ( $start_ts && $now_ts < $start_ts ) {
 					continue;
 				}
 			}
 			if ( ! empty( $rule['end_date'] ) ) {
-				$end_ts = strtotime( $rule['end_date'] );
+				$end_ts = self::parse_date_to_timestamp( $rule['end_date'] );
 				if ( $end_ts && $now_ts > $end_ts ) {
 					continue;
 				}
@@ -787,28 +845,27 @@ class WPAT_Woo_Promotions {
 	}
 
 	/**
-	 * Renderiza el banner de la cuenta regresiva en la ficha de producto.
+	 * Busca la regla promocional activa con cuenta regresiva habilitada para un producto.
+	 *
+	 * @param WC_Product $product Objeto producto.
+	 * @return array|null Datos de la regla y timestamp de expiración o null.
 	 */
-	public function render_product_countdown_banner() {
-		global $product;
+	public function get_matching_countdown_rule_for_product( $product ) {
 		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
-			return;
+			return null;
 		}
 
 		$settings = WPAT_Main::get_instance()->get_settings();
 		$rules    = isset( $settings['woo_promotions_rules'] ) && is_array( $settings['woo_promotions_rules'] ) ? $settings['woo_promotions_rules'] : array();
 
 		if ( empty( $rules ) ) {
-			return;
+			return null;
 		}
 
 		$product_id   = $product->get_id();
 		$parent_id    = $product->get_parent_id();
 		$effective_id = $parent_id ? $parent_id : $product_id;
 		$now_ts       = current_time( 'timestamp' );
-
-		$target_rule = null;
-		$end_ts      = 0;
 
 		foreach ( $rules as $rule ) {
 			if ( empty( $rule['active'] ) || '1' !== (string) $rule['active'] ) {
@@ -823,12 +880,12 @@ class WPAT_Woo_Promotions {
 				continue;
 			}
 
-			$rule_start = ! empty( $rule['start_date'] ) ? strtotime( $rule['start_date'] ) : 0;
+			$rule_start = ! empty( $rule['start_date'] ) ? self::parse_date_to_timestamp( $rule['start_date'] ) : 0;
 			if ( $rule_start > 0 && $now_ts < $rule_start ) {
 				continue;
 			}
 
-			$rule_end = strtotime( $rule['end_date'] );
+			$rule_end = self::parse_date_to_timestamp( $rule['end_date'] );
 			if ( ! $rule_end || $now_ts > $rule_end ) {
 				continue;
 			}
@@ -857,20 +914,40 @@ class WPAT_Woo_Promotions {
 			}
 
 			if ( $matches ) {
-				$target_rule = $rule;
-				$end_ts      = $rule_end;
-				break;
+				return array(
+					'rule'   => $rule,
+					'end_ts' => $rule_end,
+				);
 			}
 		}
 
-		if ( ! $target_rule || ! $end_ts ) {
+		return null;
+	}
+
+	/**
+	 * Renderiza el banner de la cuenta regresiva en la ficha de producto.
+	 */
+	public function render_product_countdown_banner() {
+		static $rendered_ids = array();
+		global $product;
+		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
 			return;
 		}
 
-		$title = ! empty( $target_rule['title'] ) ? $target_rule['title'] : __( 'Oferta por tiempo limitado', 'wp-agency-toolkit' );
+		if ( in_array( $product->get_id(), $rendered_ids, true ) ) {
+			return;
+		}
+
+		$data = $this->get_matching_countdown_rule_for_product( $product );
+		if ( ! $data ) {
+			return;
+		}
+
+		$rendered_ids[] = $product->get_id();
+		$title          = ! empty( $data['rule']['title'] ) ? $data['rule']['title'] : __( 'Oferta por tiempo limitado', 'wp-agency-toolkit' );
 
 		?>
-		<div class="wpat-promo-countdown-card" data-end-timestamp="<?php echo esc_attr( $end_ts ); ?>">
+		<div class="wpat-promo-countdown-card" data-end-timestamp="<?php echo esc_attr( $data['end_ts'] ); ?>">
 			<div class="wpat-promo-countdown-header">
 				<span class="wpat-promo-countdown-icon">⚡</span>
 				<span class="wpat-promo-countdown-title"><?php echo esc_html( $title ); ?> — <strong>¡La oferta termina en!</strong></span>
@@ -886,5 +963,161 @@ class WPAT_Woo_Promotions {
 			</div>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Renderiza una insignia/banner de cuenta regresiva compacta en los productos del catálogo de la tienda.
+	 */
+	public function render_shop_loop_countdown_banner() {
+		global $product;
+		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
+			return;
+		}
+
+		$data = $this->get_matching_countdown_rule_for_product( $product );
+		if ( ! $data ) {
+			return;
+		}
+
+		?>
+		<div class="wpat-promo-countdown-card wpat-promo-shop-loop-card" data-end-timestamp="<?php echo esc_attr( $data['end_ts'] ); ?>" style="margin: 8px 0 !important; padding: 8px 10px !important;">
+			<div class="wpat-promo-countdown-header" style="margin-bottom: 4px; gap: 5px;">
+				<span class="wpat-promo-countdown-icon" style="font-size: 14px;">⚡</span>
+				<span class="wpat-promo-countdown-title" style="font-size: 11px; font-weight: 700; color: #9a3412;">¡Oferta termina en!</span>
+			</div>
+			<div class="wpat-promo-countdown-timer" style="gap: 3px; justify-content: center;">
+				<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px;"><span class="wpat-cd-val wpat-cd-days" style="font-size: 12px;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px;">Días</span></div>
+				<div class="wpat-cd-sep" style="font-size: 11px;">:</div>
+				<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px;"><span class="wpat-cd-val wpat-cd-hours" style="font-size: 12px;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px;">Horas</span></div>
+				<div class="wpat-cd-sep" style="font-size: 11px;">:</div>
+				<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px;"><span class="wpat-cd-val wpat-cd-mins" style="font-size: 12px;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px;">Min</span></div>
+				<div class="wpat-cd-sep" style="font-size: 11px;">:</div>
+				<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px;"><span class="wpat-cd-val wpat-cd-secs" style="font-size: 12px;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px;">Seg</span></div>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Obtiene la regla promocional directa aplicable a un producto.
+	 *
+	 * @param WC_Product $product Objeto producto.
+	 * @return array|null Regla coincidente o null.
+	 */
+	public function get_matching_promo_rule_for_product( $product ) {
+		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
+			return null;
+		}
+
+		$settings = WPAT_Main::get_instance()->get_settings();
+		$rules    = isset( $settings['woo_promotions_rules'] ) && is_array( $settings['woo_promotions_rules'] ) ? $settings['woo_promotions_rules'] : array();
+
+		if ( empty( $rules ) ) {
+			return null;
+		}
+
+		$product_id   = $product->get_id();
+		$parent_id    = $product->get_parent_id();
+		$effective_id = $parent_id ? $parent_id : $product_id;
+		$now_ts       = current_time( 'timestamp' );
+
+		foreach ( $rules as $rule ) {
+			if ( empty( $rule['active'] ) || '1' !== (string) $rule['active'] ) {
+				continue;
+			}
+
+			if ( ! empty( $rule['start_date'] ) ) {
+				$start_ts = self::parse_date_to_timestamp( $rule['start_date'] );
+				if ( $start_ts && $now_ts < $start_ts ) {
+					continue;
+				}
+			}
+
+			if ( ! empty( $rule['end_date'] ) ) {
+				$end_ts = self::parse_date_to_timestamp( $rule['end_date'], true );
+				if ( $end_ts && $now_ts > $end_ts ) {
+					continue;
+				}
+			}
+
+			$ignore_sale = ! empty( $rule['ignore_on_sale'] ) && '1' === (string) $rule['ignore_on_sale'];
+			if ( $ignore_sale && $product->is_on_sale() ) {
+				continue;
+			}
+
+			$scope        = ! empty( $rule['scope'] ) ? sanitize_key( $rule['scope'] ) : 'all';
+			$target_cats  = isset( $rule['categories'] ) && is_array( $rule['categories'] ) ? array_map( 'absint', $rule['categories'] ) : array();
+			$target_prods = isset( $rule['products'] ) && is_array( $rule['products'] ) ? array_map( 'absint', $rule['products'] ) : array();
+
+			$matches = false;
+			if ( 'all' === $scope ) {
+				$matches = true;
+			} elseif ( 'category' === $scope && ! empty( $target_cats ) ) {
+				$prod_cats = wc_get_product_term_ids( $effective_id, 'product_cat' );
+				if ( array_intersect( $target_cats, $prod_cats ) ) {
+					$matches = true;
+				}
+			} elseif ( 'product' === $scope && ! empty( $target_prods ) ) {
+				if ( in_array( $product_id, $target_prods, true ) || in_array( $effective_id, $target_prods, true ) ) {
+					$matches = true;
+				}
+			}
+
+			if ( $matches ) {
+				return $rule;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Muestra el Título Público de la promoción en los productos dentro del Carrito y del Checkout.
+	 *
+	 * @param string $name Nombre formateado del producto.
+	 * @param array  $cart_item Datos del elemento en el carrito.
+	 * @param string $cart_item_key Clave del elemento.
+	 * @return string Nombre formateado con la etiqueta del Título Público de la promoción.
+	 */
+	public function display_promo_title_in_cart_and_checkout( $name, $cart_item, $cart_item_key ) {
+		/** @var WC_Product|null $product */
+		$product = isset( $cart_item['data'] ) ? $cart_item['data'] : null;
+		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
+			return $name;
+		}
+
+		$promo_rule = $this->get_matching_promo_rule_for_product( $product );
+		if ( ! $promo_rule || empty( $promo_rule['title'] ) ) {
+			return $name;
+		}
+
+		$title = sanitize_text_field( $promo_rule['title'] );
+
+		// Prevenir duplicación en caso de filtros encadenados
+		if ( false !== strpos( $name, 'wpat-cart-promo-tag' ) ) {
+			return $name;
+		}
+
+		$tag_html  = '<div class="wpat-cart-promo-tag" style="margin-top: 4px; font-size: 11.5px; font-weight: 700; color: #0369a1; background: #e0f2fe; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 10px; display: inline-flex; align-items: center; gap: 4px;">';
+		$tag_html .= '<span>🎁</span> <span>' . esc_html( $title ) . '</span>';
+		$tag_html .= '</div>';
+
+		return $name . $tag_html;
+	}
+
+	/**
+	 * Guarda el Título Público de la promoción en los metadatos de la línea de pedido (HPOS / COT Compatible).
+	 */
+	public function save_line_item_promo_meta( $item, $cart_item_key, $values, $order ) {
+		/** @var WC_Product|null $product */
+		$product = isset( $values['data'] ) ? $values['data'] : null;
+		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
+			return;
+		}
+
+		$promo_rule = $this->get_matching_promo_rule_for_product( $product );
+		if ( $promo_rule && ! empty( $promo_rule['title'] ) ) {
+			$item->add_meta_data( __( 'Promoción Aplicada', 'wp-agency-toolkit' ), sanitize_text_field( $promo_rule['title'] ), true );
+		}
 	}
 }

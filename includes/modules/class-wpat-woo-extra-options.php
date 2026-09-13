@@ -647,6 +647,9 @@ class WPAT_Woo_Extra_Options {
 	 */
 	public function filter_product_get_price( $price, $product ) {
 		if ( is_object( $product ) && isset( $product->wpat_extra_price ) && floatval( $product->wpat_extra_price ) > 0 ) {
+			if ( ! empty( $product->wpat_promo_applied ) ) {
+				return $price;
+			}
 			$base = isset( $product->wpat_base_price ) ? floatval( $product->wpat_base_price ) : floatval( $price );
 			return $base + floatval( $product->wpat_extra_price );
 		}

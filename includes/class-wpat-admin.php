@@ -1465,6 +1465,8 @@ class WPAT_Admin {
 			'woo-pdf-invoices',
 			'woo-live-search',
 			'woo-facets',
+			'woo-promotions',
+			'woo_promotions',
 			'post-csv-importer',
 			'anti-spam',
 			'silent-skin',
@@ -1477,6 +1479,12 @@ class WPAT_Admin {
 
 		$settings = get_option( 'wpat_settings', array() );
 		$settings[ $module_id ] = $state;
+
+		if ( 'woo-promotions' === $module_id || 'woo_promotions' === $module_id ) {
+			$settings['woo-promotions'] = $state;
+			$settings['woo_promotions'] = $state;
+		}
+
 		update_option( 'wpat_settings', $settings );
 
 		wp_send_json_success( array( 'message' => 'Módulo actualizado correctamente.' ) );

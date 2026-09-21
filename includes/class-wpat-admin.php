@@ -5909,15 +5909,39 @@ class WPAT_Admin {
 										
 										<!-- Filtros del Optimizador Masivo -->
 										<div class="wpat-bulk-filters" style="display: flex; flex-wrap: wrap; gap: 15px; background: #f8fafc; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid var(--wpat-border);">
-											<div style="flex: 1; min-width: 200px;">
+											<div style="flex: 1; min-width: 180px;">
 												<label for="wpat_bulk_filter_min_size" style="display:block; font-weight:600; margin-bottom:5px; font-size:12px;">Peso Mínimo de Imagen (en KB)</label>
 												<input type="number" id="wpat_bulk_filter_min_size" placeholder="Ej: 500" min="0" style="width: 100%;" />
 												<p class="description" style="font-size:11px; margin-top:2px;">Solo optimizar imágenes con un peso de archivo mayor o igual a este valor.</p>
 											</div>
-											<div style="flex: 1; min-width: 200px;">
-												<label for="wpat_bulk_filter_date_start" style="display:block; font-weight:600; margin-bottom:5px; font-size:12px;">Fecha Mínima de Subida</label>
+											<div style="flex: 1; min-width: 180px;">
+												<label for="wpat_bulk_filter_date_start" style="display:block; font-weight:600; margin-bottom:5px; font-size:12px;">Fecha Desde</label>
 												<input type="date" id="wpat_bulk_filter_date_start" style="width: 100%;" />
-												<p class="description" style="font-size:11px; margin-top:2px;">Solo optimizar imágenes subidas en esta fecha o después.</p>
+												<p class="description" style="font-size:11px; margin-top:2px;">Solo imágenes subidas a partir de esta fecha.</p>
+											</div>
+											<div style="flex: 1; min-width: 180px;">
+												<label for="wpat_bulk_filter_date_end" style="display:block; font-weight:600; margin-bottom:5px; font-size:12px;">Fecha Hasta</label>
+												<input type="date" id="wpat_bulk_filter_date_end" style="width: 100%;" />
+												<p class="description" style="font-size:11px; margin-top:2px;">Solo imágenes subidas hasta esta fecha.</p>
+											</div>
+											<div style="flex: 1 1 100%; border-top: 1px dashed var(--wpat-border); padding-top: 12px; margin-top: 5px;">
+												<label style="display:block; font-weight:600; margin-bottom:8px; font-size:12px;">Formatos de imagen a escanear y convertir:</label>
+												<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
+													<label style="display:inline-flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; font-weight:500;">
+														<input type="checkbox" class="wpat-bulk-format-cb" value="image/jpeg" checked />
+														<span>JPG / JPEG (<code>.jpg</code>, <code>.jpeg</code>)</span>
+													</label>
+													<label style="display:inline-flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; font-weight:500;">
+														<input type="checkbox" class="wpat-bulk-format-cb" value="image/png" checked />
+														<span>PNG (<code>.png</code>)</span>
+													</label>
+													<label style="display:inline-flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; font-weight:500;">
+														<input type="checkbox" class="wpat-bulk-format-cb" value="image/gif" />
+														<span>GIF (<code>.gif</code>)</span>
+														<span style="font-size:11px; color:#64748b; font-weight:normal;">(Desmarcado por defecto para no perder animación en GIFs animados)</span>
+													</label>
+												</div>
+												<p class="description" style="font-size:11px; margin-top:6px;">Las imágenes que ya estén en formato WebP (<code>.webp</code>) se detectan y omiten automáticamente sin volver a convertirlas.</p>
 											</div>
 										</div>
 

@@ -40,6 +40,25 @@ class WPAT_Image_Optimizer {
 	}
 
 	/**
+	 * Comprueba si un archivo GIF contiene animación (múltiples frames).
+	 *
+	 * @param string $filename Ruta al archivo de imagen.
+	 * @return bool
+	 */
+	private function is_animated_gif( $filename ) {
+		if ( ! file_exists( $filename ) || ! ( $fh = @fopen( $filename, 'rb' ) ) ) {
+			return false;
+		}
+		$count = 0;
+		while ( ! feof( $fh ) && $count < 2 ) {
+			$chunk = fread( $fh, 1024 * 100 );
+			$count += preg_match_all( '#\x00\x21\xF9\x04.{4}\x00(\x2C|\x21)#s', $chunk, $matches );
+		}
+		fclose( $fh );
+		return $count > 1;
+	}
+
+	/**
 	 * Optimiza, redimensiona y convierte la imagen subida a formato WebP.
 	 *
 	 * @param array  $upload Array de datos del archivo subido.
@@ -58,6 +77,11 @@ class WPAT_Image_Optimizer {
 
 		// Omitir de inmediato si la imagen ya es WebP o no es un formato imprimible convertible
 		if ( 'image/webp' === $mime_type || 'webp' === $ext ) {
+			return $upload;
+		}
+
+		// Si es un GIF animado, preservar el archivo original para no perder el movimiento
+		if ( ( 'image/gif' === $mime_type || 'gif' === $ext ) && $this->is_animated_gif( $file_path ) ) {
 			return $upload;
 		}
 
@@ -130,7 +154,7 @@ class WPAT_Image_Optimizer {
 	}
 
 	/**
-	 * AJAX: Escanea la cantidad de imágenes JPEG/PNG/GIF pendientes de optimización en la Biblioteca usando filtros.
+	 * AJAX: Escanea la cantidad de imágenes pendientes de optimización en la Biblioteca usando filtros.
 	 */
 	public function ajax_scan_images() {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -140,26 +164,54 @@ class WPAT_Image_Optimizer {
 		global $wpdb;
 
 		$min_size   = isset( $_POST['min_size'] ) ? (int) $_POST['min_size'] : 0;
-		$date_start = isset( $_POST['date_start'] ) ? sanitize_text_field( $_POST['date_start'] ) : '';
+		$date_start = isset( $_POST['date_start'] ) ? sanitize_text_field( wp_unslash( $_POST['date_start'] ) ) : '';
+		$date_end   = isset( $_POST['date_end'] ) ? sanitize_text_field( wp_unslash( $_POST['date_end'] ) ) : '';
 
-		$date_query = "";
-		if ( ! empty( $date_start ) ) {
-			$date_query = $wpdb->prepare( "AND post_date >= %s", $date_start . ' 00:00:00' );
+		// Formatos seleccionados por el usuario
+		$allowed_valid_formats = array( 'image/jpeg', 'image/png', 'image/gif' );
+		$selected_formats      = array();
+
+		if ( isset( $_POST['formats'] ) ) {
+			$raw_formats = is_array( $_POST['formats'] ) ? $_POST['formats'] : explode( ',', sanitize_text_field( wp_unslash( $_POST['formats'] ) ) );
+			foreach ( $raw_formats as $fmt ) {
+				$fmt = sanitize_text_field( wp_unslash( $fmt ) );
+				if ( in_array( $fmt, $allowed_valid_formats, true ) ) {
+					$selected_formats[] = $fmt;
+				}
+			}
 		}
 
-		// Obtener todos los candidatos no optimizados y filtrar por fecha
-		$query = "
-			SELECT ID 
+		// Si no se envió nada o está vacío, por defecto procesar JPG y PNG
+		if ( empty( $selected_formats ) ) {
+			$selected_formats = array( 'image/jpeg', 'image/png' );
+		}
+
+		$date_conditions = array();
+		if ( ! empty( $date_start ) ) {
+			$date_conditions[] = $wpdb->prepare( "post_date >= %s", $date_start . ' 00:00:00' );
+		}
+		if ( ! empty( $date_end ) ) {
+			$date_conditions[] = $wpdb->prepare( "post_date <= %s", $date_end . ' 23:59:59' );
+		}
+
+		$date_query = ! empty( $date_conditions ) ? 'AND ' . implode( ' AND ', $date_conditions ) : '';
+
+		$format_placeholders = implode( ', ', array_fill( 0, count( $selected_formats ), '%s' ) );
+
+		// Obtener todos los candidatos no optimizados que coincidan con los formatos y rango de fechas
+		$query = $wpdb->prepare(
+			"SELECT ID 
 			FROM {$wpdb->posts} 
 			WHERE post_type = 'attachment' 
-			AND post_mime_type IN ('image/jpeg', 'image/png', 'image/gif') 
+			AND post_mime_type IN ({$format_placeholders}) 
 			AND ID NOT IN (
 				SELECT post_id 
 				FROM {$wpdb->postmeta} 
 				WHERE meta_key = '_wpat_optimized' AND meta_value = '1'
 			)
-			{$date_query}
-		";
+			{$date_query}",
+			$selected_formats
+		);
 
 		$ids          = array_map( 'intval', $wpdb->get_col( $query ) );
 		$matching_ids = array();
@@ -177,6 +229,17 @@ class WPAT_Image_Optimizer {
 					continue;
 				}
 
+				// Validar que coincida con los formatos permitidos
+				if ( ! in_array( $mime_type, $selected_formats, true ) ) {
+					continue;
+				}
+
+				// Si es un GIF animado, omitir para no perder la animación
+				if ( ( 'image/gif' === $mime_type || 'gif' === $ext ) && $this->is_animated_gif( $file_path ) ) {
+					update_post_meta( $id, '_wpat_optimized', '1' );
+					continue;
+				}
+
 				$size_bytes = filesize( $file_path );
 				$size_kb    = $size_bytes / 1024;
 				if ( $min_size > 0 && $size_kb < $min_size ) {
@@ -188,12 +251,12 @@ class WPAT_Image_Optimizer {
 		}
 
 		wp_send_json_success( array(
-			'ids'               => $matching_ids,
-			'count'             => count( $matching_ids ),
-			'total_bytes'       => $total_bytes,
-			'total_bytes_pref'  => size_format( $total_bytes ),
-			'est_opt_bytes'     => $total_bytes * 0.30,
-			'est_opt_bytes_f'   => size_format( $total_bytes * 0.30 ),
+			'ids'              => $matching_ids,
+			'count'            => count( $matching_ids ),
+			'total_bytes'      => $total_bytes,
+			'total_bytes_pref' => size_format( $total_bytes ),
+			'est_opt_bytes'    => $total_bytes * 0.30,
+			'est_opt_bytes_f'  => size_format( $total_bytes * 0.30 ),
 		) );
 	}
 
@@ -242,6 +305,14 @@ class WPAT_Image_Optimizer {
 				update_post_meta( $id, '_wpat_optimized', '1' );
 				$processed_count++;
 				$logs[] = "Omitida: Imagen ID {$id} ya se encuentra en formato WebP.";
+				continue;
+			}
+
+			// Si es un GIF animado, preservar el original para no perder el movimiento
+			if ( ( 'image/gif' === $mime_type || 'gif' === $ext ) && $this->is_animated_gif( $file_path ) ) {
+				update_post_meta( $id, '_wpat_optimized', '1' );
+				$processed_count++;
+				$logs[] = "Preservada: ID {$id} es un GIF animado (mantiene animación original).";
 				continue;
 			}
 

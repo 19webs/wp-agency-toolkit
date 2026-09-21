@@ -677,12 +677,24 @@ jQuery(document).ready(function($) {
 	$('#wpat_scan_images_btn').on('click', function(e) {
 		e.preventDefault();
 		var $btn = $(this);
+
+		var selectedFormats = [];
+		$('.wpat-bulk-format-cb:checked').each(function() {
+			selectedFormats.push($(this).val());
+		});
+
+		if (selectedFormats.length === 0) {
+			alert('Debes seleccionar al menos un formato de imagen a escanear (JPG, PNG o GIF).');
+			return;
+		}
+
 		$btn.prop('disabled', true).text('Escaneando...');
 		$('#wpat_start_bulk_btn').hide();
 		$('#wpat_bulk_status').hide();
 
 		var minSize = $('#wpat_bulk_filter_min_size').val();
 		var dateStart = $('#wpat_bulk_filter_date_start').val();
+		var dateEnd = $('#wpat_bulk_filter_date_end').val();
 
 		$.ajax({
 			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
@@ -690,7 +702,9 @@ jQuery(document).ready(function($) {
 			data: {
 				action: 'wpat_scan_images',
 				min_size: minSize,
-				date_start: dateStart
+				date_start: dateStart,
+				date_end: dateEnd,
+				formats: selectedFormats
 			},
 			success: function(response) {
 				$btn.prop('disabled', false).text('Escanear Biblioteca');

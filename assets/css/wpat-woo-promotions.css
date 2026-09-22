@@ -104,6 +104,12 @@
 
 /* --- TARJETA DE CONTADOR REGRESIVO (COUNTDOWN TIMER) --- */
 .wpat-promo-countdown-card {
+	display: block !important;
+	clear: both !important;
+	width: 100% !important;
+	max-width: 100% !important;
+	visibility: visible !important;
+	opacity: 1 !important;
 	background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%) !important;
 	border: 1px solid #fed7aa !important;
 	border-radius: 12px !important;
@@ -112,6 +118,7 @@
 	box-shadow: 0 4px 14px rgba(249, 115, 22, 0.08) !important;
 	box-sizing: border-box !important;
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
+	z-index: 10 !important;
 }
 
 .wpat-promo-countdown-header {
@@ -124,6 +131,8 @@
 .wpat-promo-countdown-icon {
 	font-size: 20px !important;
 	line-height: 1 !important;
+	display: inline-flex !important;
+	align-items: center !important;
 	animation: wpat-lightning-pulse 1.5s infinite ease-in-out;
 }
 
@@ -146,6 +155,7 @@
 	display: flex !important;
 	align-items: center !important;
 	gap: 6px !important;
+	flex-wrap: wrap !important;
 }
 
 .wpat-cd-block {

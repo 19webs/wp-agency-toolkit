@@ -78,14 +78,22 @@ class WPAT_Woo_Promotions {
 		add_action( 'woocommerce_before_cart_totals', array( $this, 'render_tiered_spend_progress_bar' ), 10 );
 		add_action( 'woocommerce_proceed_to_checkout', array( $this, 'render_tiered_spend_progress_bar' ), 5 );
 
-		// Hook para renderizar contador regresivo en la ficha de producto y catálogo de la tienda
+		// Hook para renderizar contador regresivo en la ficha de producto (Elementor, Hello theme, builders y estándar)
+		add_action( 'woocommerce_single_product_summary', array( $this, 'render_product_countdown_banner' ), 11 );
 		add_action( 'woocommerce_single_product_summary', array( $this, 'render_product_countdown_banner' ), 25 );
-		add_action( 'woocommerce_before_add_to_cart_form', array( $this, 'render_product_countdown_banner' ), 10 );
-		add_action( 'woocommerce_after_add_to_cart_form', array( $this, 'render_product_countdown_banner' ), 10 );
-		add_action( 'woocommerce_product_meta_end', array( $this, 'render_product_countdown_banner' ), 10 );
+		add_action( 'woocommerce_before_add_to_cart_form', array( $this, 'render_product_countdown_banner' ), 5 );
+		add_action( 'woocommerce_before_add_to_cart_button', array( $this, 'render_product_countdown_banner' ), 5 );
+		add_action( 'woocommerce_after_add_to_cart_button', array( $this, 'render_product_countdown_banner' ), 15 );
+		add_action( 'woocommerce_after_add_to_cart_form', array( $this, 'render_product_countdown_banner' ), 15 );
+		add_action( 'woocommerce_product_meta_end', array( $this, 'render_product_countdown_banner' ), 15 );
 
+		// Integración con el filtro de precio para inyectar automáticamente en maquetadores (Elementor Price widget, etc.)
+		add_filter( 'woocommerce_get_price_html', array( $this, 'append_countdown_to_price_html' ), 99, 2 );
+
+		// Catálogo y loops de productos
 		add_action( 'woocommerce_after_shop_loop_item', array( $this, 'render_shop_loop_countdown_banner' ), 9 );
 		add_action( 'woocommerce_after_shop_loop_item_title', array( $this, 'render_shop_loop_countdown_banner' ), 15 );
+		add_action( 'woocommerce_shop_loop_item_title', array( $this, 'render_shop_loop_countdown_banner' ), 15 );
 
 		add_shortcode( 'wpat_promo_countdown', array( $this, 'render_countdown_shortcode' ) );
 
@@ -98,16 +106,53 @@ class WPAT_Woo_Promotions {
 	}
 
 	/**
-	 * Shortcode [wpat_promo_countdown] para renderizar el contador en cualquier maquetador.
+	 * Shortcode [wpat_promo_countdown id="123"] para renderizar el contador en cualquier maquetador (Elementor, Divi, etc.).
+	 *
+	 * @param array $atts Atributos del shortcode.
+	 * @return string HTML del contador.
 	 */
-	public function render_countdown_shortcode() {
-		global $product;
+	public function render_countdown_shortcode( $atts = array() ) {
+		$atts = shortcode_atts(
+			array(
+				'id' => 0,
+			),
+			$atts,
+			'wpat_promo_countdown'
+		);
+
+		$product = self::resolve_product( ! empty( $atts['id'] ) ? absint( $atts['id'] ) : null );
 		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
 			return '';
 		}
-		ob_start();
-		$this->render_product_countdown_banner();
-		return ob_get_clean();
+
+		return $this->get_countdown_banner_html( $product, false );
+	}
+
+	/**
+	 * Inyecta el contador directamente tras el precio si aún no se ha renderizado por ningún hook de acción.
+	 * Ideal para maquetadores como Elementor que reemplazan los hooks tradicionales por widgets sueltos.
+	 *
+	 * @param string     $price_html HTML del precio.
+	 * @param WC_Product $product    Objeto producto.
+	 * @return string
+	 */
+	public function append_countdown_to_price_html( $price_html, $product ) {
+		if ( is_admin() || wp_doing_ajax() || ( function_exists( 'is_cart' ) && is_cart() ) || ( function_exists( 'is_checkout' ) && is_checkout() ) ) {
+			return $price_html;
+		}
+
+		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
+			return $price_html;
+		}
+
+		$is_single = ( function_exists( 'is_product' ) && is_product() ) || ( function_exists( 'get_the_ID' ) && get_the_ID() === $product->get_id() );
+		$banner_html = $this->get_countdown_banner_html( $product, ! $is_single );
+
+		if ( ! empty( $banner_html ) ) {
+			return $price_html . $banner_html;
+		}
+
+		return $price_html;
 	}
 
 	/**
@@ -762,13 +807,63 @@ class WPAT_Woo_Promotions {
 	}
 
 	/**
+	 * Resuelve de forma infalible el objeto WC_Product actual en cualquier contexto (Elementor, Gutenberg, Loops, Shortcodes).
+	 *
+	 * @param WC_Product|int|null $product_or_id Producto o ID opcional.
+	 * @return WC_Product|null
+	 */
+	public static function resolve_product( $product_or_id = null ) {
+		if ( $product_or_id && is_a( $product_or_id, 'WC_Product' ) ) {
+			return $product_or_id;
+		}
+
+		if ( is_numeric( $product_or_id ) && $product_or_id > 0 ) {
+			$p = wc_get_product( $product_or_id );
+			if ( $p && is_a( $p, 'WC_Product' ) ) {
+				return $p;
+			}
+		}
+
+		global $product;
+		if ( $product && is_a( $product, 'WC_Product' ) ) {
+			return $product;
+		}
+
+		global $post;
+		if ( $post && isset( $post->ID ) && 'product' === get_post_type( $post->ID ) ) {
+			$p = wc_get_product( $post->ID );
+			if ( $p && is_a( $p, 'WC_Product' ) ) {
+				return $p;
+			}
+		}
+
+		$the_id = function_exists( 'get_the_ID' ) ? get_the_ID() : 0;
+		if ( $the_id && 'product' === get_post_type( $the_id ) ) {
+			$p = wc_get_product( $the_id );
+			if ( $p && is_a( $p, 'WC_Product' ) ) {
+				return $p;
+			}
+		}
+
+		$queried_id = function_exists( 'get_queried_object_id' ) ? get_queried_object_id() : 0;
+		if ( $queried_id && 'product' === get_post_type( $queried_id ) ) {
+			$p = wc_get_product( $queried_id );
+			if ( $p && is_a( $p, 'WC_Product' ) ) {
+				return $p;
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Encuentra la regla activa de mayor prioridad con contador de tiempo habilitado para un producto.
 	 *
 	 * @param WC_Product|int $product_or_id Objeto producto o ID.
 	 * @return array|null Datos de la regla y timestamp de expiración o null.
 	 */
 	public function get_matching_countdown_rule_for_product( $product_or_id ) {
-		$product = is_a( $product_or_id, 'WC_Product' ) ? $product_or_id : wc_get_product( $product_or_id );
+		$product = self::resolve_product( $product_or_id );
 		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
 			return null;
 		}
@@ -837,7 +932,7 @@ class WPAT_Woo_Promotions {
 
 			if ( $matches ) {
 				$rule_end = 0;
-				if ( ! empty( $rule['end_date'] ) ) {
+				if ( $enable_sched && ! empty( $rule['end_date'] ) ) {
 					$rule_end = self::parse_date_to_timestamp( $rule['end_date'], true );
 				}
 
@@ -889,37 +984,36 @@ class WPAT_Woo_Promotions {
 	}
 
 	/**
-	 * Renderiza la tarjeta de cuenta regresiva en la página de producto individual.
+	 * Genera el código HTML del contador regresivo para un producto.
+	 *
+	 * @param WC_Product|int $product_or_id Producto o ID.
+	 * @param bool           $is_loop       Si es visualización compacta en catálogo/loop.
+	 * @return string HTML generado o cadena vacía si no aplica.
 	 */
-	public function render_product_countdown_banner() {
+	public function get_countdown_banner_html( $product_or_id, $is_loop = false ) {
 		static $rendered_ids = array();
-		global $product;
 
+		$product = self::resolve_product( $product_or_id );
 		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
-			$post_id = get_the_ID();
-			if ( $post_id ) {
-				$product = wc_get_product( $post_id );
-			}
+			return '';
 		}
 
-		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
-			return;
-		}
-
-		if ( in_array( $product->get_id(), $rendered_ids, true ) ) {
-			return;
+		$cache_key = ( $is_loop ? 'loop_' : 'single_' ) . $product->get_id();
+		if ( in_array( $cache_key, $rendered_ids, true ) ) {
+			return '';
 		}
 
 		$data = $this->get_matching_countdown_rule_for_product( $product );
 		if ( ! $data ) {
-			return;
+			return '';
 		}
 
-		$rendered_ids[] = $product->get_id();
-		$rule           = $data['rule'];
-		$title          = ! empty( $rule['title'] ) ? $rule['title'] : __( 'Oferta por tiempo limitado', 'wp-agency-toolkit' );
-		$icon_key       = ! empty( $rule['icon'] ) ? $rule['icon'] : 'lightning';
-		$symbol         = self::get_promo_icon_symbol( $icon_key );
+		$rendered_ids[] = $cache_key;
+
+		$rule     = $data['rule'];
+		$title    = ! empty( $rule['title'] ) ? $rule['title'] : __( 'Oferta por tiempo limitado', 'wp-agency-toolkit' );
+		$icon_key = ! empty( $rule['icon'] ) ? $rule['icon'] : 'lightning';
+		$symbol   = self::get_promo_icon_symbol( $icon_key );
 
 		$cd_title   = ! empty( $rule['countdown_title'] ) ? $rule['countdown_title'] : __( '¡La oferta termina en!', 'wp-agency-toolkit' );
 		$bg_color   = ! empty( $rule['countdown_bg_color'] ) ? $rule['countdown_bg_color'] : '#fff7ed';
@@ -929,86 +1023,77 @@ class WPAT_Woo_Promotions {
 		$digit_col  = ! empty( $rule['countdown_digit_color'] ) ? $rule['countdown_digit_color'] : '#ea580c';
 		$font_size  = ! empty( $rule['countdown_font_size'] ) ? absint( $rule['countdown_font_size'] ) : 14;
 
-		?>
-		<div class="wpat-promo-countdown-card" data-end-timestamp="<?php echo esc_attr( $data['end_ts'] ); ?>" style="background: <?php echo esc_attr( $bg_color ); ?> !important; border: 1px solid <?php echo esc_attr( $border_col ); ?> !important;">
-			<div class="wpat-promo-countdown-header">
-				<?php if ( ! empty( $symbol ) ) : ?>
-					<span class="wpat-promo-countdown-icon"><?php echo esc_html( $symbol ); ?></span>
-				<?php endif; ?>
-				<span class="wpat-promo-countdown-title" style="color: <?php echo esc_attr( $text_color ); ?> !important; font-size: <?php echo esc_attr( $font_size ); ?>px !important;"><?php echo esc_html( $title ); ?> — <strong><?php echo esc_html( $cd_title ); ?></strong></span>
+		ob_start();
+
+		if ( $is_loop ) :
+			?>
+			<div class="wpat-promo-countdown-card wpat-promo-shop-loop-card" data-end-timestamp="<?php echo esc_attr( $data['end_ts'] ); ?>" style="margin: 8px 0 !important; padding: 8px 10px !important; background: <?php echo esc_attr( $bg_color ); ?> !important; border: 1px solid <?php echo esc_attr( $border_col ); ?> !important;">
+				<div class="wpat-promo-countdown-header" style="margin-bottom: 4px; gap: 5px;">
+					<?php if ( ! empty( $symbol ) ) : ?>
+						<span class="wpat-promo-countdown-icon" style="font-size: 14px;"><?php echo esc_html( $symbol ); ?></span>
+					<?php endif; ?>
+					<span class="wpat-promo-countdown-title" style="font-size: 11px; font-weight: 700; color: <?php echo esc_attr( $text_color ); ?> !important;"><?php echo esc_html( $cd_title ); ?></span>
+				</div>
+				<div class="wpat-promo-countdown-timer" style="gap: 3px; justify-content: center;">
+					<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px; background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-days" style="font-size: 12px; color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px; color: <?php echo esc_attr( $text_color ); ?> !important;">Días</span></div>
+					<div class="wpat-cd-sep" style="font-size: 11px; color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
+					<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px; background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-hours" style="font-size: 12px; color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px; color: <?php echo esc_attr( $text_color ); ?> !important;">Horas</span></div>
+					<div class="wpat-cd-sep" style="font-size: 11px; color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
+					<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px; background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-mins" style="font-size: 12px; color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px; color: <?php echo esc_attr( $text_color ); ?> !important;">Min</span></div>
+					<div class="wpat-cd-sep" style="font-size: 11px; color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
+					<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px; background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-secs" style="font-size: 12px; color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px; color: <?php echo esc_attr( $text_color ); ?> !important;">Seg</span></div>
+				</div>
 			</div>
-			<div class="wpat-promo-countdown-timer">
-				<div class="wpat-cd-block" style="background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-days" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="color: <?php echo esc_attr( $text_color ); ?> !important;">Días</span></div>
-				<div class="wpat-cd-sep" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
-				<div class="wpat-cd-block" style="background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-hours" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="color: <?php echo esc_attr( $text_color ); ?> !important;">Horas</span></div>
-				<div class="wpat-cd-sep" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
-				<div class="wpat-cd-block" style="background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-mins" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="color: <?php echo esc_attr( $text_color ); ?> !important;">Min</span></div>
-				<div class="wpat-cd-sep" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
-				<div class="wpat-cd-block" style="background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-secs" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="color: <?php echo esc_attr( $text_color ); ?> !important;">Seg</span></div>
+			<?php
+		else :
+			?>
+			<div class="wpat-promo-countdown-card" data-end-timestamp="<?php echo esc_attr( $data['end_ts'] ); ?>" style="background: <?php echo esc_attr( $bg_color ); ?> !important; border: 1px solid <?php echo esc_attr( $border_col ); ?> !important;">
+				<div class="wpat-promo-countdown-header">
+					<?php if ( ! empty( $symbol ) ) : ?>
+						<span class="wpat-promo-countdown-icon"><?php echo esc_html( $symbol ); ?></span>
+					<?php endif; ?>
+					<span class="wpat-promo-countdown-title" style="color: <?php echo esc_attr( $text_color ); ?> !important; font-size: <?php echo esc_attr( $font_size ); ?>px !important;"><?php echo esc_html( $title ); ?> — <strong><?php echo esc_html( $cd_title ); ?></strong></span>
+				</div>
+				<div class="wpat-promo-countdown-timer">
+					<div class="wpat-cd-block" style="background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-days" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="color: <?php echo esc_attr( $text_color ); ?> !important;">Días</span></div>
+					<div class="wpat-cd-sep" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
+					<div class="wpat-cd-block" style="background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-hours" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="color: <?php echo esc_attr( $text_color ); ?> !important;">Horas</span></div>
+					<div class="wpat-cd-sep" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
+					<div class="wpat-cd-block" style="background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-mins" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="color: <?php echo esc_attr( $text_color ); ?> !important;">Min</span></div>
+					<div class="wpat-cd-sep" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
+					<div class="wpat-cd-block" style="background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-secs" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="color: <?php echo esc_attr( $text_color ); ?> !important;">Seg</span></div>
+				</div>
 			</div>
-		</div>
-		<?php
+			<?php
+		endif;
+
+		return ob_get_clean();
+	}
+
+	/**
+	 * Renderiza la tarjeta de cuenta regresiva en la página de producto individual.
+	 *
+	 * @param WC_Product|int|null $product_or_id Producto opcional.
+	 */
+	public function render_product_countdown_banner( $product_or_id = null ) {
+		$product = self::resolve_product( $product_or_id );
+		if ( ! $product ) {
+			return;
+		}
+		echo $this->get_countdown_banner_html( $product, false ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	/**
 	 * Renderiza una insignia/banner de cuenta regresiva compacta en los productos del catálogo de la tienda.
+	 *
+	 * @param WC_Product|int|null $product_or_id Producto opcional.
 	 */
-	public function render_shop_loop_countdown_banner() {
-		static $rendered_loop_ids = array();
-		global $product;
-
-		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
-			$post_id = get_the_ID();
-			if ( $post_id ) {
-				$product = wc_get_product( $post_id );
-			}
-		}
-
-		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
+	public function render_shop_loop_countdown_banner( $product_or_id = null ) {
+		$product = self::resolve_product( $product_or_id );
+		if ( ! $product ) {
 			return;
 		}
-
-		if ( in_array( $product->get_id(), $rendered_loop_ids, true ) ) {
-			return;
-		}
-
-		$data = $this->get_matching_countdown_rule_for_product( $product );
-		if ( ! $data ) {
-			return;
-		}
-
-		$rendered_loop_ids[] = $product->get_id();
-
-		$rule     = $data['rule'];
-		$icon_key = ! empty( $rule['icon'] ) ? $rule['icon'] : 'lightning';
-		$symbol   = self::get_promo_icon_symbol( $icon_key );
-
-		$cd_title   = ! empty( $rule['countdown_title'] ) ? $rule['countdown_title'] : __( '¡Oferta termina en!', 'wp-agency-toolkit' );
-		$bg_color   = ! empty( $rule['countdown_bg_color'] ) ? $rule['countdown_bg_color'] : '#fff7ed';
-		$border_col = ! empty( $rule['countdown_border_color'] ) ? $rule['countdown_border_color'] : '#fed7aa';
-		$text_color = ! empty( $rule['countdown_text_color'] ) ? $rule['countdown_text_color'] : '#9a3412';
-		$digit_bg   = ! empty( $rule['countdown_digit_bg'] ) ? $rule['countdown_digit_bg'] : '#ffffff';
-		$digit_col  = ! empty( $rule['countdown_digit_color'] ) ? $rule['countdown_digit_color'] : '#ea580c';
-
-		?>
-		<div class="wpat-promo-countdown-card wpat-promo-shop-loop-card" data-end-timestamp="<?php echo esc_attr( $data['end_ts'] ); ?>" style="margin: 8px 0 !important; padding: 8px 10px !important; background: <?php echo esc_attr( $bg_color ); ?> !important; border: 1px solid <?php echo esc_attr( $border_col ); ?> !important;">
-			<div class="wpat-promo-countdown-header" style="margin-bottom: 4px; gap: 5px;">
-				<?php if ( ! empty( $symbol ) ) : ?>
-					<span class="wpat-promo-countdown-icon" style="font-size: 14px;"><?php echo esc_html( $symbol ); ?></span>
-				<?php endif; ?>
-				<span class="wpat-promo-countdown-title" style="font-size: 11px; font-weight: 700; color: <?php echo esc_attr( $text_color ); ?> !important;"><?php echo esc_html( $cd_title ); ?></span>
-			</div>
-			<div class="wpat-promo-countdown-timer" style="gap: 3px; justify-content: center;">
-				<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px; background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-days" style="font-size: 12px; color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px; color: <?php echo esc_attr( $text_color ); ?> !important;">Días</span></div>
-				<div class="wpat-cd-sep" style="font-size: 11px; color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
-				<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px; background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-hours" style="font-size: 12px; color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px; color: <?php echo esc_attr( $text_color ); ?> !important;">Horas</span></div>
-				<div class="wpat-cd-sep" style="font-size: 11px; color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
-				<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px; background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-mins" style="font-size: 12px; color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px; color: <?php echo esc_attr( $text_color ); ?> !important;">Min</span></div>
-				<div class="wpat-cd-sep" style="font-size: 11px; color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
-				<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px; background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-secs" style="font-size: 12px; color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px; color: <?php echo esc_attr( $text_color ); ?> !important;">Seg</span></div>
-			</div>
-		</div>
-		<?php
+		echo $this->get_countdown_banner_html( $product, true ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	/**

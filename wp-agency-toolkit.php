@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.69
+ * Version:     4.3.70
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.69' );
+define( 'WPAT_VERSION', '4.3.70' );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -220,9 +220,13 @@ class WPAT_Main {
 		// Cargar configuraciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n de forma centralizada
 		$settings = $this->get_settings();
 
-		// Cargar condicionalmente cada mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³dulo si estÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ activo (ON)
+		// Cargar condicionalmente cada módulo si está activo (ON) o si tiene reglas activas
 		foreach ( $this->modules as $id => $module ) {
-			if ( isset( $settings[ $id ] ) && '1' === $settings[ $id ] ) {
+			$is_module_on = ( isset( $settings[ $id ] ) && '1' === (string) $settings[ $id ] );
+			if ( ! $is_module_on && ( 'woo-promotions' === $id || 'woo_promotions' === $id ) && ! empty( $settings['woo_promotions_rules'] ) ) {
+				$is_module_on = true;
+			}
+			if ( $is_module_on ) {
 				$file_path = WPAT_PATH . $module['file'];
 				if ( file_exists( $file_path ) ) {
 					require_once $file_path;

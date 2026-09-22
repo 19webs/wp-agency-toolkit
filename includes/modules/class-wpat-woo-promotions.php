@@ -87,9 +87,6 @@ class WPAT_Woo_Promotions {
 		add_action( 'woocommerce_after_add_to_cart_form', array( $this, 'render_product_countdown_banner' ), 15 );
 		add_action( 'woocommerce_product_meta_end', array( $this, 'render_product_countdown_banner' ), 15 );
 
-		// Integración con el filtro de precio para inyectar automáticamente en maquetadores (Elementor Price widget, etc.)
-		add_filter( 'woocommerce_get_price_html', array( $this, 'append_countdown_to_price_html' ), 99, 2 );
-
 		// Catálogo y loops de productos
 		add_action( 'woocommerce_after_shop_loop_item', array( $this, 'render_shop_loop_countdown_banner' ), 9 );
 		add_action( 'woocommerce_after_shop_loop_item_title', array( $this, 'render_shop_loop_countdown_banner' ), 15 );
@@ -129,33 +126,6 @@ class WPAT_Woo_Promotions {
 	}
 
 	/**
-	 * Inyecta el contador directamente tras el precio si aún no se ha renderizado por ningún hook de acción.
-	 * Ideal para maquetadores como Elementor que reemplazan los hooks tradicionales por widgets sueltos.
-	 *
-	 * @param string     $price_html HTML del precio.
-	 * @param WC_Product $product    Objeto producto.
-	 * @return string
-	 */
-	public function append_countdown_to_price_html( $price_html, $product ) {
-		if ( is_admin() || wp_doing_ajax() || ( function_exists( 'is_cart' ) && is_cart() ) || ( function_exists( 'is_checkout' ) && is_checkout() ) ) {
-			return $price_html;
-		}
-
-		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
-			return $price_html;
-		}
-
-		$is_single = ( function_exists( 'is_product' ) && is_product() ) || ( function_exists( 'get_the_ID' ) && get_the_ID() === $product->get_id() );
-		$banner_html = $this->get_countdown_banner_html( $product, ! $is_single );
-
-		if ( ! empty( $banner_html ) ) {
-			return $price_html . $banner_html;
-		}
-
-		return $price_html;
-	}
-
-	/**
 	 * Encola estilos y scripts para el frontend.
 	 */
 	public function enqueue_frontend_assets() {
@@ -188,8 +158,8 @@ class WPAT_Woo_Promotions {
 		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
 			return false;
 		}
-		// Consultar directamente el post meta o la propiedad 'edit' sin pasar por los filtros de WPAT
-		$raw_sale_price = $product->get_prop( 'sale_price', 'edit' );
+		// Consultar directamente el precio rebajado en contexto 'edit' para evitar disparar filtros de precio
+		$raw_sale_price = $product->get_sale_price( 'edit' );
 		if ( '' !== $raw_sale_price && null !== $raw_sale_price && (float) $raw_sale_price > 0 ) {
 			return true;
 		}

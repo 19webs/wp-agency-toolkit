@@ -403,9 +403,9 @@ class WPAT_Woo_Checkout_Designer {
 		}
 
 		$settings              = WPAT_Main::get_instance()->get_settings();
-		$cart_designer_enabled = ! isset( $settings['woo_cart_designer_enabled'] ) || '1' === $settings['woo_cart_designer_enabled'];
+		$checkout_enabled      = ! empty( $settings['woo-checkout-designer'] ) && '1' === $settings['woo-checkout-designer'];
 
-		if ( ! $cart_designer_enabled ) {
+		if ( ! $checkout_enabled ) {
 			return;
 		}
 
@@ -525,7 +525,7 @@ class WPAT_Woo_Checkout_Designer {
 	 * Agrega la miniatura del producto y badge de cantidad en el resumen del checkout.
 	 */
 	public function add_product_thumbnail_to_checkout( $product_name, $cart_item, $cart_item_key ) {
-		if ( ! $this->is_checkout_page() ) {
+		if ( ! $this->is_checkout_page() && ! wp_doing_ajax() ) {
 			return $product_name;
 		}
 
@@ -574,7 +574,7 @@ class WPAT_Woo_Checkout_Designer {
 	}
 
 	/**
-	 * AJAX handler para actualizar la cantidad o eliminar un producto desde el checkout.
+	 * AJAX handler para actualizar la cantidad o eliminar un producto desde el checkout o drawer cart.
 	 */
 	public function ajax_update_checkout_qty() {
 		check_ajax_referer( 'wpat-checkout-nonce', 'security' );
@@ -591,9 +591,13 @@ class WPAT_Woo_Checkout_Designer {
 
 			WC()->cart->calculate_totals();
 
+			$fragments = array();
+			$fragments = $this->add_to_cart_fragments( $fragments );
+
 			wp_send_json_success( array(
 				'cart_count' => WC()->cart->get_cart_contents_count(),
 				'cart_total' => WC()->cart->get_total(),
+				'fragments'  => $fragments,
 			) );
 		}
 

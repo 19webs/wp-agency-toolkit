@@ -812,6 +812,7 @@ class WPAT_Admin {
 		}
 
 		if ( empty( $saving_module ) || 'woo-catalog' === $saving_module ) {
+			$new_settings['woo-catalog']             = isset( $input_settings['woo-catalog'] ) && '1' === $input_settings['woo-catalog'] ? '1' : '0';
 			$new_settings['woo_catalog_hide_price']  = isset( $input_settings['woo_catalog_hide_price'] ) && '1' === $input_settings['woo_catalog_hide_price'] ? '1' : '0';
 			$new_settings['woo_catalog_price_text']  = isset( $input_settings['woo_catalog_price_text'] ) ? sanitize_text_field( $input_settings['woo_catalog_price_text'] ) : '';
 			$new_settings['woo_catalog_hide_cart']   = isset( $input_settings['woo_catalog_hide_cart'] ) && '1' === $input_settings['woo_catalog_hide_cart'] ? '1' : '0';
@@ -824,6 +825,7 @@ class WPAT_Admin {
 
 		// 6. Sanitizar WooCommerce Gallery Zoom
 		if ( empty( $saving_module ) || 'woo-zoom' === $saving_module ) {
+			$new_settings['woo-zoom']                  = isset( $input_settings['woo-zoom'] ) && '1' === $input_settings['woo-zoom'] ? '1' : '0';
 			$new_settings['woo_zoom_disable_zoom']     = isset( $input_settings['woo_zoom_disable_zoom'] ) && '1' === $input_settings['woo_zoom_disable_zoom'] ? '1' : '0';
 			$new_settings['woo_zoom_disable_lightbox'] = isset( $input_settings['woo_zoom_disable_lightbox'] ) && '1' === $input_settings['woo_zoom_disable_lightbox'] ? '1' : '0';
 			$new_settings['woo_zoom_disable_slider']   = isset( $input_settings['woo_zoom_disable_slider'] ) && '1' === $input_settings['woo_zoom_disable_slider'] ? '1' : '0';
@@ -1037,7 +1039,7 @@ class WPAT_Admin {
 		if ( empty( $saving_module ) || 'woo-sale-badges' === $saving_module ) {
 			$new_settings['woo-sale-badges']           = isset( $input_settings['woo-sale-badges'] ) && '1' === $input_settings['woo-sale-badges'] ? '1' : '0';
 			$new_settings['woo_sale_badge_shape']       = isset( $input_settings['woo_sale_badge_shape'] ) && in_array( $input_settings['woo_sale_badge_shape'], array( 'soft', 'pill', 'rect', 'circle', 'corner-ribbon', 'price-tag' ), true ) ? $input_settings['woo_sale_badge_shape'] : 'soft';
-			$new_settings['woo_sale_badge_text_type']   = isset( $input_settings['woo_sale_badge_text_type'] ) && in_array( $input_settings['woo_sale_badge_text_type'], array( 'custom', 'percentage' ), true ) ? $input_settings['woo_sale_badge_text_type'] : 'custom';
+			$new_settings['woo_sale_badge_text_type']   = isset( $input_settings['woo_sale_badge_text_type'] ) && in_array( $input_settings['woo_sale_badge_text_type'], array( 'custom', 'percentage', 'amount' ), true ) ? $input_settings['woo_sale_badge_text_type'] : 'custom';
 			$new_settings['woo_sale_badge_custom_text'] = isset( $input_settings['woo_sale_badge_custom_text'] ) ? sanitize_text_field( $input_settings['woo_sale_badge_custom_text'] ) : '¡OFERTA!';
 			$new_settings['woo_sale_badge_bg_color']    = isset( $input_settings['woo_sale_badge_bg_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_sale_badge_bg_color'] ) ? $input_settings['woo_sale_badge_bg_color'] : '#ef4444';
 			$new_settings['woo_sale_badge_txt_color']   = isset( $input_settings['woo_sale_badge_txt_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_sale_badge_txt_color'] ) ? $input_settings['woo_sale_badge_txt_color'] : '#ffffff';
@@ -1047,11 +1049,16 @@ class WPAT_Admin {
 
 		// 19. Sanitizar Filtro por Facetas AJAX de WooCommerce
 		if ( empty( $saving_module ) || 'woo-facets' === $saving_module ) {
-			$new_settings['woo-facets']     = isset( $input_settings['woo-facets'] ) && '1' === $input_settings['woo-facets'] ? '1' : '0';
-			$new_settings['facets_enabled'] = $new_settings['woo-facets'];
-			if ( isset( $input_settings['facets_config'] ) ) {
-				$new_settings['facets_config'] = is_array( $input_settings['facets_config'] ) ? array_map( 'sanitize_key', $input_settings['facets_config'] ) : array( 'sort', 'price', 'category', 'stock', 'rating' );
-			}
+			$new_settings['woo-facets']                = isset( $input_settings['woo-facets'] ) && '1' === $input_settings['woo-facets'] ? '1' : '0';
+			$new_settings['facets_enabled']            = $new_settings['woo-facets'];
+			$new_settings['facets_config']             = isset( $input_settings['facets_config'] ) && is_array( $input_settings['facets_config'] ) ? array_map( 'sanitize_key', $input_settings['facets_config'] ) : array( 'sort', 'price', 'category', 'stock', 'rating' );
+			$new_settings['woo_facets_accent_color']   = isset( $input_settings['woo_facets_accent_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_facets_accent_color'] ) ? $input_settings['woo_facets_accent_color'] : '#2563eb';
+			$new_settings['woo_facets_card_bg']        = isset( $input_settings['woo_facets_card_bg'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_facets_card_bg'] ) ? $input_settings['woo_facets_card_bg'] : '#ffffff';
+			$new_settings['woo_facets_border_color']   = isset( $input_settings['woo_facets_border_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_facets_border_color'] ) ? $input_settings['woo_facets_border_color'] : '#e2e8f0';
+			$new_settings['woo_facets_badge_bg']      = isset( $input_settings['woo_facets_badge_bg'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['woo_facets_badge_bg'] ) ? $input_settings['woo_facets_badge_bg'] : '#f1f5f9';
+			$new_settings['woo_facets_border_radius']  = isset( $input_settings['woo_facets_border_radius'] ) ? max( 0, min( 40, absint( $input_settings['woo_facets_border_radius'] ) ) ) : 12;
+			$new_settings['woo_facets_show_active_tags'] = isset( $input_settings['woo_facets_show_active_tags'] ) && '1' === $input_settings['woo_facets_show_active_tags'] ? '1' : '0';
+			$new_settings['woo_facets_sticky']         = isset( $input_settings['woo_facets_sticky'] ) && '1' === $input_settings['woo_facets_sticky'] ? '1' : '0';
 		}
 
 		// 20. Sanitizar Promociones Dinámicas y Descuentos de WooCommerce
@@ -1188,9 +1195,12 @@ class WPAT_Admin {
 			}
 		}
 
+		// 21. Sanitizar Autocompletado de Direcciones en Checkout (WooCommerce)
+		if ( empty( $saving_module ) || 'woo-address-autofill' === $saving_module ) {
+			$new_settings['woo-address-autofill']       = isset( $input_settings['woo-address-autofill'] ) && '1' === $input_settings['woo-address-autofill'] ? '1' : '0';
+			$new_settings['woo_address_autofill_city'] = isset( $input_settings['woo_address_autofill_city'] ) && '1' === $input_settings['woo_address_autofill_city'] ? '1' : '0';
+		}
 
-
-		// Guardar en la base de datos
 		update_option( 'wpat_settings', $new_settings );
 
 		// Actualizar reglas del archivo .htaccess para SSL
@@ -4311,7 +4321,7 @@ class WPAT_Admin {
 										if (addRuleBtn) {
 											addRuleBtn.addEventListener('click', function() {
 												if (noRulesMsg) noRulesMsg.style.display = 'none';
-												var rIndex = rulesContainer.querySelectorAll('.wpat-extra-rule-card').length;
+												var rIndex = new Date().getTime();
 												var html = '<div class="wpat-extra-rule-card" data-title="" style="background: #ffffff; border: 1px solid var(--wpat-border); border-radius: 8px; margin-bottom: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">' +
 													'<div class="wpat-rule-header-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; cursor: pointer; user-select: none;">' +
 														'<div style="display: flex; gap: 12px; align-items: center; flex-grow: 1; min-width: 0;">' +
@@ -4395,7 +4405,7 @@ class WPAT_Admin {
 												var card = e.target.closest('.wpat-extra-rule-card');
 												var listContainer = card.querySelector('.wpat-fields-list-container');
 												var rIndex = e.target.getAttribute('data-rule');
-												var fIndex = listContainer.querySelectorAll('.wpat-field-item-row').length;
+												var fIndex = new Date().getTime() + '_' + Math.floor(Math.random() * 1000);
 
 												var fHtml = '<div class="wpat-field-item-row" style="background: #ffffff; border: 1px solid #cbd5e1; padding: 10px 12px; border-radius: 6px; margin-bottom: 8px;">' +
 													'<div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr auto; gap: 10px; align-items: center;">' +
@@ -4691,6 +4701,13 @@ class WPAT_Admin {
 												Insignia de Stock
 											</label>
 										</div>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px;">
+										<label style="font-weight: 600; display: block; margin-bottom: 5px;">Texto de Marcador de Posición (Placeholder):</label>
+										<?php $ls_ph = isset( $settings['live_search_placeholder'] ) ? esc_attr( $settings['live_search_placeholder'] ) : 'Buscar productos por nombre, SKU o categoría...'; ?>
+										<input type="text" name="wpat_settings[live_search_placeholder]" value="<?php echo $ls_ph; ?>" class="regular-text" style="width: 100%; max-width: 500px;" />
+										<p class="description">Texto visible en el campo de búsqueda antes de que el usuario empiece a escribir.</p>
 									</div>
 
 									<div class="wpat-field-group" style="margin-top: 15px;">
@@ -5033,11 +5050,11 @@ class WPAT_Admin {
 													<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 700; color: #166534;">Configuración de Compra X, Paga Y (ej. 3x2 / 2x1):</h4>
 													<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
 														<div>
-															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Por cada (Comprar Qty):</label>
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Por cada (Comprar Qty en lote):</label>
 															<input type="number" min="1" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][buy_qty]" value="<?php echo esc_attr( isset( $rule['buy_qty'] ) ? $rule['buy_qty'] : 3 ); ?>" style="width: 100%;" />
 														</div>
 														<div>
-															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Llevarte gratis / rebajado (Pagar Qty):</label>
+															<label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Unidades regaladas / rebajadas (ej: 1 en 3x2, 1 en 2x1):</label>
 															<input type="number" min="1" name="wpat_settings[woo_promotions_rules][<?php echo esc_attr( $idx ); ?>][get_qty]" value="<?php echo esc_attr( isset( $rule['get_qty'] ) ? $rule['get_qty'] : 1 ); ?>" style="width: 100%;" />
 														</div>
 														<div>
@@ -5651,6 +5668,33 @@ class WPAT_Admin {
 				</script>
 				<?php
 				break;
+			case 'woo-address-autofill':
+				?>
+				<div class="wpat-module-card" style="margin-top: 20px;">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Autocompletado de Código Postal, Provincia y Población (Checkout)</h3>
+							<p>Rellena automáticamente la Provincia y sugiere las poblaciones correspondientes según el Código Postal introducido, agilizando el checkout y reduciendo errores de entrega.</p>
+						</div>
+						<?php $this->render_module_toggle( 'woo-address-autofill', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block;">
+						<div class="wpat-field-group" style="margin-top: 15px;">
+							<label style="font-weight: 600; display: flex; align-items: center; gap: 8px;">
+								<input type="checkbox" name="wpat_settings[woo_address_autofill_city]" value="1" <?php checked( isset( $settings['woo_address_autofill_city'] ) ? $settings['woo_address_autofill_city'] : '1', '1' ); ?>>
+								Convertir el campo de Población en un desplegable inteligente filtrado por provincia
+							</label>
+							<p class="description" style="margin-left: 24px;">Permite al cliente seleccionar su municipio de una lista verificada, con opción de escritura manual si no estuviera listado.</p>
+						</div>
+
+						<div class="wpat-field-group" style="margin-top: 15px; background: #f8fafc; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 8px;">
+							<h4 style="margin: 0 0 8px 0; font-size: 13.5px; font-weight: 700;">🇪🇸 Base de Datos de España Incorporada</h4>
+							<p style="margin: 0; font-size: 12.5px; color: #475569;">Incluye las <strong>52 provincias</strong> y más de <strong>540 municipios</strong> de España con relaciones bidireccionales automáticas entre CP ↔ Provincia ↔ Población.</p>
+						</div>
+					</div>
+				</div>
+				<?php
+				break;
 			case 'duplicator':
 				?>
 <div class="wpat-module-card">
@@ -6175,85 +6219,180 @@ class WPAT_Admin {
 							<h3>Badges y Etiquetas de Oferta High-Impact</h3>
 							<p>Reemplaza la etiqueta de oferta nativa de WooCommerce por botones, cintas y etiquetas personalizadas de alto impacto con cálculo automático de descuento.</p>
 						</div>
-						<?php $this->render_module_toggle( 'woo-sale-badges',
-			$settings, true ); ?>
+						<?php $this->render_module_toggle( 'woo-sale-badges', $settings, true ); ?>
 					</div>
 					<div class="wpat-module-body" style="display: block;">
-						<div class="wpat-field-group">
-							<label style="font-weight: 700; display: block; margin-bottom: 12px;">Selecciona la Forma del Badge / Etiqueta:</label>
-							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
-								<label style="border: 2px solid <?php echo 'soft' === $shape ? '#2563eb' : '#e2e8f0'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
-									<input type="radio" name="wpat_settings[woo_sale_badge_shape]" value="soft" <?php checked( $shape, 'soft' ); ?>>
-									<strong style="display: block; margin-top: 6px; font-size: 14px;">Bordes Suaves</strong>
-									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Esquinas ligeramente redondeadas (8px radius).</span>
-								</label>
-								<label style="border: 2px solid <?php echo 'pill' === $shape ? '#2563eb' : '#e2e8f0'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
-									<input type="radio" name="wpat_settings[woo_sale_badge_shape]" value="pill" <?php checked( $shape, 'pill' ); ?>>
-									<strong style="display: block; margin-top: 6px; font-size: 14px;">Píldora (Pill)</strong>
-									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Totalmente redondeado estilo cápsula (20px radius).</span>
-								</label>
-								<label style="border: 2px solid <?php echo 'rect' === $shape ? '#2563eb' : '#e2e8f0'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
-									<input type="radio" name="wpat_settings[woo_sale_badge_shape]" value="rect" <?php checked( $shape, 'rect' ); ?>>
-									<strong style="display: block; margin-top: 6px; font-size: 14px;">Rectangular</strong>
-									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Bordes rectos limpios (0px radius).</span>
-								</label>
-								<label style="border: 2px solid <?php echo 'circle' === $shape ? '#2563eb' : '#e2e8f0'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
-									<input type="radio" name="wpat_settings[woo_sale_badge_shape]" value="circle" <?php checked( $shape, 'circle' ); ?>>
-									<strong style="display: block; margin-top: 6px; font-size: 14px;">Circular Compacto</strong>
-									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Badge circular concéntrico (50x50px).</span>
-								</label>
-								<label style="border: 2px solid <?php echo 'corner-ribbon' === $shape ? '#2563eb' : '#e2e8f0'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
-									<input type="radio" name="wpat_settings[woo_sale_badge_shape]" value="corner-ribbon" <?php checked( $shape, 'corner-ribbon' ); ?>>
-									<strong style="display: block; margin-top: 6px; font-size: 14px;">Cinta Diagonal</strong>
-									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Cinta de esquina cruzada a 45 grados.</span>
-								</label>
-								<label style="border: 2px solid <?php echo 'price-tag' === $shape ? '#2563eb' : '#e2e8f0'; ?>; padding: 15px; border-radius: 10px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
-									<input type="radio" name="wpat_settings[woo_sale_badge_shape]" value="price-tag" <?php checked( $shape, 'price-tag' ); ?>>
-									<strong style="display: block; margin-top: 6px; font-size: 14px;">Etiqueta de Precio</strong>
-									<span class="description" style="font-size: 12px; display: block; margin-top: 4px;">Estilo ticket con muesca lateral.</span>
-								</label>
-							</div>
-						</div>
+						<div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 25px; align-items: start;">
+							<div>
+								<div class="wpat-field-group">
+									<label style="font-weight: 700; display: block; margin-bottom: 12px;">Selecciona la Forma del Badge / Etiqueta:</label>
+									<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;" id="wpat-badge-shape-options">
+										<label class="wpat-shape-card" style="border: 2px solid <?php echo 'soft' === $shape ? '#2563eb' : '#e2e8f0'; ?>; padding: 12px; border-radius: 8px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
+											<input type="radio" name="wpat_settings[woo_sale_badge_shape]" value="soft" <?php checked( $shape, 'soft' ); ?>>
+											<strong style="display: block; margin-top: 4px; font-size: 13px;">Bordes Suaves</strong>
+											<span class="description" style="font-size: 11px; display: block; margin-top: 2px;">Redondeado 8px.</span>
+										</label>
+										<label class="wpat-shape-card" style="border: 2px solid <?php echo 'pill' === $shape ? '#2563eb' : '#e2e8f0'; ?>; padding: 12px; border-radius: 8px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
+											<input type="radio" name="wpat_settings[woo_sale_badge_shape]" value="pill" <?php checked( $shape, 'pill' ); ?>>
+											<strong style="display: block; margin-top: 4px; font-size: 13px;">Píldora (Pill)</strong>
+											<span class="description" style="font-size: 11px; display: block; margin-top: 2px;">Cápsula 20px.</span>
+										</label>
+										<label class="wpat-shape-card" style="border: 2px solid <?php echo 'rect' === $shape ? '#2563eb' : '#e2e8f0'; ?>; padding: 12px; border-radius: 8px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
+											<input type="radio" name="wpat_settings[woo_sale_badge_shape]" value="rect" <?php checked( $shape, 'rect' ); ?>>
+											<strong style="display: block; margin-top: 4px; font-size: 13px;">Rectangular</strong>
+											<span class="description" style="font-size: 11px; display: block; margin-top: 2px;">Bordes rectos 0px.</span>
+										</label>
+										<label class="wpat-shape-card" style="border: 2px solid <?php echo 'circle' === $shape ? '#2563eb' : '#e2e8f0'; ?>; padding: 12px; border-radius: 8px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
+											<input type="radio" name="wpat_settings[woo_sale_badge_shape]" value="circle" <?php checked( $shape, 'circle' ); ?>>
+											<strong style="display: block; margin-top: 4px; font-size: 13px;">Circular</strong>
+											<span class="description" style="font-size: 11px; display: block; margin-top: 2px;">Compacto 50x50px.</span>
+										</label>
+										<label class="wpat-shape-card" style="border: 2px solid <?php echo 'corner-ribbon' === $shape ? '#2563eb' : '#e2e8f0'; ?>; padding: 12px; border-radius: 8px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
+											<input type="radio" name="wpat_settings[woo_sale_badge_shape]" value="corner-ribbon" <?php checked( $shape, 'corner-ribbon' ); ?>>
+											<strong style="display: block; margin-top: 4px; font-size: 13px;">Cinta Diagonal</strong>
+											<span class="description" style="font-size: 11px; display: block; margin-top: 2px;">Esquina 45 grados.</span>
+										</label>
+										<label class="wpat-shape-card" style="border: 2px solid <?php echo 'price-tag' === $shape ? '#2563eb' : '#e2e8f0'; ?>; padding: 12px; border-radius: 8px; cursor: pointer; background: var(--wpat-card-bg, #fff);">
+											<input type="radio" name="wpat_settings[woo_sale_badge_shape]" value="price-tag" <?php checked( $shape, 'price-tag' ); ?>>
+											<strong style="display: block; margin-top: 4px; font-size: 13px;">Etiqueta Ticket</strong>
+											<span class="description" style="font-size: 11px; display: block; margin-top: 2px;">Con muesca de precio.</span>
+										</label>
+									</div>
+								</div>
 
-						<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
+								<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 20px 0;" />
 
-						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-							<div class="wpat-field-group">
-								<label style="font-weight: 600; display: block; margin-bottom: 6px;">Tipo de Texto a Mostrar:</label>
-								<select name="wpat_settings[woo_sale_badge_text_type]" class="regular-text" style="width: 100%;">
-									<option value="custom" <?php selected( $text_type, 'custom' ); ?>>Texto Personalizado (Ej: ¡OFERTA!)</option>
-									<option value="percentage" <?php selected( $text_type, 'percentage' ); ?>>Porcentaje de Descuento Real (Ej: -25%)</option>
-								</select>
-							</div>
-							<div class="wpat-field-group">
-								<label style="font-weight: 600; display: block; margin-bottom: 6px;">Texto Personalizado:</label>
-								<input type="text" name="wpat_settings[woo_sale_badge_custom_text]" value="<?php echo esc_attr( $custom_txt ); ?>" class="regular-text" style="width: 100%;" placeholder="¡OFERTA!">
-							</div>
-						</div>
+								<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+									<div class="wpat-field-group">
+										<label style="font-weight: 600; display: block; margin-bottom: 6px;">Tipo de Texto a Mostrar:</label>
+										<select name="wpat_settings[woo_sale_badge_text_type]" id="wpat_badge_text_type" class="regular-text" style="width: 100%;">
+											<option value="custom" <?php selected( $text_type, 'custom' ); ?>>Texto Personalizado (Ej: ¡OFERTA!)</option>
+											<option value="percentage" <?php selected( $text_type, 'percentage' ); ?>>Porcentaje de Descuento (Ej: -25% / Hasta -30%)</option>
+											<option value="amount" <?php selected( $text_type, 'amount' ); ?>>Ahorro en Moneda (Ej: Ahorra 15,00 €)</option>
+										</select>
+									</div>
+									<div class="wpat-field-group" id="wpat-badge-custom-text-wrap" style="<?php echo 'custom' !== $text_type ? 'opacity: 0.5;' : ''; ?>">
+										<label style="font-weight: 600; display: block; margin-bottom: 6px;">Texto Personalizado:</label>
+										<input type="text" name="wpat_settings[woo_sale_badge_custom_text]" id="wpat_badge_custom_text" value="<?php echo esc_attr( $custom_txt ); ?>" class="regular-text" style="width: 100%;" placeholder="¡OFERTA!">
+									</div>
+								</div>
 
-						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; margin-top: 15px;">
-							<div class="wpat-field-group">
-								<label style="font-weight: 600; display: block; margin-bottom: 6px;">Color de Fondo:</label>
-								<input type="text" name="wpat_settings[woo_sale_badge_bg_color]" value="<?php echo esc_attr( $bg_color ); ?>" class="wpat-color-picker" data-default-color="#ef4444">
+								<div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; margin-top: 15px;">
+									<div class="wpat-field-group">
+										<label style="font-weight: 600; display: block; margin-bottom: 6px;">Color Fondo:</label>
+										<input type="text" name="wpat_settings[woo_sale_badge_bg_color]" id="wpat_badge_bg_color" value="<?php echo esc_attr( $bg_color ); ?>" class="wpat-color-picker" data-default-color="#ef4444">
+									</div>
+									<div class="wpat-field-group">
+										<label style="font-weight: 600; display: block; margin-bottom: 6px;">Color Texto:</label>
+										<input type="text" name="wpat_settings[woo_sale_badge_txt_color]" id="wpat_badge_txt_color" value="<?php echo esc_attr( $txt_color ); ?>" class="wpat-color-picker" data-default-color="#ffffff">
+									</div>
+									<div class="wpat-field-group">
+										<label style="font-weight: 600; display: block; margin-bottom: 6px;">Fuente (px):</label>
+										<input type="number" name="wpat_settings[woo_sale_badge_font_size]" id="wpat_badge_font_size" value="<?php echo esc_attr( $font_size ); ?>" min="8" max="32" class="small-text" style="width: 100%;">
+									</div>
+									<div class="wpat-field-group">
+										<label style="font-weight: 600; display: block; margin-bottom: 6px;">Posición:</label>
+										<select name="wpat_settings[woo_sale_badge_position]" id="wpat_badge_position" style="width: 100%;">
+											<option value="top-left" <?php selected( $position, 'top-left' ); ?>>Superior Izq</option>
+											<option value="top-right" <?php selected( $position, 'top-right' ); ?>>Superior Der</option>
+										</select>
+									</div>
+								</div>
 							</div>
-							<div class="wpat-field-group">
-								<label style="font-weight: 600; display: block; margin-bottom: 6px;">Color de Texto:</label>
-								<input type="text" name="wpat_settings[woo_sale_badge_txt_color]" value="<?php echo esc_attr( $txt_color ); ?>" class="wpat-color-picker" data-default-color="#ffffff">
-							</div>
-							<div class="wpat-field-group">
-								<label style="font-weight: 600; display: block; margin-bottom: 6px;">Tamaño Fuente (px):</label>
-								<input type="number" name="wpat_settings[woo_sale_badge_font_size]" value="<?php echo esc_attr( $font_size ); ?>" min="8" max="32" class="small-text">
-							</div>
-							<div class="wpat-field-group">
-								<label style="font-weight: 600; display: block; margin-bottom: 6px;">Posición en la Imagen:</label>
-								<select name="wpat_settings[woo_sale_badge_position]" style="width: 100%;">
-									<option value="top-left" <?php selected( $position, 'top-left' ); ?>>Superior Izquierda</option>
-									<option value="top-right" <?php selected( $position, 'top-right' ); ?>>Superior Derecha</option>
-								</select>
+
+							<!-- Live Preview Card -->
+							<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; text-align: center;">
+								<span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em; display: block; margin-bottom: 12px;">Vista Previa en Vivo</span>
+								
+								<div id="wpat-badge-preview-container" style="position: relative; width: 200px; height: 220px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; padding: 15px;">
+									
+									<!-- Mock Sale Badge -->
+									<span id="wpat-badge-preview" class="onsale wpat-sale-badge badge-<?php echo esc_attr( $shape ); ?> pos-<?php echo esc_attr( $position ); ?>" style="background-color: <?php echo esc_attr( $bg_color ); ?> !important; color: <?php echo esc_attr( $txt_color ); ?> !important; font-size: <?php echo esc_attr( $font_size ); ?>px !important; <?php echo 'top-right' === $position ? 'right: 12px !important; left: auto !important;' : 'left: 12px !important; right: auto !important;'; ?>">
+										<?php
+										if ( 'percentage' === $text_type ) {
+											echo '-25%';
+										} elseif ( 'amount' === $text_type ) {
+											echo 'Ahorra 15,00 €';
+										} else {
+											echo esc_html( $custom_txt );
+										}
+										?>
+									</span>
+
+									<!-- Mock Product Image Placeholder -->
+									<div style="height: 120px; background: #f1f5f9; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #94a3b8;">
+										<span class="dashicons dashicons-format-image" style="font-size: 36px; width: 36px; height: 36px;"></span>
+									</div>
+
+									<!-- Mock Product Meta -->
+									<div style="text-align: left;">
+										<div style="height: 10px; width: 70%; background: #e2e8f0; border-radius: 4px; margin-bottom: 6px;"></div>
+										<div style="display: flex; gap: 8px; align-items: center;">
+											<span style="font-size: 11px; text-decoration: line-through; color: #94a3b8;">60,00 €</span>
+											<span style="font-size: 13px; font-weight: 700; color: #0f172a;">45,00 €</span>
+										</div>
+									</div>
+								</div>
+								<p class="description" style="font-size: 11px; margin-top: 10px; color: #64748b;">Visualización en directo de cómo lucirá sobre las imágenes de tu catálogo.</p>
 							</div>
 						</div>
 					</div>
 				</div>
+
+				<script>
+				(function($) {
+					$(document).ready(function() {
+						function updateBadgePreview() {
+							var shape = $('input[name="wpat_settings[woo_sale_badge_shape]"]:checked').val() || 'soft';
+							var textType = $('#wpat_badge_text_type').val();
+							var customTxt = $('#wpat_badge_custom_text').val() || '¡OFERTA!';
+							var bgColor = $('#wpat_badge_bg_color').val() || '#ef4444';
+							var txtColor = $('#wpat_badge_txt_color').val() || '#ffffff';
+							var fontSize = $('#wpat_badge_font_size').val() || 13;
+							var position = $('#wpat_badge_position').val() || 'top-left';
+
+							var $badge = $('#wpat-badge-preview');
+							$badge.attr('class', 'onsale wpat-sale-badge badge-' + shape + ' pos-' + position);
+							$badge.css({
+								'background-color': bgColor,
+								'color': txtColor,
+								'font-size': fontSize + 'px'
+							});
+
+							if (position === 'top-right') {
+								$badge.css({ 'right': '12px', 'left': 'auto' });
+							} else {
+								$badge.css({ 'left': '12px', 'right': 'auto' });
+							}
+
+							var displayText = customTxt;
+							if (textType === 'percentage') {
+								displayText = '-25%';
+								$('#wpat-badge-custom-text-wrap').css('opacity', '0.5');
+							} else if (textType === 'amount') {
+								displayText = 'Ahorra 15,00 €';
+								$('#wpat-badge-custom-text-wrap').css('opacity', '0.5');
+							} else {
+								$('#wpat-badge-custom-text-wrap').css('opacity', '1');
+							}
+							$badge.text(displayText);
+
+							// Highlight selected shape card
+							$('.wpat-shape-card').each(function() {
+								var isChecked = $(this).find('input[type="radio"]').is(':checked');
+								$(this).css('border-color', isChecked ? '#2563eb' : '#e2e8f0');
+							});
+						}
+
+						$('input[name="wpat_settings[woo_sale_badge_shape]"]').on('change', updateBadgePreview);
+						$('#wpat_badge_text_type, #wpat_badge_position').on('change', updateBadgePreview);
+						$('#wpat_badge_custom_text, #wpat_badge_font_size').on('input change', updateBadgePreview);
+						$('#wpat_badge_bg_color, #wpat_badge_txt_color').on('input change', function() {
+							setTimeout(updateBadgePreview, 50);
+						});
+					});
+				})(jQuery);
+				</script>
 				<?php
 				break;
 			case 'woo-checkout-designer':

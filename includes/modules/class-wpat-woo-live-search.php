@@ -63,6 +63,7 @@ class WPAT_Woo_Live_Search {
 
 		wp_localize_script( 'wpat-woo-live-search', 'wpatWooSearch', array(
 			'ajaxurl'     => admin_url( 'admin-ajax.php' ),
+			'nonce'       => wp_create_nonce( 'wpat_live_search_nonce' ),
 			'min_chars'   => 2,
 			'max_results' => isset( $settings['live_search_max_results'] ) ? min( 8, max( 1, intval( $settings['live_search_max_results'] ) ) ) : 5,
 			'no_results'  => __( 'No se encontraron productos coincidentes', 'wp-agency-toolkit' ),
@@ -92,14 +93,14 @@ class WPAT_Woo_Live_Search {
 		<div class="wpat-live-search-wrapper <?php echo $extra_class; ?>">
 			<form role="search" method="get" class="wpat-live-search-form" action="<?php echo esc_url( home_url( '/' ) ); ?>">
 				<div class="wpat-live-search-input-wrap">
-					<input type="search" class="wpat-live-search-field" placeholder="<?php echo $placeholder; ?>" value="<?php echo get_search_query(); ?>" name="s" autocomplete="off" />
+					<input type="search" class="wpat-live-search-field" placeholder="<?php echo $placeholder; ?>" value="<?php echo get_search_query(); ?>" name="s" autocomplete="off" aria-label="<?php echo esc_attr( $placeholder ); ?>" />
 					<input type="hidden" name="post_type" value="product" />
 					<button type="submit" class="wpat-live-search-submit" aria-label="<?php esc_attr_e( 'Buscar', 'wp-agency-toolkit' ); ?>">
 						<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
 					</button>
-					<span class="wpat-live-search-spinner" style="display:none;"></span>
+					<span class="wpat-live-search-spinner" style="display:none;" aria-hidden="true"></span>
 				</div>
-				<div class="wpat-live-search-dropdown" style="display:none;"></div>
+				<div class="wpat-live-search-dropdown" style="display:none;" role="listbox"></div>
 			</form>
 		</div>
 		<?php
@@ -117,12 +118,15 @@ class WPAT_Woo_Live_Search {
 	 * Endpoint AJAX para consultar productos WooCommerce en tiempo real.
 	 */
 	public function ajax_product_search() {
+		check_ajax_referer( 'wpat_live_search_nonce', 'nonce' );
+
 		$term = isset( $_GET['term'] ) ? sanitize_text_field( wp_unslash( $_GET['term'] ) ) : '';
 
 		if ( mb_strlen( trim( $term ) ) < 2 ) {
 			wp_send_json_success( array( 'results' => array(), 'total' => 0 ) );
 		}
 
+		global $wpdb;
 		$settings    = WPAT_Main::get_instance()->get_settings();
 		$max_results = isset( $settings['live_search_max_results'] ) ? min( 8, max( 1, intval( $settings['live_search_max_results'] ) ) ) : 5;
 		$show_thumb  = ! isset( $settings['live_search_show_thumb'] ) || '1' === $settings['live_search_show_thumb'];
@@ -142,15 +146,49 @@ class WPAT_Woo_Live_Search {
 			}
 		}
 
-		// 2. Búsqueda por SKU
-		if ( function_exists( 'wc_get_product_id_by_sku' ) ) {
-			$sku_id = wc_get_product_id_by_sku( $term );
-			if ( $sku_id && ! in_array( $sku_id, $found_ids, true ) ) {
-				$found_ids[] = $sku_id;
+		// 2. Búsqueda por SKU exacto y parcial (incluyendo variaciones)
+		$term_like = '%' . $wpdb->esc_like( $term ) . '%';
+		$sku_post_ids = $wpdb->get_col( $wpdb->prepare(
+			"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_sku' AND meta_value LIKE %s LIMIT %d",
+			$term_like,
+			$max_results * 2
+		) );
+
+		if ( ! empty( $sku_post_ids ) ) {
+			foreach ( $sku_post_ids as $sp_id ) {
+				$sp_id = intval( $sp_id );
+				$parent_id = wp_get_post_parent_id( $sp_id );
+				$target_id = $parent_id ? $parent_id : $sp_id;
+				$target_post = get_post( $target_id );
+				if ( $target_post && 'product' === $target_post->post_type && 'publish' === $target_post->post_status ) {
+					if ( ! in_array( $target_id, $found_ids, true ) ) {
+						$found_ids[] = $target_id;
+					}
+				}
 			}
 		}
 
-		// 3. Consulta WP_Query por título y contenido
+		// 3. Búsqueda por Categorías de Producto que coincidan con el término
+		$cat_matching_terms = get_terms( array(
+			'taxonomy'   => 'product_cat',
+			'name__like' => $term,
+			'fields'     => 'ids',
+			'hide_empty' => true,
+		) );
+
+		// 4. Preparar visibilidad de WooCommerce
+		$tax_query = array();
+		if ( taxonomy_exists( 'product_visibility' ) ) {
+			$product_visibility_term_ids = wc_get_product_visibility_term_ids();
+			$tax_query[] = array(
+				'taxonomy' => 'product_visibility',
+				'field'    => 'term_taxonomy_id',
+				'terms'    => array( $product_visibility_term_ids['exclude-from-search'], $product_visibility_term_ids['exclude-from-catalog'] ),
+				'operator' => 'NOT IN',
+			);
+		}
+
+		// 5. Consulta principal WP_Query
 		$args = array(
 			'post_type'      => 'product',
 			'post_status'    => 'publish',
@@ -159,34 +197,45 @@ class WPAT_Woo_Live_Search {
 			'post__not_in'   => $found_ids,
 		);
 
-		// Excluir productos ocultos del catálogo si WooCommerce está activo
-		if ( taxonomy_exists( 'product_visibility' ) ) {
-			$product_visibility_term_ids = wc_get_product_visibility_term_ids();
-			$args['tax_query']           = array(
-				array(
-					'taxonomy' => 'product_visibility',
-					'field'    => 'term_taxonomy_id',
-					'terms'    => array( $product_visibility_term_ids['exclude-from-search'], $product_visibility_term_ids['exclude-from-catalog'] ),
-					'operator' => 'NOT IN',
-				),
-			);
+		if ( ! empty( $tax_query ) ) {
+			$args['tax_query'] = $tax_query;
 		}
 
-		// Si encontramos productos por ID o SKU, aseguramos meterlos primero
+		$query = new WP_Query( $args );
+
+		// 6. Si hay categorías coincidentes y aún hay espacio, buscar productos en esas categorías
+		$cat_posts = array();
+		if ( ! empty( $cat_matching_terms ) && ( count( $found_ids ) + count( $query->posts ) < $max_results ) ) {
+			$cat_tax_query = $tax_query;
+			$cat_tax_query[] = array(
+				'taxonomy' => 'product_cat',
+				'field'    => 'term_id',
+				'terms'    => $cat_matching_terms,
+			);
+			$cat_query = new WP_Query( array(
+				'post_type'      => 'product',
+				'post_status'    => 'publish',
+				'posts_per_page' => $max_results,
+				'tax_query'      => $cat_tax_query,
+				'post__not_in'   => array_merge( $found_ids, wp_list_pluck( $query->posts, 'ID' ) ),
+			) );
+			$cat_posts = $cat_query->posts;
+		}
+
+		// Si encontramos productos por ID o SKU, aseguramos obtener sus objetos de post
+		$direct_posts = array();
 		if ( ! empty( $found_ids ) ) {
 			$direct_posts = get_posts( array(
 				'post_type'   => 'product',
 				'post_status' => 'publish',
 				'post__in'    => $found_ids,
+				'numberposts' => count( $found_ids ),
 			) );
-		} else {
-			$direct_posts = array();
 		}
 
-		$query       = new WP_Query( $args );
-		$all_posts   = array_merge( $direct_posts, $query->posts );
+		$all_posts   = array_merge( $direct_posts, $query->posts, $cat_posts );
 		$all_posts   = array_slice( $all_posts, 0, $max_results );
-		$total_found = $query->found_posts + count( $direct_posts );
+		$total_found = $query->found_posts + count( $direct_posts ) + ( isset( $cat_query ) ? $cat_query->found_posts : 0 );
 
 		foreach ( $all_posts as $post ) {
 			$product = wc_get_product( $post->ID );
@@ -217,14 +266,14 @@ class WPAT_Woo_Live_Search {
 			if ( 'sku' === $show_meta || 'both' === $show_meta ) {
 				$sku = $product->get_sku();
 				if ( $sku ) {
-					$meta_text .= 'SKU: ' . $sku;
+					$meta_text .= 'SKU: ' . esc_html( $sku );
 				}
 			}
 			if ( 'cat' === $show_meta || 'both' === $show_meta ) {
 				$cats = wc_get_product_category_list( $product->get_id(), ', ' );
 				if ( $cats ) {
 					$clean_cats = wp_strip_all_tags( $cats );
-					$meta_text .= ( $meta_text ? ' | ' : '' ) . $clean_cats;
+					$meta_text .= ( $meta_text ? ' | ' : '' ) . esc_html( $clean_cats );
 				}
 			}
 

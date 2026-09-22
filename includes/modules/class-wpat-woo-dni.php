@@ -30,6 +30,16 @@ class WPAT_Woo_Dni {
 	 * Constructor.
 	 */
 	private function __construct() {
+		$settings = WPAT_Main::get_instance()->get_settings();
+		if ( empty( $settings['woo-dni'] ) && empty( $settings['dni_enabled'] ) ) {
+			return;
+		}
+
+		// Si el Editor de Checkout ya gestiona el NIF/DNI de forma avanzada, evitar duplicidad
+		if ( ! empty( $settings['woo-checkout-editor'] ) && ! empty( $settings['checkout_nif_enabled'] ) ) {
+			return;
+		}
+
 		// Añadir campo al checkout
 		add_filter( 'woocommerce_billing_fields', array( $this, 'add_dni_field' ) );
 		

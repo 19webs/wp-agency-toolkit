@@ -276,7 +276,9 @@ class WPAT_Woo_Promotions {
 				continue;
 			}
 
-			if ( ! in_array( $rule_type, array( 'global_discount', 'bulk_qty' ), true ) ) {
+			// Solo las reglas de descuento global modifican directamente el precio base/unitario del producto.
+			// Las reglas por volumen (bulk_qty), tramos (tiered_spend) y 3x2 (bxgy) se calculan en el carrito según cantidades reales.
+			if ( 'global_discount' !== $rule_type ) {
 				continue;
 			}
 
@@ -332,12 +334,14 @@ class WPAT_Woo_Promotions {
 				if ( $calculated < $lowest_price ) {
 					$lowest_price = $calculated;
 					$applied      = true;
+					$winning_rule = $rule;
 				}
 			}
 		}
 
 		if ( $applied && is_object( $product ) ) {
-			$product->wpat_promo_applied = true;
+			$product->wpat_promo_applied     = true;
+			$product->wpat_applied_promo_rule = isset( $winning_rule ) ? $winning_rule : null;
 		}
 
 		self::$in_price_filter = false;
@@ -576,6 +580,12 @@ class WPAT_Woo_Promotions {
 				$discount_amount = min( $discount_amount, (float) $cart->get_subtotal() );
 				$fee_id          = 'wpat_promo_' . $rule_id;
 				$cart->add_fee( $rule_title, -$discount_amount, true, '' );
+
+				if ( WC()->session ) {
+					$applied_fees = (array) WC()->session->get( 'wpat_promo_applied_fees', array() );
+					$applied_fees[ sanitize_title( $rule_title ) ] = $rule_id;
+					WC()->session->set( 'wpat_promo_applied_fees', $applied_fees );
+				}
 			}
 		}
 	}
@@ -611,12 +621,32 @@ class WPAT_Woo_Promotions {
 			return;
 		}
 
+		$now_ts      = time();
 		$target_rule = null;
+
 		foreach ( $rules as $rule ) {
-			if ( ! empty( $rule['active'] ) && isset( $rule['type'] ) && 'tiered_spend' === $rule['type'] ) {
-				$target_rule = $rule;
-				break;
+			if ( empty( $rule['active'] ) || '1' !== (string) $rule['active'] || empty( $rule['type'] ) || 'tiered_spend' !== $rule['type'] ) {
+				continue;
 			}
+
+			$enable_sched = isset( $rule['enable_schedule'] ) ? ( '1' === (string) $rule['enable_schedule'] ) : ( ! empty( $rule['start_date'] ) || ! empty( $rule['end_date'] ) );
+			if ( $enable_sched ) {
+				if ( ! empty( $rule['start_date'] ) ) {
+					$start_ts = self::parse_date_to_timestamp( $rule['start_date'] );
+					if ( $start_ts && $now_ts < $start_ts ) {
+						continue;
+					}
+				}
+				if ( ! empty( $rule['end_date'] ) ) {
+					$end_ts = self::parse_date_to_timestamp( $rule['end_date'], true );
+					if ( $end_ts && $now_ts > $end_ts ) {
+						continue;
+					}
+				}
+			}
+
+			$target_rule = $rule;
+			break;
 		}
 
 		if ( ! $target_rule || empty( $target_rule['tiers'] ) ) {
@@ -912,8 +942,13 @@ class WPAT_Woo_Promotions {
 	 * Renderiza una insignia/banner de cuenta regresiva compacta en los productos del catálogo de la tienda.
 	 */
 	public function render_shop_loop_countdown_banner() {
+		static $rendered_loop_ids = array();
 		global $product;
 		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
+			return;
+		}
+
+		if ( in_array( $product->get_id(), $rendered_loop_ids, true ) ) {
 			return;
 		}
 
@@ -921,6 +956,8 @@ class WPAT_Woo_Promotions {
 		if ( ! $data ) {
 			return;
 		}
+
+		$rendered_loop_ids[] = $product->get_id();
 
 		$rule     = $data['rule'];
 		$icon_key = ! empty( $rule['icon'] ) ? $rule['icon'] : 'lightning';
@@ -965,6 +1002,10 @@ class WPAT_Woo_Promotions {
 			return null;
 		}
 
+		if ( isset( $product->wpat_applied_promo_rule ) && is_array( $product->wpat_applied_promo_rule ) ) {
+			return $product->wpat_applied_promo_rule;
+		}
+
 		$settings = WPAT_Main::get_instance()->get_settings();
 		$rules    = isset( $settings['woo_promotions_rules'] ) && is_array( $settings['woo_promotions_rules'] ) ? $settings['woo_promotions_rules'] : array();
 
@@ -979,6 +1020,11 @@ class WPAT_Woo_Promotions {
 
 		foreach ( $rules as $rule ) {
 			if ( empty( $rule['active'] ) || '1' !== (string) $rule['active'] ) {
+				continue;
+			}
+
+			$rule_type = ! empty( $rule['type'] ) ? sanitize_key( $rule['type'] ) : 'global_discount';
+			if ( 'global_discount' !== $rule_type ) {
 				continue;
 			}
 

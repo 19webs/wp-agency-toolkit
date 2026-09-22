@@ -363,7 +363,7 @@ class WPAT_Woo_Extra_Options {
 
 		echo '<div class="wpat-live-price-box" style="margin-top: 18px; padding: 12px 16px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">';
 		echo '<span style="font-weight: 600; color: #0369a1; font-size: 14px;">Precio Total Estimado:</span>';
-		echo '<span id="wpat-live-total-amount" style="font-weight: 700; color: #0284c7; font-size: 18px;" data-base-price="' . esc_attr( $base_prod_price ) . '" data-promo-discount-pct="' . esc_attr( $promo_discount_pct ) . '">' . wc_price( $base_prod_price ) . '</span>';
+		echo '<span id="wpat-live-total-amount" style="font-weight: 700; color: #0284c7; font-size: 18px;" data-base-price="' . esc_attr( $base_prod_price ) . '" data-original-base-price="' . esc_attr( $base_prod_price ) . '" data-promo-discount-pct="' . esc_attr( $promo_discount_pct ) . '">' . wc_price( $base_prod_price ) . '</span>';
 		echo '</div>';
 
 		echo '</div>';
@@ -412,7 +412,8 @@ class WPAT_Woo_Extra_Options {
 						var hidden = group.querySelector('input[type="hidden"]');
 						if (hidden && hidden.value) {
 							if (hidden.value.indexOf('|') !== -1) {
-								var p = parseFloat(hidden.value.split('|')[1]);
+								var parts = hidden.value.split('|');
+								var p = parts.length >= 3 ? parseFloat(parts[2]) : parseFloat(parts[1]);
 								if (!isNaN(p)) extraSum += p;
 							} else if (groupBasePrice > 0) {
 								extraSum += groupBasePrice;
@@ -484,6 +485,26 @@ class WPAT_Woo_Extra_Options {
 				});
 			});
 
+			// Sincronizar en tiempo real cuando cambia la variación seleccionada en WooCommerce
+			if (typeof jQuery !== 'undefined') {
+				jQuery('form.cart').on('found_variation', function(event, variation) {
+					if (variation && (variation.display_price !== undefined || variation.price !== undefined)) {
+						basePrice = parseFloat(variation.display_price !== undefined ? variation.display_price : variation.price);
+						if (liveTotalEl) {
+							liveTotalEl.setAttribute('data-base-price', basePrice);
+						}
+						updateLiveTotal();
+					}
+				}).on('reset_data', function() {
+					var origPrice = parseFloat(liveTotalEl ? (liveTotalEl.getAttribute('data-original-base-price') || 0) : 0);
+					basePrice = origPrice;
+					if (liveTotalEl) {
+						liveTotalEl.setAttribute('data-base-price', basePrice);
+					}
+					updateLiveTotal();
+				});
+			}
+
 			// Inicializar precio al cargar
 			updateLiveTotal();
 		});
@@ -503,12 +524,25 @@ class WPAT_Woo_Extra_Options {
 		foreach ( $rules as $rule_idx => $rule ) {
 			$fields = isset( $rule['fields'] ) && is_array( $rule['fields'] ) ? $rule['fields'] : array();
 			foreach ( $fields as $f_idx => $field ) {
-				$field_id = 'wpat_extra_' . $rule_idx . '_' . $f_idx;
-				$required = ! empty( $field['required'] ) && '1' === $field['required'];
+				$field_id   = 'wpat_extra_' . $rule_idx . '_' . $f_idx;
+				$field_type = ! empty( $field['type'] ) ? $field['type'] : 'text';
+				$required   = ! empty( $field['required'] ) && '1' === $field['required'];
 
-				if ( $required && empty( $_POST[ $field_id ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-					wc_add_notice( sprintf( __( 'Por favor, rellena el campo obligatorio: <strong>%s</strong>.', 'wp-agency-toolkit' ), esc_html( $field['label'] ) ), 'error' );
-					return false;
+				if ( ! $required ) {
+					continue;
+				}
+
+				if ( 'file' === $field_type ) {
+					$has_file = isset( $_FILES[ $field_id ] ) && ! empty( $_FILES[ $field_id ]['name'] ) && UPLOAD_ERR_OK === (int) $_FILES[ $field_id ]['error'];
+					if ( ! $has_file ) {
+						wc_add_notice( sprintf( __( 'Por favor, adjunta el archivo obligatorio: <strong>%s</strong>.', 'wp-agency-toolkit' ), esc_html( $field['label'] ) ), 'error' );
+						return false;
+					}
+				} else {
+					if ( ! isset( $_POST[ $field_id ] ) || '' === trim( wp_unslash( $_POST[ $field_id ] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+						wc_add_notice( sprintf( __( 'Por favor, rellena el campo obligatorio: <strong>%s</strong>.', 'wp-agency-toolkit' ), esc_html( $field['label'] ) ), 'error' );
+						return false;
+					}
 				}
 			}
 		}
@@ -575,7 +609,12 @@ class WPAT_Woo_Extra_Options {
 					} elseif ( strpos( $raw_val, '|' ) !== false ) {
 						$parts             = explode( '|', $raw_val );
 						$opt_label_display = trim( $parts[0] );
-						$opt_price         = isset( $parts[1] ) ? floatval( trim( $parts[1] ) ) : $base_price;
+						if ( count( $parts ) >= 3 ) {
+							$opt_price = floatval( trim( $parts[2] ) );
+						} elseif ( isset( $parts[1] ) ) {
+							$p1 = trim( $parts[1] );
+							$opt_price = is_numeric( $p1 ) ? floatval( $p1 ) : $base_price;
+						}
 					}
 
 					$extra_options[] = array(
@@ -593,12 +632,20 @@ class WPAT_Woo_Extra_Options {
 			$target_id = $variation_id ? $variation_id : $product_id;
 			$prod_obj  = wc_get_product( $target_id );
 			if ( $prod_obj ) {
-				$unfiltered_price = (float) $prod_obj->get_regular_price();
-				if ( $unfiltered_price <= 0 ) {
-					$unfiltered_price = (float) $prod_obj->get_price( 'edit' );
+				$sale_p = (float) $prod_obj->get_sale_price( 'edit' );
+				if ( $sale_p <= 0 ) {
+					$sale_p = (float) $prod_obj->get_sale_price();
 				}
-				if ( $unfiltered_price <= 0 ) {
-					$unfiltered_price = (float) $prod_obj->get_price();
+				if ( $sale_p > 0 ) {
+					$unfiltered_price = $sale_p;
+				} else {
+					$unfiltered_price = (float) $prod_obj->get_regular_price();
+					if ( $unfiltered_price <= 0 ) {
+						$unfiltered_price = (float) $prod_obj->get_price( 'edit' );
+					}
+					if ( $unfiltered_price <= 0 ) {
+						$unfiltered_price = (float) $prod_obj->get_price();
+					}
 				}
 				$cart_item_data['wpat_base_price'] = $unfiltered_price;
 			}
@@ -684,16 +731,8 @@ class WPAT_Woo_Extra_Options {
 	 */
 	public function filter_cart_item_price( $price_html, $cart_item, $cart_item_key ) {
 		if ( ! empty( $cart_item['wpat_extra_options'] ) && is_array( $cart_item['wpat_extra_options'] ) && isset( $cart_item['data'] ) && is_object( $cart_item['data'] ) ) {
-			$extra_price = 0;
-			foreach ( $cart_item['wpat_extra_options'] as $opt ) {
-				if ( isset( $opt['price'] ) && floatval( $opt['price'] ) > 0 ) {
-					$extra_price += floatval( $opt['price'] );
-				}
-			}
-			if ( $extra_price > 0 ) {
-				$base_price = isset( $cart_item['wpat_base_price'] ) && floatval( $cart_item['wpat_base_price'] ) > 0 ? floatval( $cart_item['wpat_base_price'] ) : floatval( $cart_item['data']->get_price() );
-				return wc_price( $base_price + $extra_price );
-			}
+			$product = $cart_item['data'];
+			return wc_price( $product->get_price() );
 		}
 		return $price_html;
 	}
@@ -703,17 +742,9 @@ class WPAT_Woo_Extra_Options {
 	 */
 	public function filter_cart_item_subtotal( $subtotal_html, $cart_item, $cart_item_key ) {
 		if ( ! empty( $cart_item['wpat_extra_options'] ) && is_array( $cart_item['wpat_extra_options'] ) && isset( $cart_item['data'] ) && is_object( $cart_item['data'] ) ) {
-			$extra_price = 0;
-			foreach ( $cart_item['wpat_extra_options'] as $opt ) {
-				if ( isset( $opt['price'] ) && floatval( $opt['price'] ) > 0 ) {
-					$extra_price += floatval( $opt['price'] );
-				}
-			}
-			if ( $extra_price > 0 ) {
-				$base_price = isset( $cart_item['wpat_base_price'] ) && floatval( $cart_item['wpat_base_price'] ) > 0 ? floatval( $cart_item['wpat_base_price'] ) : floatval( $cart_item['data']->get_price() );
-				$quantity   = isset( $cart_item['quantity'] ) ? intval( $cart_item['quantity'] ) : 1;
-				return wc_price( ( $base_price + $extra_price ) * $quantity );
-			}
+			$product  = $cart_item['data'];
+			$quantity = isset( $cart_item['quantity'] ) ? intval( $cart_item['quantity'] ) : 1;
+			return wc_price( floatval( $product->get_price() ) * $quantity );
 		}
 		return $subtotal_html;
 	}
@@ -772,7 +803,8 @@ class WPAT_Woo_Extra_Options {
 			foreach ( $values['wpat_extra_options'] as $opt ) {
 				$meta_value = ! empty( $opt['file_url'] ) ? $opt['file_url'] : $opt['value'];
 				if ( ! empty( $opt['price'] ) && $opt['price'] > 0 ) {
-					$meta_value .= ' (+' . wc_price( $opt['price'] ) . ')';
+					$clean_price = wp_strip_all_tags( wc_price( $opt['price'] ) );
+					$meta_value .= ' (+' . $clean_price . ')';
 				}
 
 				$item->add_meta_data( $opt['label'], $meta_value, true );

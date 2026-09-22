@@ -11,8 +11,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$settings    = WPAT_Main::get_instance()->get_settings();
-$footer_text = ! empty( $settings['woo_email_footer_text'] ) ? $settings['woo_email_footer_text'] : get_option( 'woocommerce_email_footer_text' );
+$settings       = WPAT_Main::get_instance()->get_settings();
+$email_type_id  = ( isset( $email ) && isset( $email->id ) ) ? $email->id : 'customer_processing_order';
+$raw_footer     = WPAT_Woo_Email_Designer::get_message_for_type( $email_type_id, 'footer', $settings );
+$order_obj      = ( isset( $order ) && is_a( $order, 'WC_Order' ) ) ? $order : null;
+$footer_text    = ! empty( $raw_footer ) ? WPAT_Woo_Email_Designer::get_instance()->replace_email_placeholders( $raw_footer, $order_obj ) : get_option( 'woocommerce_email_footer_text' );
 
 $social_fb   = isset( $settings['woo_email_social_fb'] ) ? trim( $settings['woo_email_social_fb'] ) : '';
 $social_ig   = isset( $settings['woo_email_social_ig'] ) ? trim( $settings['woo_email_social_ig'] ) : '';

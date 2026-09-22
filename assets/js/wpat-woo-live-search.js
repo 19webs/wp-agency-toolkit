@@ -4,6 +4,7 @@
 
 jQuery(document).ready(function($) {
 	var searchTimer = null;
+	var currentAjaxRequest = null;
 	var activeIndex = -1;
 
 	$(document).on('input', '.wpat-live-search-field', function() {
@@ -14,9 +15,12 @@ jQuery(document).ready(function($) {
 		var term = $.trim($field.val());
 
 		clearTimeout(searchTimer);
+		if (currentAjaxRequest && currentAjaxRequest.readyState !== 4) {
+			currentAjaxRequest.abort();
+		}
 		activeIndex = -1;
 
-		if (term.length < wpatWooSearch.min_chars) {
+		if (term.length < (wpatWooSearch.min_chars || 2)) {
 			$dropdown.hide().empty();
 			$spinner.hide();
 			return;
@@ -25,11 +29,13 @@ jQuery(document).ready(function($) {
 		$spinner.show();
 
 		searchTimer = setTimeout(function() {
-			$.ajax({
+			currentAjaxRequest = $.ajax({
 				url: wpatWooSearch.ajaxurl,
 				type: 'GET',
+				dataType: 'json',
 				data: {
 					action: 'wpat_frontend_product_search',
+					nonce: wpatWooSearch.nonce,
 					term: term
 				},
 				success: function(response) {
@@ -37,10 +43,10 @@ jQuery(document).ready(function($) {
 					if (response.success && response.data.results && response.data.results.length > 0) {
 						var html = '';
 						$.each(response.data.results, function(i, item) {
-							html += '<a href="' + item.url + '" class="wpat-live-search-item">';
+							html += '<a href="' + item.url + '" class="wpat-live-search-item" role="option">';
 							
 							if (item.thumb) {
-								html += '<img src="' + item.thumb + '" class="wpat-live-search-thumb" alt="" />';
+								html += '<img src="' + item.thumb + '" class="wpat-live-search-thumb" alt="' + item.title + '" />';
 							}
 
 							html += '<div class="wpat-live-search-info">';
@@ -70,10 +76,13 @@ jQuery(document).ready(function($) {
 
 						$dropdown.html(html).show();
 					} else {
-						$dropdown.html('<div class="wpat-live-search-no-results">' + wpatWooSearch.no_results + '</div>').show();
+						$dropdown.html('<div class="wpat-live-search-no-results">' + (wpatWooSearch.no_results || 'No se encontraron productos coincidentes') + '</div>').show();
 					}
 				},
-				error: function() {
+				error: function(xhr, status) {
+					if (status === 'abort') {
+						return;
+					}
 					$spinner.hide();
 					$dropdown.html('<div class="wpat-live-search-no-results">Error en la búsqueda</div>').show();
 				}
@@ -81,12 +90,27 @@ jQuery(document).ready(function($) {
 		}, 300);
 	});
 
-	// Navegación por Teclado (Flechas arriba/abajo + Enter)
+	// Reabrir dropdown al hacer foco si ya hay texto
+	$(document).on('focus', '.wpat-live-search-field', function() {
+		var $field = $(this);
+		var $wrap = $field.closest('.wpat-live-search-wrapper');
+		var $dropdown = $wrap.find('.wpat-live-search-dropdown');
+		if ($dropdown.children().length > 0 && $.trim($field.val()).length >= (wpatWooSearch.min_chars || 2)) {
+			$dropdown.show();
+		}
+	});
+
+	// Navegación por Teclado (Flechas arriba/abajo + Enter + Escape)
 	$(document).on('keydown', '.wpat-live-search-field', function(e) {
 		var $field = $(this);
 		var $wrap = $field.closest('.wpat-live-search-wrapper');
 		var $dropdown = $wrap.find('.wpat-live-search-dropdown');
 		var $items = $dropdown.find('.wpat-live-search-item');
+
+		if (e.keyCode === 27) { // Escape
+			$dropdown.hide();
+			return;
+		}
 
 		if (!$dropdown.is(':visible') || !$items.length) {
 			return;
@@ -97,11 +121,13 @@ jQuery(document).ready(function($) {
 			activeIndex++;
 			if (activeIndex >= $items.length) activeIndex = 0;
 			$items.removeClass('active').eq(activeIndex).addClass('active');
+			$items.eq(activeIndex)[0].scrollIntoView({ block: 'nearest' });
 		} else if (e.keyCode === 38) { // Flecha arriba
 			e.preventDefault();
 			activeIndex--;
 			if (activeIndex < 0) activeIndex = $items.length - 1;
 			$items.removeClass('active').eq(activeIndex).addClass('active');
+			$items.eq(activeIndex)[0].scrollIntoView({ block: 'nearest' });
 		} else if (e.keyCode === 13) { // Enter
 			if (activeIndex >= 0 && activeIndex < $items.length) {
 				e.preventDefault();

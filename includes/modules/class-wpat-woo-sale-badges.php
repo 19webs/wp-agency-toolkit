@@ -71,6 +71,10 @@ class WPAT_Woo_Sale_Badges {
 				background-color: {$bg_color} !important;
 				color: {$txt_color} !important;
 			}
+			.wpat-sale-badge.badge-price-tag {
+				background-color: {$bg_color} !important;
+				color: {$txt_color} !important;
+			}
 		";
 
 		wp_add_inline_style( 'wpat-sale-badges-css', $custom_css );
@@ -95,17 +99,28 @@ class WPAT_Woo_Sale_Badges {
 		// Si el usuario eligió mostrar el porcentaje de descuento real
 		if ( 'percentage' === $calc_type ) {
 			$percentage = 0;
+			$is_range   = false;
 
 			if ( $product->is_type( 'variable' ) ) {
 				$percentages = array();
 				$prices      = $product->get_variation_prices();
 
-				foreach ( $prices['price'] as $key => $price ) {
-					if ( isset( $prices['regular_price'][ $key ] ) && $prices['regular_price'][ $key ] > $price && $prices['regular_price'][ $key ] > 0 ) {
-						$percentages[] = round( ( ( $prices['regular_price'][ $key ] - $price ) / $prices['regular_price'][ $key ] ) * 100 );
+				if ( ! empty( $prices['price'] ) && is_array( $prices['price'] ) ) {
+					foreach ( $prices['price'] as $key => $price ) {
+						if ( isset( $prices['regular_price'][ $key ] ) && $prices['regular_price'][ $key ] > $price && $prices['regular_price'][ $key ] > 0 ) {
+							$percentages[] = round( ( ( $prices['regular_price'][ $key ] - $price ) / $prices['regular_price'][ $key ] ) * 100 );
+						}
 					}
 				}
-				$percentage = ! empty( $percentages ) ? max( $percentages ) : 0;
+
+				if ( ! empty( $percentages ) ) {
+					$max_pct = max( $percentages );
+					$min_pct = min( $percentages );
+					$percentage = $max_pct;
+					if ( $max_pct !== $min_pct ) {
+						$is_range = true;
+					}
+				}
 			} elseif ( $product->is_type( 'grouped' ) ) {
 				$percentage = 0;
 			} else {
@@ -118,10 +133,49 @@ class WPAT_Woo_Sale_Badges {
 			}
 
 			if ( $percentage > 0 ) {
-				$label_text = '-' . $percentage . '%';
+				$label_text = $is_range ? sprintf( __( 'Hasta -%d%%', 'wp-agency-toolkit' ), $percentage ) : '-' . $percentage . '%';
+			}
+		} elseif ( 'amount' === $calc_type ) {
+			// Modo ahorro en valor monetario (Ej: Ahorra 15€)
+			$savings  = 0;
+			$is_range = false;
+
+			if ( $product->is_type( 'variable' ) ) {
+				$savings_arr = array();
+				$prices      = $product->get_variation_prices();
+
+				if ( ! empty( $prices['price'] ) && is_array( $prices['price'] ) ) {
+					foreach ( $prices['price'] as $key => $price ) {
+						if ( isset( $prices['regular_price'][ $key ] ) && $prices['regular_price'][ $key ] > $price ) {
+							$savings_arr[] = (float) ( $prices['regular_price'][ $key ] - $price );
+						}
+					}
+				}
+
+				if ( ! empty( $savings_arr ) ) {
+					$max_sav = max( $savings_arr );
+					$min_sav = min( $savings_arr );
+					$savings = $max_sav;
+					if ( $max_sav !== $min_sav ) {
+						$is_range = true;
+					}
+				}
+			} elseif ( ! $product->is_type( 'grouped' ) ) {
+				$regular_price = (float) $product->get_regular_price();
+				$sale_price    = (float) $product->get_sale_price();
+
+				if ( $regular_price > 0 && $sale_price > 0 && $regular_price > $sale_price ) {
+					$savings = $regular_price - $sale_price;
+				}
+			}
+
+			if ( $savings > 0 ) {
+				$formatted_savings = wp_strip_all_tags( wc_price( $savings ) );
+				$label_text = $is_range ? sprintf( __( 'Ahorra hasta %s', 'wp-agency-toolkit' ), $formatted_savings ) : sprintf( __( 'Ahorra %s', 'wp-agency-toolkit' ), $formatted_savings );
 			}
 		}
 
+		$label_text  = apply_filters( 'wpat_sale_badge_label_text', $label_text, $product, $calc_type );
 		$shape_class = 'badge-' . sanitize_html_class( $shape );
 		$pos_class   = 'pos-' . sanitize_html_class( $position );
 

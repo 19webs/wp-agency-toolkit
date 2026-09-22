@@ -274,6 +274,114 @@
 	to { transform: translateX(-50%) rotate(360deg); }
 }
 
+.wpat-facets-header-row {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	margin-bottom: 16px !important;
+	padding-bottom: 12px !important;
+	border-bottom: 1px solid var(--wpat-facet-border, #e2e8f0) !important;
+}
+
+.wpat-facets-main-title {
+	font-size: 17px !important;
+	font-weight: 700 !important;
+	color: #0f172a !important;
+	margin: 0 !important;
+	display: flex !important;
+	align-items: center !important;
+	gap: 8px !important;
+}
+
+.wpat-facets-mobile-close-btn {
+	display: none !important;
+	background: transparent !important;
+	border: none !important;
+	font-size: 26px !important;
+	line-height: 1 !important;
+	color: #64748b !important;
+	cursor: pointer !important;
+	padding: 0 4px !important;
+}
+
+/* --- BOTÓN DISPARADOR MÓVIL (MOBILE TRIGGER) --- */
+.wpat-facets-mobile-trigger-wrap {
+	display: none;
+	margin-bottom: 15px;
+}
+
+.wpat-facets-mobile-toggle-btn {
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 8px !important;
+	background: var(--wpat-facet-accent, #2563eb) !important;
+	color: #ffffff !important;
+	border: none !important;
+	padding: 10px 20px !important;
+	border-radius: 8px !important;
+	font-size: 14px !important;
+	font-weight: 700 !important;
+	cursor: pointer !important;
+	box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25) !important;
+	width: 100% !important;
+	justify-content: center !important;
+}
+
+.wpat-facets-backdrop {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	background: rgba(15, 23, 42, 0.5);
+	backdrop-filter: blur(2px);
+	z-index: 9998;
+	opacity: 0;
+	transition: opacity 0.3s ease;
+}
+
+.wpat-facets-backdrop.active {
+	display: block;
+	opacity: 1;
+}
+
+/* --- RESPONSIVE / OFF-CANVAS EN MÓVILES (< 768px) --- */
+@media (max-width: 768px) {
+	.wpat-facets-mobile-trigger-wrap {
+		display: block !important;
+	}
+
+	.wpat-facets-mobile-close-btn {
+		display: block !important;
+	}
+
+	.wpat-facets-wrapper {
+		position: fixed !important;
+		top: 0 !important;
+		left: -320px !important;
+		width: 300px !important;
+		max-width: 85vw !important;
+		height: 100vh !important;
+		max-height: 100vh !important;
+		overflow-y: auto !important;
+		z-index: 9999 !important;
+		border-radius: 0 16px 16px 0 !important;
+		box-shadow: 4px 0 25px rgba(0, 0, 0, 0.15) !important;
+		transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+		margin: 0 !important;
+		padding: 20px !important;
+	}
+
+	.wpat-facets-wrapper.wpat-drawer-open {
+		left: 0 !important;
+	}
+
+	body.wpat-facets-drawer-active {
+		overflow: hidden !important;
+	}
+}
+
 /* --- STICKY SIDEBAR DE FACETAS EN DESKTOP --- */
 @media (min-width: 769px) {
 	.wpat-facets-wrapper.wpat-facets-sticky {
@@ -283,5 +391,10 @@
 		max-height: calc(100vh - 40px) !important;
 		overflow-y: auto !important;
 	}
+}
+
+.wpat-no-products-wrapper {
+	width: 100% !important;
+	margin: 20px 0 !important;
 }
 

@@ -18,6 +18,60 @@ jQuery(document).ready(function($) {
 		});
 	});
 
+	// --- 1.1 VALIDACIÓN DE CAMPOS OBLIGATORIOS POR PASO ---
+	function validateStepFields($container) {
+		var isValid = true;
+		var $firstInvalid = null;
+
+		$container.find('.validate-required input:visible, .validate-required select:visible, .validate-required textarea:visible, input[required]:visible, select[required]:visible').each(function() {
+			var $field = $(this);
+			var val = $field.val();
+
+			if ($field.is(':checkbox') && !$field.is(':checked')) {
+				isValid = false;
+				$field.closest('.form-row').addClass('woocommerce-invalid');
+				if (!$firstInvalid) $firstInvalid = $field;
+			} else if (!val || (typeof val === 'string' && val.trim() === '')) {
+				isValid = false;
+				$field.closest('.form-row').addClass('woocommerce-invalid');
+				$field.css('border-color', '#ef4444');
+				if (!$firstInvalid) $firstInvalid = $field;
+			} else {
+				$field.closest('.form-row').removeClass('woocommerce-invalid').addClass('woocommerce-validated');
+				$field.css('border-color', '');
+			}
+		});
+
+		// Validar email si existe en este contenedor
+		var $emailField = $container.find('#billing_email');
+		if ($emailField.length && $emailField.is(':visible')) {
+			var emailVal = $emailField.val() ? $emailField.val().trim() : '';
+			var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+			if (!emailRegex.test(emailVal)) {
+				isValid = false;
+				$emailField.closest('.form-row').addClass('woocommerce-invalid');
+				$emailField.css('border-color', '#ef4444');
+				if (!$firstInvalid) $firstInvalid = $emailField;
+			}
+		}
+
+		if (!isValid && $firstInvalid) {
+			$('html, body').animate({
+				scrollTop: $firstInvalid.offset().top - 80
+			}, 300);
+			$firstInvalid.focus();
+		}
+
+		return isValid;
+	}
+
+	$(document).on('input change', '.woocommerce-invalid input, .woocommerce-invalid select', function() {
+		if ($(this).val()) {
+			$(this).closest('.form-row').removeClass('woocommerce-invalid');
+			$(this).css('border-color', '');
+		}
+	});
+
 	// --- 2. MULTI-STEP NAVIGATION (NEXT / PREV BUTTONS & STEPS BAR) ---
 	function goToStep(step) {
 		step = parseInt(step, 10);
@@ -41,6 +95,11 @@ jQuery(document).ready(function($) {
 
 	$(document).on('click', '.wpat-next-btn', function(e) {
 		e.preventDefault();
+		var $currentPanel = $(this).closest('.wpat-step-panel');
+		if ($currentPanel.length && !validateStepFields($currentPanel)) {
+			return false;
+		}
+
 		var nextStep = $(this).data('next');
 		goToStep(nextStep);
 	});
@@ -53,7 +112,63 @@ jQuery(document).ready(function($) {
 
 	$(document).on('click', '.wpat-step-item', function() {
 		var step = $(this).data('step');
+		var currentStep = $('.wpat-step-item.active').data('step') || 1;
+
+		if (step > currentStep) {
+			var $currentPanel = $('.wpat-step-panel[data-step="' + currentStep + '"]');
+			if ($currentPanel.length && !validateStepFields($currentPanel)) {
+				return false;
+			}
+		}
 		goToStep(step);
+	});
+
+	// --- 2.1 ACCORDION CHECKOUT CONTROLS ---
+	function toggleAccordionStep(step) {
+		step = parseInt(step, 10);
+		if (isNaN(step) || step < 1 || step > 3) return;
+
+		var $targetItem = $('.wpat-accordion-item[data-accordion-step="' + step + '"]');
+		if (!$targetItem.length) return;
+
+		$('.wpat-accordion-item').not($targetItem).removeClass('active').find('.wpat-accordion-body').slideUp(200);
+		$('.wpat-accordion-item').not($targetItem).find('.wpat-accordion-toggle-icon').text('▼');
+
+		$targetItem.addClass('active').find('.wpat-accordion-body').slideDown(200);
+		$targetItem.find('.wpat-accordion-toggle-icon').text('▲');
+
+		$('html, body').animate({
+			scrollTop: $targetItem.offset().top - 40
+		}, 300);
+	}
+
+	$(document).on('click', '.wpat-accordion-header', function() {
+		var step = $(this).data('step');
+		var currentStep = $('.wpat-accordion-item.active').data('accordion-step') || 1;
+
+		if (step > currentStep) {
+			var $currentBody = $('.wpat-accordion-item[data-accordion-step="' + currentStep + '"] .wpat-accordion-body');
+			if ($currentBody.length && !validateStepFields($currentBody)) {
+				return false;
+			}
+		}
+		toggleAccordionStep(step);
+	});
+
+	$(document).on('click', '.wpat-accordion-next-btn', function(e) {
+		e.preventDefault();
+		var $currentBody = $(this).closest('.wpat-accordion-body');
+		if ($currentBody.length && !validateStepFields($currentBody)) {
+			return false;
+		}
+		var nextStep = $(this).data('next');
+		toggleAccordionStep(nextStep);
+	});
+
+	$(document).on('click', '.wpat-accordion-prev-btn', function(e) {
+		e.preventDefault();
+		var prevStep = $(this).data('prev');
+		toggleAccordionStep(prevStep);
 	});
 
 	// --- 3. CUSTOM CLEAN COUPON SUBMIT (CHECKOUT) ---
@@ -61,7 +176,7 @@ jQuery(document).ready(function($) {
 		e.preventDefault();
 		var $input = $('#wpat_coupon_code_field');
 		var code = $input.val() ? $input.val().trim() : '';
-		var $box = $(this).closest('.wpat-custom-coupon-box, .wpat-coupon-input-group, .wpat-sidebar-card');
+		var $box = $(this).closest('.wpat-custom-coupon-box, .wpat-coupon-input-group, .wpat-sidebar-card, .wpat-order-review-card');
 		if (!$box.length) $box = $input.parent();
 
 		$('.wpat-checkout-coupon-notice, .wpat-checkout-coupon-response-notice').remove();
@@ -82,15 +197,19 @@ jQuery(document).ready(function($) {
 		var origText = $btn.text();
 		$btn.prop('disabled', true).text('Aplicando...');
 
+		var applyUrl = '/?wc-ajax=apply_coupon';
+		if (typeof wc_checkout_params !== 'undefined' && wc_checkout_params.wc_ajax_url) {
+			applyUrl = wc_checkout_params.wc_ajax_url.toString().replace('%%endpoint%%', 'apply_coupon');
+		}
+
 		var data = {
-			action: 'woocommerce_apply_coupon',
 			security: typeof wc_checkout_params !== 'undefined' ? wc_checkout_params.apply_coupon_nonce : '',
 			coupon_code: code
 		};
 
 		$.ajax({
 			type: 'POST',
-			url: typeof wc_checkout_params !== 'undefined' ? wc_checkout_params.ajax_url : '/?wc-ajax=apply_coupon',
+			url: applyUrl,
 			data: data,
 			success: function(response) {
 				$btn.prop('disabled', false).text(origText);
@@ -452,5 +571,66 @@ jQuery(document).ready(function($) {
 				}, 400);
 			});
 		}
+	});
+
+	// --- 7.1 DRAWER CART AJAX QUANTITY & REMOVAL ---
+	$(document).on('click', '.wpat-drawer-qty-btn, .wpat-drawer-remove-btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var cartKey = $btn.data('cart-key') || $btn.attr('data-cart-key') || $btn.attr('data-cart_item_key');
+		if (!cartKey) return;
+
+		var isPlus = $btn.hasClass('wpat-drawer-qty-plus');
+		var isMinus = $btn.hasClass('wpat-drawer-qty-minus');
+		var isRemove = $btn.hasClass('wpat-drawer-remove-btn');
+
+		var $item = $btn.closest('.wpat-drawer-item');
+		var $valSpan = $item.find('.wpat-drawer-qty-val');
+		var currentQty = parseInt($valSpan.text(), 10) || 1;
+		var newQty = currentQty;
+
+		if (isPlus) {
+			newQty = currentQty + 1;
+		} else if (isMinus) {
+			newQty = Math.max(0, currentQty - 1);
+		} else if (isRemove) {
+			newQty = 0;
+		}
+
+		$item.css('opacity', '0.4');
+
+		$.ajax({
+			type: 'POST',
+			url: typeof wpatCheckoutOptions !== 'undefined' ? wpatCheckoutOptions.ajax_url : '/wp-admin/admin-ajax.php',
+			data: {
+				action: 'wpat_update_checkout_qty',
+				security: typeof wpatCheckoutOptions !== 'undefined' ? wpatCheckoutOptions.nonce : '',
+				cart_key: cartKey,
+				qty: newQty
+			},
+			success: function(response) {
+				if (response && response.success && response.data) {
+					if (response.data.fragments) {
+						if (response.data.fragments['div.wpat-drawer-cart-body']) {
+							$('.wpat-drawer-cart-body').replaceWith(response.data.fragments['div.wpat-drawer-cart-body']);
+						}
+						if (response.data.fragments['span.wpat-drawer-cart-count']) {
+							$('.wpat-drawer-cart-count').replaceWith(response.data.fragments['span.wpat-drawer-cart-count']);
+						}
+					} else {
+						if (response.data.cart_count !== undefined) {
+							$('.wpat-drawer-cart-count').text(response.data.cart_count);
+						}
+					}
+					$(document.body).trigger('wc_fragment_refresh');
+					$(document.body).trigger('update_checkout');
+				} else {
+					window.location.reload();
+				}
+			},
+			error: function() {
+				window.location.reload();
+			}
+		});
 	});
 });

@@ -87,7 +87,7 @@ class WPAT_Woo_Email_Designer {
 	 * @param WC_Order $order Objeto del pedido opcional.
 	 * @return string
 	 */
-	public function replace_email_placeholders( $text, $order = null ) {
+	public function replace_email_placeholders( $text, $order_or_user = null ) {
 		if ( empty( $text ) ) {
 			return '';
 		}
@@ -99,19 +99,21 @@ class WPAT_Woo_Email_Designer {
 		$order_total   = '49,00 €';
 		$tracking_code = 'ES123456789';
 
-		if ( $order && is_a( $order, 'WC_Order' ) ) {
-			$customer_name = $order->get_formatted_billing_full_name();
+		if ( $order_or_user && is_a( $order_or_user, 'WC_Order' ) ) {
+			$customer_name = $order_or_user->get_formatted_billing_full_name();
 			if ( empty( trim( $customer_name ) ) ) {
-				$customer_name = $order->get_billing_first_name() ? $order->get_billing_first_name() : 'Cliente';
+				$customer_name = $order_or_user->get_billing_first_name() ? $order_or_user->get_billing_first_name() : 'Cliente';
 			}
-			$order_number  = $order->get_order_number();
-			$order_date    = wc_format_datetime( $order->get_date_created() );
-			$order_total   = $order->get_formatted_order_total();
+			$order_number  = $order_or_user->get_order_number();
+			$order_date    = wc_format_datetime( $order_or_user->get_date_created() );
+			$order_total   = $order_or_user->get_formatted_order_total();
 
-			$meta_tracking = $order->get_meta( '_tracking_number' );
+			$meta_tracking = $order_or_user->get_meta( '_tracking_number' );
 			if ( ! empty( $meta_tracking ) ) {
 				$tracking_code = $meta_tracking;
 			}
+		} elseif ( $order_or_user && is_a( $order_or_user, 'WP_User' ) ) {
+			$customer_name = ! empty( $order_or_user->display_name ) ? $order_or_user->display_name : ( ! empty( $order_or_user->first_name ) ? $order_or_user->first_name : $order_or_user->user_login );
 		}
 
 		$replacements = array(

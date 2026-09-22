@@ -69,6 +69,10 @@ jQuery(document).ready(function($) {
 	}
 
 	function convertCityToSelect(type, towns, currentVal) {
+		if (wpatAutofillOptions.autofill_city === '0' || wpatAutofillOptions.autofill_city === false) {
+			return;
+		}
+
 		var $cityField = $('#' + type + '_city');
 		if (!$cityField.length) return;
 

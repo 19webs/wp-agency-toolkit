@@ -163,105 +163,6 @@ jQuery(document).ready(function($) {
 			alert('El selector de medios de WordPress no está disponible.');
 		}
 	});
-
-	// Envío AJAX de correo electrónico de prueba (Diseñador de Emails)
-	$(document).on('click', '#wpat_send_test_email_btn', function(e) {
-		e.preventDefault();
-		var $btn = $(this);
-		var origHtml = $btn.html();
-		var nonce = $('#wpat_settings_nonce').val();
-		var recipient = $('#wpat_test_email_recipient').val();
-		var emailType = $('#wpat_email_type_selector').val();
-
-		$btn.prop('disabled', true).html('⏳ Enviando...');
-
-		$.ajax({
-			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : '/wp-admin/admin-ajax.php'),
-			type: 'POST',
-			data: {
-				action: 'wpat_send_test_email',
-				security: nonce,
-				recipient: recipient,
-				email_type: emailType
-			},
-			success: function(response) {
-				$btn.prop('disabled', false).html(origHtml);
-				if (response.success) {
-					showToast(response.data.message, false);
-				} else {
-					showToast('Error: ' + (response.data ? response.data.message : 'No se pudo enviar el correo'), true);
-				}
-			},
-			error: function() {
-				$btn.prop('disabled', false).html(origHtml);
-				showToast('Error de conexión al enviar el correo de prueba', true);
-			}
-		});
-	});
-
-	// Modal de Vista Previa en Vivo de Correo Electrónico
-	$(document).on('click', '#wpat_email_live_preview_btn', function(e) {
-		e.preventDefault();
-		var $btn = $(this);
-		var origHtml = $btn.html();
-		var nonce = $('#wpat_settings_nonce').val();
-		var emailType = $('#wpat_email_type_selector').val();
-
-		$btn.prop('disabled', true).html('⏳ Generando...');
-
-		$.ajax({
-			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : '/wp-admin/admin-ajax.php'),
-			type: 'POST',
-			data: {
-				action: 'wpat_get_email_preview_html',
-				security: nonce,
-				email_type: emailType
-			},
-			success: function(response) {
-				$btn.prop('disabled', false).html(origHtml);
-				if (response.success && response.data.html) {
-					openEmailPreviewModal(response.data.html);
-				} else {
-					showToast('Error: ' + (response.data ? response.data.message : 'No se pudo generar la vista previa'), true);
-				}
-			},
-			error: function() {
-				$btn.prop('disabled', false).html(origHtml);
-				showToast('Error de conexión al cargar la vista previa', true);
-			}
-		});
-	});
-
-	function openEmailPreviewModal(htmlContent) {
-		$('#wpat-email-preview-modal').remove();
-
-		var modalHtml = '<div id="wpat-email-preview-modal" style="position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">' +
-			'<div style="background: #ffffff; width: 100%; max-width: 820px; height: 88vh; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden;">' +
-				'<div style="padding: 16px 24px; background: #0f172a; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">' +
-					'<div style="display: flex; align-items: center; gap: 10px;">' +
-						'<span style="font-size: 18px;">📧</span>' +
-						'<h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #ffffff;">Vista Previa en Vivo - Plantilla de Email</h3>' +
-					'</div>' +
-					'<button type="button" class="wpat-close-modal-btn" style="background: rgba(255,255,255,0.15); border: none; color: #ffffff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 1; display: flex; align-items: center; justify-content: center;">&times;</button>' +
-				'</div>' +
-				'<div style="flex: 1; background: #f8fafc; position: relative;">' +
-					'<iframe id="wpat-email-iframe" style="width: 100%; height: 100%; border: none;"></iframe>' +
-				'</div>' +
-			'</div>' +
-		'</div>';
-
-		$('body').append(modalHtml);
-
-		var iframe = document.getElementById('wpat-email-iframe');
-		var iframedoc = iframe.contentDocument || iframe.contentWindow.document;
-		iframedoc.open();
-		iframedoc.write(htmlContent);
-		iframedoc.close();
-
-		$(document).on('click', '#wpat-email-preview-modal .wpat-close-modal-btn', function() {
-			$('#wpat-email-preview-modal').remove();
-		});
-	}
 	
 	// Restaurar pestaña activa guardada en localStorage (solo si no se pasó tab por URL)
 	var urlParams = new URLSearchParams(window.location.search);
@@ -3750,10 +3651,45 @@ jQuery(document).ready(function($) {
 		}
 	});
 
-	// Sincronización del almacenamiento oculto per-template
+	// Sincronización del almacenamiento oculto per-template y rastreo de campo activo
 	var getActiveEmailType = function() {
 		return $('#wpat_email_type_selector').val() || 'customer_processing_order';
 	};
+
+	var $lastFocusedEmailField = $('#wpat_email_field_intro');
+
+	$(document).on('focus', '.wpat-email-input-field', function() {
+		$lastFocusedEmailField = $(this);
+	});
+
+	// Inserción de etiquetas dinámicas clicables
+	$(document).on('click', '.wpat-tag-pill-btn', function(e) {
+		e.preventDefault();
+		var tag = $(this).data('tag');
+		if (!tag) return;
+
+		var $target = ($lastFocusedEmailField && $lastFocusedEmailField.length && $lastFocusedEmailField.is(':visible')) ? $lastFocusedEmailField : $('#wpat_email_field_intro');
+		if (!$target.length) return;
+
+		var el = $target[0];
+		if (document.selection) {
+			el.focus();
+			var sel = document.selection.createRange();
+			sel.text = tag;
+		} else if (el.selectionStart || el.selectionStart === 0) {
+			var startPos = el.selectionStart;
+			var endPos = el.selectionEnd;
+			var currentVal = $target.val();
+			$target.val(currentVal.substring(0, startPos) + tag + currentVal.substring(endPos, currentVal.length));
+			el.selectionStart = startPos + tag.length;
+			el.selectionEnd = startPos + tag.length;
+		} else {
+			$target.val($target.val() + ' ' + tag);
+		}
+
+		$target.focus().trigger('input').trigger('change');
+		showToast('Etiqueta ' + tag + ' insertada', false);
+	});
 
 	$(document).on('input keyup change', '.wpat-email-input-field', function() {
 		var $field = $(this);

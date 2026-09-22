@@ -5,8 +5,9 @@
 jQuery(document).ready(function($) {
 	'use strict';
 	var filterTimer = null;
+	var isPopState = false;
 
-	// Actualizar barra de etiquetas activas
+	// Sincronizar y actualizar barra de etiquetas activas
 	function updateActiveTags() {
 		var $bar = $('.wpat-facets-active-tags-bar');
 		if (!$bar.length) return;
@@ -34,8 +35,9 @@ jQuery(document).ready(function($) {
 		// Precios
 		var minP = $form.find('input[name="min_price"]').val();
 		var maxP = $form.find('input[name="max_price"]').val();
+		var currSym = (typeof wpatWooFacets !== 'undefined' && wpatWooFacets.currency_symbol) ? wpatWooFacets.currency_symbol : '€';
 		if (minP || maxP) {
-			var priceTxt = 'Precio: ' + (minP ? minP + '€' : '0€') + ' - ' + (maxP ? maxP + '€' : '∞');
+			var priceTxt = 'Precio: ' + (minP ? minP + currSym : '0' + currSym) + ' - ' + (maxP ? maxP + currSym : '∞');
 			var $pill = $('<span class="wpat-facet-tag-pill">' + priceTxt + ' <span class="wpat-facet-tag-remove" data-type="price">&times;</span></span>');
 			$list.append($pill);
 			tagCount++;
@@ -48,17 +50,73 @@ jQuery(document).ready(function($) {
 		}
 	}
 
-	// Detectar cambio en cualquier input de faceta
-	$(document).on('change input', '.wpat-facet-input', function(e) {
-		updateActiveTags();
-		if ($(this).attr('type') === 'number') {
-			clearTimeout(filterTimer);
-			filterTimer = setTimeout(function() {
-				triggerFacetFilter(1);
-			}, 400);
-		} else {
-			triggerFacetFilter(1);
+	// Sincronizar parámetros de filtros con la URL del navegador
+	function syncUrlState() {
+		if (isPopState) return;
+		var $form = $('.wpat-facets-form');
+		if (!$form.length) return;
+
+		var formData = $form.serializeArray();
+		var params = new URLSearchParams();
+
+		$.each(formData, function(i, field) {
+			if (field.value !== '' && field.value !== null) {
+				if (field.name.indexOf('[]') !== -1) {
+					var cleanKey = field.name.replace('[]', '');
+					params.append(cleanKey, field.value);
+				} else {
+					params.set(field.name, field.value);
+				}
+			}
+		});
+
+		var newQuery = params.toString();
+		var newUrl = window.location.pathname + (newQuery ? '?' + newQuery : '');
+		if (window.history && window.history.pushState) {
+			window.history.pushState({ path: newUrl }, '', newUrl);
 		}
+	}
+
+	// Restaurar formulario al usar botones Adelante/Atrás del navegador
+	window.addEventListener('popstate', function(e) {
+		isPopState = true;
+		var params = new URLSearchParams(window.location.search);
+		var $form = $('.wpat-facets-form');
+		if ($form.length) {
+			$form.find('input[type="checkbox"], input[type="radio"]').prop('checked', false);
+			$form.find('input[type="number"]').val('');
+			$form.find('select').val('menu_order');
+
+			params.forEach(function(val, key) {
+				var $input = $form.find('input[name="' + key + '[]"][value="' + val + '"], input[name="' + key + '"][value="' + val + '"]');
+				if ($input.length) {
+					$input.prop('checked', true);
+				} else if ($form.find('input[name="' + key + '"]').length) {
+					$form.find('input[name="' + key + '"]').val(val);
+				} else if ($form.find('select[name="' + key + '"]').length) {
+					$form.find('select[name="' + key + '"]').val(val);
+				}
+			});
+			updateActiveTags();
+			triggerFacetFilter(1, false);
+		}
+		isPopState = false;
+	});
+
+	// Detectar cambio en cualquier input de faceta
+	$(document).on('change', '.wpat-facet-input:not([type="number"])', function(e) {
+		updateActiveTags();
+		syncUrlState();
+		triggerFacetFilter(1, true);
+	});
+
+	$(document).on('input', '.wpat-facet-input[type="number"]', function(e) {
+		updateActiveTags();
+		clearTimeout(filterTimer);
+		filterTimer = setTimeout(function() {
+			syncUrlState();
+			triggerFacetFilter(1, true);
+		}, 400);
 	});
 
 	// Eliminar etiqueta individual
@@ -77,7 +135,8 @@ jQuery(document).ready(function($) {
 		}
 
 		updateActiveTags();
-		triggerFacetFilter(1);
+		syncUrlState();
+		triggerFacetFilter(1, true);
 	});
 
 	// Botón de limpiar todo en la barra de tags o botón principal
@@ -85,9 +144,11 @@ jQuery(document).ready(function($) {
 		e.preventDefault();
 		var $form = $('.wpat-facets-form');
 		$form.find('input[type="checkbox"], input[type="radio"]').prop('checked', false);
-		$form.find('input[type="number"], select').val('');
+		$form.find('input[type="number"]').val('');
+		$form.find('select').val('menu_order');
 		updateActiveTags();
-		triggerFacetFilter(1);
+		syncUrlState();
+		triggerFacetFilter(1, true);
 	});
 
 	// Paginación AJAX
@@ -99,37 +160,57 @@ jQuery(document).ready(function($) {
 			var page = match ? parseInt(match[1]) : 1;
 			if (page) {
 				e.preventDefault();
-				triggerFacetFilter(page);
-				$('html, body').animate({ scrollTop: $('.products').offset().top - 100 }, 300);
+				triggerFacetFilter(page, true);
+				var $target = $('.products, ul.products, .wpat-no-products-wrapper').first();
+				if ($target.length) {
+					$('html, body').animate({ scrollTop: $target.offset().top - 120 }, 300);
+				}
 			}
 		}
+	});
+
+	// Abrir / Cerrar Drawer Móvil
+	$(document).on('click', '.wpat-facets-mobile-toggle-btn', function(e) {
+		e.preventDefault();
+		$('#wpat-facets-main-container').addClass('wpat-drawer-open');
+		$('.wpat-facets-backdrop').addClass('active');
+		$('body').addClass('wpat-facets-drawer-active');
+	});
+
+	$(document).on('click', '.wpat-facets-mobile-close-btn, .wpat-facets-backdrop', function(e) {
+		e.preventDefault();
+		$('#wpat-facets-main-container').removeClass('wpat-drawer-open');
+		$('.wpat-facets-backdrop').removeClass('active');
+		$('body').removeClass('wpat-facets-drawer-active');
 	});
 
 	/**
 	 * Ejecuta la llamada AJAX para actualizar el grid de productos de WooCommerce.
 	 */
-	function triggerFacetFilter(page) {
+	function triggerFacetFilter(page, shouldSync) {
 		var $form = $('.wpat-facets-form');
 		if (!$form.length) return;
 
 		var formData = $form.serializeArray();
 		var dataObj = {
 			action: 'wpat_filter_products',
+			security: (typeof wpatWooFacets !== 'undefined' && wpatWooFacets.security) ? wpatWooFacets.security : '',
 			paged: page || 1
 		};
 
 		$.each(formData, function(i, field) {
-			if (dataObj[field.name]) {
-				if (!$.isArray(dataObj[field.name])) {
-					dataObj[field.name] = [dataObj[field.name]];
+			if (field.name.indexOf('[]') !== -1) {
+				var cleanName = field.name.replace('[]', '');
+				if (!dataObj[cleanName]) {
+					dataObj[cleanName] = [];
 				}
-				dataObj[field.name].push(field.value);
+				dataObj[cleanName].push(field.value);
 			} else {
 				dataObj[field.name] = field.value;
 			}
 		});
 
-		var $targetContainer = $('.products, ul.products').first();
+		var $targetContainer = $('.products, ul.products, .wpat-no-products-wrapper').first();
 		if (!$targetContainer.length) {
 			$targetContainer = $('.woocommerce-info').first().parent();
 		}
@@ -137,28 +218,32 @@ jQuery(document).ready(function($) {
 		$targetContainer.addClass('wpat-products-loading');
 
 		$.ajax({
-			url: wpatWooFacets.ajaxurl,
+			url: (typeof wpatWooFacets !== 'undefined' && wpatWooFacets.ajaxurl) ? wpatWooFacets.ajaxurl : '/wp-admin/admin-ajax.php',
 			type: 'POST',
 			data: dataObj,
 			success: function(response) {
 				$targetContainer.removeClass('wpat-products-loading');
 				if (response.success) {
-					if ($('.products, ul.products').length) {
-						$('.products, ul.products').replaceWith(response.data.html);
-					} else if ($('.wpat-no-products-found').length) {
-						$('.wpat-no-products-found').replaceWith(response.data.html);
+					// Actualizar catálogo de productos
+					var $existingList = $('.products, ul.products, .wpat-no-products-wrapper').first();
+					if ($existingList.length) {
+						$existingList.replaceWith(response.data.html);
 					} else {
 						$targetContainer.html(response.data.html);
 					}
 
 					// Actualizar paginación
-					if ($('.woocommerce-pagination, nav.woocommerce-pagination').length) {
+					var $pagination = $('.woocommerce-pagination, nav.woocommerce-pagination');
+					if ($pagination.length) {
 						if (response.data.pagination) {
-							$('.woocommerce-pagination, nav.woocommerce-pagination').replaceWith('<nav class="woocommerce-pagination">' + response.data.pagination + '</nav>');
+							$pagination.replaceWith('<nav class="woocommerce-pagination">' + response.data.pagination + '</nav>');
 						} else {
-							$('.woocommerce-pagination, nav.woocommerce-pagination').empty();
+							$pagination.empty();
 						}
 					}
+
+					// Disparar evento para compatibilidad con lazy load y tooltips
+					$(document.body).trigger('wpat_facets_updated', [response.data]);
 				}
 			},
 			error: function() {

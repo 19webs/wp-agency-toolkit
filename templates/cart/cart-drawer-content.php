@@ -60,7 +60,11 @@ defined( 'ABSPATH' ) || exit;
 							</span>
 
 							<div class="wpat-drawer-qty-controls">
-								<span class="wpat-drawer-qty-label"><?php echo esc_html( $cart_item['quantity'] ); ?> ud.</span>
+								<div class="wpat-drawer-qty-selector">
+									<button type="button" class="wpat-drawer-qty-btn wpat-drawer-qty-minus" data-cart-key="<?php echo esc_attr( $cart_item_key ); ?>">-</button>
+									<span class="wpat-drawer-qty-val"><?php echo esc_html( $cart_item['quantity'] ); ?></span>
+									<button type="button" class="wpat-drawer-qty-btn wpat-drawer-qty-plus" data-cart-key="<?php echo esc_attr( $cart_item_key ); ?>">+</button>
+								</div>
 							</div>
 						</div>
 					</div>

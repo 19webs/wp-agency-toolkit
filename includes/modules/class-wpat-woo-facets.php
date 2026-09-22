@@ -74,9 +74,11 @@ class WPAT_Woo_Facets {
 
 		wp_localize_script( 'wpat-woo-facets', 'wpatWooFacets', array(
 			'ajaxurl'            => admin_url( 'admin-ajax.php' ),
+			'security'           => wp_create_nonce( 'wpat_facets_nonce' ),
 			'loading'            => __( 'Cargando productos...', 'wp-agency-toolkit' ),
 			'active_filters_lbl' => __( 'Filtros Activos:', 'wp-agency-toolkit' ),
 			'clear_all_lbl'      => __( 'Limpiar todo', 'wp-agency-toolkit' ),
+			'currency_symbol'    => function_exists( 'get_woocommerce_currency_symbol' ) ? get_woocommerce_currency_symbol() : '€',
 		) );
 	}
 
@@ -99,12 +101,31 @@ class WPAT_Woo_Facets {
 
 		$wrapper_classes = 'wpat-facets-wrapper' . ( $is_sticky ? ' wpat-facets-sticky' : '' );
 
+		// Capturar valores preexistentes de $_GET para restaurar filtros por URL
+		$get_orderby   = isset( $_GET['orderby'] ) ? sanitize_text_field( $_GET['orderby'] ) : 'menu_order';
+		$get_min_price = isset( $_GET['min_price'] ) ? floatval( $_GET['min_price'] ) : '';
+		$get_max_price = isset( $_GET['max_price'] ) ? floatval( $_GET['max_price'] ) : '';
+		$get_cats      = isset( $_GET['product_cat'] ) ? ( is_array( $_GET['product_cat'] ) ? array_map( 'sanitize_text_field', $_GET['product_cat'] ) : explode( ',', sanitize_text_field( $_GET['product_cat'] ) ) ) : array();
+		$get_in_stock  = ! empty( $_GET['in_stock'] ) && '1' === (string) $_GET['in_stock'];
+		$get_on_sale   = ! empty( $_GET['on_sale'] ) && '1' === (string) $_GET['on_sale'];
+		$get_rating    = isset( $_GET['rating'] ) ? intval( $_GET['rating'] ) : 0;
+
 		ob_start();
 		?>
-		<div class="<?php echo esc_attr( $wrapper_classes ); ?>">
-			<?php if ( ! empty( $atts['title'] ) ) : ?>
-				<h3 class="wpat-facets-main-title"><?php echo esc_html( $atts['title'] ); ?></h3>
-			<?php endif; ?>
+		<!-- Botón Móvil para abrir filtros en drawer -->
+		<div class="wpat-facets-mobile-trigger-wrap">
+			<button type="button" class="wpat-facets-mobile-toggle-btn">
+				<span class="dashicons dashicons-filter"></span> <?php echo esc_html( $atts['title'] ); ?>
+			</button>
+		</div>
+
+		<div class="<?php echo esc_attr( $wrapper_classes ); ?>" id="wpat-facets-main-container">
+			<div class="wpat-facets-header-row">
+				<?php if ( ! empty( $atts['title'] ) ) : ?>
+					<h3 class="wpat-facets-main-title"><?php echo esc_html( $atts['title'] ); ?></h3>
+				<?php endif; ?>
+				<button type="button" class="wpat-facets-mobile-close-btn" aria-label="<?php esc_attr_e( 'Cerrar filtros', 'wp-agency-toolkit' ); ?>">&times;</button>
+			</div>
 
 			<?php if ( $show_active_tags ) : ?>
 				<div class="wpat-facets-active-tags-bar" style="display: none;">
@@ -121,11 +142,12 @@ class WPAT_Woo_Facets {
 					<div class="wpat-facet-group">
 						<label class="wpat-facet-title"><?php esc_html_e( 'Ordenar por', 'wp-agency-toolkit' ); ?></label>
 						<select name="orderby" class="wpat-facet-select wpat-facet-input">
-							<option value="menu_order"><?php esc_html_e( 'Relevancia por defecto', 'wp-agency-toolkit' ); ?></option>
-							<option value="date"><?php esc_html_e( 'Más recientes', 'wp-agency-toolkit' ); ?></option>
-							<option value="price-asc"><?php esc_html_e( 'Precio: Menor a Mayor', 'wp-agency-toolkit' ); ?></option>
-							<option value="price-desc"><?php esc_html_e( 'Precio: Mayor a Menor', 'wp-agency-toolkit' ); ?></option>
-							<option value="rating"><?php esc_html_e( 'Mejor valorados', 'wp-agency-toolkit' ); ?></option>
+							<option value="menu_order" <?php selected( $get_orderby, 'menu_order' ); ?>><?php esc_html_e( 'Relevancia por defecto', 'wp-agency-toolkit' ); ?></option>
+							<option value="popularity" <?php selected( $get_orderby, 'popularity' ); ?>><?php esc_html_e( 'Más populares', 'wp-agency-toolkit' ); ?></option>
+							<option value="date" <?php selected( $get_orderby, 'date' ); ?>><?php esc_html_e( 'Más recientes', 'wp-agency-toolkit' ); ?></option>
+							<option value="price-asc" <?php selected( $get_orderby, 'price-asc' ); ?>><?php esc_html_e( 'Precio: Menor a Mayor', 'wp-agency-toolkit' ); ?></option>
+							<option value="price-desc" <?php selected( $get_orderby, 'price-desc' ); ?>><?php esc_html_e( 'Precio: Mayor a Menor', 'wp-agency-toolkit' ); ?></option>
+							<option value="rating" <?php selected( $get_orderby, 'rating' ); ?>><?php esc_html_e( 'Mejor valorados', 'wp-agency-toolkit' ); ?></option>
 						</select>
 					</div>
 				<?php endif; ?>
@@ -133,15 +155,18 @@ class WPAT_Woo_Facets {
 				<?php // 2. Rango de Precio ?>
 				<?php if ( in_array( 'price', $enabled_facets, true ) ) :
 					global $wpdb;
-					$min_price = floor( $wpdb->get_var( "SELECT MIN(meta_value+0) FROM {$wpdb->postmeta} WHERE meta_key='_price' AND meta_value != ''" ) ?: 0 );
-					$max_price = ceil( $wpdb->get_var( "SELECT MAX(meta_value+0) FROM {$wpdb->postmeta} WHERE meta_key='_price' AND meta_value != ''" ) ?: 500 );
+					$min_price = floor( (float) $wpdb->get_var( "SELECT MIN(CAST(pm.meta_value AS DECIMAL(10,2))) FROM {$wpdb->postmeta} pm INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id WHERE pm.meta_key='_price' AND pm.meta_value != '' AND p.post_status='publish' AND p.post_type IN ('product', 'product_variation')" ) ?: 0 );
+					$max_price = ceil( (float) $wpdb->get_var( "SELECT MAX(CAST(pm.meta_value AS DECIMAL(10,2))) FROM {$wpdb->postmeta} pm INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id WHERE pm.meta_key='_price' AND pm.meta_value != '' AND p.post_status='publish' AND p.post_type IN ('product', 'product_variation')" ) ?: 500 );
+					if ( $max_price <= $min_price ) {
+						$max_price = $min_price + 100;
+					}
 					?>
 					<div class="wpat-facet-group">
-						<label class="wpat-facet-title"><?php esc_html_e( 'Rango de Precio (€)', 'wp-agency-toolkit' ); ?></label>
+						<label class="wpat-facet-title"><?php printf( esc_html__( 'Rango de Precio (%s)', 'wp-agency-toolkit' ), function_exists( 'get_woocommerce_currency_symbol' ) ? esc_html( get_woocommerce_currency_symbol() ) : '€' ); ?></label>
 						<div class="wpat-facet-price-range">
-							<input type="number" name="min_price" class="wpat-facet-input min-price-input" min="<?php echo $min_price; ?>" max="<?php echo $max_price; ?>" placeholder="<?php echo $min_price; ?>" />
+							<input type="number" name="min_price" class="wpat-facet-input min-price-input" min="<?php echo esc_attr( $min_price ); ?>" max="<?php echo esc_attr( $max_price ); ?>" value="<?php echo esc_attr( $get_min_price ); ?>" placeholder="<?php echo esc_attr( $min_price ); ?>" />
 							<span>—</span>
-							<input type="number" name="max_price" class="wpat-facet-input max-price-input" min="<?php echo $min_price; ?>" max="<?php echo $max_price; ?>" placeholder="<?php echo $max_price; ?>" />
+							<input type="number" name="max_price" class="wpat-facet-input max-price-input" min="<?php echo esc_attr( $min_price ); ?>" max="<?php echo esc_attr( $max_price ); ?>" value="<?php echo esc_attr( $get_max_price ); ?>" placeholder="<?php echo esc_attr( $max_price ); ?>" />
 						</div>
 					</div>
 				<?php endif; ?>
@@ -155,7 +180,7 @@ class WPAT_Woo_Facets {
 							<div class="wpat-facet-checkbox-list">
 								<?php foreach ( $cats as $cat ) : ?>
 									<label class="wpat-facet-checkbox-item">
-										<input type="checkbox" name="product_cat[]" value="<?php echo esc_attr( $cat->slug ); ?>" class="wpat-facet-input" />
+										<input type="checkbox" name="product_cat[]" value="<?php echo esc_attr( $cat->slug ); ?>" class="wpat-facet-input" <?php checked( in_array( $cat->slug, $get_cats, true ) ); ?> />
 										<span class="wpat-facet-label"><?php echo esc_html( $cat->name ); ?></span>
 										<span class="wpat-facet-count">(<?php echo esc_html( $cat->count ); ?>)</span>
 									</label>
@@ -171,11 +196,11 @@ class WPAT_Woo_Facets {
 						<label class="wpat-facet-title"><?php esc_html_e( 'Disponibilidad', 'wp-agency-toolkit' ); ?></label>
 						<div class="wpat-facet-checkbox-list">
 							<label class="wpat-facet-checkbox-item">
-								<input type="checkbox" name="in_stock" value="1" class="wpat-facet-input" />
+								<input type="checkbox" name="in_stock" value="1" class="wpat-facet-input" <?php checked( $get_in_stock ); ?> />
 								<span class="wpat-facet-label"><?php esc_html_e( 'Solo en Stock', 'wp-agency-toolkit' ); ?></span>
 							</label>
 							<label class="wpat-facet-checkbox-item">
-								<input type="checkbox" name="on_sale" value="1" class="wpat-facet-input" />
+								<input type="checkbox" name="on_sale" value="1" class="wpat-facet-input" <?php checked( $get_on_sale ); ?> />
 								<span class="wpat-facet-label"><?php esc_html_e( 'En Oferta', 'wp-agency-toolkit' ); ?></span>
 							</label>
 						</div>
@@ -191,13 +216,14 @@ class WPAT_Woo_Facets {
 							if ( ! taxonomy_exists( $tax_name ) ) continue;
 							$terms = get_terms( array( 'taxonomy' => $tax_name, 'hide_empty' => true ) );
 							if ( empty( $terms ) || is_wp_error( $terms ) ) continue;
+							$get_attr_vals = isset( $_GET[ 'attr_' . $tax->attribute_name ] ) ? ( is_array( $_GET[ 'attr_' . $tax->attribute_name ] ) ? $_GET[ 'attr_' . $tax->attribute_name ] : explode( ',', sanitize_text_field( $_GET[ 'attr_' . $tax->attribute_name ] ) ) ) : array();
 							?>
 							<div class="wpat-facet-group">
 								<label class="wpat-facet-title"><?php echo esc_html( $tax->attribute_label ); ?></label>
 								<div class="wpat-facet-checkbox-list">
 									<?php foreach ( $terms as $term ) : ?>
 										<label class="wpat-facet-checkbox-item">
-											<input type="checkbox" name="attr_<?php echo esc_attr( $tax->attribute_name ); ?>[]" value="<?php echo esc_attr( $term->slug ); ?>" class="wpat-facet-input" />
+											<input type="checkbox" name="attr_<?php echo esc_attr( $tax->attribute_name ); ?>[]" value="<?php echo esc_attr( $term->slug ); ?>" class="wpat-facet-input" <?php checked( in_array( $term->slug, $get_attr_vals, true ) ); ?> />
 											<span class="wpat-facet-label"><?php echo esc_html( $term->name ); ?></span>
 											<span class="wpat-facet-count">(<?php echo esc_html( $term->count ); ?>)</span>
 										</label>
@@ -215,8 +241,8 @@ class WPAT_Woo_Facets {
 						<div class="wpat-facet-checkbox-list">
 							<?php for ( $r = 5; $r >= 3; $r-- ) : ?>
 								<label class="wpat-facet-checkbox-item">
-									<input type="radio" name="rating" value="<?php echo $r; ?>" class="wpat-facet-input" />
-									<span class="wpat-facet-label"><?php echo str_repeat( '★', $r ) . str_repeat( '☆', 5 - $r ); ?> <?php echo ( 5 === $r ) ? '5 estrellas' : $r . '+ estrellas'; ?></span>
+									<input type="radio" name="rating" value="<?php echo $r; ?>" class="wpat-facet-input" <?php checked( $get_rating === $r ); ?> />
+									<span class="wpat-facet-label"><?php echo str_repeat( '★', $r ) . str_repeat( '☆', 5 - $r ); ?> <?php echo ( 5 === $r ) ? esc_html__( '5 estrellas', 'wp-agency-toolkit' ) : sprintf( esc_html__( '%d+ estrellas', 'wp-agency-toolkit' ), $r ); ?></span>
 								</label>
 							<?php endfor; ?>
 						</div>
@@ -228,6 +254,7 @@ class WPAT_Woo_Facets {
 				</div>
 			</form>
 		</div>
+		<div class="wpat-facets-backdrop"></div>
 		<?php
 		return ob_get_clean();
 	}
@@ -236,12 +263,14 @@ class WPAT_Woo_Facets {
 	 * Endpoint AJAX para filtrar productos WooCommerce según las facetas marcadas.
 	 */
 	public function ajax_filter_products() {
+		check_ajax_referer( 'wpat_facets_nonce', 'security', false );
+
 		$paged     = isset( $_POST['paged'] ) ? max( 1, intval( $_POST['paged'] ) ) : 1;
 		$min_price = isset( $_POST['min_price'] ) && '' !== $_POST['min_price'] ? floatval( $_POST['min_price'] ) : null;
 		$max_price = isset( $_POST['max_price'] ) && '' !== $_POST['max_price'] ? floatval( $_POST['max_price'] ) : null;
 		$cats      = isset( $_POST['product_cat'] ) && is_array( $_POST['product_cat'] ) ? array_map( 'sanitize_text_field', $_POST['product_cat'] ) : array();
-		$in_stock  = ! empty( $_POST['in_stock'] ) && '1' === $_POST['in_stock'];
-		$on_sale   = ! empty( $_POST['on_sale'] ) && '1' === $_POST['on_sale'];
+		$in_stock  = ! empty( $_POST['in_stock'] ) && '1' === (string) $_POST['in_stock'];
+		$on_sale   = ! empty( $_POST['on_sale'] ) && '1' === (string) $_POST['on_sale'];
 		$orderby   = isset( $_POST['orderby'] ) ? sanitize_text_field( $_POST['orderby'] ) : 'menu_order';
 		$rating    = isset( $_POST['rating'] ) ? intval( $_POST['rating'] ) : 0;
 
@@ -254,7 +283,7 @@ class WPAT_Woo_Facets {
 			'tax_query'      => array( 'relation' => 'AND' ),
 		);
 
-		// Excluir productos ocultos
+		// Excluir productos ocultos del catálogo y búsquedas
 		if ( taxonomy_exists( 'product_visibility' ) ) {
 			$product_visibility_term_ids = wc_get_product_visibility_term_ids();
 			$args['tax_query'][]         = array(
@@ -314,7 +343,7 @@ class WPAT_Woo_Facets {
 		foreach ( $_POST as $key => $val ) {
 			if ( 0 === strpos( $key, 'attr_' ) && ! empty( $val ) && is_array( $val ) ) {
 				$attr_slug = sanitize_text_field( substr( $key, 5 ) );
-				$tax_name  = wc_attribute_taxonomy_name( $attr_slug );
+				$tax_name  = ( 0 === strpos( $attr_slug, 'pa_' ) ) ? $attr_slug : 'pa_' . $attr_slug;
 				if ( taxonomy_exists( $tax_name ) ) {
 					$args['tax_query'][] = array(
 						'taxonomy' => $tax_name,
@@ -336,7 +365,7 @@ class WPAT_Woo_Facets {
 			);
 		}
 
-		// Ordenación
+		// Ordenación nativa de WooCommerce
 		switch ( $orderby ) {
 			case 'price-asc':
 				$args['meta_key'] = '_price';
@@ -345,6 +374,11 @@ class WPAT_Woo_Facets {
 				break;
 			case 'price-desc':
 				$args['meta_key'] = '_price';
+				$args['orderby']  = 'meta_value_num';
+				$args['order']    = 'DESC';
+				break;
+			case 'popularity':
+				$args['meta_key'] = 'total_sales';
 				$args['orderby']  = 'meta_value_num';
 				$args['order']    = 'DESC';
 				break;
@@ -375,7 +409,7 @@ class WPAT_Woo_Facets {
 			woocommerce_product_loop_end();
 			wp_reset_postdata();
 		} else {
-			echo '<p class="woocommerce-info wpat-no-products-found">' . esc_html__( 'No se encontraron productos que coincidan con los filtros seleccionados.', 'wp-agency-toolkit' ) . '</p>';
+			echo '<div class="wpat-no-products-wrapper"><p class="woocommerce-info wpat-no-products-found">' . esc_html__( 'No se encontraron productos que coincidan con los filtros seleccionados.', 'wp-agency-toolkit' ) . '</p></div>';
 		}
 		$grid_html = ob_get_clean();
 

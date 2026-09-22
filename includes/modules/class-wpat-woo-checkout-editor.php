@@ -46,6 +46,9 @@ class WPAT_Woo_Checkout_Editor {
 		add_action( 'woocommerce_admin_order_data_after_billing_address', array( $this, 'display_fields_in_admin_billing' ) );
 		add_action( 'woocommerce_admin_order_data_after_shipping_address', array( $this, 'display_fields_in_admin_shipping' ) );
 
+		// Pre-rellenar campos en checkout para clientes registrados
+		add_filter( 'woocommerce_checkout_get_value', array( $this, 'prefill_custom_checkout_fields' ), 10, 2 );
+
 		// Exponer automáticamente en la API REST de WooCommerce para CRM/ERP
 		add_filter( 'woocommerce_rest_prepare_shop_order_object', array( $this, 'expose_fields_in_rest_api' ), 10, 3 );
 	}
@@ -185,6 +188,32 @@ class WPAT_Woo_Checkout_Editor {
 	}
 
 	/**
+	 * Pre-rellena los valores de NIF y campos personalizados para usuarios autenticados.
+	 */
+	public function prefill_custom_checkout_fields( $value, $input ) {
+		if ( ! empty( $value ) || ! is_user_logged_in() ) {
+			return $value;
+		}
+
+		$user_id = get_current_user_id();
+		if ( ! $user_id ) {
+			return $value;
+		}
+
+		$meta_val = get_user_meta( $user_id, $input, true );
+		if ( ! empty( $meta_val ) ) {
+			return $meta_val;
+		}
+
+		$meta_val_under = get_user_meta( $user_id, '_' . $input, true );
+		if ( ! empty( $meta_val_under ) ) {
+			return $meta_val_under;
+		}
+
+		return $value;
+	}
+
+	/**
 	 * Valida que los campos requeridos estén correctamente rellenados.
 	 */
 	public function validate_custom_checkout_fields() {
@@ -202,8 +231,15 @@ class WPAT_Woo_Checkout_Editor {
 
 		// Validar campos personalizados obligatorios
 		$custom_fields = isset( $settings['checkout_custom_fields'] ) && is_array( $settings['checkout_custom_fields'] ) ? $settings['checkout_custom_fields'] : array();
+		$ship_to_diff  = ! empty( $_POST['ship_to_different_address'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+
 		foreach ( $custom_fields as $cf ) {
 			if ( ! empty( $cf['key'] ) && ! empty( $cf['required'] ) && '1' === $cf['required'] ) {
+				// Si el campo es de la sección shipping y el cliente no seleccionó enviar a otra dirección, omitir
+				if ( isset( $cf['section'] ) && 'shipping' === $cf['section'] && ! $ship_to_diff ) {
+					continue;
+				}
+
 				$key = sanitize_key( $cf['key'] );
 				if ( empty( $_POST[ $key ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
 					/* translators: %s: nombre del campo */
@@ -214,7 +250,7 @@ class WPAT_Woo_Checkout_Editor {
 	}
 
 	/**
-	 * Guarda los metadatos de los campos personalizados en el pedido.
+	 * Guarda los metadatos de los campos personalizados en el pedido (Compatible con HPOS & CPT).
 	 *
 	 * @param int   $order_id ID del pedido.
 	 * @param array $posted   Datos enviados por POST.
@@ -225,10 +261,23 @@ class WPAT_Woo_Checkout_Editor {
 			return;
 		}
 
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			return;
+		}
+
+		$customer_id = $order->get_customer_id();
+
 		// Guardar NIF
 		if ( ! empty( $settings['checkout_nif_enabled'] ) && isset( $_POST['billing_nif'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			$nif_val = sanitize_text_field( wp_unslash( $_POST['billing_nif'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			update_post_meta( $order_id, '_billing_nif', $nif_val );
+			$order->update_meta_data( '_billing_nif', $nif_val );
+			$order->update_meta_data( 'billing_nif', $nif_val );
+
+			if ( $customer_id > 0 ) {
+				update_user_meta( $customer_id, 'billing_nif', $nif_val );
+				update_user_meta( $customer_id, '_billing_nif', $nif_val );
+			}
 		}
 
 		// Guardar campos personalizados
@@ -240,15 +289,21 @@ class WPAT_Woo_Checkout_Editor {
 			$key = sanitize_key( $cf['key'] );
 			if ( isset( $_POST[ $key ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
 				$val = sanitize_text_field( wp_unslash( $_POST[ $key ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-				update_post_meta( $order_id, '_' . $key, $val );
-				// También guardar sin guion bajo inicial para legibilidad si se requiere
-				update_post_meta( $order_id, $key, $val );
+				$order->update_meta_data( '_' . $key, $val );
+				$order->update_meta_data( $key, $val );
+
+				if ( $customer_id > 0 ) {
+					update_user_meta( $customer_id, $key, $val );
+					update_user_meta( $customer_id, '_' . $key, $val );
+				}
 			}
 		}
+
+		$order->save();
 	}
 
 	/**
-	 * Muestra los campos personalizados en los correos electrónicos del cliente y administración.
+	 * Muestra los campos personalizados en los correos electrónicos del cliente y administración (HPOS Compatible).
 	 *
 	 * @param array    $fields Campos existentes.
 	 * @param bool     $sent_to_admin Si es correo de admin.
@@ -261,11 +316,16 @@ class WPAT_Woo_Checkout_Editor {
 			return $fields;
 		}
 
-		$order_id = $order->get_id();
+		if ( ! $order || ! is_a( $order, 'WC_Order' ) ) {
+			return $fields;
+		}
 
 		// NIF en email
 		if ( ! empty( $settings['checkout_nif_enabled'] ) ) {
-			$nif = get_post_meta( $order_id, '_billing_nif', true );
+			$nif = $order->get_meta( '_billing_nif' );
+			if ( empty( $nif ) ) {
+				$nif = $order->get_meta( 'billing_nif' );
+			}
 			if ( ! empty( $nif ) ) {
 				$fields['billing_nif'] = array(
 					'label' => __( 'NIF / CIF', 'wp-agency-toolkit' ),
@@ -281,7 +341,10 @@ class WPAT_Woo_Checkout_Editor {
 				continue;
 			}
 			$key = sanitize_key( $cf['key'] );
-			$val = get_post_meta( $order_id, '_' . $key, true );
+			$val = $order->get_meta( '_' . $key );
+			if ( empty( $val ) ) {
+				$val = $order->get_meta( $key );
+			}
 			if ( ! empty( $val ) ) {
 				$fields[ $key ] = array(
 					'label' => esc_html( $cf['label'] ),
@@ -294,7 +357,7 @@ class WPAT_Woo_Checkout_Editor {
 	}
 
 	/**
-	 * Muestra el NIF y campos en la ficha del pedido en WP Admin (Dirección de Facturación).
+	 * Muestra el NIF y campos en la ficha del pedido en WP Admin (Dirección de Facturación) - HPOS Compatible.
 	 *
 	 * @param WC_Order $order Objeto del pedido.
 	 */
@@ -304,10 +367,15 @@ class WPAT_Woo_Checkout_Editor {
 			return;
 		}
 
-		$order_id = $order->get_id();
+		if ( ! $order || ! is_a( $order, 'WC_Order' ) ) {
+			return;
+		}
 
 		if ( ! empty( $settings['checkout_nif_enabled'] ) ) {
-			$nif = get_post_meta( $order_id, '_billing_nif', true );
+			$nif = $order->get_meta( '_billing_nif' );
+			if ( empty( $nif ) ) {
+				$nif = $order->get_meta( 'billing_nif' );
+			}
 			if ( ! empty( $nif ) ) {
 				echo '<p><strong>' . esc_html__( 'NIF / CIF:', 'wp-agency-toolkit' ) . '</strong> ' . esc_html( $nif ) . '</p>';
 			}
@@ -319,7 +387,10 @@ class WPAT_Woo_Checkout_Editor {
 				continue;
 			}
 			$key = sanitize_key( $cf['key'] );
-			$val = get_post_meta( $order_id, '_' . $key, true );
+			$val = $order->get_meta( '_' . $key );
+			if ( empty( $val ) ) {
+				$val = $order->get_meta( $key );
+			}
 			if ( ! empty( $val ) ) {
 				echo '<p><strong>' . esc_html( $cf['label'] ) . ':</strong> ' . esc_html( $val ) . '</p>';
 			}
@@ -327,7 +398,7 @@ class WPAT_Woo_Checkout_Editor {
 	}
 
 	/**
-	 * Muestra campos en la ficha del pedido en WP Admin (Dirección de Envío).
+	 * Muestra campos en la ficha del pedido en WP Admin (Dirección de Envío) - HPOS Compatible.
 	 *
 	 * @param WC_Order $order Objeto del pedido.
 	 */
@@ -337,7 +408,9 @@ class WPAT_Woo_Checkout_Editor {
 			return;
 		}
 
-		$order_id = $order->get_id();
+		if ( ! $order || ! is_a( $order, 'WC_Order' ) ) {
+			return;
+		}
 
 		$custom_fields = isset( $settings['checkout_custom_fields'] ) && is_array( $settings['checkout_custom_fields'] ) ? $settings['checkout_custom_fields'] : array();
 		foreach ( $custom_fields as $cf ) {
@@ -345,7 +418,10 @@ class WPAT_Woo_Checkout_Editor {
 				continue;
 			}
 			$key = sanitize_key( $cf['key'] );
-			$val = get_post_meta( $order_id, '_' . $key, true );
+			$val = $order->get_meta( '_' . $key );
+			if ( empty( $val ) ) {
+				$val = $order->get_meta( $key );
+			}
 			if ( ! empty( $val ) ) {
 				echo '<p><strong>' . esc_html( $cf['label'] ) . ':</strong> ' . esc_html( $val ) . '</p>';
 			}
@@ -353,7 +429,7 @@ class WPAT_Woo_Checkout_Editor {
 	}
 
 	/**
-	 * Expone los campos personalizados automáticamente en la API REST de WooCommerce para conectividad con CRM / ERP.
+	 * Expone los campos personalizados automáticamente en la API REST de WooCommerce (HPOS Compatible).
 	 *
 	 * @param WP_REST_Response $response Respuesta de la API REST.
 	 * @param WC_Order         $order    Objeto del pedido.
@@ -367,7 +443,6 @@ class WPAT_Woo_Checkout_Editor {
 		}
 
 		$data = $response->get_data();
-		$order_id = $order->get_id();
 
 		if ( ! isset( $data['meta_data'] ) || ! is_array( $data['meta_data'] ) ) {
 			$data['meta_data'] = array();
@@ -375,7 +450,10 @@ class WPAT_Woo_Checkout_Editor {
 
 		// NIF en API REST
 		if ( ! empty( $settings['checkout_nif_enabled'] ) ) {
-			$nif = get_post_meta( $order_id, '_billing_nif', true );
+			$nif = $order->get_meta( '_billing_nif' );
+			if ( empty( $nif ) ) {
+				$nif = $order->get_meta( 'billing_nif' );
+			}
 			if ( ! empty( $nif ) ) {
 				$data['billing']['nif'] = $nif;
 				$data['meta_data'][] = array(
@@ -393,7 +471,10 @@ class WPAT_Woo_Checkout_Editor {
 				continue;
 			}
 			$key = sanitize_key( $cf['key'] );
-			$val = get_post_meta( $order_id, '_' . $key, true );
+			$val = $order->get_meta( '_' . $key );
+			if ( empty( $val ) ) {
+				$val = $order->get_meta( $key );
+			}
 			if ( ! empty( $val ) ) {
 				$data['meta_data'][] = array(
 					'id'    => 0,

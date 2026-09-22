@@ -114,10 +114,6 @@ class WPAT_Woo_Promotions {
 	 * Encola estilos y scripts para el frontend.
 	 */
 	public function enqueue_frontend_assets() {
-		if ( ! function_exists( 'is_cart' ) || ! function_exists( 'is_checkout' ) || ! function_exists( 'is_product' ) ) {
-			return;
-		}
-
 		$plugin_url = defined( 'WPAT_URL' ) ? WPAT_URL : plugin_dir_url( dirname( __DIR__ ) );
 		$version    = defined( 'WPAT_VERSION' ) ? WPAT_VERSION : '1.0.0';
 
@@ -768,10 +764,11 @@ class WPAT_Woo_Promotions {
 	/**
 	 * Encuentra la regla activa de mayor prioridad con contador de tiempo habilitado para un producto.
 	 *
-	 * @param WC_Product $product Objeto producto.
+	 * @param WC_Product|int $product_or_id Objeto producto o ID.
 	 * @return array|null Datos de la regla y timestamp de expiración o null.
 	 */
-	public function get_matching_countdown_rule_for_product( $product ) {
+	public function get_matching_countdown_rule_for_product( $product_or_id ) {
+		$product = is_a( $product_or_id, 'WC_Product' ) ? $product_or_id : wc_get_product( $product_or_id );
 		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
 			return null;
 		}
@@ -797,7 +794,7 @@ class WPAT_Woo_Promotions {
 				continue;
 			}
 
-			$enable_sched = isset( $rule['enable_schedule'] ) ? ( '1' === (string) $rule['enable_schedule'] ) : ( ! empty( $rule['start_date'] ) || ! empty( $rule['end_date'] ) );
+			$enable_sched = ! empty( $rule['enable_schedule'] ) && '1' === (string) $rule['enable_schedule'];
 
 			if ( $enable_sched ) {
 				if ( ! empty( $rule['start_date'] ) ) {
@@ -839,12 +836,19 @@ class WPAT_Woo_Promotions {
 			}
 
 			if ( $matches ) {
+				$rule_end = 0;
 				if ( ! empty( $rule['end_date'] ) ) {
 					$rule_end = self::parse_date_to_timestamp( $rule['end_date'], true );
-				} else {
+				}
+
+				if ( ! $rule_end || $rule_end <= $now_ts ) {
 					$tz        = function_exists( 'wp_timezone' ) ? wp_timezone() : new DateTimeZone( 'UTC' );
 					$today_end = new DateTime( 'today 23:59:59', $tz );
 					$rule_end  = $today_end->getTimestamp();
+					// Si por alguna razón hoy ya pasó, poner fin de mañana
+					if ( $rule_end <= $now_ts ) {
+						$rule_end += 86400;
+					}
 				}
 
 				return array(
@@ -890,6 +894,14 @@ class WPAT_Woo_Promotions {
 	public function render_product_countdown_banner() {
 		static $rendered_ids = array();
 		global $product;
+
+		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
+			$post_id = get_the_ID();
+			if ( $post_id ) {
+				$product = wc_get_product( $post_id );
+			}
+		}
+
 		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
 			return;
 		}
@@ -944,6 +956,14 @@ class WPAT_Woo_Promotions {
 	public function render_shop_loop_countdown_banner() {
 		static $rendered_loop_ids = array();
 		global $product;
+
+		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
+			$post_id = get_the_ID();
+			if ( $post_id ) {
+				$product = wc_get_product( $post_id );
+			}
+		}
+
 		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
 			return;
 		}

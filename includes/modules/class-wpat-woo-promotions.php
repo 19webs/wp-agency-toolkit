@@ -1002,27 +1002,27 @@ class WPAT_Woo_Promotions {
 
 		if ( $is_loop ) :
 			?>
-			<div class="wpat-promo-countdown-card wpat-promo-shop-loop-card" data-end-timestamp="<?php echo esc_attr( $data['end_ts'] ); ?>" style="margin: 8px 0 !important; padding: 8px 10px !important; background: <?php echo esc_attr( $bg_color ); ?> !important; border: 1px solid <?php echo esc_attr( $border_col ); ?> !important;">
-				<div class="wpat-promo-countdown-header" style="margin-bottom: 4px; gap: 5px;">
+			<div class="wpat-promo-countdown-card wpat-promo-shop-loop-card" data-end-timestamp="<?php echo esc_attr( $data['end_ts'] ); ?>" style="background: <?php echo esc_attr( $bg_color ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;">
+				<div class="wpat-promo-countdown-header">
 					<?php if ( ! empty( $symbol ) ) : ?>
-						<span class="wpat-promo-countdown-icon" style="font-size: 14px;"><?php echo esc_html( $symbol ); ?></span>
+						<span class="wpat-promo-countdown-icon"><?php echo esc_html( $symbol ); ?></span>
 					<?php endif; ?>
-					<span class="wpat-promo-countdown-title" style="font-size: 11px; font-weight: 700; color: <?php echo esc_attr( $text_color ); ?> !important;"><?php echo esc_html( $cd_title ); ?></span>
+					<span class="wpat-promo-countdown-title" style="color: <?php echo esc_attr( $text_color ); ?> !important;"><?php echo esc_html( $cd_title ); ?></span>
 				</div>
-				<div class="wpat-promo-countdown-timer" style="gap: 3px; justify-content: center;">
-					<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px; background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-days" style="font-size: 12px; color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px; color: <?php echo esc_attr( $text_color ); ?> !important;">Días</span></div>
-					<div class="wpat-cd-sep" style="font-size: 11px; color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
-					<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px; background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-hours" style="font-size: 12px; color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px; color: <?php echo esc_attr( $text_color ); ?> !important;">Horas</span></div>
-					<div class="wpat-cd-sep" style="font-size: 11px; color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
-					<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px; background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-mins" style="font-size: 12px; color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px; color: <?php echo esc_attr( $text_color ); ?> !important;">Min</span></div>
-					<div class="wpat-cd-sep" style="font-size: 11px; color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
-					<div class="wpat-cd-block" style="min-width: 32px; padding: 3px 4px; background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-secs" style="font-size: 12px; color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="font-size: 7.5px; color: <?php echo esc_attr( $text_color ); ?> !important;">Seg</span></div>
+				<div class="wpat-promo-countdown-timer">
+					<div class="wpat-cd-block" style="background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-days" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="color: <?php echo esc_attr( $text_color ); ?> !important;">Días</span></div>
+					<div class="wpat-cd-sep" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
+					<div class="wpat-cd-block" style="background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-hours" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="color: <?php echo esc_attr( $text_color ); ?> !important;">Horas</span></div>
+					<div class="wpat-cd-sep" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
+					<div class="wpat-cd-block" style="background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-mins" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="color: <?php echo esc_attr( $text_color ); ?> !important;">Min</span></div>
+					<div class="wpat-cd-sep" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">:</div>
+					<div class="wpat-cd-block" style="background: <?php echo esc_attr( $digit_bg ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;"><span class="wpat-cd-val wpat-cd-secs" style="color: <?php echo esc_attr( $digit_col ); ?> !important;">00</span><span class="wpat-cd-lbl" style="color: <?php echo esc_attr( $text_color ); ?> !important;">Seg</span></div>
 				</div>
 			</div>
 			<?php
 		else :
 			?>
-			<div class="wpat-promo-countdown-card" data-end-timestamp="<?php echo esc_attr( $data['end_ts'] ); ?>" style="background: <?php echo esc_attr( $bg_color ); ?> !important; border: 1px solid <?php echo esc_attr( $border_col ); ?> !important;">
+			<div class="wpat-promo-countdown-card" data-end-timestamp="<?php echo esc_attr( $data['end_ts'] ); ?>" style="background: <?php echo esc_attr( $bg_color ); ?> !important; border-color: <?php echo esc_attr( $border_col ); ?> !important;">
 				<div class="wpat-promo-countdown-header">
 					<?php if ( ! empty( $symbol ) ) : ?>
 						<span class="wpat-promo-countdown-icon"><?php echo esc_html( $symbol ); ?></span>

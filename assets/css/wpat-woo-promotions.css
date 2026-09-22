@@ -110,12 +110,12 @@
 	max-width: 100% !important;
 	visibility: visible !important;
 	opacity: 1 !important;
-	background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%) !important;
-	border: 1px solid #fed7aa !important;
+	background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+	border: 1px solid #fed7aa;
 	border-radius: 12px !important;
-	padding: 14px 18px !important;
-	margin: 15px 0 20px 0 !important;
-	box-shadow: 0 4px 14px rgba(249, 115, 22, 0.08) !important;
+	padding: 12px 16px !important;
+	margin: 12px 0 16px 0 !important;
+	box-shadow: 0 3px 10px rgba(249, 115, 22, 0.06) !important;
 	box-sizing: border-box !important;
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
 	z-index: 10 !important;
@@ -125,72 +125,167 @@
 	display: flex !important;
 	align-items: center !important;
 	gap: 8px !important;
-	margin-bottom: 10px !important;
+	margin-bottom: 8px !important;
 }
 
 .wpat-promo-countdown-icon {
-	font-size: 20px !important;
+	font-size: 18px !important;
 	line-height: 1 !important;
 	display: inline-flex !important;
 	align-items: center !important;
+	flex-shrink: 0 !important;
 	animation: wpat-lightning-pulse 1.5s infinite ease-in-out;
 }
 
 @keyframes wpat-lightning-pulse {
 	0%, 100% { transform: scale(1); opacity: 1; }
-	50% { transform: scale(1.2); opacity: 0.85; }
+	50% { transform: scale(1.15); opacity: 0.85; }
 }
 
 .wpat-promo-countdown-title {
-	font-size: 13.5px !important;
-	color: #9a3412 !important;
-	line-height: 1.4 !important;
+	font-size: 13px !important;
+	color: #9a3412;
+	line-height: 1.3 !important;
 }
 
 .wpat-promo-countdown-title strong {
-	color: #c2410c !important;
+	color: #c2410c;
 }
 
 .wpat-promo-countdown-timer {
 	display: flex !important;
 	align-items: center !important;
 	gap: 6px !important;
-	flex-wrap: wrap !important;
+	flex-wrap: nowrap !important;
+	width: 100% !important;
+	max-width: 100% !important;
+	box-sizing: border-box !important;
 }
 
 .wpat-cd-block {
-	background: #ffffff !important;
-	border: 1px solid #fdba74 !important;
+	background: #ffffff;
+	border: 1px solid #fdba74;
 	border-radius: 8px !important;
 	padding: 6px 10px !important;
-	min-width: 48px !important;
+	min-width: 44px !important;
 	text-align: center !important;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04) !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+	box-sizing: border-box !important;
 }
 
 .wpat-cd-val {
 	display: block !important;
-	font-size: 16px !important;
+	font-size: 15px !important;
 	font-weight: 800 !important;
-	color: #ea580c !important;
+	color: #ea580c;
 	line-height: 1.1 !important;
+	font-variant-numeric: tabular-nums !important;
 }
 
 .wpat-cd-lbl {
 	display: block !important;
-	font-size: 9px !important;
+	font-size: 8.5px !important;
 	font-weight: 700 !important;
-	color: #9a3412 !important;
+	color: #9a3412;
 	text-transform: uppercase !important;
 	margin-top: 2px !important;
-	letter-spacing: 0.5px !important;
+	letter-spacing: 0.4px !important;
+	line-height: 1 !important;
+	white-space: nowrap !important;
 }
 
 .wpat-cd-sep {
-	font-size: 16px !important;
+	font-size: 15px !important;
 	font-weight: 800 !important;
-	color: #ea580c !important;
+	color: #ea580c;
 	line-height: 1 !important;
+	flex-shrink: 0 !important;
+	user-select: none !important;
+}
+
+/* --- ADAPTACIÓN ULTRA-COMPACTA PARA CATÁLOGO / SHOP LOOP --- */
+.wpat-promo-shop-loop-card {
+	padding: 6px 8px !important;
+	margin: 6px 0 10px 0 !important;
+	border-radius: 8px !important;
+	box-shadow: 0 2px 6px rgba(249, 115, 22, 0.05) !important;
+}
+
+.wpat-promo-shop-loop-card .wpat-promo-countdown-header {
+	justify-content: center !important;
+	gap: 4px !important;
+	margin-bottom: 5px !important;
+}
+
+.wpat-promo-shop-loop-card .wpat-promo-countdown-icon {
+	font-size: 13px !important;
+}
+
+.wpat-promo-shop-loop-card .wpat-promo-countdown-title {
+	font-size: 11px !important;
+	font-weight: 700 !important;
+	text-align: center !important;
+	white-space: nowrap !important;
+	overflow: hidden !important;
+	text-overflow: ellipsis !important;
+}
+
+.wpat-promo-shop-loop-card .wpat-promo-countdown-timer {
+	display: flex !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	gap: 2px !important;
+	flex-wrap: nowrap !important;
+	width: 100% !important;
+}
+
+.wpat-promo-shop-loop-card .wpat-cd-block {
+	flex: 1 1 0 !important;
+	min-width: 0 !important;
+	padding: 3px 2px !important;
+	border-radius: 5px !important;
+	text-align: center !important;
+}
+
+.wpat-promo-shop-loop-card .wpat-cd-val {
+	font-size: 12.5px !important;
+	font-weight: 800 !important;
+	line-height: 1.1 !important;
+}
+
+.wpat-promo-shop-loop-card .wpat-cd-lbl {
+	font-size: 7px !important;
+	font-weight: 700 !important;
+	margin-top: 1px !important;
+	letter-spacing: 0.1px !important;
+}
+
+.wpat-promo-shop-loop-card .wpat-cd-sep {
+	font-size: 11px !important;
+	font-weight: 800 !important;
+	padding: 0 1px !important;
+	margin-top: -3px !important;
+}
+
+/* Responsive móvil */
+@media (max-width: 480px) {
+	.wpat-promo-shop-loop-card {
+		padding: 5px 6px !important;
+	}
+	.wpat-promo-shop-loop-card .wpat-cd-val {
+		font-size: 11px !important;
+	}
+	.wpat-promo-shop-loop-card .wpat-cd-lbl {
+		font-size: 6.5px !important;
+	}
+	.wpat-promo-shop-loop-card .wpat-cd-sep {
+		font-size: 10px !important;
+		padding: 0 !important;
+	}
+	.wpat-promo-shop-loop-card .wpat-promo-countdown-title {
+		font-size: 10px !important;
+	}
 }
 
 /* --- ETIQUETA DE TÍTULO PÚBLICO DE PROMOCIÓN EN CARRITO / CHECKOUT --- */

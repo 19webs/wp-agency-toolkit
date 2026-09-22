@@ -188,11 +188,16 @@ class WPAT_Woo_Promotions {
 		if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
 			return false;
 		}
-		$sale_price = (float) $product->get_sale_price( 'edit' );
-		if ( $sale_price <= 0 ) {
-			$sale_price = (float) $product->get_sale_price();
+		// Consultar directamente el post meta o la propiedad 'edit' sin pasar por los filtros de WPAT
+		$raw_sale_price = $product->get_prop( 'sale_price', 'edit' );
+		if ( '' !== $raw_sale_price && null !== $raw_sale_price && (float) $raw_sale_price > 0 ) {
+			return true;
 		}
-		return $sale_price > 0;
+		$meta_sale = get_post_meta( $product->get_id(), '_sale_price', true );
+		if ( '' !== $meta_sale && null !== $meta_sale && (float) $meta_sale > 0 ) {
+			return true;
+		}
+		return false;
 	}
 
 	/**

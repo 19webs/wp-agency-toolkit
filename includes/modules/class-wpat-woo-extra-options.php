@@ -183,6 +183,29 @@ class WPAT_Woo_Extra_Options {
 			return;
 		}
 
+		// Comprobar si aplica una promoción con descuento en campos extras
+		$promo_discount_pct = 0.0;
+		if ( class_exists( 'WPAT_Woo_Promotions' ) ) {
+			$promo_rule = WPAT_Woo_Promotions::get_instance()->get_matching_promo_rule_for_product( $product );
+			if ( $promo_rule && ! empty( $promo_rule['include_extra_options'] ) && '1' === (string) $promo_rule['include_extra_options'] ) {
+				if ( isset( $promo_rule['discount_type'] ) && 'percent' === $promo_rule['discount_type'] && isset( $promo_rule['discount_value'] ) ) {
+					$promo_discount_pct = (float) $promo_rule['discount_value'];
+				}
+			}
+		}
+
+		// Helper para formatear precio de extra con rebaja tachada
+		$render_extra_price_badge = function( $amt ) use ( $promo_discount_pct ) {
+			if ( $amt <= 0 ) {
+				return '';
+			}
+			if ( $promo_discount_pct > 0 ) {
+				$disc_amt = max( 0, $amt * ( 1 - ( $promo_discount_pct / 100 ) ) );
+				return ' <span class="wpat-extra-price" style="margin-left: 4px;"><del style="color: #94a3b8; font-size: 12px; font-weight: normal; margin-right: 3px;">+' . wc_price( $amt ) . '</del><ins style="color: #2563eb; font-weight: 700; text-decoration: none;">+' . wc_price( $disc_amt ) . '</ins></span>';
+			}
+			return ' <span class="wpat-extra-price" style="color: #2563eb; font-weight: 600;">(+' . wc_price( $amt ) . ')</span>';
+		};
+
 		echo '<style>
 		form.cart { flex-wrap: wrap !important; }
 		.wpat-extra-options-wrapper {
@@ -230,7 +253,7 @@ class WPAT_Woo_Extra_Options {
 					}
 				}
 
-				$price_html = ( ! $has_option_prices && $price > 0 ) ? ' <span class="wpat-extra-price" style="color: #2563eb; font-weight: 600;">(+' . wc_price( $price ) . ')</span>' : '';
+				$price_html = ( ! $has_option_prices && $price > 0 ) ? $render_extra_price_badge( $price ) : '';
 				$req_html   = $required ? ' <span class="required" style="color:#ef4444;">*</span>' : '';
 
 				echo '<div class="wpat-extra-field-group" data-type="' . esc_attr( $type ) . '" data-base-price="' . esc_attr( $price ) . '" style="margin-bottom: 14px;">';
@@ -257,7 +280,12 @@ class WPAT_Woo_Extra_Options {
 							$opt_price  = isset( $parts[1] ) ? floatval( trim( $parts[1] ) ) : $price;
 							$opt_disp   = $opt_name;
 							if ( $opt_price > 0 ) {
-								$opt_disp .= ' (+' . wc_price( $opt_price ) . ')';
+								if ( $promo_discount_pct > 0 ) {
+									$disc_p = max( 0, $opt_price * ( 1 - ( $promo_discount_pct / 100 ) ) );
+									$opt_disp .= ' (+' . wp_strip_all_tags( wc_price( $disc_p ) ) . ' [Antes ' . wp_strip_all_tags( wc_price( $opt_price ) ) . '])';
+								} else {
+									$opt_disp .= ' (+' . wc_price( $opt_price ) . ')';
+								}
 							}
 							$value_attr = $opt_name . '|' . $opt_price;
 							$is_def     = ( ! empty( $default_val ) && ( strcasecmp( $default_val, $opt_name ) === 0 || strcasecmp( $default_val, $opt ) === 0 ) );
@@ -279,7 +307,8 @@ class WPAT_Woo_Extra_Options {
 						$c_p     = isset( $parts_c[2] ) ? floatval( trim( $parts_c[2] ) ) : $price;
 						if ( ! empty( $c_name ) && ! empty( $default_val ) && ( strcasecmp( $default_val, $c_name ) === 0 || strcasecmp( $default_val, trim( $sw_check ) ) === 0 ) ) {
 							$initial_val = $c_name . '|' . $c_p;
-							$initial_lbl = 'Seleccionado: ' . $c_name . ( $c_p > 0 ? ' (+' . number_format( $c_p, 2, ',', '.' ) . ' €)' : '' );
+							$c_disp_p    = ( $promo_discount_pct > 0 && $c_p > 0 ) ? max( 0, $c_p * ( 1 - ( $promo_discount_pct / 100 ) ) ) : $c_p;
+							$initial_lbl = 'Seleccionado: ' . $c_name . ( $c_p > 0 ? ' (+' . number_format( $c_disp_p, 2, ',', '.' ) . ' €)' : '' );
 							break;
 						}
 					}
@@ -299,7 +328,15 @@ class WPAT_Woo_Extra_Options {
 
 						$color_hex  = self::parse_color_hex( ! empty( $raw_hex ) && ! is_numeric( $raw_hex ) ? $raw_hex : $color_name );
 						$val_attr   = $color_name . '|' . $color_price;
-						$title_text = $color_name . ( $color_price > 0 ? ' (+' . wc_price( $color_price ) . ')' : '' );
+						$title_text = $color_name;
+						if ( $color_price > 0 ) {
+							if ( $promo_discount_pct > 0 ) {
+								$disc_p = max( 0, $color_price * ( 1 - ( $promo_discount_pct / 100 ) ) );
+								$title_text .= ' (+' . wp_strip_all_tags( wc_price( $disc_p ) ) . ')';
+							} else {
+								$title_text .= ' (+' . wc_price( $color_price ) . ')';
+							}
+						}
 						$is_def     = ( ! empty( $default_val ) && ( strcasecmp( $default_val, $color_name ) === 0 || strcasecmp( $default_val, trim( $sw ) ) === 0 ) );
 						$sel_style  = $is_def ? 'box-shadow: 0 0 0 2.5px #2563eb; transform: scale(1.12);' : 'box-shadow: 0 0 0 1px #cbd5e1;';
 						$sel_class  = $is_def ? ' selected' : '';
@@ -319,7 +356,7 @@ class WPAT_Woo_Extra_Options {
 							$opt_price  = isset( $parts[1] ) ? floatval( trim( $parts[1] ) ) : $price;
 							$opt_disp   = $opt_name;
 							if ( $opt_price > 0 ) {
-								$opt_disp .= ' (+' . wc_price( $opt_price ) . ')';
+								$opt_disp .= $render_extra_price_badge( $opt_price );
 							}
 							$value_attr = $opt_name . '|' . $opt_price;
 							$radio_id   = $field_id . '_' . $r_idx;
@@ -349,17 +386,7 @@ class WPAT_Woo_Extra_Options {
 		}
 
 		// Bloque de Total Dinámico en Vivo
-		$base_prod_price    = floatval( $product->get_price() );
-		$promo_discount_pct = 0.0;
-
-		if ( class_exists( 'WPAT_Woo_Promotions' ) ) {
-			$promo_rule = WPAT_Woo_Promotions::get_instance()->get_matching_promo_rule_for_product( $product );
-			if ( $promo_rule && ! empty( $promo_rule['include_extra_options'] ) && '1' === (string) $promo_rule['include_extra_options'] ) {
-				if ( isset( $promo_rule['discount_type'] ) && 'percent' === $promo_rule['discount_type'] && isset( $promo_rule['discount_value'] ) ) {
-					$promo_discount_pct = (float) $promo_rule['discount_value'];
-				}
-			}
-		}
+		$base_prod_price = floatval( $product->get_price() );
 
 		echo '<div class="wpat-live-price-box" style="margin-top: 18px; padding: 12px 16px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">';
 		echo '<span style="font-weight: 600; color: #0369a1; font-size: 14px;">Precio Total Estimado:</span>';
@@ -476,7 +503,8 @@ class WPAT_Woo_Extra_Options {
 						if (labelSpan) {
 							var labelText = 'Seleccionado: ' + colorName;
 							if (priceVal > 0) {
-								labelText += ' (+' + priceVal.toFixed(2).replace('.', ',') + ' €)';
+								var dispPrice = promoPct > 0 ? (priceVal * (1 - (promoPct / 100))) : priceVal;
+								labelText += ' (+' + dispPrice.toFixed(2).replace('.', ',') + ' €)';
 							}
 							labelSpan.textContent = labelText;
 						}

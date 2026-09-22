@@ -724,10 +724,14 @@ class WPAT_Admin {
 
 		// 4. Sanitizar Deshabilitar Comentarios
 		if ( empty( $saving_module ) || 'disable-comments' === $saving_module ) {
-			$new_settings['disable_comments_global'] = isset( $input_settings['disable_comments_global'] ) && '1' === $input_settings['disable_comments_global'] ? '1' : '0';
-			$new_settings['disable_comments_posts']  = isset( $input_settings['disable_comments_posts'] ) && '1' === $input_settings['disable_comments_posts'] ? '1' : '0';
-			$new_settings['disable_comments_pages']  = isset( $input_settings['disable_comments_pages'] ) && '1' === $input_settings['disable_comments_pages'] ? '1' : '0';
-			$new_settings['disable_comments_media']  = isset( $input_settings['disable_comments_media'] ) && '1' === $input_settings['disable_comments_media'] ? '1' : '0';
+			$new_settings['disable_comments_global']       = isset( $input_settings['disable_comments_global'] ) && '1' === $input_settings['disable_comments_global'] ? '1' : '0';
+			$new_settings['disable_comments_posts']        = isset( $input_settings['disable_comments_posts'] ) && '1' === $input_settings['disable_comments_posts'] ? '1' : '0';
+			$new_settings['disable_comments_pages']        = isset( $input_settings['disable_comments_pages'] ) && '1' === $input_settings['disable_comments_pages'] ? '1' : '0';
+			$new_settings['disable_comments_media']        = isset( $input_settings['disable_comments_media'] ) && '1' === $input_settings['disable_comments_media'] ? '1' : '0';
+			$new_settings['disable_comments_keep_reviews'] = isset( $input_settings['disable_comments_keep_reviews'] ) && '1' === $input_settings['disable_comments_keep_reviews'] ? '1' : '0';
+
+			$cpts_raw = isset( $input_settings['disable_comments_cpts'] ) && is_array( $input_settings['disable_comments_cpts'] ) ? $input_settings['disable_comments_cpts'] : array();
+			$new_settings['disable_comments_cpts'] = array_map( 'sanitize_key', $cpts_raw );
 		}
 
 		// 5. Sanitizar WooCommerce Catalog
@@ -841,11 +845,46 @@ class WPAT_Admin {
 			$new_settings['sec_disable_user_enum']    = isset( $input_settings['sec_disable_user_enum'] ) && '1' === $input_settings['sec_disable_user_enum'] ? '1' : '0';
 			$new_settings['sec_disable_xmlrpc']       = isset( $input_settings['sec_disable_xmlrpc'] ) && '1' === $input_settings['sec_disable_xmlrpc'] ? '1' : '0';
 			$new_settings['sec_block_admin_user']     = isset( $input_settings['sec_block_admin_user'] ) && '1' === $input_settings['sec_block_admin_user'] ? '1' : '0';
+			$new_settings['sec_security_headers']     = isset( $input_settings['sec_security_headers'] ) && '1' === $input_settings['sec_security_headers'] ? '1' : '0';
 		}
 
-		// Sanitizar redirección SSL
+		// Sanitizar redirección y opciones SSL
 		if ( empty( $saving_module ) || 'ssl-fixer' === $saving_module ) {
-			$new_settings['ssl_redirect_method'] = isset( $input_settings['ssl_redirect_method'] ) && in_array( $input_settings['ssl_redirect_method'], array( 'php', 'htaccess' ), true ) ? $input_settings['ssl_redirect_method'] : 'php';
+			$new_settings['ssl_redirect_method']   = isset( $input_settings['ssl_redirect_method'] ) && in_array( $input_settings['ssl_redirect_method'], array( 'php', 'htaccess', 'none' ), true ) ? $input_settings['ssl_redirect_method'] : 'php';
+			$new_settings['ssl_fix_mixed_content'] = isset( $input_settings['ssl_fix_mixed_content'] ) && '1' === $input_settings['ssl_fix_mixed_content'] ? '1' : '0';
+			$new_settings['ssl_enable_hsts']       = isset( $input_settings['ssl_enable_hsts'] ) && '1' === $input_settings['ssl_enable_hsts'] ? '1' : '0';
+			$new_settings['ssl_enable_csp']        = isset( $input_settings['ssl_enable_csp'] ) && '1' === $input_settings['ssl_enable_csp'] ? '1' : '0';
+			$new_settings['ssl_proxy_fix']         = isset( $input_settings['ssl_proxy_fix'] ) && '1' === $input_settings['ssl_proxy_fix'] ? '1' : '0';
+		}
+
+		// Sanitizar Optimización de Rendimiento
+		if ( empty( $saving_module ) || 'performance' === $saving_module ) {
+			$new_settings['perf_disable_emojis']            = isset( $input_settings['perf_disable_emojis'] ) && '1' === $input_settings['perf_disable_emojis'] ? '1' : '0';
+			$new_settings['perf_cleanup_head']              = isset( $input_settings['perf_cleanup_head'] ) && '1' === $input_settings['perf_cleanup_head'] ? '1' : '0';
+			$new_settings['perf_heartbeat_control']         = isset( $input_settings['perf_heartbeat_control'] ) && in_array( $input_settings['perf_heartbeat_control'], array( 'default', 'slow', 'disable_frontend', 'disable_all' ), true ) ? $input_settings['perf_heartbeat_control'] : 'slow';
+			$new_settings['perf_disable_jquery_migrate']    = isset( $input_settings['perf_disable_jquery_migrate'] ) && '1' === $input_settings['perf_disable_jquery_migrate'] ? '1' : '0';
+			$new_settings['perf_disable_wc_cart_fragments'] = isset( $input_settings['perf_disable_wc_cart_fragments'] ) && '1' === $input_settings['perf_disable_wc_cart_fragments'] ? '1' : '0';
+			$new_settings['perf_limit_revisions']           = isset( $input_settings['perf_limit_revisions'] ) && in_array( $input_settings['perf_limit_revisions'], array( '0', '3', '5', '10', 'unlimited' ), true ) ? $input_settings['perf_limit_revisions'] : '5';
+			$new_settings['perf_autosave_interval']         = isset( $input_settings['perf_autosave_interval'] ) && in_array( $input_settings['perf_autosave_interval'], array( '60', '180', '300' ), true ) ? $input_settings['perf_autosave_interval'] : '180';
+			$new_settings['perf_disable_dashicons']         = isset( $input_settings['perf_disable_dashicons'] ) && '1' === $input_settings['perf_disable_dashicons'] ? '1' : '0';
+			$new_settings['perf_disable_embeds']            = isset( $input_settings['perf_disable_embeds'] ) && '1' === $input_settings['perf_disable_embeds'] ? '1' : '0';
+		}
+
+		// Sanitizar Soporte de Archivos SVG
+		if ( empty( $saving_module ) || 'svg-support' === $saving_module ) {
+			$new_settings['svg_admin_only']          = isset( $input_settings['svg_admin_only'] ) && '1' === $input_settings['svg_admin_only'] ? '1' : '0';
+			$new_settings['svg_sanitize_strict']     = isset( $input_settings['svg_sanitize_strict'] ) && '1' === $input_settings['svg_sanitize_strict'] ? '1' : '0';
+			$new_settings['svg_generate_dimensions'] = isset( $input_settings['svg_generate_dimensions'] ) && '1' === $input_settings['svg_generate_dimensions'] ? '1' : '0';
+		}
+
+		// Sanitizar Generador de Sitemap XML
+		if ( empty( $saving_module ) || 'sitemap-xml' === $saving_module ) {
+			$new_settings['sitemap_include_posts']      = isset( $input_settings['sitemap_include_posts'] ) && '1' === $input_settings['sitemap_include_posts'] ? '1' : '0';
+			$new_settings['sitemap_include_pages']      = isset( $input_settings['sitemap_include_pages'] ) && '1' === $input_settings['sitemap_include_pages'] ? '1' : '0';
+			$new_settings['sitemap_include_products']   = isset( $input_settings['sitemap_include_products'] ) && '1' === $input_settings['sitemap_include_products'] ? '1' : '0';
+			$new_settings['sitemap_include_taxonomies'] = isset( $input_settings['sitemap_include_taxonomies'] ) && '1' === $input_settings['sitemap_include_taxonomies'] ? '1' : '0';
+			$new_settings['sitemap_include_images']     = isset( $input_settings['sitemap_include_images'] ) && '1' === $input_settings['sitemap_include_images'] ? '1' : '0';
+			$new_settings['sitemap_exclude_urls']       = isset( $input_settings['sitemap_exclude_urls'] ) ? sanitize_textarea_field( $input_settings['sitemap_exclude_urls'] ) : '';
 		}
 
 		// 8. Sanitizar SMTP
@@ -897,11 +936,20 @@ class WPAT_Admin {
 
 		// 11. Sanitizar Barra y Tiempo de Lectura
 		if ( empty( $saving_module ) || 'reading-progress' === $saving_module ) {
-			$new_settings['reading-progress']     = isset( $input_settings['reading-progress'] ) && '1' === $input_settings['reading-progress'] ? '1' : '0';
-			$new_settings['reading_bar_enabled']  = $new_settings['reading-progress'];
-			$new_settings['reading_bar_color']    = isset( $input_settings['reading_bar_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['reading_bar_color'] ) ? $input_settings['reading_bar_color'] : '#2563eb';
-			$new_settings['reading_bar_height']   = isset( $input_settings['reading_bar_height'] ) ? max( 1, min( 30, absint( $input_settings['reading_bar_height'] ) ) ) : 4;
-			$new_settings['reading_time_enabled'] = isset( $input_settings['reading_time_enabled'] ) && '1' === $input_settings['reading_time_enabled'] ? '1' : '0';
+			$new_settings['reading-progress']       = isset( $input_settings['reading-progress'] ) && '1' === $input_settings['reading-progress'] ? '1' : '0';
+			$new_settings['reading_bar_enabled']    = isset( $input_settings['reading_bar_enabled'] ) && '1' === $input_settings['reading_bar_enabled'] ? '1' : '0';
+			$new_settings['reading_bar_color']      = isset( $input_settings['reading_bar_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['reading_bar_color'] ) ? $input_settings['reading_bar_color'] : '#2563eb';
+			$new_settings['reading_bar_color_end']  = isset( $input_settings['reading_bar_color_end'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['reading_bar_color_end'] ) ? $input_settings['reading_bar_color_end'] : '';
+			$new_settings['reading_bar_height']     = isset( $input_settings['reading_bar_height'] ) ? max( 1, min( 30, absint( $input_settings['reading_bar_height'] ) ) ) : 4;
+			$new_settings['reading_bar_position']   = isset( $input_settings['reading_bar_position'] ) && 'bottom' === $input_settings['reading_bar_position'] ? 'bottom' : 'top';
+			$new_settings['reading_bar_scope']      = isset( $input_settings['reading_bar_scope'] ) && 'window' === $input_settings['reading_bar_scope'] ? 'window' : 'article';
+			$new_settings['reading_time_enabled']   = isset( $input_settings['reading_time_enabled'] ) && '1' === $input_settings['reading_time_enabled'] ? '1' : '0';
+			$new_settings['reading_time_wpm']       = isset( $input_settings['reading_time_wpm'] ) ? max( 100, min( 500, absint( $input_settings['reading_time_wpm'] ) ) ) : 200;
+			$new_settings['reading_time_style']     = isset( $input_settings['reading_time_style'] ) && in_array( $input_settings['reading_time_style'], array( 'pill', 'minimal', 'bordered' ), true ) ? $input_settings['reading_time_style'] : 'pill';
+			$new_settings['reading_time_label']     = isset( $input_settings['reading_time_label'] ) ? sanitize_text_field( $input_settings['reading_time_label'] ) : 'Tiempo estimado de lectura: {time} min';
+
+			$pts_raw = isset( $input_settings['reading_bar_post_types'] ) && is_array( $input_settings['reading_bar_post_types'] ) ? $input_settings['reading_bar_post_types'] : array( 'post' );
+			$new_settings['reading_bar_post_types'] = array_map( 'sanitize_key', $pts_raw );
 		}
 
 		// 12. Sanitizar Detector de Incompatibilidades
@@ -1199,6 +1247,16 @@ class WPAT_Admin {
 		if ( empty( $saving_module ) || 'woo-address-autofill' === $saving_module ) {
 			$new_settings['woo-address-autofill']       = isset( $input_settings['woo-address-autofill'] ) && '1' === $input_settings['woo-address-autofill'] ? '1' : '0';
 			$new_settings['woo_address_autofill_city'] = isset( $input_settings['woo_address_autofill_city'] ) && '1' === $input_settings['woo_address_autofill_city'] ? '1' : '0';
+		}
+
+		// 22. Sanitizar Protección Anti-Spam en Formularios
+		if ( empty( $saving_module ) || 'anti-spam' === $saving_module ) {
+			$new_settings['anti-spam']               = isset( $input_settings['anti-spam'] ) && '1' === $input_settings['anti-spam'] ? '1' : '0';
+			$new_settings['antispam_honeypot']       = isset( $input_settings['antispam_honeypot'] ) && '1' === $input_settings['antispam_honeypot'] ? '1' : '0';
+			$new_settings['antispam_time_check']     = isset( $input_settings['antispam_time_check'] ) && '1' === $input_settings['antispam_time_check'] ? '1' : '0';
+			$new_settings['antispam_block_cyrillic'] = isset( $input_settings['antispam_block_cyrillic'] ) && '1' === $input_settings['antispam_block_cyrillic'] ? '1' : '0';
+			$new_settings['antispam_max_links']      = isset( $input_settings['antispam_max_links'] ) ? absint( $input_settings['antispam_max_links'] ) : 2;
+			$new_settings['antispam_keywords']       = isset( $input_settings['antispam_keywords'] ) ? sanitize_textarea_field( $input_settings['antispam_keywords'] ) : '';
 		}
 
 		update_option( 'wpat_settings', $new_settings );
@@ -3588,62 +3646,475 @@ class WPAT_Admin {
 				<?php
 				break;
 			case 'ssl-fixer':
+				require_once WPAT_PATH . 'includes/modules/class-wpat-ssl-fixer.php';
+				$ssl_status = WPAT_SSL_Fixer::get_ssl_status();
+				$ssl_nonce  = wp_create_nonce( 'wpat_ssl_fixer_nonce' );
 				?>
-<div class="wpat-module-card">
-								<div class="wpat-module-header">
-									<div class="wpat-module-info">
-										<h3>Forzar SSL & Contenido Mixto</h3>
-										<p>Fuerza la redirección a HTTPS, repara URLs del buffer de salida y añade cabeceras de seguridad HTTP básicas.</p>
+				<div class="wpat-module-card">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Forzar SSL & Contenido Mixto</h3>
+							<p>Garantiza una navegación 100% segura mediante redirección HTTPS automática, resolución de contenido mixto (buffer y directiva CSP) y cabeceras de transporte seguro.</p>
+						</div>
+						<?php $this->render_module_toggle( 'ssl-fixer', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block; padding: 20px;">
+
+						<!-- 1. Estado en Vivo y Diagnóstico SSL -->
+						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+							<h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+								<span class="dashicons dashicons-shield" style="color: <?php echo $ssl_status['is_https_live'] ? '#10b981' : '#ef4444'; ?>;"></span>
+								<?php esc_html_e( 'Diagnóstico del Servidor y Certificado SSL', 'wp-agency-toolkit' ); ?>
+							</h4>
+
+							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px;">
+								<div style="background: #fff; padding: 10px 14px; border-radius: 6px; border: 1px solid #e2e8f0;">
+									<div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600; margin-bottom: 2px;">
+										<?php esc_html_e( 'Conexión Actual', 'wp-agency-toolkit' ); ?>
 									</div>
-									<?php $this->render_module_toggle( 'ssl-fixer', $settings, true ); ?>
-								</div>
-								<div class="wpat-module-body" style="display: block;">
-									<div class="wpat-field-group">
-										<label for="wpat_ssl_redirect_method">Método de redireccionamiento a HTTPS</label>
-										<select name="wpat_settings[ssl_redirect_method]" id="wpat_ssl_redirect_method">
-											<option value="php" <?php selected( $settings['ssl_redirect_method'], 'php' ); ?>>Redirección 301 por PHP (Segura, compatible con todos los servidores)</option>
-											<option value="htaccess" <?php selected( $settings['ssl_redirect_method'], 'htaccess' ); ?>>Redirección 301 por .htaccess (Más rápida, solo Apache/LiteSpeed)</option>
-										</select>
-										<p class="description">Nota: La redirección por .htaccess es más veloz porque se ejecuta antes de cargar WordPress, pero solo funciona en servidores Apache o LiteSpeed. Si utilizas Nginx, mantén el método PHP.</p>
+									<div style="font-size: 14px; font-weight: 600; color: <?php echo $ssl_status['is_https_live'] ? '#059669' : '#dc2626'; ?>;">
+										<?php echo $ssl_status['is_https_live'] ? '🔒 HTTPS Activo y Seguro' : '⚠️ HTTP Inseguro'; ?>
 									</div>
-									
 								</div>
+
+								<div style="background: #fff; padding: 10px 14px; border-radius: 6px; border: 1px solid #e2e8f0;">
+									<div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600; margin-bottom: 2px;">
+										<?php esc_html_e( 'Detección de Servidor / CDN', 'wp-agency-toolkit' ); ?>
+									</div>
+									<div style="font-size: 13px; font-weight: 600; color: #334155;">
+										<?php echo esc_html( $ssl_status['proxy_type'] ); ?>
+									</div>
+								</div>
+
+								<div style="background: #fff; padding: 10px 14px; border-radius: 6px; border: 1px solid #e2e8f0;">
+									<div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600; margin-bottom: 2px;">
+										<?php esc_html_e( 'URLs Generales de WordPress', 'wp-agency-toolkit' ); ?>
+									</div>
+									<div style="font-size: 13px; font-weight: 600; color: <?php echo $ssl_status['is_fully_https'] ? '#059669' : '#d97706'; ?>;">
+										<?php echo $ssl_status['is_fully_https'] ? '✓ Ambas con https://' : '⚠️ Contienen http://'; ?>
+									</div>
+								</div>
+							</div>
+
+							<?php if ( ! $ssl_status['is_fully_https'] ) : ?>
+								<div id="wpat-fix-urls-alert" style="background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; padding: 12px 14px; border-radius: 6px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+									<div>
+										<p style="margin: 0; font-size: 13px; color: #92400e; font-weight: 600;">
+											<?php esc_html_e( 'La Dirección de WordPress o Dirección del Sitio en los Ajustes Generales todavía utilizan "http://".', 'wp-agency-toolkit' ); ?>
+										</p>
+										<p style="margin: 2px 0 0 0; font-size: 12px; color: #b45309;">
+											<?php esc_html_e( 'Se recomienda actualizarlas a https:// para evitar redirecciones intermedias o alertas de candado roto.', 'wp-agency-toolkit' ); ?>
+										</p>
+									</div>
+									<button type="button" id="wpat-fix-wp-urls-btn" class="button button-primary button-small">
+										<?php esc_html_e( 'Actualizar URLs a HTTPS', 'wp-agency-toolkit' ); ?>
+									</button>
+								</div>
+							<?php endif; ?>
+						</div>
+
+						<!-- 2. Ajustes de Redirección y Reparación -->
+						<div class="wpat-field-group" style="margin-bottom: 20px;">
+							<label for="wpat_ssl_redirect_method" style="font-weight: 600; display: block; margin-bottom: 6px;">
+								<?php esc_html_e( 'Método de redireccionamiento forzado a HTTPS', 'wp-agency-toolkit' ); ?>
+							</label>
+							<select name="wpat_settings[ssl_redirect_method]" id="wpat_ssl_redirect_method" style="max-width: 500px; width: 100%;">
+								<option value="php" <?php selected( isset( $settings['ssl_redirect_method'] ) ? $settings['ssl_redirect_method'] : 'php', 'php' ); ?>>
+									<?php esc_html_e( 'Redirección 301 por PHP (Segura, compatible con Cloudflare, proxies y todos los servidores)', 'wp-agency-toolkit' ); ?>
+								</option>
+								<option value="htaccess" <?php selected( isset( $settings['ssl_redirect_method'] ) ? $settings['ssl_redirect_method'] : 'php', 'htaccess' ); ?>>
+									<?php esc_html_e( 'Redirección 301 por .htaccess (Mayor velocidad, solo Apache / LiteSpeed)', 'wp-agency-toolkit' ); ?>
+								</option>
+								<option value="none" <?php selected( isset( $settings['ssl_redirect_method'] ) ? $settings['ssl_redirect_method'] : 'php', 'none' ); ?>>
+									<?php esc_html_e( 'Desactivada (Solo reparar contenido mixto sin forzar redirección)', 'wp-agency-toolkit' ); ?>
+								</option>
+							</select>
+							<p class="description" style="margin-top: 6px;">
+								<?php esc_html_e( 'La redirección por PHP detecta automáticamente terminaciones SSL en balanceadores de carga y proxies como Cloudflare para evitar bucles.', 'wp-agency-toolkit' ); ?>
+							</p>
+						</div>
+
+						<div class="wpat-field-group" style="margin-bottom: 15px;">
+							<label style="font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+								<input type="checkbox" name="wpat_settings[ssl_proxy_fix]" value="1" <?php checked( ! isset( $settings['ssl_proxy_fix'] ) || '1' === (string) $settings['ssl_proxy_fix'] ); ?> />
+								<?php esc_html_e( 'Detección inteligente de Proxy Inverso / Cloudflare (Recomendado)', 'wp-agency-toolkit' ); ?>
+							</label>
+							<p class="description" style="margin-left: 24px;">
+								<?php esc_html_e( 'Normaliza las cabeceras HTTP_CF_VISITOR y HTTP_X_FORWARDED_PROTO evitando el error de redirecciones infinitas (ERR_TOO_MANY_REDIRECTS).', 'wp-agency-toolkit' ); ?>
+							</p>
+						</div>
+
+						<div class="wpat-field-group" style="margin-bottom: 15px;">
+							<label style="font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+								<input type="checkbox" name="wpat_settings[ssl_enable_csp]" value="1" <?php checked( ! isset( $settings['ssl_enable_csp'] ) || '1' === (string) $settings['ssl_enable_csp'] ); ?> />
+								<?php esc_html_e( 'Activar directiva CSP "Upgrade-Insecure-Requests" (Solución Nativa de Navegador)', 'wp-agency-toolkit' ); ?>
+							</label>
+							<p class="description" style="margin-left: 24px;">
+								<?php esc_html_e( 'Ordena automáticamente a los navegadores web que carguen todas las imágenes, scripts y estilos HTTP a través de HTTPS directamente sin generar avisos de contenido mixto.', 'wp-agency-toolkit' ); ?>
+							</p>
+						</div>
+
+						<div class="wpat-field-group" style="margin-bottom: 15px;">
+							<label style="font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+								<input type="checkbox" name="wpat_settings[ssl_fix_mixed_content]" value="1" <?php checked( ! isset( $settings['ssl_fix_mixed_content'] ) || '1' === (string) $settings['ssl_fix_mixed_content'] ); ?> />
+								<?php esc_html_e( 'Corrección Dinámica de Contenido Mixto en Frontend (Buffer de Salida)', 'wp-agency-toolkit' ); ?>
+							</label>
+							<p class="description" style="margin-left: 24px;">
+								<?php esc_html_e( 'Reescribe en tiempo real cualquier enlace o medio con protocolo http:// en el código HTML generado hacia https://.', 'wp-agency-toolkit' ); ?>
+							</p>
+						</div>
+
+						<div class="wpat-field-group" style="margin-bottom: 25px;">
+							<label style="font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+								<input type="checkbox" name="wpat_settings[ssl_enable_hsts]" value="1" <?php checked( ! isset( $settings['ssl_enable_hsts'] ) || '1' === (string) $settings['ssl_enable_hsts'] ); ?> />
+								<?php esc_html_e( 'Activar cabecera HSTS (HTTP Strict Transport Security)', 'wp-agency-toolkit' ); ?>
+							</label>
+							<p class="description" style="margin-left: 24px;">
+								<?php esc_html_e( 'Inyecta la directiva Strict-Transport-Security garantizando que los navegadores solo se comuniquen con tu web mediante HTTPS cifrado.', 'wp-agency-toolkit' ); ?>
+							</p>
+						</div>
+
+						<hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 25px 0;">
+
+						<!-- 3. Escáner de Enlaces HTTP en Base de Datos -->
+						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+								<h4 style="margin: 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+									<span class="dashicons dashicons-search" style="color: #6366f1;"></span>
+									<?php esc_html_e( 'Escáner de Contenido Mixto en Base de Datos', 'wp-agency-toolkit' ); ?>
+								</h4>
+								<button type="button" id="wpat-scan-mixed-btn" class="button button-secondary button-small" style="display: inline-flex; align-items: center; gap: 4px;">
+									<span class="dashicons dashicons-update" style="font-size: 15px; line-height: 20px; width: 15px; height: 15px;"></span>
+									<?php esc_html_e( 'Escanear Entradas con HTTP', 'wp-agency-toolkit' ); ?>
+								</button>
+							</div>
+							<p style="font-size: 13px; color: #64748b; margin-top: 0; margin-bottom: 12px;">
+								<?php esc_html_e( 'Busca entradas, páginas o recursos antiguos guardados en la base de datos con enlaces "http://" hacia tu propio dominio.', 'wp-agency-toolkit' ); ?>
+							</p>
+
+							<div id="wpat-mixed-scan-results" style="display: none;"></div>
+						</div>
+
+						<script type="text/javascript">
+							document.addEventListener('DOMContentLoaded', function() {
+								// Botón corregir URLs generales
+								var fixUrlsBtn = document.getElementById('wpat-fix-wp-urls-btn');
+								if (fixUrlsBtn) {
+									fixUrlsBtn.addEventListener('click', function() {
+										if (!confirm('<?php echo esc_js( __( '¿Deseas actualizar la Dirección de WordPress y la Dirección del Sitio a HTTPS?', 'wp-agency-toolkit' ) ); ?>')) return;
+										fixUrlsBtn.disabled = true;
+										fixUrlsBtn.textContent = '<?php echo esc_js( __( 'Actualizando...', 'wp-agency-toolkit' ) ); ?>';
+
+										var xhr = new XMLHttpRequest();
+										xhr.open('POST', '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>', true);
+										xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+										xhr.onload = function() {
+											var resp = JSON.parse(xhr.responseText || '{}');
+											var alertBox = document.getElementById('wpat-fix-urls-alert');
+											if (resp.success && alertBox) {
+												alertBox.style.background = '#f0fdf4';
+												alertBox.style.borderColor = '#bbf7d0';
+												alertBox.style.borderLeftColor = '#16a34a';
+												alertBox.innerHTML = '<p style="margin:0; color:#14532d; font-size:13px; font-weight:600;">✓ ' + (resp.data.message || 'URLs actualizadas con éxito') + '</p>';
+											} else {
+												alert(resp.data && resp.data.message ? resp.data.message : 'Error al actualizar');
+												fixUrlsBtn.disabled = false;
+												fixUrlsBtn.textContent = '<?php echo esc_js( __( 'Actualizar URLs a HTTPS', 'wp-agency-toolkit' ) ); ?>';
+											}
+										};
+										xhr.send('action=wpat_fix_wp_urls_https&security=<?php echo esc_js( $ssl_nonce ); ?>');
+									});
+								}
+
+								// Botón escanear contenido mixto en BD
+								var scanBtn = document.getElementById('wpat-scan-mixed-btn');
+								if (scanBtn) {
+									scanBtn.addEventListener('click', function() {
+										scanBtn.disabled = true;
+										scanBtn.textContent = '<?php echo esc_js( __( 'Escaneando...', 'wp-agency-toolkit' ) ); ?>';
+										var resBox = document.getElementById('wpat-mixed-scan-results');
+										resBox.style.display = 'block';
+										resBox.innerHTML = '<p style="color:#64748b; font-size:13px;"><?php echo esc_js( __( 'Buscando contenidos con enlaces HTTP...', 'wp-agency-toolkit' ) ); ?></p>';
+
+										var xhr = new XMLHttpRequest();
+										xhr.open('POST', '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>', true);
+										xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+										xhr.onload = function() {
+											scanBtn.disabled = false;
+											scanBtn.textContent = '<?php echo esc_js( __( 'Escanear Entradas con HTTP', 'wp-agency-toolkit' ) ); ?>';
+											var resp = JSON.parse(xhr.responseText || '{}');
+											if (resp.success) {
+												if (resp.data.count === 0) {
+													resBox.innerHTML = '<div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px 14px; border-radius:6px; color:#14532d; font-size:13px; font-weight:600;">✓ ¡Excelente! No se han encontrado entradas o páginas con enlaces HTTP en la base de datos.</div>';
+												} else {
+													var html = '<div style="background:#fff1f2; border:1px solid #fecdd3; border-radius:6px; padding:12px; margin-top:8px;">';
+													html += '<strong style="color:#9f1239; font-size:13px; display:block; margin-bottom:8px;">⚠️ Se han detectado ' + resp.data.count + ' contenidos con referencias "http://":</strong>';
+													html += '<ul style="margin:0; padding-left:20px; font-size:13px;">';
+													resp.data.items.forEach(function(it) {
+														html += '<li style="margin-bottom:4px;"><a href="' + it.edit_link + '" target="_blank" style="font-weight:600; color:#be123c;">' + it.title + '</a> (' + it.type + ')</li>';
+													});
+													html += '</ul></div>';
+													resBox.innerHTML = html;
+												}
+											} else {
+												resBox.innerHTML = '<p style="color:#ef4444; font-size:13px;">Error en el escaneo.</p>';
+											}
+										};
+										xhr.send('action=wpat_scan_mixed_content&security=<?php echo esc_js( $ssl_nonce ); ?>');
+									});
+								}
+							});
+						</script>
+					</div>
+				</div>
 				<?php
 				break;
 			case 'disable-comments':
+				$comments_nonce = wp_create_nonce( 'wpat_comments_nonce' );
+				$public_cpts    = get_post_types( array( 'public' => true, '_builtin' => false ), 'objects' );
+				$saved_cpts     = isset( $settings['disable_comments_cpts'] ) && is_array( $settings['disable_comments_cpts'] ) ? $settings['disable_comments_cpts'] : array();
 				?>
-<div class="wpat-module-card">
-								<div class="wpat-module-header">
-									<div class="wpat-module-info">
-										<h3>Deshabilitar Comentarios</h3>
-										<p>Desactiva globalmente o por tipos de contenido los comentarios, trackbacks y widgets para evitar spam.</p>
-									</div>
-									<?php $this->render_module_toggle( 'disable-comments', $settings, true ); ?>
+				<div class="wpat-module-card">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Deshabilitar Comentarios Globales & Anti-Spam</h3>
+							<p>Cierra el sistema de comentarios, bloquea inyecciones de spambots por REST API y wp-comments-post.php, y elimina avisos visuales en el panel.</p>
+						</div>
+						<?php $this->render_module_toggle( 'disable-comments', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block; padding: 20px;">
+
+						<!-- 1. Alcance de Desactivación -->
+						<h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+							<span class="dashicons dashicons-admin-comments" style="color: #6366f1;"></span>
+							<?php esc_html_e( 'Alcance y Tipos de Contenido', 'wp-agency-toolkit' ); ?>
+						</h4>
+
+						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+							<label style="font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: flex-start; gap: 10px;">
+								<input type="checkbox" name="wpat_settings[disable_comments_global]" id="wpat_disable_comments_global" value="1" <?php checked( ! isset( $settings['disable_comments_global'] ) || '1' === (string) $settings['disable_comments_global'] ); ?> style="margin-top: 2px;" />
+								<div>
+									<span style="color: #1e293b;"><?php esc_html_e( 'Desactivar comentarios en TODO el sitio web (Recomendado)', 'wp-agency-toolkit' ); ?></span>
+									<p class="description" style="margin: 4px 0 0 0; font-weight: normal;">
+										<?php esc_html_e( 'Desactiva completamente el sistema de discusión en entradas, páginas, medios y cualquier tipo de contenido personalizado, además de remover los menús de administración.', 'wp-agency-toolkit' ); ?>
+									</p>
 								</div>
-								<div class="wpat-module-body" style="display: block;">
-									<div class="wpat-field-group">
-										<label>
-											<input type="checkbox" name="wpat_settings[disable_comments_global]" id="wpat_disable_comments_global" value="1" <?php checked( $settings['disable_comments_global'], '1' ); ?>>
-											Desactivar en todo el sitio web (Recomendado)
+							</label>
+
+							<div id="wpat-granular-comments-box" style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed #e2e8f0; <?php echo ( ! isset( $settings['disable_comments_global'] ) || '1' === (string) $settings['disable_comments_global'] ) ? 'display: none;' : ''; ?>">
+								<p style="font-weight: 600; margin: 0 0 10px 0; font-size: 13px; color: #334155;">
+									<?php esc_html_e( 'O desactiva comentarios únicamente en los siguientes tipos de contenido:', 'wp-agency-toolkit' ); ?>
+								</p>
+								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+									<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+										<input type="checkbox" name="wpat_settings[disable_comments_posts]" value="1" <?php checked( ! isset( $settings['disable_comments_posts'] ) || '1' === (string) $settings['disable_comments_posts'] ); ?> />
+										<?php esc_html_e( 'Entradas del Blog (Posts)', 'wp-agency-toolkit' ); ?>
+									</label>
+									<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+										<input type="checkbox" name="wpat_settings[disable_comments_pages]" value="1" <?php checked( ! isset( $settings['disable_comments_pages'] ) || '1' === (string) $settings['disable_comments_pages'] ); ?> />
+										<?php esc_html_e( 'Páginas Estáticas (Pages)', 'wp-agency-toolkit' ); ?>
+									</label>
+									<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+										<input type="checkbox" name="wpat_settings[disable_comments_media]" value="1" <?php checked( ! isset( $settings['disable_comments_media'] ) || '1' === (string) $settings['disable_comments_media'] ); ?> />
+										<?php esc_html_e( 'Archivos Adjuntos (Media)', 'wp-agency-toolkit' ); ?>
+									</label>
+									<?php foreach ( $public_cpts as $cpt_slug => $cpt_obj ) : ?>
+										<?php if ( 'product' === $cpt_slug ) continue; ?>
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+											<input type="checkbox" name="wpat_settings[disable_comments_cpts][]" value="<?php echo esc_attr( $cpt_slug ); ?>" <?php checked( in_array( $cpt_slug, $saved_cpts, true ) ); ?> />
+											<?php echo esc_html( $cpt_obj->labels->name ); ?> (<code><?php echo esc_html( $cpt_slug ); ?></code>)
 										</label>
-									</div>
-									<div class="wpat-field-group wpat-sub-field wpat-comments-options" <?php $this->style_conditional_display( '1' === $settings['disable_comments_global'] ? '0' : '1' ); ?>>
-										<p style="font-weight:600; margin-bottom:10px; font-size:13px;">O desactivar solo en tipos de contenido específicos:</p>
-										<label style="font-weight:normal; margin-bottom:8px;">
-											<input type="checkbox" name="wpat_settings[disable_comments_posts]" value="1" <?php checked( $settings['disable_comments_posts'], '1' ); ?>>
-											Entradas (Posts)
-										</label>
-										<label style="font-weight:normal; margin-bottom:8px;">
-											<input type="checkbox" name="wpat_settings[disable_comments_pages]" value="1" <?php checked( $settings['disable_comments_pages'], '1' ); ?>>
-											Páginas (Pages)
-										</label>
-										<label style="font-weight:normal; margin-bottom:8px;">
-											<input type="checkbox" name="wpat_settings[disable_comments_media]" value="1" <?php checked( $settings['disable_comments_media'], '1' ); ?>>
-											Archivos Multimedia (Medios)
-										</label>
-									</div>
-									
+									<?php endforeach; ?>
 								</div>
+							</div>
+						</div>
+
+						<?php if ( class_exists( 'WooCommerce' ) ) : ?>
+							<div class="wpat-field-group" style="margin-bottom: 20px;">
+								<label style="font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[disable_comments_keep_reviews]" value="1" <?php checked( ! isset( $settings['disable_comments_keep_reviews'] ) || '1' === (string) $settings['disable_comments_keep_reviews'] ); ?> />
+									<?php esc_html_e( 'Preservar las Reseñas y Valoraciones de Productos de WooCommerce', 'wp-agency-toolkit' ); ?>
+								</label>
+								<p class="description" style="margin-left: 24px;">
+									<?php esc_html_e( 'Permite que los clientes sigan dejando opiniones y estrellas en la tienda WooCommerce mientras los comentarios del resto del sitio permanecen cerrados.', 'wp-agency-toolkit' ); ?>
+								</p>
+							</div>
+						<?php endif; ?>
+
+						<hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 25px 0;">
+
+						<!-- 2. Protecciones Activas -->
+						<h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+							<span class="dashicons dashicons-shield-alt" style="color: #10b981;"></span>
+							<?php esc_html_e( 'Protecciones Anti-Spam Integradas', 'wp-agency-toolkit' ); ?>
+						</h4>
+
+						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 24px;">
+							<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px;">
+								<strong style="color: #15803d; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+									<span class="dashicons dashicons-yes"></span> <?php esc_html_e( 'Bloqueo de wp-comments-post.php', 'wp-agency-toolkit' ); ?>
+								</strong>
+								<p style="margin: 4px 0 0 0; font-size: 12px; color: #166534;">
+									<?php esc_html_e( 'Rechaza con HTTP 403 los envíos POST directos que los spambots envían sin pasar por el navegador.', 'wp-agency-toolkit' ); ?>
+								</p>
+							</div>
+
+							<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px;">
+								<strong style="color: #15803d; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+									<span class="dashicons dashicons-yes"></span> <?php esc_html_e( 'Bloqueo en API REST', 'wp-agency-toolkit' ); ?>
+								</strong>
+								<p style="margin: 4px 0 0 0; font-size: 12px; color: #166534;">
+									<?php esc_html_e( 'Desactiva las rutas /wp/v2/comments cerrando el vector de inyección de comentarios por JSON.', 'wp-agency-toolkit' ); ?>
+								</p>
+							</div>
+
+							<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px;">
+								<strong style="color: #15803d; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+									<span class="dashicons dashicons-yes"></span> <?php esc_html_e( 'Bloqueo de Pingbacks XML-RPC', 'wp-agency-toolkit' ); ?>
+								</strong>
+								<p style="margin: 4px 0 0 0; font-size: 12px; color: #166534;">
+									<?php esc_html_e( 'Neutraliza ataques de amplificación DDoS y trackbacks basura a través del protocolo XML-RPC.', 'wp-agency-toolkit' ); ?>
+								</p>
+							</div>
+						</div>
+
+						<hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 25px 0;">
+
+						<!-- 3. Mantenimiento y Purga de Comentarios en Base de Datos -->
+						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+								<h4 style="margin: 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+									<span class="dashicons dashicons-trash" style="color: #ef4444;"></span>
+									<?php esc_html_e( 'Limpieza de Comentarios Existentes en la Base de Datos', 'wp-agency-toolkit' ); ?>
+								</h4>
+								<button type="button" id="wpat-comments-refresh-btn" class="button button-secondary button-small" style="display: inline-flex; align-items: center; gap: 4px;">
+									<span class="dashicons dashicons-update" style="font-size: 15px; line-height: 20px; width: 15px; height: 15px;"></span>
+									<?php esc_html_e( 'Actualizar Conteo', 'wp-agency-toolkit' ); ?>
+								</button>
+							</div>
+
+							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+								<div style="background: #fff; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+									<div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600; margin-bottom: 2px;">
+										<?php esc_html_e( 'Total en Base de Datos', 'wp-agency-toolkit' ); ?>
+									</div>
+									<div id="wpat-comment-stat-total" style="font-size: 18px; font-weight: bold; color: #1e293b;">--</div>
+								</div>
+								<div style="background: #fff; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+									<div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600; margin-bottom: 2px;">
+										<?php esc_html_e( 'Aprobados', 'wp-agency-toolkit' ); ?>
+									</div>
+									<div id="wpat-comment-stat-approved" style="font-size: 18px; font-weight: bold; color: #059669;">--</div>
+								</div>
+								<div style="background: #fff; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+									<div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600; margin-bottom: 2px;">
+										<?php esc_html_e( 'Detectados como Spam', 'wp-agency-toolkit' ); ?>
+									</div>
+									<div id="wpat-comment-stat-spam" style="font-size: 18px; font-weight: bold; color: #dc2626;">--</div>
+								</div>
+								<div style="background: #fff; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+									<div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600; margin-bottom: 2px;">
+										<?php esc_html_e( 'En la Papelera', 'wp-agency-toolkit' ); ?>
+									</div>
+									<div id="wpat-comment-stat-trash" style="font-size: 18px; font-weight: bold; color: #d97706;">--</div>
+								</div>
+							</div>
+
+							<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+								<p style="font-size: 13px; color: #64748b; margin: 0;">
+									<?php esc_html_e( 'Si tu sitio acumuló spam o comentarios antiguos, puedes vaciar las tablas wp_comments y wp_commentmeta por completo.', 'wp-agency-toolkit' ); ?>
+								</p>
+								<button type="button" id="wpat-btn-delete-all-comments" class="button button-secondary" style="color: #be123c; border-color: #fecdd3; background: #fff1f2;">
+									<span class="dashicons dashicons-trash" style="font-size: 16px; line-height: 24px; vertical-align: middle;"></span>
+									<?php esc_html_e( 'Purgar Todos los Comentarios de la BD', 'wp-agency-toolkit' ); ?>
+								</button>
+							</div>
+
+							<div id="wpat-comments-action-result" style="font-size: 13px; margin-top: 10px; font-weight: 600;"></div>
+						</div>
+
+						<script type="text/javascript">
+							document.addEventListener('DOMContentLoaded', function() {
+								var globalCheckbox = document.getElementById('wpat_disable_comments_global');
+								var granularBox = document.getElementById('wpat-granular-comments-box');
+								if (globalCheckbox && granularBox) {
+									globalCheckbox.addEventListener('change', function() {
+										granularBox.style.display = this.checked ? 'none' : 'block';
+									});
+								}
+
+								var nonce = '<?php echo esc_js( $comments_nonce ); ?>';
+								var ajaxUrl = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
+
+								function updateCommentStats() {
+									var statTotal = document.getElementById('wpat-comment-stat-total');
+									var statApproved = document.getElementById('wpat-comment-stat-approved');
+									var statSpam = document.getElementById('wpat-comment-stat-spam');
+									var statTrash = document.getElementById('wpat-comment-stat-trash');
+
+									if (statTotal) statTotal.textContent = '...';
+									if (statApproved) statApproved.textContent = '...';
+									if (statSpam) statSpam.textContent = '...';
+									if (statTrash) statTrash.textContent = '...';
+
+									var xhr = new XMLHttpRequest();
+									xhr.open('POST', ajaxUrl, true);
+									xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+									xhr.onload = function() {
+										var resp = JSON.parse(xhr.responseText || '{}');
+										if (resp.success) {
+											if (statTotal) statTotal.textContent = resp.data.total;
+											if (statApproved) statApproved.textContent = resp.data.approved;
+											if (statSpam) statSpam.textContent = resp.data.spam;
+											if (statTrash) statTrash.textContent = resp.data.trash;
+										}
+									};
+									xhr.send('action=wpat_comments_get_stats&security=' + encodeURIComponent(nonce));
+								}
+
+								updateCommentStats();
+
+								var refreshBtn = document.getElementById('wpat-comments-refresh-btn');
+								if (refreshBtn) {
+									refreshBtn.addEventListener('click', updateCommentStats);
+								}
+
+								var deleteBtn = document.getElementById('wpat-btn-delete-all-comments');
+								if (deleteBtn) {
+									deleteBtn.addEventListener('click', function() {
+										if (!confirm('<?php echo esc_js( __( '¡ATENCIÓN! Esta acción eliminará permanentemente TODOS los comentarios y valoraciones existentes de la base de datos de WordPress. ¿Deseas continuar?', 'wp-agency-toolkit' ) ); ?>')) return;
+
+										deleteBtn.disabled = true;
+										deleteBtn.textContent = '<?php echo esc_js( __( 'Eliminando...', 'wp-agency-toolkit' ) ); ?>';
+										var resBox = document.getElementById('wpat-comments-action-result');
+
+										var xhr = new XMLHttpRequest();
+										xhr.open('POST', ajaxUrl, true);
+										xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+										xhr.onload = function() {
+											deleteBtn.disabled = false;
+											deleteBtn.textContent = '<?php echo esc_js( __( 'Purgar Todos los Comentarios de la BD', 'wp-agency-toolkit' ) ); ?>';
+											var resp = JSON.parse(xhr.responseText || '{}');
+											if (resp.success) {
+												if (resBox) {
+													resBox.style.color = '#15803d';
+													resBox.textContent = '✓ ' + (resp.data.message || 'Comentarios eliminados con éxito.');
+												}
+												updateCommentStats();
+											} else {
+												if (resBox) {
+													resBox.style.color = '#b91c1c';
+													resBox.textContent = '⚠️ ' + (resp.data.message || 'Error al eliminar.');
+												}
+											}
+										};
+										xhr.send('action=wpat_comments_delete_all&security=' + encodeURIComponent(nonce));
+									});
+								}
+							});
+						</script>
+					</div>
+				</div>
 				<?php
 				break;
 			case 'security-hardening':
@@ -3711,6 +4182,13 @@ class WPAT_Admin {
 										<label>
 											<input type="checkbox" name="wpat_settings[sec_block_admin_user]" value="1" <?php checked( $settings['sec_block_admin_user'], '1' ); ?>>
 											Bloquear el usuario 'admin' (Deniega el inicio de sesión y registro de este nombre de usuario por defecto)
+										</label>
+									</div>
+
+									<div class="wpat-field-group">
+										<label>
+											<input type="checkbox" name="wpat_settings[sec_security_headers]" value="1" <?php checked( isset( $settings['sec_security_headers'] ) ? $settings['sec_security_headers'] : '0', '1' ); ?>>
+											Cabeceras de seguridad HTTP (Añade X-Frame-Options, X-Content-Type-Options, Referrer-Policy y X-XSS-Protection para mitigar Clickjacking y MIME sniffing)
 										</label>
 									</div>
 
@@ -5804,52 +6282,528 @@ class WPAT_Admin {
 				<?php
 				break;
 			case 'performance':
+				$perf_nonce = wp_create_nonce( 'wpat_perf_nonce' );
 				?>
-<div class="wpat-module-card">
-								<div class="wpat-module-header">
-									<div class="wpat-module-info">
-										<h3>Ajustes de Rendimiento</h3>
-										<p>Desactiva los emojis integrados, remueve etiquetas meta innecesarias del <head> de WordPress y limita las revisiones por entrada a un máximo de 5.</p>
+				<div class="wpat-module-card">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Ajustes de Rendimiento & Optimización</h3>
+							<p>Acelera la velocidad de carga (Core Web Vitals), reduce el consumo de CPU y memoria del servidor, y mantén la base de datos optimizada.</p>
+						</div>
+						<?php $this->render_module_toggle( 'performance', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block; padding: 20px;">
+
+						<!-- 1. Limpieza de Assets y Frontend -->
+						<h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+							<span class="dashicons dashicons-dashboard" style="color: #6366f1;"></span>
+							<?php esc_html_e( 'Optimización de Assets & Frontend (Core Web Vitals)', 'wp-agency-toolkit' ); ?>
+						</h4>
+
+						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 24px;">
+							<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px;">
+								<label style="font-weight: 600; cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[perf_disable_emojis]" value="1" <?php checked( ! isset( $settings['perf_disable_emojis'] ) || '1' === (string) $settings['perf_disable_emojis'] ); ?> style="margin-top: 2px;" />
+									<div>
+										<span><?php esc_html_e( 'Desactivar Emojis Nativos de WP', 'wp-agency-toolkit' ); ?></span>
+										<p class="description" style="margin: 3px 0 0 0; font-weight: normal;"><?php esc_html_e( 'Elimina wp-emoji.js, estilos CSS inline y DNS prefetch a s.w.org (~15KB de ahorro).', 'wp-agency-toolkit' ); ?></p>
 									</div>
-									<?php $this->render_module_toggle( 'performance', $settings, false ); ?>
+								</label>
+							</div>
+
+							<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px;">
+								<label style="font-weight: 600; cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[perf_cleanup_head]" value="1" <?php checked( ! isset( $settings['perf_cleanup_head'] ) || '1' === (string) $settings['perf_cleanup_head'] ); ?> style="margin-top: 2px;" />
+									<div>
+										<span><?php esc_html_e( 'Limpieza de Cabeceras <head>', 'wp-agency-toolkit' ); ?></span>
+										<p class="description" style="margin: 3px 0 0 0; font-weight: normal;"><?php esc_html_e( 'Remueve RSD, WLW Manifest, generador de versión de WP y enlaces cortos redundantes.', 'wp-agency-toolkit' ); ?></p>
+									</div>
+								</label>
+							</div>
+
+							<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px;">
+								<label style="font-weight: 600; cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[perf_disable_jquery_migrate]" value="1" <?php checked( ! isset( $settings['perf_disable_jquery_migrate'] ) || '1' === (string) $settings['perf_disable_jquery_migrate'] ); ?> style="margin-top: 2px;" />
+									<div>
+										<span><?php esc_html_e( 'Desactivar jQuery Migrate en Frontend', 'wp-agency-toolkit' ); ?></span>
+										<p class="description" style="margin: 3px 0 0 0; font-weight: normal;"><?php esc_html_e( 'Evita cargar la librería de compatibilidad obsoleta de jQuery en temas modernos.', 'wp-agency-toolkit' ); ?></p>
+									</div>
+								</label>
+							</div>
+
+							<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px;">
+								<label style="font-weight: 600; cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[perf_disable_dashicons]" value="1" <?php checked( ! isset( $settings['perf_disable_dashicons'] ) || '1' === (string) $settings['perf_disable_dashicons'] ); ?> style="margin-top: 2px;" />
+									<div>
+										<span><?php esc_html_e( 'Desactivar Dashicons para Visitantes', 'wp-agency-toolkit' ); ?></span>
+										<p class="description" style="margin: 3px 0 0 0; font-weight: normal;"><?php esc_html_e( 'No carga la fuente dashicons.min.css en el frontend a menos que el usuario esté identificado.', 'wp-agency-toolkit' ); ?></p>
+									</div>
+								</label>
+							</div>
+
+							<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px;">
+								<label style="font-weight: 600; cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[perf_disable_embeds]" value="1" <?php checked( ! isset( $settings['perf_disable_embeds'] ) || '1' === (string) $settings['perf_disable_embeds'] ); ?> style="margin-top: 2px;" />
+									<div>
+										<span><?php esc_html_e( 'Desactivar Scripts de Incrustación (oEmbed)', 'wp-agency-toolkit' ); ?></span>
+										<p class="description" style="margin: 3px 0 0 0; font-weight: normal;"><?php esc_html_e( 'Remueve wp-embed.min.js y llamadas de descubrimiento de incrustaciones de terceros.', 'wp-agency-toolkit' ); ?></p>
+									</div>
+								</label>
+							</div>
+
+							<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px;">
+								<label style="font-weight: 600; cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[perf_disable_wc_cart_fragments]" value="1" <?php checked( ! isset( $settings['perf_disable_wc_cart_fragments'] ) || '1' === (string) $settings['perf_disable_wc_cart_fragments'] ); ?> style="margin-top: 2px;" />
+									<div>
+										<span><?php esc_html_e( 'Optimizar WooCommerce Cart Fragments', 'wp-agency-toolkit' ); ?></span>
+										<p class="description" style="margin: 3px 0 0 0; font-weight: normal;"><?php esc_html_e( 'Bloquea la pesada llamada AJAX de actualización de carrito en páginas que no son de tienda cuando el carrito está vacío.', 'wp-agency-toolkit' ); ?></p>
+									</div>
+								</label>
+							</div>
+						</div>
+
+						<hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 25px 0;">
+
+						<!-- 2. CPU del Servidor y Base de Datos -->
+						<h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+							<span class="dashicons dashicons-admin-generic" style="color: #6366f1;"></span>
+							<?php esc_html_e( 'Ajustes del Servidor, Heartbeat & Revisiones', 'wp-agency-toolkit' ); ?>
+						</h4>
+
+						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px;">
+							<div class="wpat-field-group">
+								<label for="wpat_perf_heartbeat_control" style="font-weight: 600; display: block; margin-bottom: 6px;">
+									<?php esc_html_e( 'Frecuencia de Heartbeat API de WordPress', 'wp-agency-toolkit' ); ?>
+								</label>
+								<select name="wpat_settings[perf_heartbeat_control]" id="wpat_perf_heartbeat_control" style="width: 100%;">
+									<option value="slow" <?php selected( isset( $settings['perf_heartbeat_control'] ) ? $settings['perf_heartbeat_control'] : 'slow', 'slow' ); ?>>
+										<?php esc_html_e( 'Ralentizar a 60s/120s (Recomendado - Ahorra CPU)', 'wp-agency-toolkit' ); ?>
+									</option>
+									<option value="disable_frontend" <?php selected( isset( $settings['perf_heartbeat_control'] ) ? $settings['perf_heartbeat_control'] : 'slow', 'disable_frontend' ); ?>>
+										<?php esc_html_e( 'Desactivar solo en Frontend', 'wp-agency-toolkit' ); ?>
+									</option>
+									<option value="disable_all" <?php selected( isset( $settings['perf_heartbeat_control'] ) ? $settings['perf_heartbeat_control'] : 'slow', 'disable_all' ); ?>>
+										<?php esc_html_e( 'Desactivar en todo el sitio (excepto edición de posts)', 'wp-agency-toolkit' ); ?>
+									</option>
+									<option value="default" <?php selected( isset( $settings['perf_heartbeat_control'] ) ? $settings['perf_heartbeat_control'] : 'slow', 'default' ); ?>>
+										<?php esc_html_e( 'Por defecto de WordPress (15s en edición)', 'wp-agency-toolkit' ); ?>
+									</option>
+								</select>
+								<p class="description" style="margin-top: 4px;">
+									<?php esc_html_e( 'Reduce drásticamente las peticiones repetitivas a admin-ajax.php generadas en segundo plano.', 'wp-agency-toolkit' ); ?>
+								</p>
+							</div>
+
+							<div class="wpat-field-group">
+								<label for="wpat_perf_limit_revisions" style="font-weight: 600; display: block; margin-bottom: 6px;">
+									<?php esc_html_e( 'Límite de Revisiones de Entradas y Páginas', 'wp-agency-toolkit' ); ?>
+								</label>
+								<select name="wpat_settings[perf_limit_revisions]" id="wpat_perf_limit_revisions" style="width: 100%;">
+									<option value="5" <?php selected( isset( $settings['perf_limit_revisions'] ) ? $settings['perf_limit_revisions'] : '5', '5' ); ?>>
+										<?php esc_html_e( 'Máximo 5 revisiones por entrada (Recomendado)', 'wp-agency-toolkit' ); ?>
+									</option>
+									<option value="3" <?php selected( isset( $settings['perf_limit_revisions'] ) ? $settings['perf_limit_revisions'] : '5', '3' ); ?>>
+										<?php esc_html_e( 'Máximo 3 revisiones', 'wp-agency-toolkit' ); ?>
+									</option>
+									<option value="10" <?php selected( isset( $settings['perf_limit_revisions'] ) ? $settings['perf_limit_revisions'] : '5', '10' ); ?>>
+										<?php esc_html_e( 'Máximo 10 revisiones', 'wp-agency-toolkit' ); ?>
+									</option>
+									<option value="0" <?php selected( isset( $settings['perf_limit_revisions'] ) ? $settings['perf_limit_revisions'] : '5', '0' ); ?>>
+										<?php esc_html_e( 'Desactivar revisiones por completo', 'wp-agency-toolkit' ); ?>
+									</option>
+									<option value="unlimited" <?php selected( isset( $settings['perf_limit_revisions'] ) ? $settings['perf_limit_revisions'] : '5', 'unlimited' ); ?>>
+										<?php esc_html_e( 'Ilimitadas (Por defecto WP - Engorda la BD)', 'wp-agency-toolkit' ); ?>
+									</option>
+								</select>
+								<p class="description" style="margin-top: 4px;">
+									<?php esc_html_e( 'Evita que la tabla wp_posts se sature con cientos de versiones antiguas de cada post.', 'wp-agency-toolkit' ); ?>
+								</p>
+							</div>
+
+							<div class="wpat-field-group">
+								<label for="wpat_perf_autosave_interval" style="font-weight: 600; display: block; margin-bottom: 6px;">
+									<?php esc_html_e( 'Intervalo de Autoguardado en el Editor', 'wp-agency-toolkit' ); ?>
+								</label>
+								<select name="wpat_settings[perf_autosave_interval]" id="wpat_perf_autosave_interval" style="width: 100%;">
+									<option value="180" <?php selected( isset( $settings['perf_autosave_interval'] ) ? $settings['perf_autosave_interval'] : '180', '180' ); ?>>
+										<?php esc_html_e( 'Cada 180 segundos (3 minutos - Recomendado)', 'wp-agency-toolkit' ); ?>
+									</option>
+									<option value="300" <?php selected( isset( $settings['perf_autosave_interval'] ) ? $settings['perf_autosave_interval'] : '180', '300' ); ?>>
+										<?php esc_html_e( 'Cada 300 segundos (5 minutos)', 'wp-agency-toolkit' ); ?>
+									</option>
+									<option value="60" <?php selected( isset( $settings['perf_autosave_interval'] ) ? $settings['perf_autosave_interval'] : '180', '60' ); ?>>
+										<?php esc_html_e( 'Cada 60 segundos (Por defecto WP)', 'wp-agency-toolkit' ); ?>
+									</option>
+								</select>
+								<p class="description" style="margin-top: 4px;">
+									<?php esc_html_e( 'Reduce las escrituras constantes en base de datos mientras los autores redactan contenido.', 'wp-agency-toolkit' ); ?>
+								</p>
+							</div>
+						</div>
+
+						<hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 25px 0;">
+
+						<!-- 3. Mantenimiento y Limpieza de Base de Datos en 1 Clic -->
+						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+								<h4 style="margin: 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+									<span class="dashicons dashicons-database-view" style="color: #10b981;"></span>
+									<?php esc_html_e( 'Mantenimiento y Optimización de Base de Datos en 1 Clic', 'wp-agency-toolkit' ); ?>
+								</h4>
+								<button type="button" id="wpat-perf-refresh-stats-btn" class="button button-secondary button-small" style="display: inline-flex; align-items: center; gap: 4px;">
+									<span class="dashicons dashicons-update" style="font-size: 15px; line-height: 20px; width: 15px; height: 15px;"></span>
+									<?php esc_html_e( 'Consultar Estado', 'wp-agency-toolkit' ); ?>
+								</button>
+							</div>
+
+							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 12px;">
+								<div style="background: #fff; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between;">
+									<div>
+										<div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600; margin-bottom: 2px;">
+											<?php esc_html_e( 'Revisiones Almacenadas', 'wp-agency-toolkit' ); ?>
+										</div>
+										<div id="wpat-stat-revisions" style="font-size: 18px; font-weight: bold; color: #1e293b; margin-bottom: 8px;">--</div>
+									</div>
+									<button type="button" id="wpat-btn-clean-revisions" class="button button-small" style="width: 100%;">
+										<?php esc_html_e( 'Purgar Revisiones', 'wp-agency-toolkit' ); ?>
+									</button>
 								</div>
+
+								<div style="background: #fff; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between;">
+									<div>
+										<div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600; margin-bottom: 2px;">
+											<?php esc_html_e( 'Transients Caducados', 'wp-agency-toolkit' ); ?>
+										</div>
+										<div id="wpat-stat-transients" style="font-size: 18px; font-weight: bold; color: #1e293b; margin-bottom: 8px;">--</div>
+									</div>
+									<button type="button" id="wpat-btn-clean-transients" class="button button-small" style="width: 100%;">
+										<?php esc_html_e( 'Limpiar Transients', 'wp-agency-toolkit' ); ?>
+									</button>
+								</div>
+
+								<div style="background: #fff; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between;">
+									<div>
+										<div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600; margin-bottom: 2px;">
+											<?php esc_html_e( 'Elementos en Papelera', 'wp-agency-toolkit' ); ?>
+										</div>
+										<div id="wpat-stat-trash" style="font-size: 18px; font-weight: bold; color: #1e293b; margin-bottom: 8px;">--</div>
+									</div>
+									<button type="button" id="wpat-btn-clean-trash" class="button button-small" style="width: 100%;">
+										<?php esc_html_e( 'Vaciar Papelera', 'wp-agency-toolkit' ); ?>
+									</button>
+								</div>
+
+								<div style="background: #fff; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between;">
+									<div>
+										<div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600; margin-bottom: 2px;">
+											<?php esc_html_e( 'Espacio Recuperable', 'wp-agency-toolkit' ); ?>
+										</div>
+										<div id="wpat-stat-overhead" style="font-size: 18px; font-weight: bold; color: #059669; margin-bottom: 8px;">--</div>
+									</div>
+									<button type="button" id="wpat-btn-optimize-tables" class="button button-primary button-small" style="width: 100%;">
+										<?php esc_html_e( 'Optimizar Tablas', 'wp-agency-toolkit' ); ?>
+									</button>
+								</div>
+							</div>
+
+							<div id="wpat-perf-action-result" style="font-size: 13px; margin-top: 8px; font-weight: 600;"></div>
+						</div>
+
+						<script type="text/javascript">
+							document.addEventListener('DOMContentLoaded', function() {
+								var nonce = '<?php echo esc_js( $perf_nonce ); ?>';
+								var ajaxUrl = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
+
+								function updateStats() {
+									var statRev = document.getElementById('wpat-stat-revisions');
+									var statTrans = document.getElementById('wpat-stat-transients');
+									var statTrash = document.getElementById('wpat-stat-trash');
+									var statOver = document.getElementById('wpat-stat-overhead');
+
+									if (statRev) statRev.textContent = '...';
+									if (statTrans) statTrans.textContent = '...';
+									if (statTrash) statTrash.textContent = '...';
+									if (statOver) statOver.textContent = '...';
+
+									var xhr = new XMLHttpRequest();
+									xhr.open('POST', ajaxUrl, true);
+									xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+									xhr.onload = function() {
+										var resp = JSON.parse(xhr.responseText || '{}');
+										if (resp.success) {
+											if (statRev) statRev.textContent = resp.data.revisions;
+											if (statTrans) statTrans.textContent = resp.data.expired_transients;
+											if (statTrash) statTrash.textContent = resp.data.trashed_total;
+											if (statOver) statOver.textContent = resp.data.overhead;
+										}
+									};
+									xhr.send('action=wpat_perf_get_db_stats&security=' + encodeURIComponent(nonce));
+								}
+
+								updateStats();
+
+								var refreshBtn = document.getElementById('wpat-perf-refresh-stats-btn');
+								if (refreshBtn) {
+									refreshBtn.addEventListener('click', updateStats);
+								}
+
+								function runDbAction(actionName, btnId, confirmMsg, successMsg) {
+									var btn = document.getElementById(btnId);
+									if (!btn) return;
+									btn.addEventListener('click', function() {
+										if (confirmMsg && !confirm(confirmMsg)) return;
+										btn.disabled = true;
+										var oldText = btn.textContent;
+										btn.textContent = '<?php echo esc_js( __( 'Procesando...', 'wp-agency-toolkit' ) ); ?>';
+										var resBox = document.getElementById('wpat-perf-action-result');
+
+										var xhr = new XMLHttpRequest();
+										xhr.open('POST', ajaxUrl, true);
+										xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+										xhr.onload = function() {
+											btn.disabled = false;
+											btn.textContent = oldText;
+											var resp = JSON.parse(xhr.responseText || '{}');
+											if (resp.success) {
+												if (resBox) {
+													resBox.style.color = '#15803d';
+													resBox.textContent = '✓ ' + (successMsg || 'Acción completada con éxito.');
+												}
+												updateStats();
+											} else {
+												if (resBox) {
+													resBox.style.color = '#b91c1c';
+													resBox.textContent = '⚠️ Error al ejecutar la acción.';
+												}
+											}
+										};
+										xhr.send('action=' + encodeURIComponent(actionName) + '&security=' + encodeURIComponent(nonce));
+									});
+								}
+
+								runDbAction('wpat_perf_clean_revisions', 'wpat-btn-clean-revisions', '<?php echo esc_js( __( '¿Deseas purgar todas las revisiones antiguas de la base de datos?', 'wp-agency-toolkit' ) ); ?>', '<?php echo esc_js( __( 'Revisiones purgadas correctamente.', 'wp-agency-toolkit' ) ); ?>');
+								runDbAction('wpat_perf_clean_transients', 'wpat-btn-clean-transients', '<?php echo esc_js( __( '¿Deseas eliminar todos los transients caducados?', 'wp-agency-toolkit' ) ); ?>', '<?php echo esc_js( __( 'Transients limpiados correctamente.', 'wp-agency-toolkit' ) ); ?>');
+								runDbAction('wpat_perf_clean_trash', 'wpat-btn-clean-trash', '<?php echo esc_js( __( '¿Deseas vaciar permanentemente las entradas y comentarios de la papelera?', 'wp-agency-toolkit' ) ); ?>', '<?php echo esc_js( __( 'Papelera vaciada correctamente.', 'wp-agency-toolkit' ) ); ?>');
+								runDbAction('wpat_perf_optimize_tables', 'wpat-btn-optimize-tables', '<?php echo esc_js( __( '¿Deseas optimizar y desfragmentar todas las tablas de WordPress?', 'wp-agency-toolkit' ) ); ?>', '<?php echo esc_js( __( 'Tablas optimizadas y desfragmentadas con éxito.', 'wp-agency-toolkit' ) ); ?>');
+							});
+						</script>
+					</div>
+				</div>
 				<?php
 				break;
 			case 'reading-progress':
+				$saved_post_types = isset( $settings['reading_bar_post_types'] ) && is_array( $settings['reading_bar_post_types'] ) ? $settings['reading_bar_post_types'] : array( 'post' );
+				$public_pts       = get_post_types( array( 'public' => true ), 'objects' );
+				unset( $public_pts['attachment'] );
 				?>
-<div class="wpat-module-card" style="margin-top: 20px;">
-								<div class="wpat-module-header">
-									<div class="wpat-module-info">
-										<h3>Experiencia de Lectura & UX en Entradas</h3>
-										<p>Muestra una barra superior de avance al hacer scroll y calcula automáticamente el tiempo estimado de lectura en las entradas (posts).</p>
-									</div>
-									<?php $this->render_module_toggle( 'reading-progress', $settings, true ); ?>
+				<div class="wpat-module-card">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Progreso de Lectura & Tiempo Estimado (UX)</h3>
+							<p>Mejora la experiencia de usuario y la retención con una barra de scroll de lectura fluida con compensación de barra de administración y distintivo de tiempo de lectura.</p>
+						</div>
+						<?php $this->render_module_toggle( 'reading-progress', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block; padding: 20px;">
+
+						<!-- 1. Barra de Progreso de Scroll -->
+						<h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+							<span class="dashicons dashicons-image-rotate-right" style="color: #6366f1;"></span>
+							<?php esc_html_e( 'Barra de Progreso de Scroll', 'wp-agency-toolkit' ); ?>
+						</h4>
+
+						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin-bottom: 22px;">
+							<div class="wpat-field-group" style="margin-bottom: 16px;">
+								<label style="font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[reading_bar_enabled]" id="wpat_reading_bar_enabled" value="1" <?php checked( ! isset( $settings['reading_bar_enabled'] ) || '1' === (string) $settings['reading_bar_enabled'] ); ?> />
+									<?php esc_html_e( 'Activar Barra de Progreso de Lectura', 'wp-agency-toolkit' ); ?>
+								</label>
+								<p class="description" style="margin-left: 24px;">
+									<?php esc_html_e( 'Muestra una barra fluida sin librerías pesadas que avanza conforme el usuario hace scroll hacia abajo.', 'wp-agency-toolkit' ); ?>
+								</p>
+							</div>
+
+							<!-- Previsualizador de la barra -->
+							<div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; margin-bottom: 16px;">
+								<div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">
+									<?php esc_html_e( 'Vista Previa en Vivo de la Barra', 'wp-agency-toolkit' ); ?>
 								</div>
-								<div class="wpat-module-body" style="display: block;">
-									
-
-									<div class="wpat-field-group" style="margin-top: 15px; display: flex; gap: 25px; align-items: flex-start; flex-wrap: wrap;">
-										<div>
-											<label for="wpat_reading_bar_color" style="display:block; margin-bottom:5px; font-weight:600;">Color de la Barra de Lectura</label>
-											<input type="text" name="wpat_settings[reading_bar_color]" id="wpat_reading_bar_color" value="<?php echo esc_attr( isset( $settings['reading_bar_color'] ) ? $settings['reading_bar_color'] : '#2563eb' ); ?>" class="wpat-color-picker" />
-										</div>
-										<div>
-											<label for="wpat_reading_bar_height" style="display:block; margin-bottom:5px; font-weight:600;">Grosor de la Barra (píxeles)</label>
-											<input type="number" name="wpat_settings[reading_bar_height]" id="wpat_reading_bar_height" min="1" max="30" value="<?php echo esc_attr( isset( $settings['reading_bar_height'] ) ? $settings['reading_bar_height'] : '4' ); ?>" class="small-text" style="height: 30px; text-align: center;" /> px
-											<p class="description" style="margin-top:3px;">Por defecto: 4px. Auméntalo (ej. 6px o 8px) para que sea más visible.</p>
-										</div>
-									</div>
-
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<label style="font-weight: 600;">
-											<input type="checkbox" name="wpat_settings[reading_time_enabled]" value="1" <?php checked( isset( $settings['reading_time_enabled'] ) ? $settings['reading_time_enabled'] : '0', '1' ); ?>>
-											Mostrar Tiempo Estimado de Lectura (Badge automático al inicio del artículo)
-										</label>
-										<p class="description" style="margin-top:6px;">Calcula automáticamente el tiempo necesario en base a 200 palabras/minuto e inserta una etiqueta estilizada (ej. <code>⏱️ Tiempo estimado de lectura: 3 min</code>) justo antes del contenido de la entrada. También puedes insertarlo manualmente en cualquier maquetador (Elementor, Divi, Gutenberg) mediante los shortcodes <code>[tiempo_lectura]</code> o <code>[wpat_reading_time]</code>.</p>
-									</div>
-
-									
+								<div style="background: #e2e8f0; border-radius: 4px; overflow: hidden; width: 100%; height: 16px; position: relative;">
+									<div id="wpat-reading-bar-preview" style="height: 100%; width: 65%; border-radius: 4px; transition: all 0.2s ease;"></div>
 								</div>
+							</div>
+
+							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px;">
+								<div>
+									<label for="wpat_reading_bar_color" style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">
+										<?php esc_html_e( 'Color Principal', 'wp-agency-toolkit' ); ?>
+									</label>
+									<input type="text" name="wpat_settings[reading_bar_color]" id="wpat_reading_bar_color" value="<?php echo esc_attr( isset( $settings['reading_bar_color'] ) ? $settings['reading_bar_color'] : '#2563eb' ); ?>" class="wpat-color-picker" />
+								</div>
+
+								<div>
+									<label for="wpat_reading_bar_color_end" style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">
+										<?php esc_html_e( 'Color Final (Degradado Opcional)', 'wp-agency-toolkit' ); ?>
+									</label>
+									<input type="text" name="wpat_settings[reading_bar_color_end]" id="wpat_reading_bar_color_end" value="<?php echo esc_attr( isset( $settings['reading_bar_color_end'] ) ? $settings['reading_bar_color_end'] : '' ); ?>" class="wpat-color-picker" placeholder="#9333ea" />
+								</div>
+
+								<div>
+									<label for="wpat_reading_bar_height" style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">
+										<?php esc_html_e( 'Grosor de la Barra', 'wp-agency-toolkit' ); ?>
+									</label>
+									<div style="display: flex; align-items: center; gap: 6px;">
+										<input type="number" name="wpat_settings[reading_bar_height]" id="wpat_reading_bar_height" min="1" max="30" value="<?php echo esc_attr( isset( $settings['reading_bar_height'] ) ? $settings['reading_bar_height'] : '4' ); ?>" class="small-text" style="height: 32px; text-align: center;" /> px
+									</div>
+								</div>
+
+								<div>
+									<label for="wpat_reading_bar_position" style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">
+										<?php esc_html_e( 'Posición en Pantalla', 'wp-agency-toolkit' ); ?>
+									</label>
+									<select name="wpat_settings[reading_bar_position]" id="wpat_reading_bar_position" style="width: 100%; height: 32px;">
+										<option value="top" <?php selected( isset( $settings['reading_bar_position'] ) ? $settings['reading_bar_position'] : 'top', 'top' ); ?>>
+											<?php esc_html_e( 'Superior (Top - Debajo de Admin Bar)', 'wp-agency-toolkit' ); ?>
+										</option>
+										<option value="bottom" <?php selected( isset( $settings['reading_bar_position'] ) ? $settings['reading_bar_position'] : 'top', 'bottom' ); ?>>
+											<?php esc_html_e( 'Inferior (Bottom)', 'wp-agency-toolkit' ); ?>
+										</option>
+									</select>
+								</div>
+							</div>
+
+							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; padding-top: 14px; border-top: 1px dashed #e2e8f0;">
+								<div>
+									<label for="wpat_reading_bar_scope" style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">
+										<?php esc_html_e( 'Cálculo del Progreso (Alcance)', 'wp-agency-toolkit' ); ?>
+									</label>
+									<select name="wpat_settings[reading_bar_scope]" id="wpat_reading_bar_scope" style="width: 100%; height: 32px;">
+										<option value="article" <?php selected( isset( $settings['reading_bar_scope'] ) ? $settings['reading_bar_scope'] : 'article', 'article' ); ?>>
+											<?php esc_html_e( 'Contenido del Artículo únicamente (Recomendado)', 'wp-agency-toolkit' ); ?>
+										</option>
+										<option value="window" <?php selected( isset( $settings['reading_bar_scope'] ) ? $settings['reading_bar_scope'] : 'article', 'window' ); ?>>
+											<?php esc_html_e( 'Toda la Página (Incluyendo pie de página y comentarios)', 'wp-agency-toolkit' ); ?>
+										</option>
+									</select>
+									<p class="description" style="margin-top: 4px;">
+										<?php esc_html_e( 'El modo artículo alcanza el 100% justo cuando el lector termina de leer el texto principal, antes de los comentarios o el footer.', 'wp-agency-toolkit' ); ?>
+									</p>
+								</div>
+
+								<div>
+									<label style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">
+										<?php esc_html_e( 'Mostrar en Tipos de Contenido', 'wp-agency-toolkit' ); ?>
+									</label>
+									<div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px;">
+										<?php foreach ( $public_pts as $pt_key => $pt_obj ) : ?>
+											<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px;">
+												<input type="checkbox" name="wpat_settings[reading_bar_post_types][]" value="<?php echo esc_attr( $pt_key ); ?>" <?php checked( in_array( $pt_key, $saved_post_types, true ) ); ?> />
+												<?php echo esc_html( $pt_obj->labels->name ); ?>
+											</label>
+										<?php endforeach; ?>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 25px 0;">
+
+						<!-- 2. Distintivo de Tiempo Estimado de Lectura -->
+						<h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+							<span class="dashicons dashicons-clock" style="color: #6366f1;"></span>
+							<?php esc_html_e( 'Distintivo de Tiempo Estimado de Lectura', 'wp-agency-toolkit' ); ?>
+						</h4>
+
+						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px;">
+							<div class="wpat-field-group" style="margin-bottom: 16px;">
+								<label style="font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[reading_time_enabled]" id="wpat_reading_time_enabled" value="1" <?php checked( ! isset( $settings['reading_time_enabled'] ) || '1' === (string) $settings['reading_time_enabled'] ); ?> />
+									<?php esc_html_e( 'Insertar Distintivo Automático al Inicio del Artículo', 'wp-agency-toolkit' ); ?>
+								</label>
+								<p class="description" style="margin-left: 24px;">
+									<?php esc_html_e( 'Calcula las palabras del contenido y muestra una etiqueta con el tiempo estimado justo antes del primer párrafo.', 'wp-agency-toolkit' ); ?>
+								</p>
+							</div>
+
+							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 16px;">
+								<div>
+									<label for="wpat_reading_time_style" style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">
+										<?php esc_html_e( 'Estilo Visual del Badge', 'wp-agency-toolkit' ); ?>
+									</label>
+									<select name="wpat_settings[reading_time_style]" id="wpat_reading_time_style" style="width: 100%; height: 32px;">
+										<option value="pill" <?php selected( isset( $settings['reading_time_style'] ) ? $settings['reading_time_style'] : 'pill', 'pill' ); ?>>
+											<?php esc_html_e( 'Pastilla Moderna (Bordes redondeados con fondo)', 'wp-agency-toolkit' ); ?>
+										</option>
+										<option value="bordered" <?php selected( isset( $settings['reading_time_style'] ) ? $settings['reading_time_style'] : 'pill', 'bordered' ); ?>>
+											<?php esc_html_e( 'Borde Lateral Acentuado', 'wp-agency-toolkit' ); ?>
+										</option>
+										<option value="minimal" <?php selected( isset( $settings['reading_time_style'] ) ? $settings['reading_time_style'] : 'pill', 'minimal' ); ?>>
+											<?php esc_html_e( 'Minimalista (Texto e icono plano)', 'wp-agency-toolkit' ); ?>
+										</option>
+									</select>
+								</div>
+
+								<div>
+									<label for="wpat_reading_time_wpm" style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">
+										<?php esc_html_e( 'Velocidad de Lectura (Palabras por Minuto)', 'wp-agency-toolkit' ); ?>
+									</label>
+									<select name="wpat_settings[reading_time_wpm]" id="wpat_reading_time_wpm" style="width: 100%; height: 32px;">
+										<option value="180" <?php selected( isset( $settings['reading_time_wpm'] ) ? (int) $settings['reading_time_wpm'] : 200, 180 ); ?>>
+											<?php esc_html_e( '180 PPM (Lectura pausada)', 'wp-agency-toolkit' ); ?>
+										</option>
+										<option value="200" <?php selected( isset( $settings['reading_time_wpm'] ) ? (int) $settings['reading_time_wpm'] : 200, 200 ); ?>>
+											<?php esc_html_e( '200 PPM (Promedio estándar internacional)', 'wp-agency-toolkit' ); ?>
+										</option>
+										<option value="250" <?php selected( isset( $settings['reading_time_wpm'] ) ? (int) $settings['reading_time_wpm'] : 200, 250 ); ?>>
+											<?php esc_html_e( '250 PPM (Lectura rápida)', 'wp-agency-toolkit' ); ?>
+										</option>
+									</select>
+								</div>
+							</div>
+
+							<div class="wpat-field-group" style="margin-bottom: 14px;">
+								<label for="wpat_reading_time_label" style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;">
+									<?php esc_html_e( 'Texto Personalizado del Distintivo', 'wp-agency-toolkit' ); ?>
+								</label>
+								<input type="text" name="wpat_settings[reading_time_label]" id="wpat_reading_time_label" value="<?php echo esc_attr( isset( $settings['reading_time_label'] ) ? $settings['reading_time_label'] : 'Tiempo estimado de lectura: {time} min' ); ?>" class="large-text" style="height: 32px;" />
+								<p class="description" style="margin-top: 4px;">
+									<?php esc_html_e( 'Utiliza la etiqueta {time} para insertar el número calculado de minutos.', 'wp-agency-toolkit' ); ?>
+								</p>
+							</div>
+
+							<div style="background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 12px;">
+								<div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">
+									<?php esc_html_e( 'Shortcodes Disponibles para Maquetadores (Elementor / Gutenberg / Divi)', 'wp-agency-toolkit' ); ?>
+								</div>
+								<p style="margin: 0; font-size: 13px; color: #334155;">
+									<code>[tiempo_lectura]</code> o <code>[wpat_reading_time]</code>
+								</p>
+							</div>
+						</div>
+
+						<script type="text/javascript">
+							document.addEventListener('DOMContentLoaded', function() {
+								function updateBarPreview() {
+									var bar = document.getElementById('wpat-reading-bar-preview');
+									var c1 = document.getElementById('wpat_reading_bar_color').value || '#2563eb';
+									var c2 = document.getElementById('wpat_reading_bar_color_end').value;
+									if (bar) {
+										if (c2) {
+											bar.style.background = 'linear-gradient(90deg, ' + c1 + ' 0%, ' + c2 + ' 100%)';
+										} else {
+											bar.style.background = c1;
+										}
+									}
+								}
+								var inputC1 = document.getElementById('wpat_reading_bar_color');
+								var inputC2 = document.getElementById('wpat_reading_bar_color_end');
+								if (inputC1) inputC1.addEventListener('input', updateBarPreview);
+								if (inputC2) inputC2.addEventListener('input', updateBarPreview);
+								updateBarPreview();
+							});
+						</script>
+					</div>
+				</div>
 				<?php
 				break;
 			case 'accessibility':
@@ -5925,15 +6879,141 @@ class WPAT_Admin {
 				<?php
 				break;
 			case 'svg-support':
+				$xml_available = extension_loaded( 'xml' ) || class_exists( 'SimpleXMLElement' );
 				?>
-<div class="wpat-module-card">
-								<div class="wpat-module-header">
-									<div class="wpat-module-info">
-										<h3>Soporte para Archivos SVG</h3>
-										<p>Habilita la subida de archivos SVG en la Biblioteca de Medios aplicando una sanitización básica de seguridad XML (remueve tags de script e inyecciones XSS).</p>
-									</div>
-									<?php $this->render_module_toggle( 'svg-support', $settings, false ); ?>
+				<div class="wpat-module-card">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Soporte para Archivos SVG & Sanitización Segura</h3>
+							<p>Permite subir gráficos vectoriales SVG directamente a la Biblioteca de Medios con sanitización profunda contra inyecciones XSS/XXE, generación automática de dimensiones y previsualización nítida.</p>
+						</div>
+						<?php $this->render_module_toggle( 'svg-support', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block; padding: 20px;">
+
+						<!-- 1. Estado del Motor SVG -->
+						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 22px;">
+							<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px 14px;">
+								<div style="font-size: 11px; color: #166534; text-transform: uppercase; font-weight: 600; margin-bottom: 2px;">
+									<?php esc_html_e( 'Soporte MIME', 'wp-agency-toolkit' ); ?>
 								</div>
+								<div style="font-size: 14px; font-weight: 600; color: #15803d; display: flex; align-items: center; gap: 6px;">
+									<span class="dashicons dashicons-yes-alt"></span> image/svg+xml (.svg, .svgz)
+								</div>
+							</div>
+
+							<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px 14px;">
+								<div style="font-size: 11px; color: #166534; text-transform: uppercase; font-weight: 600; margin-bottom: 2px;">
+									<?php esc_html_e( 'Motor XML del Servidor', 'wp-agency-toolkit' ); ?>
+								</div>
+								<div style="font-size: 14px; font-weight: 600; color: #15803d; display: flex; align-items: center; gap: 6px;">
+									<span class="dashicons dashicons-yes-alt"></span> <?php echo $xml_available ? 'PHP XML & Parser Activo' : 'XML Básico'; ?>
+								</div>
+							</div>
+
+							<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px 14px;">
+								<div style="font-size: 11px; color: #166534; text-transform: uppercase; font-weight: 600; margin-bottom: 2px;">
+									<?php esc_html_e( 'Previsualización en Medios', 'wp-agency-toolkit' ); ?>
+								</div>
+								<div style="font-size: 14px; font-weight: 600; color: #15803d; display: flex; align-items: center; gap: 6px;">
+									<span class="dashicons dashicons-yes-alt"></span> Renderizado CSS/JS Habilitado
+								</div>
+							</div>
+						</div>
+
+						<!-- 2. Ajustes de Seguridad y Roles -->
+						<h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+							<span class="dashicons dashicons-shield" style="color: #6366f1;"></span>
+							<?php esc_html_e( 'Reglas de Seguridad y Control de Subida', 'wp-agency-toolkit' ); ?>
+						</h4>
+
+						<div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px;">
+							<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px;">
+								<label style="font-weight: 600; cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[svg_admin_only]" value="1" <?php checked( ! isset( $settings['svg_admin_only'] ) || '1' === (string) $settings['svg_admin_only'] ); ?> style="margin-top: 2px;" />
+									<div>
+										<span><?php esc_html_e( 'Restringir la subida de SVG exclusivamente a Administradores (Recomendado)', 'wp-agency-toolkit' ); ?></span>
+										<p class="description" style="margin: 3px 0 0 0; font-weight: normal;">
+											<?php esc_html_e( 'Evita que usuarios con roles inferiores (Autores, Editores, Clientes) puedan subir archivos vectoriales SVG, bloqueando cualquier riesgo de inyección desde cuentas comprometidas.', 'wp-agency-toolkit' ); ?>
+										</p>
+									</div>
+								</label>
+							</div>
+
+							<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px;">
+								<label style="font-weight: 600; cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[svg_sanitize_strict]" value="1" <?php checked( ! isset( $settings['svg_sanitize_strict'] ) || '1' === (string) $settings['svg_sanitize_strict'] ); ?> style="margin-top: 2px;" />
+									<div>
+										<span><?php esc_html_e( 'Sanitización Estricta Anti-XSS y Anti-XXE en Tiempo de Subida', 'wp-agency-toolkit' ); ?></span>
+										<p class="description" style="margin: 3px 0 0 0; font-weight: normal;">
+											<?php esc_html_e( 'Elimina etiquetas <script>, <foreignObject>, <iframe>, eventos Javascript inline (onload, onclick) y entidades DTD maliciosas antes de guardar el archivo en el servidor.', 'wp-agency-toolkit' ); ?>
+										</p>
+									</div>
+								</label>
+							</div>
+
+							<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px;">
+								<label style="font-weight: 600; cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[svg_generate_dimensions]" value="1" <?php checked( ! isset( $settings['svg_generate_dimensions'] ) || '1' === (string) $settings['svg_generate_dimensions'] ); ?> style="margin-top: 2px;" />
+									<div>
+										<span><?php esc_html_e( 'Cálculo Automático de Dimensiones (viewBox / Ancho / Alto)', 'wp-agency-toolkit' ); ?></span>
+										<p class="description" style="margin: 3px 0 0 0; font-weight: normal;">
+											<?php esc_html_e( 'Extrae las proporciones originales del SVG para registrarlas en los metadatos de WordPress, garantizando compatibilidad total con Gutenberg, Elementor y la cuadrícula de medios.', 'wp-agency-toolkit' ); ?>
+										</p>
+									</div>
+								</label>
+							</div>
+						</div>
+
+						<hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 25px 0;">
+
+						<!-- 3. Previsualizador / Probador de SVG en Vivo -->
+						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+							<h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+								<span class="dashicons dashicons-format-image" style="color: #6366f1;"></span>
+								<?php esc_html_e( 'Probador y Validador Rápido de Código SVG', 'wp-agency-toolkit' ); ?>
+							</h4>
+							<p style="font-size: 13px; color: #64748b; margin-top: 0; margin-bottom: 12px;">
+								<?php esc_html_e( 'Pega cualquier fragmento de código <svg>...</svg> para comprobar cómo se renderiza en el navegador antes de subirlo.', 'wp-agency-toolkit' ); ?>
+							</p>
+
+							<div style="display: flex; gap: 15px; flex-wrap: wrap;">
+								<div style="flex: 2; min-width: 280px;">
+									<textarea id="wpat_svg_test_input" rows="4" style="width: 100%; font-family: monospace; font-size: 12px;" placeholder="<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;48&quot; height=&quot;48&quot; fill=&quot;#6366f1&quot;><circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;10&quot;/></svg>"></textarea>
+									<button type="button" id="wpat_svg_test_btn" class="button button-secondary button-small" style="margin-top: 6px;">
+										<?php esc_html_e( 'Validar & Previsualizar', 'wp-agency-toolkit' ); ?>
+									</button>
+								</div>
+								<div style="flex: 1; min-width: 150px; background: #fff; border: 1px dashed #cbd5e1; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 12px; min-height: 100px;">
+									<div id="wpat_svg_preview_box" style="max-width: 120px; max-height: 120px; text-align: center; color: #94a3b8; font-size: 12px;">
+										<em><?php esc_html_e( 'Vista previa aquí', 'wp-agency-toolkit' ); ?></em>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<script type="text/javascript">
+							document.addEventListener('DOMContentLoaded', function() {
+								var testBtn = document.getElementById('wpat_svg_test_btn');
+								if (testBtn) {
+									testBtn.addEventListener('click', function() {
+										var raw = (document.getElementById('wpat_svg_test_input').value || '').trim();
+										var box = document.getElementById('wpat_svg_preview_box');
+										if (!raw || raw.indexOf('<svg') === -1) {
+											box.innerHTML = '<span style="color:#ef4444; font-size:12px;">Código SVG no válido</span>';
+											return;
+										}
+										// Sanitización cliente de prueba
+										var clean = raw.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+										               .replace(/on\w+="[^"]*"/gi, '')
+										               .replace(/on\w+='[^']*'/gi, '');
+										box.innerHTML = clean;
+									});
+								}
+							});
+						</script>
+					</div>
+				</div>
 				<?php
 				break;
 			case 'image-optimizer':
@@ -6173,31 +7253,158 @@ class WPAT_Admin {
 							</div>
 				<?php
 				break;
-						case 'sitemap-xml':
+			case 'sitemap-xml':
+				require_once WPAT_PATH . 'includes/modules/class-wpat-sitemap-xml.php';
+				$sitemap_stats = WPAT_Sitemap_XML::get_sitemap_summary();
 				?>
-<div class="wpat-module-card">
-								<div class="wpat-module-header">
-									<div class="wpat-module-info">
-										<h3>Generador de Sitemap XML</h3>
-										<p>Genera automáticamente un sitemap XML dinámico y ligero en la raíz de tu sitio (<code>/sitemap.xml</code>) excluyendo cualquier contenido configurado como noindex.</p>
+				<div class="wpat-module-card">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Generador de Sitemap XML Profesional</h3>
+							<p>Genera un índice XML ultraligero con soporte para imágenes, hoja de estilos visual XSL interactiva, exclusión de etiquetas <code>noindex</code> y enlace directo para Google Search Console.</p>
+						</div>
+						<?php $this->render_module_toggle( 'sitemap-xml', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block; padding: 20px;">
+
+						<!-- 1. Estado en Vivo y Enlaces directos a Motores de Búsqueda -->
+						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin-bottom: 22px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
+								<div>
+									<h4 style="margin: 0; font-size: 15px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+										<span class="dashicons dashicons-networking" style="color: #10b981;"></span>
+										<?php esc_html_e( 'URL del Sitemap XML Activo', 'wp-agency-toolkit' ); ?>
+									</h4>
+									<div style="margin-top: 4px;">
+										<code style="font-size: 13px; font-weight: 600; background: #ffffff; padding: 4px 10px; border-radius: 4px; border: 1px solid #cbd5e1; color: #0284c7;">
+											<?php echo esc_url( $sitemap_stats['sitemap_url'] ); ?>
+										</code>
 									</div>
-									<?php $this->render_module_toggle( 'sitemap-xml', $settings, true ); ?>
 								</div>
-								<div class="wpat-module-body" style="display: block;">
-									<div class="wpat-field-group">
-										<label>Sitemap XML Integrado</label>
-										<p class="description" style="margin-bottom: 12px;">El sitemap se genera dinámicamente en <code><?php echo esc_url( home_url( '/sitemap.xml' ) ); ?></code> y excluye automáticamente las páginas o entradas configuradas con directiva <code>noindex</code>.</p>
-										<div style="display: flex; gap: 10px; flex-wrap: wrap;">
-											<a href="<?php echo esc_url( home_url( '/sitemap.xml' ) ); ?>" target="_blank" class="button button-secondary">
-												<span class="dashicons dashicons-external" style="vertical-align: middle; font-size: 16px; width: 16px; height: 16px; margin-right: 5px;"></span> Ver Sitemap.xml
-											</a>
-											<a href="<?php echo esc_url( home_url( '/sitemap.xml' ) ); ?>" download="sitemap.xml" class="button button-secondary">
-												<span class="dashicons dashicons-download" style="vertical-align: middle; font-size: 16px; width: 16px; height: 16px; margin-right: 5px;"></span> Descargar Sitemap.xml
-											</a>
-										</div>
-									</div>
+								<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+									<a href="<?php echo esc_url( $sitemap_stats['sitemap_url'] ); ?>" target="_blank" class="button button-primary" style="display: inline-flex; align-items: center; gap: 4px;">
+										<span class="dashicons dashicons-external" style="font-size: 15px; line-height: 20px; width: 15px; height: 15px;"></span>
+										<?php esc_html_e( 'Abrir Sitemap Visual', 'wp-agency-toolkit' ); ?>
+									</a>
+									<a href="<?php echo esc_url( $sitemap_stats['sitemap_url'] ); ?>" download="sitemap.xml" class="button button-secondary" style="display: inline-flex; align-items: center; gap: 4px;">
+										<span class="dashicons dashicons-download" style="font-size: 15px; line-height: 20px; width: 15px; height: 15px;"></span>
+										<?php esc_html_e( 'Descargar XML', 'wp-agency-toolkit' ); ?>
+									</a>
 								</div>
 							</div>
+
+							<!-- Estadísticas de URLs -->
+							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 14px;">
+								<div style="background: #ffffff; padding: 10px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+									<div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600;"><?php esc_html_e( 'Total Estimado', 'wp-agency-toolkit' ); ?></div>
+									<div style="font-size: 16px; font-weight: bold; color: #1e293b;"><?php echo (int) $sitemap_stats['total_est']; ?> URLs</div>
+								</div>
+								<div style="background: #ffffff; padding: 10px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+									<div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600;"><?php esc_html_e( 'Entradas Blog', 'wp-agency-toolkit' ); ?></div>
+									<div style="font-size: 16px; font-weight: bold; color: #2563eb;"><?php echo (int) $sitemap_stats['posts']; ?></div>
+								</div>
+								<div style="background: #ffffff; padding: 10px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+									<div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600;"><?php esc_html_e( 'Páginas', 'wp-agency-toolkit' ); ?></div>
+									<div style="font-size: 16px; font-weight: bold; color: #059669;"><?php echo (int) $sitemap_stats['pages']; ?></div>
+								</div>
+								<?php if ( class_exists( 'WooCommerce' ) ) : ?>
+									<div style="background: #ffffff; padding: 10px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+										<div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600;"><?php esc_html_e( 'Productos', 'wp-agency-toolkit' ); ?></div>
+										<div style="font-size: 16px; font-weight: bold; color: #7c3aed;"><?php echo (int) $sitemap_stats['products']; ?></div>
+									</div>
+								<?php endif; ?>
+								<div style="background: #ffffff; padding: 10px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+									<div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600;"><?php esc_html_e( 'Taxonomías', 'wp-agency-toolkit' ); ?></div>
+									<div style="font-size: 16px; font-weight: bold; color: #d97706;"><?php echo (int) $sitemap_stats['taxonomies']; ?></div>
+								</div>
+							</div>
+
+							<!-- Accesos rápidos Search Console & Bing -->
+							<div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #cbd5e1; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+								<span style="font-size: 12px; font-weight: 600; color: #475569;"><?php esc_html_e( 'Indexación Rápida:', 'wp-agency-toolkit' ); ?></span>
+								<a href="https://search.google.com/search-console/sitemaps" target="_blank" style="font-size: 12px; color: #2563eb; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;">
+									<span class="dashicons dashicons-google" style="font-size: 14px; line-height: 16px; width: 14px; height: 14px;"></span> Google Search Console &rarr;
+								</a>
+								<a href="https://www.bing.com/webmasters/sitemaps" target="_blank" style="font-size: 12px; color: #0284c7; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;">
+									<span class="dashicons dashicons-search" style="font-size: 14px; line-height: 16px; width: 14px; height: 14px;"></span> Bing Webmaster Tools &rarr;
+								</a>
+							</div>
+						</div>
+
+						<!-- 2. Opciones de Contenido a Incluir -->
+						<h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+							<span class="dashicons dashicons-admin-settings" style="color: #6366f1;"></span>
+							<?php esc_html_e( 'Contenidos a Incluir en el Sitemap', 'wp-agency-toolkit' ); ?>
+						</h4>
+
+						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 22px;">
+							<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px;">
+								<label style="font-weight: 600; cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[sitemap_include_posts]" value="1" <?php checked( ! isset( $settings['sitemap_include_posts'] ) || '1' === (string) $settings['sitemap_include_posts'] ); ?> style="margin-top: 2px;" />
+									<div>
+										<span><?php esc_html_e( 'Incluir Entradas del Blog (Posts)', 'wp-agency-toolkit' ); ?></span>
+										<p class="description" style="margin: 2px 0 0 0; font-weight: normal;"><?php esc_html_e( 'Prioridad 0.8 / Frecuencia semanal.', 'wp-agency-toolkit' ); ?></p>
+									</div>
+								</label>
+							</div>
+
+							<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px;">
+								<label style="font-weight: 600; cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[sitemap_include_pages]" value="1" <?php checked( ! isset( $settings['sitemap_include_pages'] ) || '1' === (string) $settings['sitemap_include_pages'] ); ?> style="margin-top: 2px;" />
+									<div>
+										<span><?php esc_html_e( 'Incluir Páginas Estáticas (Pages)', 'wp-agency-toolkit' ); ?></span>
+										<p class="description" style="margin: 2px 0 0 0; font-weight: normal;"><?php esc_html_e( 'Prioridad 0.7 / Frecuencia mensual.', 'wp-agency-toolkit' ); ?></p>
+									</div>
+								</label>
+							</div>
+
+							<?php if ( class_exists( 'WooCommerce' ) ) : ?>
+								<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px;">
+									<label style="font-weight: 600; cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+										<input type="checkbox" name="wpat_settings[sitemap_include_products]" value="1" <?php checked( ! isset( $settings['sitemap_include_products'] ) || '1' === (string) $settings['sitemap_include_products'] ); ?> style="margin-top: 2px;" />
+										<div>
+											<span><?php esc_html_e( 'Incluir Productos WooCommerce', 'wp-agency-toolkit' ); ?></span>
+											<p class="description" style="margin: 2px 0 0 0; font-weight: normal;"><?php esc_html_e( 'Prioridad 0.9 / Frecuencia semanal.', 'wp-agency-toolkit' ); ?></p>
+										</div>
+									</label>
+								</div>
+							<?php endif; ?>
+
+							<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px;">
+								<label style="font-weight: 600; cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[sitemap_include_taxonomies]" value="1" <?php checked( ! isset( $settings['sitemap_include_taxonomies'] ) || '1' === (string) $settings['sitemap_include_taxonomies'] ); ?> style="margin-top: 2px;" />
+									<div>
+										<span><?php esc_html_e( 'Incluir Taxonomías (Categorías y Etiquetas)', 'wp-agency-toolkit' ); ?></span>
+										<p class="description" style="margin: 2px 0 0 0; font-weight: normal;"><?php esc_html_e( 'Prioridad 0.5 / Frecuencia semanal.', 'wp-agency-toolkit' ); ?></p>
+									</div>
+								</label>
+							</div>
+
+							<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px;">
+								<label style="font-weight: 600; cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[sitemap_include_images]" value="1" <?php checked( ! isset( $settings['sitemap_include_images'] ) || '1' === (string) $settings['sitemap_include_images'] ); ?> style="margin-top: 2px;" />
+									<div>
+										<span><?php esc_html_e( 'Google Image Sitemap (Imágenes Destacadas)', 'wp-agency-toolkit' ); ?></span>
+										<p class="description" style="margin: 2px 0 0 0; font-weight: normal;"><?php esc_html_e( 'Inyecta etiquetas image:loc e image:title para posicionamiento en Google Imágenes.', 'wp-agency-toolkit' ); ?></p>
+									</div>
+								</label>
+							</div>
+						</div>
+
+						<hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 25px 0;">
+
+						<!-- 3. Exclusiones Manuales de URLs -->
+						<div class="wpat-field-group">
+							<label for="wpat_sitemap_exclude_urls" style="font-weight: 600; display: block; margin-bottom: 6px;">
+								<?php esc_html_e( 'Exclusiones Manuales de URLs (Opcional)', 'wp-agency-toolkit' ); ?>
+							</label>
+							<textarea name="wpat_settings[sitemap_exclude_urls]" id="wpat_sitemap_exclude_urls" rows="4" class="large-text" placeholder="<?php echo esc_attr( home_url( '/carrito/' ) . "\n" . home_url( '/mi-cuenta/' ) . "\n/gracias/" ); ?>" style="font-family: monospace;"><?php echo esc_textarea( isset( $settings['sitemap_exclude_urls'] ) ? $settings['sitemap_exclude_urls'] : '' ); ?></textarea>
+							<p class="description" style="margin-top: 6px;">
+								<?php esc_html_e( 'Escribe una URL o ruta por línea que desees omitir del sitemap XML (por ejemplo: /checkout/ o /politica-privacidad/). Las páginas configuradas con directiva "noindex" en el módulo SEO se excluyen automáticamente sin necesidad de listarlas aquí.', 'wp-agency-toolkit' ); ?>
+							</p>
+						</div>
+					</div>
+				</div>
 				<?php
 				break;
 			case 'woo-sale-badges':
@@ -7584,41 +8791,121 @@ class WPAT_Admin {
 
 			case 'conflict-detector':
 				require_once WPAT_PATH . 'includes/modules/class-wpat-conflict-detector.php';
-				$conflicts = WPAT_Conflict_Detector::get_active_conflicts();
+				$conflicts  = WPAT_Conflict_Detector::get_active_conflicts();
+				$js_errors  = WPAT_Conflict_Detector::get_logged_js_errors();
+				$ajax_nonce = wp_create_nonce( 'wpat_js_error_nonce' );
 				?>
 				<div class="wpat-module-card">
 					<div class="wpat-module-header">
 						<div class="wpat-module-info">
 							<h3>Detector de Incompatibilidades y Conflictos</h3>
-							<p>Monitorea y detecta plugins duplicados o conflictivos que puedan causar interferencias con los módulos nativos de WP Agency Toolkit.</p>
+							<p>Monitorea y detecta plugins duplicados o conflictivos que puedan causar interferencias con los módulos nativos de WP Agency Toolkit, y previene bloqueos fatales.</p>
 						</div>
 						<?php $this->render_module_toggle( 'conflict-detector', $settings, false ); ?>
 					</div>
 					<div class="wpat-module-body" style="display: block; padding: 20px;">
+						<h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+							<span class="dashicons dashicons-admin-plugins" style="color: #6366f1;"></span>
+							<?php esc_html_e( 'Plugins de Terceros Detectados', 'wp-agency-toolkit' ); ?>
+						</h4>
 						<?php if ( ! empty( $conflicts ) ) : ?>
-							<div class="wpat-conflict-list" style="display: flex; flex-direction: column; gap: 15px;">
+							<div class="wpat-conflict-list" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px;">
 								<?php foreach ( $conflicts as $plugin_file => $conflict ) : ?>
 									<div class="wpat-conflict-item" style="background: #fff1f2; border: 1px solid #fecdd3; border-left: 4px solid #e11d48; padding: 15px; border-radius: 6px;">
 										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
 											<h4 style="margin: 0; font-size: 15px; color: #9f1239; font-weight: 600;"><?php echo esc_html( $conflict['name'] ); ?></h4>
 											<span class="wpat-badge" style="background: <?php echo 'active' === $conflict['status'] ? '#e11d48' : '#f43f5e'; ?>; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px; text-transform: uppercase; font-weight: bold;">
-												<?php echo 'active' === $conflict['status'] ? 'Plugin Activo' : 'Instalado'; ?>
+												<?php echo 'active' === $conflict['status'] ? esc_html__( 'Plugin Activo', 'wp-agency-toolkit' ) : esc_html__( 'Instalado', 'wp-agency-toolkit' ); ?>
 											</span>
 										</div>
 										<p style="margin: 0 0 10px 0; color: #881337; font-size: 13px; line-height: 1.5;"><?php echo esc_html( $conflict['reason'] ); ?></p>
-										<a href="<?php echo esc_url( $conflict['action_link'] ); ?>" class="button button-small" style="background: #be123c; border-color: #9f1239; color: #fff; text-shadow: none;">Gestionar Plugins</a>
+										<a href="<?php echo esc_url( $conflict['action_link'] ); ?>" class="button button-small" style="background: #be123c; border-color: #9f1239; color: #fff; text-shadow: none;">
+											<?php esc_html_e( 'Gestionar Plugins', 'wp-agency-toolkit' ); ?>
+										</a>
 									</div>
 								<?php endforeach; ?>
 							</div>
 						<?php else : ?>
-							<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a; padding: 15px; border-radius: 6px; display: flex; align-items: center; gap: 12px;">
+							<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a; padding: 15px; border-radius: 6px; display: flex; align-items: center; gap: 12px; margin-bottom: 25px;">
 								<span class="dashicons dashicons-yes-alt" style="font-size: 24px; width: 24px; height: 24px; color: #16a34a;"></span>
 								<div>
-									<h4 style="margin: 0 0 4px 0; font-size: 14px; color: #14532d; font-weight: 600;">Sin Incompatibilidades Detectadas</h4>
-									<p style="margin: 0; color: #166534; font-size: 13px;">No se han detectado plugins conflictivos o duplicados en esta instalación de WordPress. Las funcionalidades nativas de WP Agency Toolkit funcionan de forma óptima.</p>
+									<h4 style="margin: 0 0 4px 0; font-size: 14px; color: #14532d; font-weight: 600;"><?php esc_html_e( 'Sin Incompatibilidades de Plugins', 'wp-agency-toolkit' ); ?></h4>
+									<p style="margin: 0; color: #166534; font-size: 13px;"><?php esc_html_e( 'No se han detectado plugins conflictivos o duplicados en esta instalación. Los módulos nativos de WP Agency Toolkit funcionan con máxima compatibilidad y rendimiento.', 'wp-agency-toolkit' ); ?></p>
 								</div>
 							</div>
 						<?php endif; ?>
+
+						<hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 25px 0;">
+
+						<!-- Monitor de Errores JavaScript en Tiempo Real -->
+						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+							<h4 style="margin: 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+								<span class="dashicons dashicons-code-standards" style="color: #6366f1;"></span>
+								<?php esc_html_e( 'Monitor de Errores JavaScript & Scripts en Tiempo Real', 'wp-agency-toolkit' ); ?>
+							</h4>
+							<?php if ( ! empty( $js_errors ) ) : ?>
+								<button type="button" id="wpat-clear-js-errors-btn" class="button button-secondary button-small" style="display: inline-flex; align-items: center; gap: 4px;">
+									<span class="dashicons dashicons-trash" style="font-size: 15px; line-height: 20px; width: 15px; height: 15px;"></span>
+									<?php esc_html_e( 'Limpiar Registro', 'wp-agency-toolkit' ); ?>
+								</button>
+							<?php endif; ?>
+						</div>
+						<p style="font-size: 13px; color: #64748b; margin-top: 0; margin-bottom: 15px;">
+							<?php esc_html_e( 'Captura automáticamente excepciones no controladas de JavaScript, scripts caídos y promesas rechazadas en el frontend y panel de administración para ayudarte a identificar qué plugin o script está fallando.', 'wp-agency-toolkit' ); ?>
+						</p>
+
+						<div id="wpat-js-errors-container">
+							<?php if ( ! empty( $js_errors ) ) : ?>
+								<div style="display: flex; flex-direction: column; gap: 10px;">
+									<?php foreach ( $js_errors as $err ) : ?>
+										<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #ef4444; border-radius: 6px; padding: 12px 16px;">
+											<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 6px;">
+												<strong style="color: #b91c1c; font-size: 13px; font-family: monospace; word-break: break-all;">
+													<?php echo esc_html( $err['msg'] ); ?>
+												</strong>
+												<span style="font-size: 11px; color: #94a3b8; white-space: nowrap;"><?php echo esc_html( $err['time'] ); ?></span>
+											</div>
+											<div style="font-size: 12px; color: #475569; font-family: monospace;">
+												<div><strong><?php esc_html_e( 'Archivo:', 'wp-agency-toolkit' ); ?></strong> <?php echo esc_html( $err['file'] ); ?><?php if ( ! empty( $err['line'] ) ) : ?>:<strong><?php echo (int) $err['line']; ?></strong><?php endif; ?></div>
+												<?php if ( ! empty( $err['url'] ) ) : ?>
+													<div style="color: #64748b; margin-top: 3px;"><strong><?php esc_html_e( 'Página:', 'wp-agency-toolkit' ); ?></strong> <?php echo esc_html( $err['url'] ); ?></div>
+												<?php endif; ?>
+											</div>
+										</div>
+									<?php endforeach; ?>
+								</div>
+							<?php else : ?>
+								<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #3b82f6; padding: 12px 16px; border-radius: 6px; display: flex; align-items: center; gap: 10px;">
+									<span class="dashicons dashicons-shield-alt" style="font-size: 20px; width: 20px; height: 20px; color: #3b82f6;"></span>
+									<span style="color: #475569; font-size: 13px;">
+										<?php esc_html_e( 'No se han registrado errores de JavaScript en la consola del navegador. Tus scripts se están ejecutando con normalidad.', 'wp-agency-toolkit' ); ?>
+									</span>
+								</div>
+							<?php endif; ?>
+						</div>
+
+						<script type="text/javascript">
+							document.addEventListener('DOMContentLoaded', function() {
+								var btn = document.getElementById('wpat-clear-js-errors-btn');
+								if (btn) {
+									btn.addEventListener('click', function() {
+										btn.disabled = true;
+										btn.textContent = '<?php echo esc_js( __( 'Limpiando...', 'wp-agency-toolkit' ) ); ?>';
+										var xhr = new XMLHttpRequest();
+										xhr.open('POST', '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>', true);
+										xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+										xhr.onload = function() {
+											var container = document.getElementById('wpat-js-errors-container');
+											if (container) {
+												container.innerHTML = '<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #3b82f6; padding: 12px 16px; border-radius: 6px; display: flex; align-items: center; gap: 10px;"><span class="dashicons dashicons-shield-alt" style="font-size: 20px; width: 20px; height: 20px; color: #3b82f6;"></span><span style="color: #475569; font-size: 13px;"><?php echo esc_js( __( 'Registro de errores vaciado con éxito.', 'wp-agency-toolkit' ) ); ?></span></div>';
+											}
+											btn.style.display = 'none';
+										};
+										xhr.send('action=wpat_clear_js_errors&security=<?php echo esc_js( $ajax_nonce ); ?>');
+									});
+								}
+							});
+						</script>
 					</div>
 				</div>
 				<?php

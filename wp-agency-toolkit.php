@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.73
+ * Version:     4.3.74
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.73' );
+define( 'WPAT_VERSION', '4.3.74' );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -281,11 +281,40 @@ class WPAT_Main {
 			'duplicator'                => '0',
 			'snippets'                  => '0',
 			'performance'               => '0',
+			'perf_disable_emojis'       => '1',
+			'perf_cleanup_head'         => '1',
+			'perf_heartbeat_control'    => 'slow',
+			'perf_disable_jquery_migrate' => '1',
+			'perf_disable_wc_cart_fragments' => '1',
+			'perf_limit_revisions'      => '5',
+			'perf_autosave_interval'    => '180',
+			'perf_disable_dashicons'    => '1',
+			'perf_disable_embeds'       => '1',
 			'svg-support'               => '0',
+			'svg_admin_only'            => '1',
+			'svg_sanitize_strict'       => '1',
+			'svg_generate_dimensions'   => '1',
 			'image-optimizer'           => '0',
 			'seo'                       => '0',
+			'sitemap-xml'                => '0',
+			'sitemap_include_posts'      => '1',
+			'sitemap_include_pages'      => '1',
+			'sitemap_include_products'   => '1',
+			'sitemap_include_taxonomies' => '1',
+			'sitemap_include_images'     => '1',
+			'sitemap_exclude_urls'       => '',
 			'disable-comments'          => '0',
+			'disable_comments_global'   => '1',
+			'disable_comments_posts'    => '1',
+			'disable_comments_pages'    => '1',
+			'disable_comments_media'    => '1',
+			'disable_comments_cpts'     => array(),
+			'disable_comments_keep_reviews' => '1',
 			'ssl_redirect_method'       => 'php',
+			'ssl_fix_mixed_content'     => '1',
+			'ssl_enable_hsts'           => '1',
+			'ssl_enable_csp'            => '1',
+			'ssl_proxy_fix'             => '1',
 			'envato-importer'           => '0',
 			'security-hardening'        => '0',
 			'sec_disable_file_edit'     => '0',
@@ -296,6 +325,7 @@ class WPAT_Main {
 			'sec_disable_user_enum'     => '0',
 			'sec_disable_xmlrpc'        => '0',
 			'sec_block_admin_user'      => '0',
+			'sec_security_headers'      => '0',
 
 			// Opciones de SMTP
 			'smtp'                      => '0',
@@ -358,10 +388,17 @@ class WPAT_Main {
 
 			// Opciones de Barra y Tiempo de Lectura
 			'reading-progress'            => '0',
-			'reading_bar_enabled'         => '0',
+			'reading_bar_enabled'         => '1',
 			'reading_bar_color'           => '#2563eb',
+			'reading_bar_color_end'       => '',
 			'reading_bar_height'          => '4',
-			'reading_time_enabled'        => '0',
+			'reading_bar_position'        => 'top',
+			'reading_bar_scope'           => 'article',
+			'reading_bar_post_types'      => array( 'post' ),
+			'reading_time_enabled'        => '1',
+			'reading_time_wpm'            => '200',
+			'reading_time_style'          => 'pill',
+			'reading_time_label'          => 'Tiempo estimado de lectura: {time} min',
 
 			// Opciones de Herramientas de Accesibilidad
 			'accessibility'                   => '0',

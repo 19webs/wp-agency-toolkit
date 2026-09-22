@@ -1,6 +1,8 @@
 <?php
 /**
  * Módulo: Ocultar URL de Login & Seguridad Avanzada - WP Agency Toolkit
+ *
+ * @package WPAgencyToolkit
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -10,7 +12,7 @@ class WPAT_Hide_Login {
 	/**
 	 * Instancia única de la clase.
 	 *
-	 * @var WPAT_Hide_Login
+	 * @var WPAT_Hide_Login|null
 	 */
 	private static $instance = null;
 
@@ -32,7 +34,7 @@ class WPAT_Hide_Login {
 	private function __construct() {
 		// Control de enrutamiento
 		add_action( 'wp_loaded', array( $this, 'handle_login_routing' ) );
-		
+
 		// Filtrar las URLs para reemplazar wp-login.php por el slug personalizado
 		add_filter( 'login_url', array( $this, 'filter_login_url' ), 10, 2 );
 		add_filter( 'site_url', array( $this, 'filter_site_url' ), 10, 4 );
@@ -40,6 +42,7 @@ class WPAT_Hide_Login {
 
 		// Control de intentos fallidos
 		add_action( 'wp_login_failed', array( $this, 'track_failed_login_attempts' ) );
+		add_action( 'wp_login', array( $this, 'clear_failed_attempts_on_success' ), 10, 2 );
 		add_filter( 'authenticate', array( $this, 'check_ip_lockout' ), 1, 3 );
 
 		// Captcha matemático en formulario
@@ -58,30 +61,48 @@ class WPAT_Hide_Login {
 	}
 
 	/**
-	 * Obtiene un token único de autenticación basado en la clave secreta de WordPress.
-	 *
-	 * @return string
-	 */
-	private function get_auth_token() {
-		$salt = defined( 'SECURE_AUTH_KEY' ) ? SECURE_AUTH_KEY : 'wpat_default_salt';
-		return md5( $salt . get_option( 'admin_email' ) );
-	}
-
-	/**
 	 * Obtiene la dirección IP real del visitante de forma segura.
 	 *
 	 * @return string
 	 */
 	private function get_user_ip() {
 		if ( ! empty( $_SERVER['HTTP_CLIENT_IP'] ) ) {
-			$ip = $_SERVER['HTTP_CLIENT_IP'];
+			$ip = sanitize_text_field( wp_unslash( $_SERVER['HTTP_CLIENT_IP'] ) );
 		} elseif ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
-			$ips = explode( ',', $_SERVER['HTTP_X_FORWARDED_FOR'] );
+			$ips = explode( ',', sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) );
 			$ip  = trim( $ips[0] );
 		} else {
-			$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
+			$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '0.0.0.0';
 		}
-		return sanitize_text_field( $ip );
+		return $ip;
+	}
+
+	/**
+	 * Emite una respuesta 404 nativa o redirige a la portada según la configuración.
+	 */
+	private function render_404_or_redirect() {
+		$settings      = WPAT_Main::get_instance()->get_settings();
+		$redirect_type = isset( $settings['hide_login_redirect'] ) ? $settings['hide_login_redirect'] : 'home';
+
+		if ( '404' === $redirect_type ) {
+			global $wp_query;
+			if ( $wp_query ) {
+				$wp_query->set_404();
+			}
+			status_header( 404 );
+			nocache_headers();
+
+			$template = get_query_template( '404' );
+			if ( $template && file_exists( $template ) ) {
+				include $template;
+			} else {
+				wp_safe_redirect( home_url(), 404 );
+			}
+			exit;
+		} else {
+			wp_safe_redirect( home_url( '/' ) );
+			exit;
+		}
 	}
 
 	/**
@@ -93,11 +114,12 @@ class WPAT_Hide_Login {
 		$slug = $this->get_slug();
 
 		// Obtener la ruta de la petición actual
-		$request_path = parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH );
-		$home_path    = parse_url( home_url(), PHP_URL_PATH );
+		$request_uri  = isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+		$request_path = (string) parse_url( $request_uri, PHP_URL_PATH );
+		$home_path    = (string) parse_url( home_url(), PHP_URL_PATH );
 		$relative_path = $request_path;
 
-		// Si WP está en una subcarpeta, limpiar la ruta
+		// Si WP está en una subcarpeta, limpiar la ruta relativa
 		if ( ! empty( $home_path ) && '/' !== $home_path ) {
 			if ( 0 === strpos( $request_path, $home_path ) ) {
 				$relative_path = substr( $request_path, strlen( $home_path ) );
@@ -105,15 +127,12 @@ class WPAT_Hide_Login {
 		}
 		$relative_path = trim( $relative_path, '/' );
 
-		// Caso 1: Acceden a través del slug secreto (ej. /warehouse)
+		// Caso 1: Acceden a través del slug secreto (ej. /acceso)
 		if ( $relative_path === $slug ) {
-			// Decirle a WordPress que no es un 404
 			status_header( 200 );
-			
-			// Preparar variables de servidor para simular ejecución de wp-login.php físico
-			$_SERVER['SCRIPT_NAME'] = str_replace( $slug, 'wp-login.php', $_SERVER['SCRIPT_NAME'] );
-			
-			// Cargar el archivo wp-login.php directamente en memoria
+			if ( isset( $_SERVER['SCRIPT_NAME'] ) ) {
+				$_SERVER['SCRIPT_NAME'] = str_replace( $slug, 'wp-login.php', sanitize_text_field( wp_unslash( $_SERVER['SCRIPT_NAME'] ) ) );
+			}
 			require_once ABSPATH . 'wp-login.php';
 			exit;
 		}
@@ -122,81 +141,77 @@ class WPAT_Hide_Login {
 		if ( 'wp-login.php' === $pagenow && $relative_path !== $slug ) {
 			$allowed = false;
 
-			// Acciones autorizadas que no bloqueamos
-			$action = isset( $_GET['action'] ) ? $_GET['action'] : '';
-			$allowed_actions = array( 'postpass', 'logout', 'lostpassword', 'retrievepassword', 'resetpass', 'rp' );
+			// Acciones autorizadas de WordPress que no deben bloquearse
+			$action          = isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '';
+			$allowed_actions = array(
+				'postpass',
+				'logout',
+				'lostpassword',
+				'retrievepassword',
+				'resetpass',
+				'rp',
+				'register',
+				'entered_recovery_mode',
+				'confirmaction',
+			);
 
 			if ( in_array( $action, $allowed_actions, true ) ) {
 				$allowed = true;
 			}
 
-			// Permitir si es un envío POST o si el usuario ya está conectado
-			if ( 'POST' === $_SERVER['REQUEST_METHOD'] || is_user_logged_in() ) {
+			// Permitir peticiones POST (procesamiento de login) o usuarios ya autenticados
+			$method = isset( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) ) : 'GET';
+			if ( 'POST' === $method || is_user_logged_in() ) {
 				$allowed = true;
 			}
 
-			// Si no está permitido el acceso directo a wp-login.php, aplicar la regla de bloqueo
 			if ( ! $allowed ) {
-				$settings = WPAT_Main::get_instance()->get_settings();
-				$redirect_type = isset( $settings['hide_login_redirect'] ) ? $settings['hide_login_redirect'] : 'home';
-
-				if ( '404' === $redirect_type ) {
-					// Redirigir a una ruta inexistente para que WordPress pinte de forma natural el 404 del tema/Elementor
-					wp_safe_redirect( home_url( '/404' ) );
-					exit;
-				} else {
-					// Redirigir a portada
-					wp_safe_redirect( home_url( '/' ) );
-					exit;
-				}
+				$this->render_404_or_redirect();
 			}
 		}
 
-		// Caso 3: Intento de acceso directo al panel /wp-admin/ sin estar logueado
-		$is_admin_post = ( basename( $_SERVER['SCRIPT_FILENAME'] ) === 'admin-post.php' );
-		
-		if ( is_admin() && ! is_user_logged_in() && ! ( defined( 'DOING_AJAX' ) && DOING_AJAX ) && ! ( defined( 'DOING_CRON' ) && DOING_CRON ) && ! $is_admin_post ) {
-			$settings = WPAT_Main::get_instance()->get_settings();
-			$redirect_type = isset( $settings['hide_login_redirect'] ) ? $settings['hide_login_redirect'] : 'home';
+		// Caso 3: Intento de acceso directo a /wp-admin/ sin estar logueado
+		$script_filename = isset( $_SERVER['SCRIPT_FILENAME'] ) ? basename( sanitize_text_field( wp_unslash( $_SERVER['SCRIPT_FILENAME'] ) ) ) : '';
+		$is_admin_post   = ( 'admin-post.php' === $script_filename );
 
-			if ( '404' === $redirect_type ) {
-				// Redirigir a una ruta inexistente para que WordPress pinte de forma natural el 404 del tema/Elementor
-				wp_safe_redirect( home_url( '/404' ) );
-				exit;
-			} else {
-				// Redirigir a portada
-				wp_safe_redirect( home_url( '/' ) );
-				exit;
-			}
+		if ( is_admin() && ! is_user_logged_in() && ! ( defined( 'DOING_AJAX' ) && DOING_AJAX ) && ! ( defined( 'DOING_CRON' ) && DOING_CRON ) && ! $is_admin_post ) {
+			$this->render_404_or_redirect();
 		}
 	}
 
 	/**
 	 * Modifica la URL de login generada por WordPress.
+	 *
+	 * @param string $login_url URL de login predeterminada.
+	 * @param string $redirect  URL de redirección post-login.
+	 * @return string
 	 */
 	public function filter_login_url( $login_url, $redirect ) {
-		$slug = $this->get_slug();
+		$slug    = $this->get_slug();
 		$new_url = home_url( '/' . $slug );
 		if ( ! empty( $redirect ) ) {
-			$new_url = add_query_arg( 'redirect_to', urlencode( $redirect ), $new_url );
+			$new_url = add_query_arg( 'redirect_to', rawurlencode( $redirect ), $new_url );
 		}
 		return $new_url;
 	}
 
 	/**
 	 * Filtra site_url para que las llamadas a wp-login.php se traduzcan en el slug personalizado.
+	 *
+	 * @param string      $url     URL completa.
+	 * @param string      $path    Ruta solicitada.
+	 * @param string|null $scheme  Esquema.
+	 * @param int|null    $blog_id ID del blog.
+	 * @return string
 	 */
-	public function filter_site_url( $url, $path, $scheme, $blog_id = null ) {
-		if ( strpos( $path, 'wp-login.php' ) !== false ) {
-			$slug = $this->get_slug();
-			
-			// Preservar argumentos de consulta
-			$query = '';
+	public function filter_site_url( $url, $path, $scheme = null, $blog_id = null ) {
+		if ( is_string( $path ) && false !== strpos( $path, 'wp-login.php' ) ) {
+			$slug   = $this->get_slug();
+			$query  = '';
 			$parsed = parse_url( $path );
-			if ( isset( $parsed['query'] ) ) {
+			if ( isset( $parsed['query'] ) && ! empty( $parsed['query'] ) ) {
 				$query = '?' . $parsed['query'];
 			}
-			
 			return home_url( '/' . $slug . $query );
 		}
 		return $url;
@@ -209,15 +224,14 @@ class WPAT_Hide_Login {
 	 */
 	public function track_failed_login_attempts( $username ) {
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['hide_login_limit_attempts'] ) || '1' !== $settings['hide_login_limit_attempts'] ) {
+		if ( empty( $settings['hide_login_limit_attempts'] ) || '1' !== (string) $settings['hide_login_limit_attempts'] ) {
 			return;
 		}
 
-		$ip = $this->get_user_ip();
+		$ip                 = $this->get_user_ip();
 		$transient_attempts = 'wpat_att_' . md5( $ip );
 		$transient_lockout  = 'wpat_lock_' . md5( $ip );
 
-		// Si ya está bloqueada la IP, no hacer nada más
 		if ( get_transient( $transient_lockout ) ) {
 			return;
 		}
@@ -225,38 +239,56 @@ class WPAT_Hide_Login {
 		$attempts = (int) get_transient( $transient_attempts );
 		$attempts++;
 
-		$max_attempts = isset( $settings['hide_login_max_attempts'] ) ? (int) $settings['hide_login_max_attempts'] : 3;
-		$lockout      = isset( $settings['hide_login_lockout'] ) ? (int) $settings['hide_login_lockout'] : 120;
+		$max_attempts = isset( $settings['hide_login_max_attempts'] ) ? max( 1, (int) $settings['hide_login_max_attempts'] ) : 3;
+		$lockout      = isset( $settings['hide_login_lockout'] ) ? max( 30, (int) $settings['hide_login_lockout'] ) : 120;
 
 		if ( $attempts >= $max_attempts ) {
-			// Bloquear IP
 			set_transient( $transient_lockout, time() + $lockout, $lockout );
 			delete_transient( $transient_attempts );
 		} else {
-			// Guardar intentos con expiración de 1 hora
 			set_transient( $transient_attempts, $attempts, HOUR_IN_SECONDS );
 		}
 	}
 
 	/**
+	 * Limpia el contador de intentos fallidos cuando el usuario inicia sesión correctamente.
+	 *
+	 * @param string  $user_login Nombre de usuario logueado.
+	 * @param WP_User $user       Objeto de usuario.
+	 */
+	public function clear_failed_attempts_on_success( $user_login, $user ) {
+		$ip = $this->get_user_ip();
+		delete_transient( 'wpat_att_' . md5( $ip ) );
+	}
+
+	/**
 	 * Comprueba si la dirección IP del usuario está bloqueada temporalmente antes de procesar la contraseña.
+	 *
+	 * @param WP_User|WP_Error|null $user     Usuario o error.
+	 * @param string                $username Nombre de usuario.
+	 * @param string                $password Contraseña.
+	 * @return WP_User|WP_Error
 	 */
 	public function check_ip_lockout( $user, $username, $password ) {
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['hide_login_limit_attempts'] ) || '1' !== $settings['hide_login_limit_attempts'] ) {
+		if ( empty( $settings['hide_login_limit_attempts'] ) || '1' !== (string) $settings['hide_login_limit_attempts'] ) {
 			return $user;
 		}
 
-		$ip = $this->get_user_ip();
+		$ip                = $this->get_user_ip();
 		$transient_lockout = 'wpat_lock_' . md5( $ip );
 		$lock_time         = get_transient( $transient_lockout );
 
 		if ( $lock_time ) {
-			$remaining = $lock_time - time();
+			$remaining = (int) $lock_time - time();
 			if ( $remaining > 0 ) {
 				return new WP_Error(
 					'wpat_ip_locked',
-					sprintf( '<strong>ERROR:</strong> Demasiados intentos fallidos. Tu IP está bloqueada. Por favor, vuelve a intentarlo en %d segundos.', $remaining )
+					sprintf(
+						/* translators: %d: remaining lockout seconds */
+						__( '<strong>ERROR:</strong> Demasiados intentos fallidos. Tu IP está bloqueada. Por favor, vuelve a intentarlo en %d segundos.', 'wp-agency-toolkit' ),
+						$remaining
+					)
 				);
 			} else {
 				delete_transient( $transient_lockout );
@@ -266,30 +298,32 @@ class WPAT_Hide_Login {
 	}
 
 	/**
-	 * Renderiza el campo del captcha matemático dentro del formulario de Login.
+	 * Renderiza el campo del captcha matemático dentro del formulario de Login nativo.
 	 */
 	public function render_captcha_field() {
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['hide_login_captcha'] ) || '1' !== $settings['hide_login_captcha'] ) {
+		if ( empty( $settings['hide_login_captcha'] ) || '1' !== (string) $settings['hide_login_captcha'] ) {
 			return;
 		}
 
-		// Generar números aleatorios y operación
-		$num1   = rand( 1, 9 );
-		$num2   = rand( 1, 9 );
-		$is_add = rand( 0, 1 );
+		$num1   = wp_rand( 1, 9 );
+		$num2   = wp_rand( 1, 9 );
+		$is_add = ( wp_rand( 0, 1 ) === 1 );
 
 		$result    = $is_add ? ( $num1 + $num2 ) : ( $num1 * $num2 );
 		$op_symbol = $is_add ? '+' : '×';
 
-		// Cifrar el resultado combinándolo con las claves secretas de WP
-		$hash = wp_hash( $result . '_wpat_captcha' );
+		// Generar desafío criptográfico con expiración por timestamp (protección anti-replay)
+		$timestamp = time();
+		$salt      = defined( 'AUTH_KEY' ) ? AUTH_KEY : 'wpat_captcha_salt';
+		$hash      = hash_hmac( 'sha256', $result . '|' . $timestamp, $salt );
+		$payload   = base64_encode( $timestamp . '|' . $hash );
 
 		?>
 		<p class="wpat-captcha-row" style="margin-bottom: 20px;">
-			<label for="wpat_captcha_ans">Seguridad: ¿Cuánto es <?php echo esc_html( "$num1 $op_symbol $num2" ); ?>?<br />
-				<input type="number" name="wpat_captcha_ans" id="wpat_captcha_ans" class="input" value="" size="20" required style="width: 100%;" />
-				<input type="hidden" name="wpat_captcha_challenge" value="<?php echo esc_attr( $hash ); ?>" />
+			<label for="wpat_captcha_ans"><?php echo esc_html( sprintf( __( 'Seguridad: ¿Cuánto es %1$d %2$s %3$d?', 'wp-agency-toolkit' ), $num1, $op_symbol, $num2 ) ); ?><br />
+				<input type="number" name="wpat_captcha_ans" id="wpat_captcha_ans" class="input" value="" size="20" required style="width: 100%;" autocomplete="off" />
+				<input type="hidden" name="wpat_captcha_challenge" value="<?php echo esc_attr( $payload ); ?>" />
 			</label>
 		</p>
 		<?php
@@ -297,32 +331,66 @@ class WPAT_Hide_Login {
 
 	/**
 	 * Valida la respuesta del captcha al intentar iniciar sesión.
+	 * Totalmente compatible con WooCommerce, APIs y formularios de terceros.
+	 *
+	 * @param WP_User|WP_Error|null $user     Usuario o error.
+	 * @param string                $username Nombre de usuario.
+	 * @param string                $password Contraseña.
+	 * @return WP_User|WP_Error
 	 */
 	public function validate_captcha( $user, $username, $password ) {
 		if ( is_wp_error( $user ) ) {
 			return $user;
 		}
 
-		// Solo validar si es un intento real de POST en el login
-		if ( 'POST' !== $_SERVER['REQUEST_METHOD'] || empty( $username ) ) {
+		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) ) : 'GET';
+		if ( 'POST' !== $method || empty( $username ) ) {
 			return $user;
 		}
 
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['hide_login_captcha'] ) || '1' !== $settings['hide_login_captcha'] ) {
+		if ( empty( $settings['hide_login_captcha'] ) || '1' !== (string) $settings['hide_login_captcha'] ) {
 			return $user;
 		}
 
-		$user_ans       = isset( $_POST['wpat_captcha_ans'] ) ? (int) $_POST['wpat_captcha_ans'] : -1;
-		$challenge_hash = isset( $_POST['wpat_captcha_challenge'] ) ? sanitize_text_field( $_POST['wpat_captcha_challenge'] ) : '';
+		// Si el formulario que envía la petición no incluye el desafío (ej. WooCommerce Mi Cuenta / Checkout / REST), no bloquear
+		if ( ! isset( $_POST['wpat_captcha_challenge'] ) ) {
+			return $user;
+		}
 
-		if ( empty( $challenge_hash ) || wp_hash( $user_ans . '_wpat_captcha' ) !== $challenge_hash ) {
+		$raw_payload = sanitize_text_field( wp_unslash( $_POST['wpat_captcha_challenge'] ) );
+		$decoded     = base64_decode( $raw_payload, true );
+
+		if ( false === $decoded || false === strpos( $decoded, '|' ) ) {
 			return new WP_Error(
 				'wpat_captcha_failed',
-				'<strong>ERROR:</strong> La respuesta al Captcha de seguridad es incorrecta o ha caducado.'
+				__( '<strong>ERROR:</strong> Desafío de seguridad inválido o manipulado.', 'wp-agency-toolkit' )
 			);
 		}
-		
+
+		list( $timestamp, $expected_hash ) = explode( '|', $decoded, 2 );
+		$timestamp = (int) $timestamp;
+
+		// Comprobar que el captcha no tenga más de 10 minutos de antigüedad (anti-replay)
+		if ( ( time() - $timestamp ) > 600 || $timestamp > ( time() + 60 ) ) {
+			return new WP_Error(
+				'wpat_captcha_expired',
+				__( '<strong>ERROR:</strong> El captcha de seguridad ha caducado. Por favor, recarga la página e inténtalo de nuevo.', 'wp-agency-toolkit' )
+			);
+		}
+
+		$user_ans  = isset( $_POST['wpat_captcha_ans'] ) ? (int) $_POST['wpat_captcha_ans'] : -999;
+		$salt      = defined( 'AUTH_KEY' ) ? AUTH_KEY : 'wpat_captcha_salt';
+		$calc_hash = hash_hmac( 'sha256', $user_ans . '|' . $timestamp, $salt );
+
+		if ( ! hash_equals( $expected_hash, $calc_hash ) ) {
+			return new WP_Error(
+				'wpat_captcha_failed',
+				__( '<strong>ERROR:</strong> La respuesta al Captcha de seguridad es incorrecta.', 'wp-agency-toolkit' )
+			);
+		}
+
 		return $user;
 	}
 }
+

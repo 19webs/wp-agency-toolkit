@@ -211,8 +211,8 @@ class WPAT_Quick_Pay {
 	 * @return array
 	 */
 	public static function get_products() {
-		$settings = WPAT_Main::get_instance()->get_settings();
-		$products = isset( $settings['qp_products'] ) && is_array( $settings['qp_products'] ) ? $settings['qp_products'] : array();
+		$saved    = get_option( 'wpat_settings', array() );
+		$products = isset( $saved['qp_products'] ) && is_array( $saved['qp_products'] ) ? $saved['qp_products'] : array();
 
 		// Si no hay productos, proveer uno de demostración
 		if ( empty( $products ) ) {
@@ -246,8 +246,67 @@ class WPAT_Quick_Pay {
 	 * @return array|null
 	 */
 	public static function get_product( $product_id ) {
+		if ( empty( $product_id ) ) {
+			return null;
+		}
+
 		$products = self::get_products();
-		return isset( $products[ $product_id ] ) ? $products[ $product_id ] : null;
+		if ( isset( $products[ $product_id ] ) ) {
+			return $products[ $product_id ];
+		}
+
+		// Buscar en transient si es un producto dinámico
+		$transient = get_transient( 'wpat_qp_' . $product_id );
+		if ( is_array( $transient ) && ! empty( $transient ) ) {
+			return $transient;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Resuelve un producto por ID o por payload de respaldo.
+	 *
+	 * @param string $product_id      ID del producto.
+	 * @param mixed  $product_payload JSON string o array del producto.
+	 * @return array|null
+	 */
+	public static function resolve_product( $product_id, $product_payload = '' ) {
+		$product = ! empty( $product_id ) ? self::get_product( $product_id ) : null;
+
+		if ( ! $product && ! empty( $product_payload ) ) {
+			$decoded = is_string( $product_payload ) ? json_decode( stripslashes( $product_payload ), true ) : $product_payload;
+			if ( is_array( $decoded ) && ! empty( $decoded['name'] ) && isset( $decoded['price'] ) ) {
+				$p_id = ! empty( $decoded['id'] ) ? sanitize_key( $decoded['id'] ) : ( $product_id ? sanitize_key( $product_id ) : 'custom_' . sanitize_key( $decoded['name'] ) );
+				$product = array(
+					'id'               => $p_id,
+					'name'             => sanitize_text_field( $decoded['name'] ),
+					'price'            => floatval( $decoded['price'] ),
+					'currency'         => ! empty( $decoded['currency'] ) ? sanitize_text_field( $decoded['currency'] ) : 'EUR',
+					'type'             => ! empty( $decoded['type'] ) ? sanitize_key( $decoded['type'] ) : 'service',
+					'desc'             => ! empty( $decoded['desc'] ) ? sanitize_textarea_field( $decoded['desc'] ) : '',
+					'image_url'        => ! empty( $decoded['image_url'] ) ? esc_url_raw( $decoded['image_url'] ) : '',
+					'download_file'    => ! empty( $decoded['download_file'] ) ? esc_url_raw( $decoded['download_file'] ) : '',
+					'shipping_cost'    => isset( $decoded['shipping_cost'] ) ? floatval( $decoded['shipping_cost'] ) : 0.0,
+					'tax_rate'         => isset( $decoded['tax_rate'] ) ? floatval( $decoded['tax_rate'] ) : 21.0,
+					'button_text'      => ! empty( $decoded['button_text'] ) ? sanitize_text_field( $decoded['button_text'] ) : '',
+					'is_recurring'     => ! empty( $decoded['is_recurring'] ) ? 1 : 0,
+					'billing_interval' => ! empty( $decoded['billing_interval'] ) ? sanitize_key( $decoded['billing_interval'] ) : 'month',
+					'require_phone'    => 1,
+					'require_dni'      => 1,
+				);
+				set_transient( 'wpat_qp_' . $p_id, $product, DAY_IN_SECONDS );
+			}
+		}
+
+		if ( ! $product ) {
+			$all = self::get_products();
+			if ( ! empty( $all ) ) {
+				$product = reset( $all );
+			}
+		}
+
+		return $product;
 	}
 
 	/**
@@ -256,8 +315,8 @@ class WPAT_Quick_Pay {
 	 * @return array
 	 */
 	public static function get_coupons() {
-		$settings = WPAT_Main::get_instance()->get_settings();
-		return isset( $settings['qp_coupons'] ) && is_array( $settings['qp_coupons'] ) ? $settings['qp_coupons'] : array();
+		$saved = get_option( 'wpat_settings', array() );
+		return isset( $saved['qp_coupons'] ) && is_array( $saved['qp_coupons'] ) ? $saved['qp_coupons'] : array();
 	}
 
 	/**
@@ -274,50 +333,101 @@ class WPAT_Quick_Pay {
 
 		$a = shortcode_atts(
 			array(
-				'id'           => '',
-				'name'         => '',
-				'amount'       => '',
-				'price'        => '',
-				'currency'     => 'EUR',
-				'type'         => 'service',
-				'layout'       => 'button', // 'button', 'card', 'box', 'inline'
-				'button_text'  => '',
-				'btn_class'    => '',
-				'shipping'     => '0',
-				'tax'          => '21',
-				'color'        => '',
+				'id'               => '',
+				'name'             => '',
+				'title'            => '',
+				'amount'           => '',
+				'price'            => '',
+				'currency'         => 'EUR',
+				'type'             => 'service',
+				'layout'           => 'button', // 'button', 'card', 'box', 'inline'
+				'button_text'      => '',
+				'btn_text'         => '',
+				'btn_class'        => '',
+				'class'            => '',
+				'shipping'         => '0',
+				'shipping_cost'    => '',
+				'tax'              => '21',
+				'tax_rate'         => '',
+				'color'            => '',
+				'bg_color'         => '',
+				'desc'             => '',
+				'description'      => '',
+				'image'            => '',
+				'image_url'        => '',
+				'file'             => '',
+				'download_file'    => '',
+				'recurring'        => '0',
+				'is_recurring'     => '0',
+				'interval'         => 'month',
+				'billing_interval' => 'month',
 			),
 			$atts,
 			'wpat_pay'
 		);
 
+		$p_id         = ! empty( $a['id'] ) ? sanitize_key( $a['id'] ) : '';
+		$name         = ! empty( $a['name'] ) ? sanitize_text_field( $a['name'] ) : ( ! empty( $a['title'] ) ? sanitize_text_field( $a['title'] ) : '' );
+		$price_raw    = '' !== $a['price'] ? $a['price'] : ( '' !== $a['amount'] ? $a['amount'] : '' );
+		$shipping_raw = '' !== $a['shipping_cost'] ? $a['shipping_cost'] : $a['shipping'];
+		$tax_raw      = '' !== $a['tax_rate'] ? $a['tax_rate'] : $a['tax'];
+		$btn_text     = ! empty( $a['button_text'] ) ? sanitize_text_field( $a['button_text'] ) : ( ! empty( $a['btn_text'] ) ? sanitize_text_field( $a['btn_text'] ) : '' );
+		$btn_class    = ! empty( $a['btn_class'] ) ? sanitize_html_class( $a['btn_class'] ) : ( ! empty( $a['class'] ) ? sanitize_html_class( $a['class'] ) : '' );
+		$color        = ! empty( $a['color'] ) ? sanitize_hex_color( $a['color'] ) : ( ! empty( $a['bg_color'] ) ? sanitize_hex_color( $a['bg_color'] ) : '' );
+		$desc         = ! empty( $a['desc'] ) ? sanitize_textarea_field( $a['desc'] ) : ( ! empty( $a['description'] ) ? sanitize_textarea_field( $a['description'] ) : '' );
+		$image        = ! empty( $a['image_url'] ) ? esc_url_raw( $a['image_url'] ) : ( ! empty( $a['image'] ) ? esc_url_raw( $a['image'] ) : '' );
+		$file         = ! empty( $a['download_file'] ) ? esc_url_raw( $a['download_file'] ) : ( ! empty( $a['file'] ) ? esc_url_raw( $a['file'] ) : '' );
+		$recurring    = ( ! empty( $a['recurring'] ) || ! empty( $a['is_recurring'] ) ) ? 1 : 0;
+		$interval     = ! empty( $a['interval'] ) ? sanitize_key( $a['interval'] ) : sanitize_key( $a['billing_interval'] );
+
 		$product = null;
-		if ( ! empty( $a['id'] ) ) {
-			$product = self::get_product( sanitize_key( $a['id'] ) );
+		if ( ! empty( $p_id ) ) {
+			$product = self::get_product( $p_id );
 		}
 
-		if ( ! $product ) {
-			if ( empty( $a['amount'] ) && empty( $a['price'] ) ) {
-				// Cargar el primer producto disponible
+		if ( $product ) {
+			if ( ! empty( $name ) ) {
+				$product['name'] = $name;
+			}
+			if ( '' !== $price_raw ) {
+				$product['price'] = floatval( $price_raw );
+			}
+			if ( ! empty( $desc ) ) {
+				$product['desc'] = $desc;
+			}
+			if ( ! empty( $image ) ) {
+				$product['image_url'] = $image;
+			}
+			if ( ! empty( $file ) ) {
+				$product['download_file'] = $file;
+			}
+			if ( ! empty( $btn_text ) ) {
+				$product['button_text'] = $btn_text;
+			}
+		} else {
+			if ( '' !== $price_raw || ! empty( $name ) ) {
+				$custom_id = ! empty( $p_id ) ? $p_id : ( 'custom_' . ( $name ? sanitize_key( $name ) : wp_generate_password( 6, false, false ) ) );
+				$product = array(
+					'id'               => $custom_id,
+					'name'             => ! empty( $name ) ? $name : 'Servicio / Producto',
+					'price'            => floatval( $price_raw > 0 ? $price_raw : 10.0 ),
+					'currency'         => sanitize_text_field( $a['currency'] ),
+					'type'             => sanitize_key( $a['type'] ),
+					'desc'             => $desc,
+					'image_url'        => $image,
+					'download_file'    => $file,
+					'shipping_cost'    => floatval( $shipping_raw ),
+					'tax_rate'         => floatval( $tax_raw ),
+					'button_text'      => $btn_text,
+					'is_recurring'     => $recurring,
+					'billing_interval' => $interval,
+					'require_phone'    => 1,
+					'require_dni'      => 0,
+				);
+				set_transient( 'wpat_qp_' . $product['id'], $product, DAY_IN_SECONDS );
+			} else {
 				$all_prods = self::get_products();
 				$product   = reset( $all_prods );
-			} else {
-				$product = array(
-					'id'            => 'custom_' . sanitize_key( $a['name'] ? $a['name'] : 'custom' ),
-					'name'          => ! empty( $a['name'] ) ? sanitize_text_field( $a['name'] ) : 'Servicio / Producto',
-					'price'         => floatval( ! empty( $a['price'] ) ? $a['price'] : $a['amount'] ),
-					'currency'      => sanitize_text_field( $a['currency'] ),
-					'type'          => sanitize_key( $a['type'] ),
-					'desc'          => '',
-					'image_url'     => '',
-					'download_file' => '',
-					'shipping_cost' => floatval( $a['shipping'] ),
-					'tax_rate'      => floatval( $a['tax'] ),
-					'button_text'   => ! empty( $a['button_text'] ) ? sanitize_text_field( $a['button_text'] ) : '',
-					'is_recurring'  => 0,
-					'require_phone' => 1,
-					'require_dni'   => 0,
-				);
 			}
 		}
 
@@ -329,15 +439,16 @@ class WPAT_Quick_Pay {
 		$curr_pos  = isset( $settings['qp_currency_pos'] ) ? $settings['qp_currency_pos'] : 'right';
 		$formatted_price = ( 'left' === $curr_pos ) ? $curr_sym . number_format( $product['price'], 2, ',', '.' ) : number_format( $product['price'], 2, ',', '.' ) . ' ' . $curr_sym;
 
-		$btn_text = ! empty( $a['button_text'] ) ? $a['button_text'] : ( ! empty( $product['button_text'] ) ? $product['button_text'] : 'Comprar por ' . $formatted_price );
-		$layout   = ! empty( $a['layout'] ) ? $a['layout'] : 'button';
-		$btn_color = ! empty( $a['color'] ) ? $a['color'] : ( isset( $settings['qp_primary_color'] ) ? $settings['qp_primary_color'] : '#2563eb' );
+		$button_display_text = ! empty( $product['button_text'] ) ? $product['button_text'] : ( ! empty( $btn_text ) ? $btn_text : 'Comprar por ' . $formatted_price );
+		$layout              = ! empty( $a['layout'] ) ? $a['layout'] : 'button';
+		$btn_color           = ! empty( $color ) ? $color : ( isset( $settings['qp_primary_color'] ) ? $settings['qp_primary_color'] : '#2563eb' );
+		$payload_json        = wp_json_encode( $product );
 
 		ob_start();
 
 		if ( 'card' === $layout || 'box' === $layout ) {
 			?>
-			<div class="wpat-qp-product-card" data-product-id="<?php echo esc_attr( $product['id'] ); ?>" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; max-width: 380px; background: #fff; box-shadow: 0 4px 15px -2px rgba(0,0,0,0.06); text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+			<div class="wpat-qp-product-card" data-product-id="<?php echo esc_attr( $product['id'] ); ?>" data-product-payload="<?php echo esc_attr( $payload_json ); ?>" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; max-width: 380px; background: #fff; box-shadow: 0 4px 15px -2px rgba(0,0,0,0.06); text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
 				<?php if ( ! empty( $product['image_url'] ) ) : ?>
 					<div class="wpat-qp-card-image" style="margin-bottom: 16px; border-radius: 8px; overflow: hidden; max-height: 200px;">
 						<img src="<?php echo esc_url( $product['image_url'] ); ?>" alt="<?php echo esc_attr( $product['name'] ); ?>" style="width: 100%; height: auto; display: block; object-fit: cover;" />
@@ -368,9 +479,9 @@ class WPAT_Quick_Pay {
 					<?php endif; ?>
 				</div>
 
-				<button type="button" class="wpat-qp-trigger-btn <?php echo esc_attr( $a['btn_class'] ); ?>" data-product-id="<?php echo esc_attr( $product['id'] ); ?>" style="width: 100%; background: <?php echo esc_attr( $btn_color ); ?>; color: #ffffff; border: none; border-radius: 8px; padding: 13px 22px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(37,99,235,0.25); display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+				<button type="button" class="wpat-qp-trigger-btn <?php echo esc_attr( $btn_class ); ?>" data-product-id="<?php echo esc_attr( $product['id'] ); ?>" data-product-payload="<?php echo esc_attr( $payload_json ); ?>" style="width: 100%; background: <?php echo esc_attr( $btn_color ); ?>; color: #ffffff; border: none; border-radius: 8px; padding: 13px 22px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(37,99,235,0.25); display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
 					<span class="dashicons dashicons-cart" style="font-size: 18px; width: 18px; height: 18px; line-height: 1;"></span>
-					<span><?php echo esc_html( $btn_text ); ?></span>
+					<span><?php echo esc_html( $button_display_text ); ?></span>
 				</button>
 				<div style="margin-top: 10px; font-size: 11px; color: #94a3b8; display: flex; align-items: center; justify-content: center; gap: 5px;">
 					<span>🔒 Pago 100% Seguro SSL</span>
@@ -380,9 +491,9 @@ class WPAT_Quick_Pay {
 		} else {
 			// Botón Simple
 			?>
-			<button type="button" class="wpat-qp-trigger-btn <?php echo esc_attr( $a['btn_class'] ); ?>" data-product-id="<?php echo esc_attr( $product['id'] ); ?>" style="background: <?php echo esc_attr( $btn_color ); ?>; color: #ffffff; border: none; border-radius: 8px; padding: 12px 24px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(37,99,235,0.2); display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+			<button type="button" class="wpat-qp-trigger-btn <?php echo esc_attr( $btn_class ); ?>" data-product-id="<?php echo esc_attr( $product['id'] ); ?>" data-product-payload="<?php echo esc_attr( $payload_json ); ?>" style="background: <?php echo esc_attr( $btn_color ); ?>; color: #ffffff; border: none; border-radius: 8px; padding: 12px 24px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(37,99,235,0.2); display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
 				<span class="dashicons dashicons-cart" style="font-size: 18px; width: 18px; height: 18px; line-height: 1;"></span>
-				<span><?php echo esc_html( $btn_text ); ?></span>
+				<span><?php echo esc_html( $button_display_text ); ?></span>
 			</button>
 			<?php
 		}
@@ -430,6 +541,7 @@ class WPAT_Quick_Pay {
 
 				<form id="wpat_qp_checkout_form" method="post" action="">
 					<input type="hidden" id="wpat_qp_f_product_id" name="product_id" value="" />
+					<input type="hidden" id="wpat_qp_f_product_payload" name="product_payload" value="" />
 					<input type="hidden" id="wpat_qp_f_applied_coupon" name="coupon_code" value="" />
 					<input type="hidden" id="wpat_qp_f_gateway" name="gateway" value="<?php echo $stripe_enabled ? 'stripe' : ( $redsys_enabled ? 'redsys' : ( $bizum_enabled ? 'bizum' : ( $paypal_enabled ? 'paypal' : 'transfer' ) ) ); ?>" />
 
@@ -602,8 +714,9 @@ class WPAT_Quick_Pay {
 	public function ajax_get_checkout_data() {
 		check_ajax_referer( 'wpat_quick_pay_nonce', 'security' );
 
-		$product_id = isset( $_POST['product_id'] ) ? sanitize_key( $_POST['product_id'] ) : '';
-		$product = self::get_product( $product_id );
+		$product_id      = isset( $_POST['product_id'] ) ? sanitize_key( $_POST['product_id'] ) : '';
+		$product_payload = isset( $_POST['product_payload'] ) ? $_POST['product_payload'] : '';
+		$product         = self::resolve_product( $product_id, $product_payload );
 
 		if ( ! $product ) {
 			wp_send_json_error( array( 'message' => 'Producto no encontrado.' ) );
@@ -639,10 +752,11 @@ class WPAT_Quick_Pay {
 	public function ajax_apply_coupon() {
 		check_ajax_referer( 'wpat_quick_pay_nonce', 'security' );
 
-		$product_id  = isset( $_POST['product_id'] ) ? sanitize_key( $_POST['product_id'] ) : '';
-		$coupon_code = isset( $_POST['coupon_code'] ) ? strtoupper( sanitize_text_field( trim( $_POST['coupon_code'] ) ) ) : '';
+		$product_id      = isset( $_POST['product_id'] ) ? sanitize_key( $_POST['product_id'] ) : '';
+		$product_payload = isset( $_POST['product_payload'] ) ? $_POST['product_payload'] : '';
+		$coupon_code     = isset( $_POST['coupon_code'] ) ? strtoupper( sanitize_text_field( trim( $_POST['coupon_code'] ) ) ) : '';
 
-		$product = self::get_product( $product_id );
+		$product = self::resolve_product( $product_id, $product_payload );
 		if ( ! $product ) {
 			wp_send_json_error( array( 'message' => 'Producto no encontrado.' ) );
 		}
@@ -709,18 +823,19 @@ class WPAT_Quick_Pay {
 			wp_send_json_error( array( 'message' => 'La pasarela de Stripe no está configurada correctamente en el panel.' ) );
 		}
 
-		$product_id     = isset( $_POST['product_id'] ) ? sanitize_key( $_POST['product_id'] ) : '';
-		$customer_name  = isset( $_POST['customer_name'] ) ? sanitize_text_field( $_POST['customer_name'] ) : '';
-		$customer_email = isset( $_POST['customer_email'] ) ? sanitize_email( $_POST['customer_email'] ) : '';
-		$customer_phone = isset( $_POST['customer_phone'] ) ? sanitize_text_field( $_POST['customer_phone'] ) : '';
-		$customer_dni   = isset( $_POST['customer_dni'] ) ? sanitize_text_field( $_POST['customer_dni'] ) : '';
-		$coupon_code    = isset( $_POST['coupon_code'] ) ? strtoupper( sanitize_text_field( $_POST['coupon_code'] ) ) : '';
+		$product_id      = isset( $_POST['product_id'] ) ? sanitize_key( $_POST['product_id'] ) : '';
+		$product_payload = isset( $_POST['product_payload'] ) ? $_POST['product_payload'] : '';
+		$customer_name   = isset( $_POST['customer_name'] ) ? sanitize_text_field( $_POST['customer_name'] ) : '';
+		$customer_email  = isset( $_POST['customer_email'] ) ? sanitize_email( $_POST['customer_email'] ) : '';
+		$customer_phone  = isset( $_POST['customer_phone'] ) ? sanitize_text_field( $_POST['customer_phone'] ) : '';
+		$customer_dni    = isset( $_POST['customer_dni'] ) ? sanitize_text_field( $_POST['customer_dni'] ) : '';
+		$coupon_code     = isset( $_POST['coupon_code'] ) ? strtoupper( sanitize_text_field( $_POST['coupon_code'] ) ) : '';
 
-		$shipping_addr  = isset( $_POST['shipping_address'] ) ? sanitize_text_field( $_POST['shipping_address'] ) : '';
-		$shipping_city  = isset( $_POST['shipping_city'] ) ? sanitize_text_field( $_POST['shipping_city'] ) : '';
-		$shipping_post  = isset( $_POST['shipping_postcode'] ) ? sanitize_text_field( $_POST['shipping_postcode'] ) : '';
+		$shipping_addr   = isset( $_POST['shipping_address'] ) ? sanitize_text_field( $_POST['shipping_address'] ) : '';
+		$shipping_city   = isset( $_POST['shipping_city'] ) ? sanitize_text_field( $_POST['shipping_city'] ) : '';
+		$shipping_post   = isset( $_POST['shipping_postcode'] ) ? sanitize_text_field( $_POST['shipping_postcode'] ) : '';
 
-		$product = self::get_product( $product_id );
+		$product = self::resolve_product( $product_id, $product_payload );
 		if ( ! $product ) {
 			wp_send_json_error( array( 'message' => 'Producto no encontrado.' ) );
 		}
@@ -834,10 +949,11 @@ class WPAT_Quick_Pay {
 	public function ajax_process_manual_order() {
 		check_ajax_referer( 'wpat_quick_pay_nonce', 'security' );
 
-		$gateway = isset( $_POST['gateway'] ) ? sanitize_key( $_POST['gateway'] ) : 'bizum';
-		$product_id = isset( $_POST['product_id'] ) ? sanitize_key( $_POST['product_id'] ) : '';
+		$gateway         = isset( $_POST['gateway'] ) ? sanitize_key( $_POST['gateway'] ) : 'bizum';
+		$product_id      = isset( $_POST['product_id'] ) ? sanitize_key( $_POST['product_id'] ) : '';
+		$product_payload = isset( $_POST['product_payload'] ) ? $_POST['product_payload'] : '';
 
-		$product = self::get_product( $product_id );
+		$product = self::resolve_product( $product_id, $product_payload );
 		if ( ! $product ) {
 			wp_send_json_error( array( 'message' => 'Producto no encontrado.' ) );
 		}
@@ -921,8 +1037,10 @@ class WPAT_Quick_Pay {
 	public function ajax_process_redsys_order() {
 		check_ajax_referer( 'wpat_quick_pay_nonce', 'security' );
 
-		$product_id = isset( $_POST['product_id'] ) ? sanitize_key( $_POST['product_id'] ) : '';
-		$product = self::get_product( $product_id );
+		$product_id      = isset( $_POST['product_id'] ) ? sanitize_key( $_POST['product_id'] ) : '';
+		$product_payload = isset( $_POST['product_payload'] ) ? $_POST['product_payload'] : '';
+
+		$product = self::resolve_product( $product_id, $product_payload );
 		if ( ! $product ) {
 			wp_send_json_error( array( 'message' => 'Producto no encontrado.' ) );
 		}
@@ -1031,8 +1149,10 @@ class WPAT_Quick_Pay {
 	public function ajax_process_paypal_order() {
 		check_ajax_referer( 'wpat_quick_pay_nonce', 'security' );
 
-		$product_id = isset( $_POST['product_id'] ) ? sanitize_key( $_POST['product_id'] ) : '';
-		$product = self::get_product( $product_id );
+		$product_id      = isset( $_POST['product_id'] ) ? sanitize_key( $_POST['product_id'] ) : '';
+		$product_payload = isset( $_POST['product_payload'] ) ? $_POST['product_payload'] : '';
+
+		$product = self::resolve_product( $product_id, $product_payload );
 		if ( ! $product ) {
 			wp_send_json_error( array( 'message' => 'Producto no encontrado.' ) );
 		}
@@ -1454,7 +1574,7 @@ class WPAT_Quick_Pay {
 			$product_id = 'prod_' . wp_generate_password( 8, false, false );
 		}
 
-		$settings = WPAT_Main::get_instance()->get_settings();
+		$settings = get_option( 'wpat_settings', array() );
 		$products = isset( $settings['qp_products'] ) && is_array( $settings['qp_products'] ) ? $settings['qp_products'] : array();
 
 		$products[ $product_id ] = array(
@@ -1493,7 +1613,7 @@ class WPAT_Quick_Pay {
 
 		$product_id = isset( $_POST['product_id'] ) ? sanitize_key( $_POST['product_id'] ) : '';
 
-		$settings = WPAT_Main::get_instance()->get_settings();
+		$settings = get_option( 'wpat_settings', array() );
 		$products = isset( $settings['qp_products'] ) && is_array( $settings['qp_products'] ) ? $settings['qp_products'] : array();
 
 		if ( isset( $products[ $product_id ] ) ) {
@@ -1526,7 +1646,7 @@ class WPAT_Quick_Pay {
 			wp_send_json_error( array( 'message' => 'Introduce un código válido y un importe de descuento mayor a 0.' ) );
 		}
 
-		$settings = WPAT_Main::get_instance()->get_settings();
+		$settings = get_option( 'wpat_settings', array() );
 		$coupons  = isset( $settings['qp_coupons'] ) && is_array( $settings['qp_coupons'] ) ? $settings['qp_coupons'] : array();
 
 		$usage_count = isset( $coupons[ $code ]['usage_count'] ) ? intval( $coupons[ $code ]['usage_count'] ) : 0;
@@ -1558,7 +1678,7 @@ class WPAT_Quick_Pay {
 
 		$code = isset( $_POST['code'] ) ? strtoupper( sanitize_text_field( trim( $_POST['code'] ) ) ) : '';
 
-		$settings = WPAT_Main::get_instance()->get_settings();
+		$settings = get_option( 'wpat_settings', array() );
 		$coupons  = isset( $settings['qp_coupons'] ) && is_array( $settings['qp_coupons'] ) ? $settings['qp_coupons'] : array();
 
 		if ( isset( $coupons[ $code ] ) ) {

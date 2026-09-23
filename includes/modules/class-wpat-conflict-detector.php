@@ -57,7 +57,7 @@ class WPAT_Conflict_Detector {
 			// 1. Snippets y Código
 			'code-snippets/code-snippets.php' => array(
 				'name'             => 'Code Snippets',
-				'wpat_module'      => 'custom-snippets',
+				'wpat_module'      => 'snippets',
 				'module_name'      => __( 'Fragmentos de Código (Snippets)', 'wp-agency-toolkit' ),
 				'reason_active'    => __( 'Code Snippets está activo. WP Agency Toolkit incluye su propio ejecutor nativo de Snippets. Mantener ambos activos causa llamadas duplicadas y errores críticos de funciones redeclaradas.', 'wp-agency-toolkit' ),
 				'reason_installed' => __( 'Code Snippets está instalado. Se recomienda desinstalarlo si ya utilizas los Snippets nativos de la suite.', 'wp-agency-toolkit' ),

@@ -1533,6 +1533,15 @@ class WPAT_Admin {
 			$new_settings['qp_bank_holder']     = isset( $input_settings['qp_bank_holder'] ) ? sanitize_text_field( $input_settings['qp_bank_holder'] ) : '';
 		}
 
+		// Preservar colecciones gestionadas independientemente
+		$saved_raw_wpat = get_option( 'wpat_settings', array() );
+		if ( isset( $saved_raw_wpat['qp_products'] ) && is_array( $saved_raw_wpat['qp_products'] ) ) {
+			$new_settings['qp_products'] = $saved_raw_wpat['qp_products'];
+		}
+		if ( isset( $saved_raw_wpat['qp_coupons'] ) && is_array( $saved_raw_wpat['qp_coupons'] ) ) {
+			$new_settings['qp_coupons'] = $saved_raw_wpat['qp_coupons'];
+		}
+
 		update_option( 'wpat_settings', $new_settings );
 
 		// Actualizar reglas del archivo .htaccess para SSL

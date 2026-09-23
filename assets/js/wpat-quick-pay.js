@@ -18,10 +18,12 @@
 	// 1. Abrir Modal al hacer clic en cualquier botón disparador
 	$(document).on('click', '.wpat-qp-trigger-btn', function(e) {
 		e.preventDefault();
-		var productId = $(this).data('product-id');
-		if (!productId) return;
-
 		var $btn = $(this);
+		var productId = $btn.data('product-id');
+		var productPayload = $btn.attr('data-product-payload') || '';
+
+		if (!productId && !productPayload) return;
+
 		$btn.prop('disabled', true);
 
 		// Reiniciar formulario
@@ -34,6 +36,7 @@
 		$('#wpat_qp_b_discount_row').hide();
 		$('#wpat_qp_success_screen').hide();
 		$('#wpat_qp_checkout_form').show();
+		$('#wpat_qp_f_product_payload').val(productPayload);
 
 		$.ajax({
 			url: wpatQuickPay.ajax_url,
@@ -41,7 +44,8 @@
 			data: {
 				action: 'wpat_qp_get_checkout_data',
 				security: wpatQuickPay.nonce,
-				product_id: productId
+				product_id: productId,
+				product_payload: productPayload
 			},
 			success: function(response) {
 				$btn.prop('disabled', false);
@@ -134,6 +138,7 @@
 				action: 'wpat_qp_apply_coupon',
 				security: wpatQuickPay.nonce,
 				product_id: currentProduct.id,
+				product_payload: $('#wpat_qp_f_product_payload').val(),
 				coupon_code: code
 			},
 			success: function(response) {
@@ -172,6 +177,7 @@
 		var formData = {
 			security: wpatQuickPay.nonce,
 			product_id: $('#wpat_qp_f_product_id').val(),
+			product_payload: $('#wpat_qp_f_product_payload').val(),
 			gateway: gateway,
 			customer_name: $('#wpat_qp_f_name').val(),
 			customer_email: $('#wpat_qp_f_email').val(),

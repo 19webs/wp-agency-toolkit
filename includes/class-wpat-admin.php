@@ -3409,7 +3409,19 @@ class WPAT_Admin {
 				'keywords'    => 'whatsapp boton flotante contacto chat'
 			),
 
-			// SISTEMA & ADMIN (7)
+			// SISTEMA & ADMIN (8)
+			array(
+				'id'          => 'login-customizer',
+				'is_updated'  => true,
+				'title'       => 'Personalizador del Login',
+				'badge'       => 'Subpágina',
+				'badge_class' => 'subpage',
+				'desc'        => 'Personaliza visualmente la pantalla de acceso wp-login.php con tu logotipo, fondo personalizado, colores corporativos y textos.',
+				'cat_class'   => 'cat-system cat-admin cat-security cat-sec',
+				'icon'        => '🎨',
+				'icon_bg'     => 'admin',
+				'keywords'    => 'personalizador login customizer wp-login acceso logo fondo imagen color inicio sesion'
+			),
 			array(
 				'id'          => 'initial-setup',
 				'is_updated'  => true,

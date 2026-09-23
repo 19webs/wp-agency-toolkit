@@ -37,7 +37,7 @@ class WPAT_Silent_Skin {
 	 * Constructor.
 	 */
 	private function __construct() {
-		$this->plugin_basename = plugin_basename( WPAT_FILE );
+		$this->plugin_basename = defined( 'WPAT_FILE' ) ? plugin_basename( WPAT_FILE ) : 'wp-agency-toolkit/wp-agency-toolkit.php';
 
 		// 1. Filtrar lista de plugins instalados (ocultar o renombrar)
 		add_filter( 'all_plugins', array( $this, 'filter_plugins_list' ), 999 );

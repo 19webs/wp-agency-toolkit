@@ -66,9 +66,44 @@ class WPAT_Admin {
 		public function add_admin_menu() {
 		$icon = 'data:image/svg+xml;base64,' . base64_encode( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" fill="currentColor"><path d="M512.1 191l-8.2 14.3c-3 5.3-9.4 7.5-15.1 5.4-11.8-4.4-22.6-10.7-32.1-18.6-4.6-3.8-5.8-10.5-2.8-15.7l8.2-14.3c-6.9-8-12.3-17.3-15.9-27.4h-16.5c-6 0-11.2-4.3-12.2-10.3-2-12-2.1-24.6 0-37.1 1-6 6.2-10.4 12.2-10.4h16.5c3.6-10.1 9-19.4 15.9-27.4l-8.2-14.3c-3 5.2-1.9-11.9 2.8-15.7-9.5-7.9-20.4-14.2-32.1-18.6-5.7 2.1 12.1.1 15.1 5.4l8.2 14.3c10.5-1.9 21.2-1.9 31.7 0L552 6.3c3-5.3 9.4-7.5 15.1-5.4 11.8 4.4 22.6 10.7 32.1 18.6 4.6 3.8 5.8 10.5 2.8 15.7l-8.2 14.3c-6.9 8-12.3-17.3-15.9-27.4h16.5c6 0 11.2 4.3 12.2 10.3 2 12 2.1 24.6 0 37.1-1 6-6.2 10.4-12.2 10.4h-16.5c-3.6 10.1-9 19.4-15.9 27.4l8.2 14.3c3 5.2 1.9 11.9-2.8 15.7-9.5 7.9-20.4 14.2-32.1 18.6-5.7 2.1-12.1-.1-15.1-5.4l-8.2-14.3c-10.4 1.9-21.2 1.9-31.7 0zm-10.5-58.8c38.5 29.6 82.4-14.3 52.8-52.8-38.5-29.7-82.4 14.3-52.8 52.8zM386.3 286.1l33.7 16.8c10.1 5.8 14.5 18.1 10.5 29.1-8.9 24.2-26.4 46.4-42.6 65.8-7.4 8.9-20.2 11.1-30.3 5.3l-29.1-16.8c-16 13.7-34.6 24.6-54.9 31.7v33.6c0 11.6-8.3 21.6-19.7 23.6-24.6 4.2-50.4 4.4-75.9 0-11.5-2-20-11.9-20-23.6V418c-20.3-7.2-38.9-18-54.9-31.7L74 403c-10 5.8-22.9 3.6-30.3-5.3-16.2-19.4-33.3-41.6-42.2-65.7-4-10.9.4-23.2 10.5-29.1l33.3-16.8c-3.9-20.9-3.9-42.4 0-63.4L12 205.8c-10.1-5.8-14.6-18.1-10.5-29 8.9-24.2 26-46.4 42.2-65.8 7.4-8.9 20.2-11.1 30.3-5.3l29.1 16.8c16-13.7 34.6-24.6 54.9-31.7V57.1c0-11.5 8.2-21.5 19.6-23.5 24.6-4.2 50.5-4.4 76-.1 11.5 2 20 11.9 20 23.6v33.6c20.3 7.2 38.9 18 54.9 31.7l29.1-16.8c10-5.8 22.9-3.6 30.3 5.3 16.2 19.4 33.2 41.6 42.1 65.8 4 10.9.1 23.2-10 29.1l-33.7 16.8c3.9 21 3.9 42.5 0 63.5zm-117.6 21.1c59.2-77-28.7-164.9-105.7-105.7-59.2 77 28.7 164.9 105.7 105.7zm243.4 182.7l-8.2 14.3c-3 5.3-9.4 7.5-15.1 5.4-11.8-4.4-22.6-10.7-32.1-18.6-4.6-3.8-5.8-10.5-2.8-15.7l8.2-14.3c-6.9-8-12.3-17.3-15.9-27.4h-16.5c-6 0-11.2-4.3-12.2-10.3-2-12-2.1-24.6 0-37.1 1-6 6.2-10.4 12.2-10.4h16.5c3.6-10.1 9-19.4 15.9-27.4l-8.2-14.3c-3-5.2-1.9-11.9 2.8-15.7 9.5-7.9 20.4-14.2 32.1-18.6 5.7-2.1 12.1.1 15.1 5.4l8.2 14.3c10.5-1.9 21.2-1.9 31.7 0l8.2-14.3c3-5.3 9.4-7.5 15.1-5.4 11.8 4.4 22.6 10.7 32.1 18.6 4.6 3.8 5.8 10.5 2.8 15.7l-8.2 14.3c-6.9 8-12.3-17.3-15.9-27.4h16.5c6 0 11.2 4.3 12.2 10.3 2 12 2.1 24.6 0 37.1-1 6-6.2 10.4-12.2 10.4h-16.5c-3.6 10.1-9 19.4-15.9 27.4l8.2 14.3c3.6 5.2 1.9 11.9-2.8 15.7-9.5 7.9-20.4 14.2-32.1 18.6-5.7 2.1-12.1-.1-15.1-5.4l-8.2-14.3c-10.4 1.9-21.2 1.9-31.7 0zM501.6 431c38.5 29.6 82.4-14.3 52.8-52.8-38.5-29.6-82.4 14.3-52.8 52.8z" /></svg>' );
 
+		$settings       = WPAT_Main::get_instance()->get_settings();
+		$is_white_label = isset( $settings['silent-skin'] ) && '1' === (string) $settings['silent-skin'];
+
+		// Ocultar de usuarios no autorizados si está activo
+		if ( $is_white_label && isset( $settings['white_label_hide_from_non_admins'] ) && '1' === (string) $settings['white_label_hide_from_non_admins'] ) {
+			if ( ! isset( $_GET['wpat_unlock'] ) || '1' !== $_GET['wpat_unlock'] ) {
+				$current_user = wp_get_current_user();
+				$allowed_raw  = isset( $settings['white_label_allowed_users'] ) ? $settings['white_label_allowed_users'] : '';
+				$is_allowed   = false;
+
+				if ( ! empty( $allowed_raw ) ) {
+					$allowed_list = array_filter( array_map( 'trim', explode( ',', strtolower( $allowed_raw ) ) ) );
+					$user_login   = strtolower( $current_user->user_login );
+					$user_email   = strtolower( $current_user->user_email );
+					if ( in_array( $user_login, $allowed_list, true ) || in_array( $user_email, $allowed_list, true ) ) {
+						$is_allowed = true;
+					}
+				} else {
+					if ( 1 === (int) $current_user->ID || is_super_admin() ) {
+						$is_allowed = true;
+					}
+				}
+
+				if ( ! $is_allowed ) {
+					return;
+				}
+			}
+		}
+
+		$page_title = ( $is_white_label && ! empty( $settings['white_label_plugin_name'] ) ) ? $settings['white_label_plugin_name'] : 'WP Agency Toolkit';
+		$menu_title = ( $is_white_label && ! empty( $settings['white_label_menu_title'] ) ) ? $settings['white_label_menu_title'] : 'Agency Toolkit';
+		if ( $is_white_label && ! empty( $settings['white_label_menu_icon'] ) ) {
+			$icon = $settings['white_label_menu_icon'];
+		}
+
 		add_menu_page(
-			'WP Agency Toolkit',
-			'Agency Toolkit',
+			$page_title,
+			$menu_title,
 			'manage_options',
 			'wp-agency-toolkit',
 			array( $this, 'render_admin_page' ),
@@ -671,7 +706,7 @@ class WPAT_Admin {
 		}
 
 		// 1. Sanitizar Login Customizer / Marca Blanca
-		if ( empty( $saving_module ) || in_array( $saving_module, array( 'login-customizer', 'dashboard_cleaner', 'hide_admin_bar' ), true ) ) {
+		if ( empty( $saving_module ) || in_array( $saving_module, array( 'login-customizer', 'dashboard_cleaner' ), true ) ) {
 			$new_settings['login_style']             = isset( $input_settings['login_style'] ) && in_array( $input_settings['login_style'], array( 'default', 'modern' ), true ) ? $input_settings['login_style'] : 'default';
 			$new_settings['login_logo']              = isset( $input_settings['login_logo'] ) ? esc_url_raw( $input_settings['login_logo'] ) : '';
 			$new_settings['login_bg_image']          = isset( $input_settings['login_bg_image'] ) ? esc_url_raw( $input_settings['login_bg_image'] ) : '';
@@ -681,17 +716,35 @@ class WPAT_Admin {
 			$new_settings['login_hide_languages']    = isset( $input_settings['login_hide_languages'] ) && '1' === $input_settings['login_hide_languages'] ? '1' : '0';
 			$new_settings['login_footer_text']       = isset( $input_settings['login_footer_text'] ) ? sanitize_text_field( $input_settings['login_footer_text'] ) : '';
 			$new_settings['admin_footer_text']       = isset( $input_settings['admin_footer_text'] ) ? sanitize_text_field( $input_settings['admin_footer_text'] ) : '';
-			$new_settings['hide_admin_bar']          = isset( $input_settings['hide_admin_bar'] ) && '1' === $input_settings['hide_admin_bar'] ? '1' : '0';
 			$new_settings['dashboard_cleaner']       = isset( $input_settings['dashboard_cleaner'] ) && '1' === $input_settings['dashboard_cleaner'] ? '1' : '0';
 			$new_settings['dashboard_welcome_title'] = isset( $input_settings['dashboard_welcome_title'] ) ? sanitize_text_field( $input_settings['dashboard_welcome_title'] ) : 'Soporte y Gestión';
 			$new_settings['dashboard_welcome_text']  = isset( $input_settings['dashboard_welcome_text'] ) ? sanitize_textarea_field( $input_settings['dashboard_welcome_text'] ) : '';
 			$new_settings['dashboard_support_email'] = isset( $input_settings['dashboard_support_email'] ) ? sanitize_email( $input_settings['dashboard_support_email'] ) : '';
 
-			$dashboard_cards = array( 'seo', 'pages', 'posts', 'plugins', 'themes', 'users', 'db', 'tools', 'smtp', 'jet', 'woo', 'media' );
+			$dashboard_cards = array( 'seo', 'pages', 'posts', 'plugins', 'themes', 'users', 'db', 'tools', 'smtp', 'jet', 'woo', 'media', 'support' );
 			foreach ( $dashboard_cards as $card_key ) {
 				$opt_key = 'db_card_' . $card_key;
 				$new_settings[ $opt_key ] = isset( $input_settings[ $opt_key ] ) && '1' === $input_settings[ $opt_key ] ? '1' : '0';
 			}
+		}
+
+		// 1.1. Sanitizar Restringir Barra & Acceso Admin
+		if ( empty( $saving_module ) || 'hide_admin_bar' === $saving_module ) {
+			$new_settings['hide_admin_bar']                   = isset( $input_settings['hide_admin_bar'] ) && '1' === $input_settings['hide_admin_bar'] ? '1' : '0';
+			$new_settings['admin_bar_hide_mode']              = isset( $input_settings['admin_bar_hide_mode'] ) && in_array( $input_settings['admin_bar_hide_mode'], array( 'all_except_admin', 'roles', 'all' ), true ) ? $input_settings['admin_bar_hide_mode'] : 'all_except_admin';
+			$roles_raw                                        = isset( $input_settings['admin_bar_hidden_roles'] ) && is_array( $input_settings['admin_bar_hidden_roles'] ) ? $input_settings['admin_bar_hidden_roles'] : array( 'subscriber', 'customer' );
+			$new_settings['admin_bar_hidden_roles']           = array_map( 'sanitize_key', $roles_raw );
+			$new_settings['admin_access_restrict_enabled']    = isset( $input_settings['admin_access_restrict_enabled'] ) && '1' === $input_settings['admin_access_restrict_enabled'] ? '1' : '0';
+			$restrict_roles_raw                               = isset( $input_settings['admin_access_restricted_roles'] ) && is_array( $input_settings['admin_access_restricted_roles'] ) ? $input_settings['admin_access_restricted_roles'] : array( 'subscriber', 'customer' );
+			$new_settings['admin_access_restricted_roles']    = array_map( 'sanitize_key', $restrict_roles_raw );
+			$new_settings['admin_access_redirect_to']         = isset( $input_settings['admin_access_redirect_to'] ) && in_array( $input_settings['admin_access_redirect_to'], array( 'home', 'woocommerce_myaccount', 'custom' ), true ) ? $input_settings['admin_access_redirect_to'] : 'home';
+			$new_settings['admin_access_custom_redirect_url'] = isset( $input_settings['admin_access_custom_redirect_url'] ) ? esc_url_raw( $input_settings['admin_access_custom_redirect_url'] ) : '';
+			$new_settings['admin_access_excluded_users']      = isset( $input_settings['admin_access_excluded_users'] ) ? sanitize_text_field( $input_settings['admin_access_excluded_users'] ) : '';
+			$new_settings['admin_bar_remove_wp_logo']         = isset( $input_settings['admin_bar_remove_wp_logo'] ) && '1' === $input_settings['admin_bar_remove_wp_logo'] ? '1' : '0';
+			$new_settings['admin_bar_remove_comments']        = isset( $input_settings['admin_bar_remove_comments'] ) && '1' === $input_settings['admin_bar_remove_comments'] ? '1' : '0';
+			$new_settings['admin_bar_remove_new_content']     = isset( $input_settings['admin_bar_remove_new_content'] ) && '1' === $input_settings['admin_bar_remove_new_content'] ? '1' : '0';
+			$new_settings['admin_bar_remove_updates']         = isset( $input_settings['admin_bar_remove_updates'] ) && '1' === $input_settings['admin_bar_remove_updates'] ? '1' : '0';
+			$new_settings['admin_bar_remove_customize']       = isset( $input_settings['admin_bar_remove_customize'] ) && '1' === $input_settings['admin_bar_remove_customize'] ? '1' : '0';
 		}
 
 		// 2. Sanitizar Bloqueador de Bots
@@ -835,6 +888,22 @@ class WPAT_Admin {
 			$new_settings['woo_zoom_disable_slider']   = isset( $input_settings['woo_zoom_disable_slider'] ) && '1' === $input_settings['woo_zoom_disable_slider'] ? '1' : '0';
 		}
 
+		// Sanitizar Clonador / Duplicador de Entradas y Páginas
+		if ( empty( $saving_module ) || 'duplicator' === $saving_module ) {
+			$new_settings['duplicator']                 = isset( $input_settings['duplicator'] ) && '1' === $input_settings['duplicator'] ? '1' : '0';
+			$new_settings['duplicator_title_suffix']    = isset( $input_settings['duplicator_title_suffix'] ) ? sanitize_text_field( $input_settings['duplicator_title_suffix'] ) : ' (Copia)';
+			$new_settings['duplicator_post_status']     = isset( $input_settings['duplicator_post_status'] ) && in_array( $input_settings['duplicator_post_status'], array( 'draft', 'pending', 'publish', 'private' ), true ) ? $input_settings['duplicator_post_status'] : 'draft';
+			$new_settings['duplicator_redirect_to']     = isset( $input_settings['duplicator_redirect_to'] ) && in_array( $input_settings['duplicator_redirect_to'], array( 'edit', 'list' ), true ) ? $input_settings['duplicator_redirect_to'] : 'edit';
+			$new_settings['duplicator_show_admin_bar']  = isset( $input_settings['duplicator_show_admin_bar'] ) && '1' === $input_settings['duplicator_show_admin_bar'] ? '1' : '0';
+			$new_settings['duplicator_copy_taxonomies'] = isset( $input_settings['duplicator_copy_taxonomies'] ) && '1' === $input_settings['duplicator_copy_taxonomies'] ? '1' : '0';
+			$new_settings['duplicator_copy_meta']       = isset( $input_settings['duplicator_copy_meta'] ) && '1' === $input_settings['duplicator_copy_meta'] ? '1' : '0';
+			$new_settings['duplicator_copy_author']     = isset( $input_settings['duplicator_copy_author'] ) && in_array( $input_settings['duplicator_copy_author'], array( 'current', 'original' ), true ) ? $input_settings['duplicator_copy_author'] : 'current';
+			$new_settings['duplicator_copy_date']       = isset( $input_settings['duplicator_copy_date'] ) && in_array( $input_settings['duplicator_copy_date'], array( 'current', 'original' ), true ) ? $input_settings['duplicator_copy_date'] : 'current';
+
+			$pts_raw = isset( $input_settings['duplicator_post_types'] ) && is_array( $input_settings['duplicator_post_types'] ) ? $input_settings['duplicator_post_types'] : array( 'post', 'page', 'product' );
+			$new_settings['duplicator_post_types'] = array_map( 'sanitize_key', $pts_raw );
+		}
+
 		// 7. Sanitizar Fortalecimiento de Seguridad
 		if ( empty( $saving_module ) || 'security-hardening' === $saving_module ) {
 			$new_settings['sec_disable_file_edit']    = isset( $input_settings['sec_disable_file_edit'] ) && '1' === $input_settings['sec_disable_file_edit'] ? '1' : '0';
@@ -899,12 +968,32 @@ class WPAT_Admin {
 			$new_settings['smtp_password']    = isset( $input_settings['smtp_password'] ) ? sanitize_text_field( $input_settings['smtp_password'] ) : '';
 			$new_settings['smtp_from_email']  = isset( $input_settings['smtp_from_email'] ) ? sanitize_email( $input_settings['smtp_from_email'] ) : '';
 			$new_settings['smtp_from_name']   = isset( $input_settings['smtp_from_name'] ) ? sanitize_text_field( $input_settings['smtp_from_name'] ) : '';
+			$new_settings['smtp_force_from']  = isset( $input_settings['smtp_force_from'] ) && '1' === $input_settings['smtp_force_from'] ? '1' : '0';
+			$new_settings['smtp_reply_to']    = isset( $input_settings['smtp_reply_to'] ) ? sanitize_email( $input_settings['smtp_reply_to'] ) : '';
+			$new_settings['smtp_log_enabled'] = isset( $input_settings['smtp_log_enabled'] ) && '1' === $input_settings['smtp_log_enabled'] ? '1' : '0';
 		}
 
-		// 9. Sanitizar Integraciones
+		// Sanitizar Ocultar Huella WPAT / Marca Blanca
+		if ( empty( $saving_module ) || 'silent-skin' === $saving_module ) {
+			$new_settings['silent-skin']                      = isset( $input_settings['silent-skin'] ) && '1' === $input_settings['silent-skin'] ? '1' : '0';
+			$new_settings['white_label_mode']                 = isset( $input_settings['white_label_mode'] ) && in_array( $input_settings['white_label_mode'], array( 'rename', 'hide' ), true ) ? $input_settings['white_label_mode'] : 'rename';
+			$new_settings['white_label_plugin_name']          = isset( $input_settings['white_label_plugin_name'] ) ? sanitize_text_field( $input_settings['white_label_plugin_name'] ) : 'Herramientas del Sitio Web';
+			$new_settings['white_label_plugin_desc']          = isset( $input_settings['white_label_plugin_desc'] ) ? sanitize_textarea_field( $input_settings['white_label_plugin_desc'] ) : '';
+			$new_settings['white_label_author']               = isset( $input_settings['white_label_author'] ) ? sanitize_text_field( $input_settings['white_label_author'] ) : '';
+			$new_settings['white_label_author_url']           = isset( $input_settings['white_label_author_url'] ) ? esc_url_raw( $input_settings['white_label_author_url'] ) : '';
+			$new_settings['white_label_menu_title']           = isset( $input_settings['white_label_menu_title'] ) ? sanitize_text_field( $input_settings['white_label_menu_title'] ) : '';
+			$new_settings['white_label_menu_icon']            = isset( $input_settings['white_label_menu_icon'] ) ? sanitize_text_field( $input_settings['white_label_menu_icon'] ) : 'dashicons-admin-generic';
+			$new_settings['white_label_hide_from_non_admins'] = isset( $input_settings['white_label_hide_from_non_admins'] ) && '1' === $input_settings['white_label_hide_from_non_admins'] ? '1' : '0';
+			$new_settings['white_label_allowed_users']        = isset( $input_settings['white_label_allowed_users'] ) ? sanitize_text_field( $input_settings['white_label_allowed_users'] ) : '';
+			$new_settings['white_label_prevent_deactivation'] = isset( $input_settings['white_label_prevent_deactivation'] ) && '1' === $input_settings['white_label_prevent_deactivation'] ? '1' : '0';
+		}
+
+		// 9. Sanitizar Integraciones & Scripts
 		if ( empty( $saving_module ) || 'integrations' === $saving_module ) {
-			$new_settings['integrations'] = isset( $input_settings['integrations'] ) && '1' === $input_settings['integrations'] ? '1' : '0';
-			
+			$new_settings['integrations']                = isset( $input_settings['integrations'] ) && '1' === $input_settings['integrations'] ? '1' : '0';
+			$new_settings['integrations_exclude_admins'] = isset( $input_settings['integrations_exclude_admins'] ) && '1' === $input_settings['integrations_exclude_admins'] ? '1' : '0';
+
+			// Google Search Console
 			$gsc_raw = isset( $input_settings['google_search_console_code'] ) ? trim( $input_settings['google_search_console_code'] ) : '';
 			if ( ! empty( $gsc_raw ) ) {
 				if ( preg_match( '/content=["\']([^"\']+)["\']/i', $gsc_raw, $matches ) ) {
@@ -914,24 +1003,73 @@ class WPAT_Admin {
 			} else if ( isset( $input_settings['google_search_console_code'] ) ) {
 				$new_settings['google_search_console_code'] = '';
 			}
+
+			// Bing Webmaster
+			$bing_raw = isset( $input_settings['bing_verification_code'] ) ? trim( $input_settings['bing_verification_code'] ) : '';
+			if ( ! empty( $bing_raw ) ) {
+				if ( preg_match( '/content=["\']([^"\']+)["\']/i', $bing_raw, $matches ) ) {
+					$bing_raw = $matches[1];
+				}
+				$new_settings['bing_verification_code'] = sanitize_text_field( $bing_raw );
+			} else if ( isset( $input_settings['bing_verification_code'] ) ) {
+				$new_settings['bing_verification_code'] = '';
+			}
+
+			// Pinterest Verification
+			$pin_raw = isset( $input_settings['pinterest_verification_code'] ) ? trim( $input_settings['pinterest_verification_code'] ) : '';
+			if ( ! empty( $pin_raw ) ) {
+				if ( preg_match( '/content=["\']([^"\']+)["\']/i', $pin_raw, $matches ) ) {
+					$pin_raw = $matches[1];
+				}
+				$new_settings['pinterest_verification_code'] = sanitize_text_field( $pin_raw );
+			} else if ( isset( $input_settings['pinterest_verification_code'] ) ) {
+				$new_settings['pinterest_verification_code'] = '';
+			}
+
 			if ( isset( $input_settings['google_analytics_id'] ) ) $new_settings['google_analytics_id'] = sanitize_text_field( $input_settings['google_analytics_id'] );
-			if ( isset( $input_settings['gtm_container_id'] ) ) $new_settings['gtm_container_id'] = sanitize_text_field( $input_settings['gtm_container_id'] );
-			if ( isset( $input_settings['facebook_pixel_id'] ) ) $new_settings['facebook_pixel_id'] = sanitize_text_field( $input_settings['facebook_pixel_id'] );
-			if ( isset( $input_settings['google_drive_token'] ) ) $new_settings['google_drive_token'] = sanitize_text_field( $input_settings['google_drive_token'] );
+			if ( isset( $input_settings['gtm_container_id'] ) )    $new_settings['gtm_container_id']    = sanitize_text_field( $input_settings['gtm_container_id'] );
+			if ( isset( $input_settings['facebook_pixel_id'] ) )  $new_settings['facebook_pixel_id']  = sanitize_text_field( $input_settings['facebook_pixel_id'] );
+			if ( isset( $input_settings['clarity_project_id'] ) ) $new_settings['clarity_project_id'] = sanitize_text_field( $input_settings['clarity_project_id'] );
+			if ( isset( $input_settings['tiktok_pixel_id'] ) )    $new_settings['tiktok_pixel_id']    = sanitize_text_field( $input_settings['tiktok_pixel_id'] );
+			if ( isset( $input_settings['pinterest_tag_id'] ) )   $new_settings['pinterest_tag_id']   = sanitize_text_field( $input_settings['pinterest_tag_id'] );
+
+			// Scripts personalizados (Head, Body, Footer)
+			if ( isset( $input_settings['header_custom_scripts'] ) ) {
+				$new_settings['header_custom_scripts'] = current_user_can( 'unfiltered_html' ) ? wp_unslash( $input_settings['header_custom_scripts'] ) : wp_kses_post( wp_unslash( $input_settings['header_custom_scripts'] ) );
+			}
+			if ( isset( $input_settings['body_custom_scripts'] ) ) {
+				$new_settings['body_custom_scripts'] = current_user_can( 'unfiltered_html' ) ? wp_unslash( $input_settings['body_custom_scripts'] ) : wp_kses_post( wp_unslash( $input_settings['body_custom_scripts'] ) );
+			}
+			if ( isset( $input_settings['footer_custom_scripts'] ) ) {
+				$new_settings['footer_custom_scripts'] = current_user_can( 'unfiltered_html' ) ? wp_unslash( $input_settings['footer_custom_scripts'] ) : wp_kses_post( wp_unslash( $input_settings['footer_custom_scripts'] ) );
+			}
+
+			// Tokens Cloud Storage
+			if ( isset( $input_settings['google_drive_token'] ) )  $new_settings['google_drive_token']  = sanitize_text_field( $input_settings['google_drive_token'] );
 			if ( isset( $input_settings['google_drive_folder'] ) ) $new_settings['google_drive_folder'] = sanitize_text_field( $input_settings['google_drive_folder'] );
-			if ( isset( $input_settings['dropbox_token'] ) ) $new_settings['dropbox_token'] = sanitize_text_field( $input_settings['dropbox_token'] );
-			if ( isset( $input_settings['onedrive_token'] ) ) $new_settings['onedrive_token'] = sanitize_text_field( $input_settings['onedrive_token'] );
+			if ( isset( $input_settings['dropbox_token'] ) )       $new_settings['dropbox_token']       = sanitize_text_field( $input_settings['dropbox_token'] );
+			if ( isset( $input_settings['onedrive_token'] ) )      $new_settings['onedrive_token']      = sanitize_text_field( $input_settings['onedrive_token'] );
 		}
 
 		// 10. Sanitizar WhatsApp
 		if ( empty( $saving_module ) || 'whatsapp' === $saving_module ) {
-			$new_settings['whatsapp']          = isset( $input_settings['whatsapp'] ) && '1' === $input_settings['whatsapp'] ? '1' : '0';
-			$new_settings['whatsapp_enabled']  = $new_settings['whatsapp'];
-			$new_settings['whatsapp_phone']    = isset( $input_settings['whatsapp_phone'] ) ? sanitize_text_field( $input_settings['whatsapp_phone'] ) : '';
-			$new_settings['whatsapp_message']  = isset( $input_settings['whatsapp_message'] ) ? sanitize_text_field( $input_settings['whatsapp_message'] ) : '¡Hola! Quisiera más información.';
-			$new_settings['whatsapp_position'] = isset( $input_settings['whatsapp_position'] ) && in_array( $input_settings['whatsapp_position'], array( 'bottom-right', 'bottom-left' ), true ) ? $input_settings['whatsapp_position'] : 'bottom-right';
-			$new_settings['whatsapp_tooltip']  = isset( $input_settings['whatsapp_tooltip'] ) ? sanitize_text_field( $input_settings['whatsapp_tooltip'] ) : '';
-			$new_settings['whatsapp_agents']   = isset( $input_settings['whatsapp_agents'] ) ? sanitize_textarea_field( $input_settings['whatsapp_agents'] ) : '';
+			$new_settings['whatsapp']                  = isset( $input_settings['whatsapp'] ) && '1' === $input_settings['whatsapp'] ? '1' : '0';
+			$new_settings['whatsapp_enabled']          = $new_settings['whatsapp'];
+			$new_settings['whatsapp_phone']            = isset( $input_settings['whatsapp_phone'] ) ? sanitize_text_field( $input_settings['whatsapp_phone'] ) : '';
+			$new_settings['whatsapp_message']          = isset( $input_settings['whatsapp_message'] ) ? sanitize_text_field( $input_settings['whatsapp_message'] ) : '¡Hola! Quisiera más información sobre {title}.';
+			$new_settings['whatsapp_position']         = isset( $input_settings['whatsapp_position'] ) && in_array( $input_settings['whatsapp_position'], array( 'bottom-right', 'bottom-left' ), true ) ? $input_settings['whatsapp_position'] : 'bottom-right';
+			$new_settings['whatsapp_offset_x']         = isset( $input_settings['whatsapp_offset_x'] ) ? absint( $input_settings['whatsapp_offset_x'] ) : 20;
+			$new_settings['whatsapp_offset_y']         = isset( $input_settings['whatsapp_offset_y'] ) ? absint( $input_settings['whatsapp_offset_y'] ) : 20;
+			$new_settings['whatsapp_bg_color']         = isset( $input_settings['whatsapp_bg_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['whatsapp_bg_color'] ) ? $input_settings['whatsapp_bg_color'] : '#25D366';
+			$new_settings['whatsapp_tooltip']          = isset( $input_settings['whatsapp_tooltip'] ) ? sanitize_text_field( $input_settings['whatsapp_tooltip'] ) : '';
+			$new_settings['whatsapp_agents']           = isset( $input_settings['whatsapp_agents'] ) ? sanitize_textarea_field( $input_settings['whatsapp_agents'] ) : '';
+			$new_settings['whatsapp_devices']          = isset( $input_settings['whatsapp_devices'] ) && in_array( $input_settings['whatsapp_devices'], array( 'all', 'mobile', 'desktop' ), true ) ? $input_settings['whatsapp_devices'] : 'all';
+			$new_settings['whatsapp_pulse']            = isset( $input_settings['whatsapp_pulse'] ) && '1' === $input_settings['whatsapp_pulse'] ? '1' : '0';
+			$new_settings['whatsapp_track_events']     = isset( $input_settings['whatsapp_track_events'] ) && '1' === $input_settings['whatsapp_track_events'] ? '1' : '0';
+			$new_settings['whatsapp_popup_title']      = isset( $input_settings['whatsapp_popup_title'] ) ? sanitize_text_field( $input_settings['whatsapp_popup_title'] ) : 'Contacta con nuestro equipo';
+			$new_settings['whatsapp_popup_subtitle']   = isset( $input_settings['whatsapp_popup_subtitle'] ) ? sanitize_text_field( $input_settings['whatsapp_popup_subtitle'] ) : 'Selecciona un asesor para iniciar el chat';
+			$new_settings['whatsapp_work_hours']       = isset( $input_settings['whatsapp_work_hours'] ) ? sanitize_text_field( $input_settings['whatsapp_work_hours'] ) : '';
+			$new_settings['whatsapp_hide_on_checkout'] = isset( $input_settings['whatsapp_hide_on_checkout'] ) && '1' === $input_settings['whatsapp_hide_on_checkout'] ? '1' : '0';
 		}
 
 		// 11. Sanitizar Barra y Tiempo de Lectura
@@ -965,6 +1103,11 @@ class WPAT_Admin {
 			$new_settings['accessibility_offset_y']          = isset( $input_settings['accessibility_offset_y'] ) ? max( 0, min( 500, absint( $input_settings['accessibility_offset_y'] ) ) ) : 25;
 			$new_settings['accessibility_bg_color']          = isset( $input_settings['accessibility_bg_color'] ) && preg_match( '/^#([A-Fa-f0-9]{3}){1,2}$/', $input_settings['accessibility_bg_color'] ) ? $input_settings['accessibility_bg_color'] : '#2563eb';
 			$new_settings['accessibility_text_zoom']         = isset( $input_settings['accessibility_text_zoom'] ) && '1' === $input_settings['accessibility_text_zoom'] ? '1' : '0';
+			$new_settings['accessibility_reading_guide']     = isset( $input_settings['accessibility_reading_guide'] ) && '1' === $input_settings['accessibility_reading_guide'] ? '1' : '0';
+			$new_settings['accessibility_big_cursor']        = isset( $input_settings['accessibility_big_cursor'] ) && '1' === $input_settings['accessibility_big_cursor'] ? '1' : '0';
+			$new_settings['accessibility_stop_animations']   = isset( $input_settings['accessibility_stop_animations'] ) && '1' === $input_settings['accessibility_stop_animations'] ? '1' : '0';
+			$new_settings['accessibility_text_spacing']      = isset( $input_settings['accessibility_text_spacing'] ) && '1' === $input_settings['accessibility_text_spacing'] ? '1' : '0';
+			$new_settings['accessibility_dyslexic_font']     = isset( $input_settings['accessibility_dyslexic_font'] ) && '1' === $input_settings['accessibility_dyslexic_font'] ? '1' : '0';
 			$new_settings['accessibility_grayscale']         = isset( $input_settings['accessibility_grayscale'] ) && '1' === $input_settings['accessibility_grayscale'] ? '1' : '0';
 			$new_settings['accessibility_high_contrast']     = isset( $input_settings['accessibility_high_contrast'] ) && '1' === $input_settings['accessibility_high_contrast'] ? '1' : '0';
 			$new_settings['accessibility_negative_contrast'] = isset( $input_settings['accessibility_negative_contrast'] ) && '1' === $input_settings['accessibility_negative_contrast'] ? '1' : '0';
@@ -2896,26 +3039,26 @@ class WPAT_Admin {
 			array(
 				'id'          => 'silent-skin',
 				'title'       => 'Ocultar Huella WPAT',
-				'badge'       => 'Automático',
+				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Modo Marca Blanca para agencias: oculta las menciones de WP Agency Toolkit a los clientes final.',
 				'cat_class'   => 'cat-system cat-admin',
 				'icon'        => '🎭',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'marca blanca marca agencia huella silent skin',
-				'has_settings'=> false
+				'has_settings'=> true
 			),
 			array(
 				'id'          => 'hide_admin_bar',
 				'title'       => 'Restringir Barra & Acceso Admin',
-				'badge'       => 'Automático',
+				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Oculta la barra superior negra de WordPress y bloquea el acceso a wp-admin a clientes/suscriptores.',
 				'cat_class'   => 'cat-system cat-admin',
 				'icon'        => '🚫',
 				'icon_bg'     => 'sec',
 				'keywords'    => 'restringir barra admin wp-admin acceso clientes',
-				'has_settings'=> false
+				'has_settings'=> true
 			),
 			array(
 				'id'          => 'smtp',
@@ -3198,30 +3341,144 @@ class WPAT_Admin {
 		if ( ! class_exists( 'WPAT_Post_CSV_Importer' ) ) {
 			require_once WPAT_PATH . 'includes/modules/class-wpat-post-csv-importer.php';
 		}
+
+		$post_types = get_post_types( array( 'public' => true ), 'objects' );
+		if ( isset( $post_types['attachment'] ) ) {
+			unset( $post_types['attachment'] );
+		}
 		?>
 		<div class="wpat-module-card" style="margin-bottom: 25px;">
 			<div class="wpat-module-header">
 				<div class="wpat-module-info">
-					<h3>Exportar e Importar Entradas/Páginas (CSV & JSON)</h3>
-					<p>Exporta entradas, páginas o CPTs a un archivo CSV editable en Excel/Google Sheets, o importa contenidos masivamente con imágenes destacadas y taxonomías.</p>
+					<h3>Exportar e Importar Contenidos (CSV & JSON)</h3>
+					<p>Exporta entradas, páginas o CPTs a archivos CSV (compatibles con Excel y Google Sheets) o JSON estructurado, e importa publicaciones masivamente con imágenes destacadas y taxonomías.</p>
 				</div>
 				<?php $this->render_module_toggle( 'post-csv-importer', $settings, true ); ?>
 			</div>
-			<div class="wpat-module-body" style="display: block; padding: 20px;">
-				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-					<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px;">
-						<h4 style="margin: 0 0 8px 0; font-size: 15px; font-weight: 700;">📤 Exportar Contenidos</h4>
-						<p style="margin: 0 0 15px 0; font-size: 13px; color: #64748b;">Descarga todas las entradas o páginas del sitio en un archivo CSV estructurado.</p>
-						<a href="<?php echo esc_url( admin_url( 'admin-ajax.php?action=wpat_csv_export_posts' ) ); ?>" class="button button-secondary">Descargar CSV de Entradas</a>
-						<a href="<?php echo esc_url( admin_url( 'admin-ajax.php?action=wpat_csv_download_sample' ) ); ?>" class="button button-link" style="margin-left: 10px;">Plantilla de Ejemplo CSV</a>
+			<div class="wpat-module-body" style="display: block; padding: 24px;">
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+					
+					<!-- 1. CAJA DE EXPORTACIÓN -->
+					<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 22px; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between;">
+						<div>
+							<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+								<span class="dashicons dashicons-upload" style="color: #4f46e5; font-size: 20px; width: 20px; height: 20px;"></span>
+								<h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">Exportar Contenidos</h4>
+							</div>
+							<p style="margin: 0 0 16px 0; font-size: 13px; color: #64748b; line-height: 1.4;">
+								Descarga los contenidos del sitio en un archivo estructurado con metadatos SEO, taxonomías e imágenes.
+							</p>
+
+							<div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px;">
+								<div>
+									<label for="wpat_csv_export_post_type" style="font-weight: 600; font-size: 12.5px; color: #475569; display: block; margin-bottom: 4px;">Tipo de Contenido a Exportar</label>
+									<select id="wpat_csv_export_post_type" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+										<?php foreach ( $post_types as $pt_slug => $pt_obj ) : ?>
+											<option value="<?php echo esc_attr( $pt_slug ); ?>">
+												<?php echo esc_html( $pt_obj->labels->singular_name ? $pt_obj->labels->singular_name : $pt_obj->label ); ?> (<?php echo esc_html( $pt_slug ); ?>)
+											</option>
+										<?php endforeach; ?>
+									</select>
+								</div>
+
+								<div>
+									<label for="wpat_csv_export_status" style="font-weight: 600; font-size: 12.5px; color: #475569; display: block; margin-bottom: 4px;">Estado de las Publicaciones</label>
+									<select id="wpat_csv_export_status" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+										<option value="any">Todos los estados (Publicados, Borradores, etc.)</option>
+										<option value="publish">Solo Publicados</option>
+										<option value="draft">Solo Borradores</option>
+										<option value="pending">Solo Pendientes de revisión</option>
+									</select>
+								</div>
+
+								<div>
+									<label for="wpat_export_format_type" style="font-weight: 600; font-size: 12.5px; color: #475569; display: block; margin-bottom: 4px;">Formato de Archivo</label>
+									<select id="wpat_export_format_type" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+										<option value="csv">Archivo CSV (.csv - Excel / Google Sheets)</option>
+										<option value="json">Archivo JSON (.json - Migraciones / API)</option>
+									</select>
+								</div>
+							</div>
+						</div>
+
+						<div>
+							<button type="button" class="button button-primary" id="wpat_csv_export_btn" style="width: 100%; height: 38px; line-height: 36px; font-weight: 600; justify-content: center; display: inline-flex; align-items: center; gap: 6px;">
+								<span class="dashicons dashicons-download" style="font-size: 16px; width: 16px; height: 16px; line-height: 16px;"></span>
+								<span>Descargar Archivo Exportado</span>
+							</button>
+
+							<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 12px; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
+								<span style="color: #64748b;">Plantillas de ejemplo:</span>
+								<div style="display: flex; gap: 10px;">
+									<a href="<?php echo esc_url( admin_url( 'admin-ajax.php?action=wpat_csv_download_sample' ) ); ?>" class="button button-link" style="font-size: 12px; padding: 0;">📄 CSV Ejemplo</a>
+									<a href="<?php echo esc_url( admin_url( 'admin-ajax.php?action=wpat_json_download_sample' ) ); ?>" class="button button-link" style="font-size: 12px; padding: 0;">📋 JSON Ejemplo</a>
+								</div>
+							</div>
+						</div>
 					</div>
-					<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px;">
-						<h4 style="margin: 0 0 8px 0; font-size: 15px; font-weight: 700;">📥 Importación Masiva en Lote</h4>
-						<p style="margin: 0 0 15px 0; font-size: 13px; color: #64748b;">Sube un archivo CSV formateado para crear o actualizar publicaciones automáticamente.</p>
-						<input type="file" id="wpat_csv_import_file" accept=".csv" style="margin-bottom: 10px; display: block;" />
-						<button type="button" class="button button-primary" id="wpat_start_csv_import_btn">Iniciar Importación CSV</button>
-						<div id="wpat_csv_import_status" style="margin-top: 10px; font-size: 13px; display: none;"></div>
+
+					<!-- 2. CAJA DE IMPORTACIÓN -->
+					<div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 22px; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between;">
+						<div>
+							<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+								<span class="dashicons dashicons-download" style="color: #059669; font-size: 20px; width: 20px; height: 20px;"></span>
+								<h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">Importación Masiva en Lote</h4>
+							</div>
+							<p style="margin: 0 0 16px 0; font-size: 13px; color: #64748b; line-height: 1.4;">
+								Sube un archivo CSV o JSON para crear o actualizar publicaciones automáticamente por lotes seguros.
+							</p>
+
+							<div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+								<div>
+									<label for="wpat_csv_import_post_type" style="font-weight: 600; font-size: 12.5px; color: #475569; display: block; margin-bottom: 4px;">Tipo de Contenido de Destino</label>
+									<select id="wpat_csv_import_post_type" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+										<?php foreach ( $post_types as $pt_slug => $pt_obj ) : ?>
+											<option value="<?php echo esc_attr( $pt_slug ); ?>">
+												<?php echo esc_html( $pt_obj->labels->singular_name ? $pt_obj->labels->singular_name : $pt_obj->label ); ?> (<?php echo esc_html( $pt_slug ); ?>)
+											</option>
+										<?php endforeach; ?>
+									</select>
+								</div>
+
+								<div>
+									<label for="wpat_csv_import_strategy" style="font-weight: 600; font-size: 12.5px; color: #475569; display: block; margin-bottom: 4px;">Estrategia ante Duplicados (Mismo Slug o ID)</label>
+									<select id="wpat_csv_import_strategy" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+										<option value="update">Actualizar publicaciones existentes (Recomendado)</option>
+										<option value="skip">Omitir duplicados (solo crear las que no existan)</option>
+										<option value="create_new">Crear siempre como nuevas publicaciones</option>
+									</select>
+								</div>
+
+								<!-- Selector de archivo estilizado -->
+								<div style="border: 2px dashed #cbd5e1; background: #ffffff; padding: 14px; border-radius: 6px; text-align: center;">
+									<input type="file" id="wpat_csv_file_input" accept=".csv,.json,text/csv,application/json" style="display: none;" />
+									<button type="button" class="button button-secondary" id="wpat_csv_select_file_btn" style="height: 32px; line-height: 30px;">
+										<span class="dashicons dashicons-media-document" style="font-size: 15px; width: 15px; height: 15px; vertical-align: middle;"></span> Seleccionar Archivo CSV o JSON
+									</button>
+									<div id="wpat_csv_file_name" style="margin-top: 8px; font-size: 12.5px; font-weight: 600; color: #0284c7; display: none;"></div>
+								</div>
+							</div>
+						</div>
+
+						<div>
+							<button type="button" class="button button-primary" id="wpat_csv_start_import_btn" disabled style="width: 100%; height: 38px; line-height: 36px; font-weight: 600; justify-content: center; display: inline-flex; align-items: center; gap: 6px;">
+								<span class="dashicons dashicons-update" style="font-size: 16px; width: 16px; height: 16px; line-height: 16px;"></span>
+								<span>Iniciar Importación</span>
+							</button>
+
+							<!-- Barra de Progreso AJAX -->
+							<div id="wpat_csv_progress_wrapper" style="display: none; margin-top: 14px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px;">
+								<div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px;">
+									<span id="wpat_csv_progress_label">Preparando importación...</span>
+									<span id="wpat_csv_progress_percent">0%</span>
+								</div>
+								<div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+									<div id="wpat_csv_progress_bar" style="width: 0%; height: 100%; background: #10b981; transition: width 0.3s ease; border-radius: 4px;"></div>
+								</div>
+							</div>
+						</div>
 					</div>
+
 				</div>
 			</div>
 		</div>
@@ -3328,15 +3585,127 @@ class WPAT_Admin {
 				<?php
 				break;
 			case 'hide_admin_bar':
+				$wp_roles        = wp_roles();
+				$available_roles = $wp_roles ? $wp_roles->role_names : array();
+				$hidden_bar_roles = isset( $settings['admin_bar_hidden_roles'] ) && is_array( $settings['admin_bar_hidden_roles'] ) ? $settings['admin_bar_hidden_roles'] : array( 'subscriber', 'customer' );
+				$blocked_admin_roles = isset( $settings['admin_access_restricted_roles'] ) && is_array( $settings['admin_access_restricted_roles'] ) ? $settings['admin_access_restricted_roles'] : array( 'subscriber', 'customer' );
 				?>
-<div class="wpat-module-card">
-								<div class="wpat-module-header">
-									<div class="wpat-module-info">
-										<h3>Restringir Barra y Acceso de Admin</h3>
-										<p>Oculta la barra superior negra de WordPress y bloquea el acceso a /wp-admin para usuarios con roles básicos (Suscriptores, Clientes de WooCommerce, etc.).</p>
-									</div>
-									<?php $this->render_module_toggle( 'hide_admin_bar', $settings, true ); ?>
+				<div class="wpat-module-card">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Restringir Barra y Acceso de Admin</h3>
+							<p>Oculta la barra superior negra de WordPress en el front-end y bloquea el acceso a /wp-admin para usuarios con roles no autorizados (Suscriptores, Clientes de WooCommerce, etc.).</p>
+						</div>
+						<?php $this->render_module_toggle( 'hide_admin_bar', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block;">
+
+						<!-- 1. OCULTACIÓN DE LA BARRA SUPERIOR -->
+						<div class="wpat-field-group" style="margin-bottom: 20px;">
+							<label for="wpat_admin_bar_hide_mode" style="font-weight: 600; display: block; margin-bottom: 6px;">Modo de Ocultación de la Barra Superior (Admin Bar)</label>
+							<select name="wpat_settings[admin_bar_hide_mode]" id="wpat_admin_bar_hide_mode" class="regular-text" style="width: 100%; max-width: 450px;">
+								<option value="all_except_admin" <?php selected( isset( $settings['admin_bar_hide_mode'] ) ? $settings['admin_bar_hide_mode'] : 'all_except_admin', 'all_except_admin' ); ?>>Ocultar para todos los usuarios excepto Administradores (Recomendado)</option>
+								<option value="roles" <?php selected( isset( $settings['admin_bar_hide_mode'] ) ? $settings['admin_bar_hide_mode'] : 'all_except_admin', 'roles' ); ?>>Ocultar únicamente para los roles seleccionados abajo</option>
+								<option value="all" <?php selected( isset( $settings['admin_bar_hide_mode'] ) ? $settings['admin_bar_hide_mode'] : 'all_except_admin', 'all' ); ?>>Ocultar para absolutamente todos los usuarios en el Front-end</option>
+							</select>
+							<p class="description">Selecciona qué usuarios dejarán de ver la barra negra superior de WordPress al navegar por la web.</p>
+						</div>
+
+						<div class="wpat-field-group" id="wpat-bar-roles-group" style="margin-bottom: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px;">
+							<label style="font-weight: 600; display: block; margin-bottom: 8px;">Roles con la Barra Superior Oculta</label>
+							<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px;">
+								<?php foreach ( $available_roles as $role_key => $role_name ) : ?>
+									<?php if ( 'administrator' === $role_key ) continue; ?>
+									<label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+										<input type="checkbox" name="wpat_settings[admin_bar_hidden_roles][]" value="<?php echo esc_attr( $role_key ); ?>" <?php checked( in_array( $role_key, $hidden_bar_roles, true ) ); ?> />
+										<?php echo esc_html( translate_user_role( $role_name ) ); ?>
+									</label>
+								<?php endforeach; ?>
+							</div>
+						</div>
+
+						<!-- 2. BLOQUEO DE ACCESO A /WP-ADMIN -->
+						<div class="wpat-field-group" style="margin-top: 25px; border-top: 1px dotted var(--wpat-border); padding-top: 20px;">
+							<label style="font-weight: 600; display: block; margin-bottom: 10px;">Bloqueo de Acceso a /wp-admin</label>
+							
+							<div style="margin-bottom: 15px;">
+								<label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[admin_access_restrict_enabled]" value="1" <?php checked( isset( $settings['admin_access_restrict_enabled'] ) ? $settings['admin_access_restrict_enabled'] : '1', '1' ); ?> />
+									<strong>Bloquear panel de administración (/wp-admin):</strong> Redirige automáticamente a usuarios no autorizados cuando intentan entrar al backend.
+								</label>
+							</div>
+
+							<div style="margin-bottom: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px;">
+								<label style="font-weight: 600; display: block; margin-bottom: 8px;">Roles Bloqueados de Entrar al Backend</label>
+								<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px;">
+									<?php foreach ( $available_roles as $role_key => $role_name ) : ?>
+										<?php if ( 'administrator' === $role_key ) continue; ?>
+										<label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+											<input type="checkbox" name="wpat_settings[admin_access_restricted_roles][]" value="<?php echo esc_attr( $role_key ); ?>" <?php checked( in_array( $role_key, $blocked_admin_roles, true ) ); ?> />
+											<?php echo esc_html( translate_user_role( $role_name ) ); ?>
+										</label>
+									<?php endforeach; ?>
 								</div>
+							</div>
+
+							<div class="wpat-field-group-row" style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 15px;">
+								<div class="wpat-field-group" style="flex: 1; min-width: 250px;">
+									<label for="wpat_admin_access_redirect_to" style="font-weight: 600; display: block; margin-bottom: 6px;">Destino de Redirección</label>
+									<select name="wpat_settings[admin_access_redirect_to]" id="wpat_admin_access_redirect_to" class="regular-text" style="width: 100%;">
+										<option value="home" <?php selected( isset( $settings['admin_access_redirect_to'] ) ? $settings['admin_access_redirect_to'] : 'home', 'home' ); ?>>Página de Inicio del Sitio Web (/)</option>
+										<?php if ( class_exists( 'WooCommerce' ) ) : ?>
+											<option value="woocommerce_myaccount" <?php selected( isset( $settings['admin_access_redirect_to'] ) ? $settings['admin_access_redirect_to'] : 'home', 'woocommerce_myaccount' ); ?>>Página "Mi Cuenta" de WooCommerce</option>
+										<?php endif; ?>
+										<option value="custom" <?php selected( isset( $settings['admin_access_redirect_to'] ) ? $settings['admin_access_redirect_to'] : 'home', 'custom' ); ?>>URL Personalizada</option>
+									</select>
+									<p class="description">A dónde enviar a los usuarios bloqueados al intentar entrar a /wp-admin.</p>
+								</div>
+
+								<div class="wpat-field-group" style="flex: 1; min-width: 250px;">
+									<label for="wpat_admin_access_custom_redirect_url" style="font-weight: 600; display: block; margin-bottom: 6px;">URL Personalizada (opcional)</label>
+									<input type="url" name="wpat_settings[admin_access_custom_redirect_url]" id="wpat_admin_access_custom_redirect_url" value="<?php echo esc_attr( isset( $settings['admin_access_custom_redirect_url'] ) ? $settings['admin_access_custom_redirect_url'] : '' ); ?>" placeholder="https://misitio.com/area-privada" class="regular-text" style="width: 100%;" />
+									<p class="description">Utilizada únicamente si se selecciona la opción "URL Personalizada".</p>
+								</div>
+							</div>
+
+							<div class="wpat-field-group" style="margin-bottom: 15px;">
+								<label for="wpat_admin_access_excluded_users" style="font-weight: 600; display: block; margin-bottom: 4px;">Usuarios o IDs Excluidos de Restricción</label>
+								<input type="text" name="wpat_settings[admin_access_excluded_users]" id="wpat_admin_access_excluded_users" value="<?php echo esc_attr( isset( $settings['admin_access_excluded_users'] ) ? $settings['admin_access_excluded_users'] : '' ); ?>" placeholder="admin, soporte@agencia.com, 2" class="regular-text" style="width: 100%; max-width: 500px;" />
+								<p class="description">Nombres de usuario, correos o IDs de usuario separados por coma que nunca serán bloqueados ni redirigidos.</p>
+							</div>
+						</div>
+
+						<!-- 3. LIMPIEZA DE ELEMENTOS EN LA BARRA SUPERIOR -->
+						<div class="wpat-field-group" style="margin-top: 25px; border-top: 1px dotted var(--wpat-border); padding-top: 20px;">
+							<label style="font-weight: 600; display: block; margin-bottom: 8px;">Limpieza de Nodos en la Barra Superior (para usuarios autorizados)</label>
+							<p class="description" style="margin-bottom: 12px;">Elimina elementos innecesarios o marcas externas de la barra superior para mantenerla limpia y profesional:</p>
+							
+							<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;">
+								<label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+									<input type="checkbox" name="wpat_settings[admin_bar_remove_wp_logo]" value="1" <?php checked( isset( $settings['admin_bar_remove_wp_logo'] ) ? $settings['admin_bar_remove_wp_logo'] : '1', '1' ); ?> />
+									Ocultar Logo de WordPress
+								</label>
+								<label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+									<input type="checkbox" name="wpat_settings[admin_bar_remove_comments]" value="1" <?php checked( isset( $settings['admin_bar_remove_comments'] ) ? $settings['admin_bar_remove_comments'] : '0', '1' ); ?> />
+									Ocultar Burbuja de Comentarios
+								</label>
+								<label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+									<input type="checkbox" name="wpat_settings[admin_bar_remove_new_content]" value="1" <?php checked( isset( $settings['admin_bar_remove_new_content'] ) ? $settings['admin_bar_remove_new_content'] : '0', '1' ); ?> />
+									Ocultar Botón "+ Nuevo"
+								</label>
+								<label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+									<input type="checkbox" name="wpat_settings[admin_bar_remove_updates]" value="1" <?php checked( isset( $settings['admin_bar_remove_updates'] ) ? $settings['admin_bar_remove_updates'] : '0', '1' ); ?> />
+									Ocultar Aviso de Actualizaciones
+								</label>
+								<label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+									<input type="checkbox" name="wpat_settings[admin_bar_remove_customize]" value="1" <?php checked( isset( $settings['admin_bar_remove_customize'] ) ? $settings['admin_bar_remove_customize'] : '0', '1' ); ?> />
+									Ocultar Enlace "Personalizar"
+								</label>
+							</div>
+						</div>
+
+					</div>
+				</div>
 				<?php
 				break;
 			case 'dashboard_cleaner':
@@ -3350,10 +3719,23 @@ class WPAT_Admin {
 									<?php $this->render_module_toggle( 'dashboard_cleaner', $settings, true ); ?>
 								</div>
 								<div class="wpat-module-body" style="display: block;">
-									<div class="wpat-field-group" style="margin-top: 10px;">
-										<label for="wpat_dashboard_support_email">Email de Destino de Consultas</label>
-										<input type="email" name="wpat_settings[dashboard_support_email]" id="wpat_dashboard_support_email" value="<?php echo esc_attr( isset( $settings['dashboard_support_email'] ) ? $settings['dashboard_support_email'] : get_option( 'admin_email' ) ); ?>" class="regular-text" style="display:block; margin-bottom:10px;" />
-										<p class="description">Las consultas enviadas a través del formulario de soporte en el escritorio se enviarán a esta dirección de correo.</p>
+									<div class="wpat-field-group-row" style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px;">
+										<div class="wpat-field-group" style="flex: 1; min-width: 250px;">
+											<label for="wpat_dashboard_welcome_title">Título del Bloque de Soporte</label>
+											<input type="text" name="wpat_settings[dashboard_welcome_title]" id="wpat_dashboard_welcome_title" value="<?php echo esc_attr( isset( $settings['dashboard_welcome_title'] ) ? $settings['dashboard_welcome_title'] : 'Soporte y Gestión' ); ?>" class="regular-text" style="width: 100%;" />
+											<p class="description">Título de la tarjeta de contacto y asistencia en el escritorio.</p>
+										</div>
+										<div class="wpat-field-group" style="flex: 1; min-width: 250px;">
+											<label for="wpat_dashboard_support_email">Email de Destino de Consultas</label>
+											<input type="email" name="wpat_settings[dashboard_support_email]" id="wpat_dashboard_support_email" value="<?php echo esc_attr( isset( $settings['dashboard_support_email'] ) ? $settings['dashboard_support_email'] : get_option( 'admin_email' ) ); ?>" class="regular-text" style="width: 100%;" />
+											<p class="description">Las consultas enviadas a través del formulario se remitirán a esta dirección.</p>
+										</div>
+									</div>
+
+									<div class="wpat-field-group" style="margin-top: 15px;">
+										<label for="wpat_dashboard_welcome_text">Mensaje de Bienvenida / Ayuda al Cliente</label>
+										<textarea name="wpat_settings[dashboard_welcome_text]" id="wpat_dashboard_welcome_text" rows="3" class="large-text" placeholder="Bienvenido al panel de administración de tu sitio web..."><?php echo esc_textarea( isset( $settings['dashboard_welcome_text'] ) ? $settings['dashboard_welcome_text'] : 'Bienvenido al panel de administración de tu sitio web. Si necesitas asistencia, puedes ponerte en contacto con nosotros a través del formulario de soporte.' ); ?></textarea>
+										<p class="description">Texto explicativo que verá el usuario en el módulo de soporte del escritorio.</p>
 									</div>
 									
 									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dotted var(--wpat-border); padding-top: 15px;">
@@ -3399,6 +3781,10 @@ class WPAT_Admin {
 												<input type="checkbox" name="wpat_settings[db_card_media]" value="1" <?php checked( isset( $settings['db_card_media'] ) ? $settings['db_card_media'] : '1', '1' ); ?> />
 												Biblioteca de Medios
 											</label>
+											<label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+												<input type="checkbox" name="wpat_settings[db_card_support]" value="1" <?php checked( isset( $settings['db_card_support'] ) ? $settings['db_card_support'] : '1', '1' ); ?> />
+												Tarjeta Soporte & Entorno
+											</label>
 											<?php if ( class_exists( 'WooCommerce' ) ) : ?>
 												<label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 6px;">
 													<input type="checkbox" name="wpat_settings[db_card_woo]" value="1" <?php checked( isset( $settings['db_card_woo'] ) ? $settings['db_card_woo'] : '1', '1' ); ?> />
@@ -3413,7 +3799,6 @@ class WPAT_Admin {
 											<?php endif; ?>
 										</div>
 									</div>
-									
 									
 								</div>
 							</div>
@@ -6174,17 +6559,130 @@ class WPAT_Admin {
 				<?php
 				break;
 			case 'duplicator':
+				$dup_suffix      = isset( $settings['duplicator_title_suffix'] ) ? $settings['duplicator_title_suffix'] : ' (Copia)';
+				$dup_status      = isset( $settings['duplicator_post_status'] ) ? $settings['duplicator_post_status'] : 'draft';
+				$dup_redirect    = isset( $settings['duplicator_redirect_to'] ) ? $settings['duplicator_redirect_to'] : 'edit';
+				$dup_admin_bar   = isset( $settings['duplicator_show_admin_bar'] ) ? $settings['duplicator_show_admin_bar'] : '1';
+				$dup_taxonomies  = isset( $settings['duplicator_copy_taxonomies'] ) ? $settings['duplicator_copy_taxonomies'] : '1';
+				$dup_meta        = isset( $settings['duplicator_copy_meta'] ) ? $settings['duplicator_copy_meta'] : '1';
+				$dup_author      = isset( $settings['duplicator_copy_author'] ) ? $settings['duplicator_copy_author'] : 'current';
+				$dup_date        = isset( $settings['duplicator_copy_date'] ) ? $settings['duplicator_copy_date'] : 'current';
+				$dup_post_types  = isset( $settings['duplicator_post_types'] ) && is_array( $settings['duplicator_post_types'] ) ? $settings['duplicator_post_types'] : array( 'post', 'page', 'product' );
+
+				$all_post_types = get_post_types( array( 'public' => true ), 'objects' );
+				if ( isset( $all_post_types['attachment'] ) ) {
+					unset( $all_post_types['attachment'] );
+				}
 				?>
-<div class="wpat-module-card">
-								<div class="wpat-module-header">
-									<div class="wpat-module-info">
-										<h3>Clonador de Entradas y Páginas</h3>
-										<p>Añade un enlace "Clonar" en los listados de administración para duplicar instantáneamente cualquier Entrada, Página o Custom Post Type conservando metadatos (ACF/JetEngine).</p>
-									</div>
-									<?php $this->render_module_toggle( 'duplicator', $settings, false ); ?>
+				<div class="wpat-module-card">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Clonador de Entradas, Páginas y CPTs</h3>
+							<p>Duplica cualquier Entrada, Página, Producto o Custom Post Type con 1 clic conservando metadatos (ACF, Elementor, Divi), taxonomías y atributos.</p>
+						</div>
+						<?php $this->render_module_toggle( 'duplicator', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block; padding: 20px;">
+						<form method="post" action="">
+							<?php wp_nonce_field( 'wpat_save_settings_action', 'wpat_save_settings_nonce' ); ?>
+							<input type="hidden" name="wpat_saving_module" value="duplicator" />
+
+							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 20px;">
+								
+								<!-- Formato del Título -->
+								<div class="wpat-field-group">
+									<label for="wpat_duplicator_title_suffix" style="font-weight: 600; display: block; margin-bottom: 6px;">
+										Formato del Título Duplicado
+									</label>
+									<input type="text" id="wpat_duplicator_title_suffix" name="wpat_settings[duplicator_title_suffix]" value="<?php echo esc_attr( $dup_suffix ); ?>" placeholder=" (Copia)" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+									<p class="description" style="margin-top: 4px;">Puedes escribir un sufijo como <code> (Copia)</code> o usar la etiqueta <code>{title} (Clon)</code>.</p>
 								</div>
-				<?php
-				break;
+
+								<!-- Estado del Post Duplicado -->
+								<div class="wpat-field-group">
+									<label for="wpat_duplicator_post_status" style="font-weight: 600; display: block; margin-bottom: 6px;">
+										Estado Inicial del Clon
+									</label>
+									<select id="wpat_duplicator_post_status" name="wpat_settings[duplicator_post_status]" style="width: 100%; height: 36px; border-radius: 6px;">
+										<option value="draft" <?php selected( $dup_status, 'draft' ); ?>>Borrador (Recomendado por seguridad)</option>
+										<option value="pending" <?php selected( $dup_status, 'pending' ); ?>>Pendiente de revisión</option>
+										<option value="publish" <?php selected( $dup_status, 'publish' ); ?>>Publicado inmediatamente</option>
+										<option value="private" <?php selected( $dup_status, 'private' ); ?>>Privado</option>
+									</select>
+									<p class="description" style="margin-top: 4px;">El estado con el que se guardará el nuevo elemento clonado.</p>
+								</div>
+
+								<!-- Destino tras Duplicar -->
+								<div class="wpat-field-group">
+									<label for="wpat_duplicator_redirect_to" style="font-weight: 600; display: block; margin-bottom: 6px;">
+										Acción tras Duplicar
+									</label>
+									<select id="wpat_duplicator_redirect_to" name="wpat_settings[duplicator_redirect_to]" style="width: 100%; height: 36px; border-radius: 6px;">
+										<option value="edit" <?php selected( $dup_redirect, 'edit' ); ?>>Abrir directamente el nuevo clon en el Editor (Más rápido)</option>
+										<option value="list" <?php selected( $dup_redirect, 'list' ); ?>>Permanecer en la lista de entradas / páginas</option>
+									</select>
+									<p class="description" style="margin-top: 4px;">Elige a dónde te redirige WordPress al hacer clic en duplicar.</p>
+								</div>
+
+								<!-- Asignación de Autor -->
+								<div class="wpat-field-group">
+									<label for="wpat_duplicator_copy_author" style="font-weight: 600; display: block; margin-bottom: 6px;">
+										Autor del Clon
+									</label>
+									<select id="wpat_duplicator_copy_author" name="wpat_settings[duplicator_copy_author]" style="width: 100%; height: 36px; border-radius: 6px;">
+										<option value="current" <?php selected( $dup_author, 'current' ); ?>>Usuario actual (el que hace clic en duplicar)</option>
+										<option value="original" <?php selected( $dup_author, 'original' ); ?>>Conservar el autor original de la entrada</option>
+									</select>
+								</div>
+							</div>
+
+							<!-- Selector de Tipos de Contenido Habilitados -->
+							<div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-bottom: 20px;">
+								<label style="font-weight: 700; font-size: 13.5px; color: #1e293b; display: block; margin-bottom: 8px;">
+									Tipos de Contenido Habilitados (Post Types)
+								</label>
+								<p class="description" style="margin-bottom: 12px;">Marca en qué tipos de contenido deseas mostrar el botón "Duplicar" y las acciones en lote:</p>
+								<div style="display: flex; flex-wrap: wrap; gap: 15px;">
+									<?php foreach ( $all_post_types as $pt_slug => $pt_obj ) : ?>
+										<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; cursor: pointer;">
+											<input type="checkbox" name="wpat_settings[duplicator_post_types][]" value="<?php echo esc_attr( $pt_slug ); ?>" <?php checked( in_array( $pt_slug, $dup_post_types, true ) ); ?> style="border-radius: 4px;" />
+											<span><?php echo esc_html( $pt_obj->labels->singular_name ? $pt_obj->labels->singular_name : $pt_obj->label ); ?> (<code><?php echo esc_html( $pt_slug ); ?></code>)</span>
+										</label>
+									<?php endforeach; ?>
+								</div>
+							</div>
+
+							<!-- Opciones Avanzadas de Clonación -->
+							<div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-bottom: 20px;">
+								<label style="font-weight: 700; font-size: 13.5px; color: #1e293b; display: block; margin-bottom: 12px;">
+									Opciones de Metadatos y Accesos Directos
+								</label>
+								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+									<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+										<input type="checkbox" name="wpat_settings[duplicator_copy_taxonomies]" value="1" <?php checked( $dup_taxonomies, '1' ); ?> style="border-radius: 4px;" />
+										<span><strong>Copiar Taxonomías:</strong> Clona categorías, etiquetas y taxonomías asignadas.</span>
+									</label>
+
+									<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+										<input type="checkbox" name="wpat_settings[duplicator_copy_meta]" value="1" <?php checked( $dup_meta, '1' ); ?> style="border-radius: 4px;" />
+										<span><strong>Copiar Metadatos & Constructores:</strong> Clona campos de ACF, JetEngine, Elementor y Divi.</span>
+									</label>
+
+									<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+										<input type="checkbox" name="wpat_settings[duplicator_show_admin_bar]" value="1" <?php checked( $dup_admin_bar, '1' ); ?> style="border-radius: 4px;" />
+										<span><strong>Barra Superior de WordPress:</strong> Añadir botón "Duplicar" en el Admin Bar.</span>
+									</label>
+								</div>
+							</div>
+
+							<div style="border-top: 1px solid #e2e8f0; padding-top: 15px; display: flex; justify-content: flex-end;">
+								<button type="submit" class="button button-primary" style="height: 36px; padding: 0 20px; font-weight: 600;">
+									Guardar Ajustes de Duplicador
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
 			case 'snippets':
 				?>
 <div class="wpat-module-card">
@@ -6807,75 +7305,145 @@ class WPAT_Admin {
 				<?php
 				break;
 			case 'accessibility':
+				$a11y_pos         = isset( $settings['accessibility_position'] ) ? $settings['accessibility_position'] : 'bottom-left';
+				$a11y_offset      = isset( $settings['accessibility_offset_y'] ) ? $settings['accessibility_offset_y'] : '25';
+				$a11y_color       = isset( $settings['accessibility_bg_color'] ) ? $settings['accessibility_bg_color'] : '#2563eb';
+				$a11y_zoom        = ! isset( $settings['accessibility_text_zoom'] ) || '1' === $settings['accessibility_text_zoom'];
+				$a11y_guide       = ! isset( $settings['accessibility_reading_guide'] ) || '1' === $settings['accessibility_reading_guide'];
+				$a11y_cursor      = ! isset( $settings['accessibility_big_cursor'] ) || '1' === $settings['accessibility_big_cursor'];
+				$a11y_anim        = ! isset( $settings['accessibility_stop_animations'] ) || '1' === $settings['accessibility_stop_animations'];
+				$a11y_spacing     = ! isset( $settings['accessibility_text_spacing'] ) || '1' === $settings['accessibility_text_spacing'];
+				$a11y_dyslexic    = ! isset( $settings['accessibility_dyslexic_font'] ) || '1' === $settings['accessibility_dyslexic_font'];
+				$a11y_gray        = ! isset( $settings['accessibility_grayscale'] ) || '1' === $settings['accessibility_grayscale'];
+				$a11y_contrast    = ! isset( $settings['accessibility_high_contrast'] ) || '1' === $settings['accessibility_high_contrast'];
+				$a11y_neg         = ! isset( $settings['accessibility_negative_contrast'] ) || '1' === $settings['accessibility_negative_contrast'];
+				$a11y_light       = ! isset( $settings['accessibility_light_bg'] ) || '1' === $settings['accessibility_light_bg'];
+				$a11y_links       = ! isset( $settings['accessibility_underline_links'] ) || '1' === $settings['accessibility_underline_links'];
+				$a11y_font        = ! isset( $settings['accessibility_readable_font'] ) || '1' === $settings['accessibility_readable_font'];
 				?>
-<div class="wpat-module-card" style="margin-top: 20px;">
-								<div class="wpat-module-header">
-									<div class="wpat-module-info">
-										<h3>Herramientas de Accesibilidad Web (Zero-Bloat)</h3>
-										<p>Añade un widget flotante ultra-ligero de accesibilidad (Aumentar texto, Escala de grises, Alto contraste, Fuente legible, etc.) sin cargar scripts ni librerías pesadas de terceros.</p>
-									</div>
-									<?php $this->render_module_toggle( 'accessibility', $settings, true ); ?>
+				<div class="wpat-module-card">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Herramientas de Accesibilidad Web (WCAG & ADA Compliant)</h3>
+							<p>Widget flotante ultra-ligero de accesibilidad con 12 herramientas inclusivas, guía de lectura, cursor grande, modo dislexia y persistencia en navegador.</p>
+						</div>
+						<?php $this->render_module_toggle( 'accessibility', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block; padding: 22px;">
+						<form method="post" action="">
+							<?php wp_nonce_field( 'wpat_save_settings_action', 'wpat_save_settings_nonce' ); ?>
+							<input type="hidden" name="wpat_saving_module" value="accessibility" />
+
+							<!-- Posición y Aspecto del Botón -->
+							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 24px;">
+								<div class="wpat-field-group">
+									<label for="wpat_accessibility_position" style="display:block; margin-bottom:6px; font-weight:600;">Posición del Botón Flotante</label>
+									<select name="wpat_settings[accessibility_position]" id="wpat_accessibility_position" style="width: 100%; height: 36px; border-radius: 6px;">
+										<option value="bottom-left" <?php selected( $a11y_pos, 'bottom-left' ); ?>>Inferior Izquierda (Recomendado)</option>
+										<option value="bottom-right" <?php selected( $a11y_pos, 'bottom-right' ); ?>>Inferior Derecha</option>
+										<option value="top-left" <?php selected( $a11y_pos, 'top-left' ); ?>>Superior Izquierda</option>
+										<option value="top-right" <?php selected( $a11y_pos, 'top-right' ); ?>>Superior Derecha</option>
+									</select>
 								</div>
-								<div class="wpat-module-body" style="display: block;">
-									
 
-									<div class="wpat-field-group" style="margin-top: 15px; display: flex; gap: 25px; align-items: flex-start; flex-wrap: wrap;">
-										<div>
-											<label for="wpat_accessibility_position" style="display:block; margin-bottom:5px; font-weight:600;">Posición del Botón Flotante</label>
-											<select name="wpat_settings[accessibility_position]" id="wpat_accessibility_position" style="height: 32px;">
-												<option value="bottom-left" <?php selected( isset( $settings['accessibility_position'] ) ? $settings['accessibility_position'] : 'bottom-left', 'bottom-left' ); ?>>Inferior Izquierda (Recomendado)</option>
-												<option value="bottom-right" <?php selected( isset( $settings['accessibility_position'] ) ? $settings['accessibility_position'] : 'bottom-left', 'bottom-right' ); ?>>Inferior Derecha</option>
-												<option value="top-left" <?php selected( isset( $settings['accessibility_position'] ) ? $settings['accessibility_position'] : 'bottom-left', 'top-left' ); ?>>Superior Izquierda</option>
-												<option value="top-right" <?php selected( isset( $settings['accessibility_position'] ) ? $settings['accessibility_position'] : 'bottom-left', 'top-right' ); ?>>Superior Derecha</option>
-											</select>
-										</div>
-										<div>
-											<label for="wpat_accessibility_offset_y" style="display:block; margin-bottom:5px; font-weight:600;">Distancia Vertical (Margen en px)</label>
-											<input type="number" name="wpat_settings[accessibility_offset_y]" id="wpat_accessibility_offset_y" min="0" max="500" value="<?php echo esc_attr( isset( $settings['accessibility_offset_y'] ) ? $settings['accessibility_offset_y'] : '25' ); ?>" class="small-text" style="height: 32px; text-align: center;" /> px
-										</div>
-										<div>
-											<label for="wpat_accessibility_bg_color" style="display:block; margin-bottom:5px; font-weight:600;">Color del Icono Flotante</label>
-											<input type="text" name="wpat_settings[accessibility_bg_color]" id="wpat_accessibility_bg_color" value="<?php echo esc_attr( isset( $settings['accessibility_bg_color'] ) ? $settings['accessibility_bg_color'] : '#2563eb' ); ?>" class="wpat-color-picker" />
-										</div>
-									</div>
+								<div class="wpat-field-group">
+									<label for="wpat_accessibility_offset_y" style="display:block; margin-bottom:6px; font-weight:600;">Margen Vertical (Distancia en px)</label>
+									<input type="number" name="wpat_settings[accessibility_offset_y]" id="wpat_accessibility_offset_y" min="0" max="500" value="<?php echo esc_attr( $a11y_offset ); ?>" class="small-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+									<p class="description" style="margin-top:4px;">Separación en píxeles respecto al borde superior o inferior de la pantalla.</p>
+								</div>
 
-									<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dashed var(--wpat-border); padding-top: 15px;">
-										<label style="font-weight: 600; display: block; margin-bottom: 10px;">Herramientas Activas en el Menú de Accesibilidad:</label>
-										<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;">
-											<label style="font-weight: normal;">
-												<input type="checkbox" name="wpat_settings[accessibility_text_zoom]" value="1" <?php checked( isset( $settings['accessibility_text_zoom'] ) ? $settings['accessibility_text_zoom'] : '1', '1' ); ?>>
-												🔍 Aumentar / Disminuir Texto
-											</label>
-											<label style="font-weight: normal;">
-												<input type="checkbox" name="wpat_settings[accessibility_grayscale]" value="1" <?php checked( isset( $settings['accessibility_grayscale'] ) ? $settings['accessibility_grayscale'] : '1', '1' ); ?>>
-												⏸️ Escala de Grises
-											</label>
-											<label style="font-weight: normal;">
-												<input type="checkbox" name="wpat_settings[accessibility_high_contrast]" value="1" <?php checked( isset( $settings['accessibility_high_contrast'] ) ? $settings['accessibility_high_contrast'] : '1', '1' ); ?>>
-												🌓 Alto Contraste
-											</label>
-											<label style="font-weight: normal;">
-												<input type="checkbox" name="wpat_settings[accessibility_negative_contrast]" value="1" <?php checked( isset( $settings['accessibility_negative_contrast'] ) ? $settings['accessibility_negative_contrast'] : '1', '1' ); ?>>
-												👁️ Contraste Negativo / Invertir
-											</label>
-											<label style="font-weight: normal;">
-												<input type="checkbox" name="wpat_settings[accessibility_light_bg]" value="1" <?php checked( isset( $settings['accessibility_light_bg'] ) ? $settings['accessibility_light_bg'] : '1', '1' ); ?>>
-												💡 Fondo Claro
-											</label>
-											<label style="font-weight: normal;">
-												<input type="checkbox" name="wpat_settings[accessibility_underline_links]" value="1" <?php checked( isset( $settings['accessibility_underline_links'] ) ? $settings['accessibility_underline_links'] : '1', '1' ); ?>>
-												🔗 Subrayar Enlaces
-											</label>
-											<label style="font-weight: normal;">
-												<input type="checkbox" name="wpat_settings[accessibility_readable_font]" value="1" <?php checked( isset( $settings['accessibility_readable_font'] ) ? $settings['accessibility_readable_font'] : '1', '1' ); ?>>
-												🅰️ Fuente Legible (Sans-Serif)
-											</label>
-										</div>
-									</div>
-
-									
+								<div class="wpat-field-group">
+									<label for="wpat_accessibility_bg_color" style="display:block; margin-bottom:6px; font-weight:600;">Color del Icono Flotante</label>
+									<input type="text" name="wpat_settings[accessibility_bg_color]" id="wpat_accessibility_bg_color" value="<?php echo esc_attr( $a11y_color ); ?>" class="wpat-color-picker" />
 								</div>
 							</div>
+
+							<!-- Herramientas Activas -->
+							<div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-bottom: 20px;">
+								<label style="font-weight: 700; font-size: 13.5px; color: #1e293b; display: block; margin-bottom: 8px;">
+									Herramientas Habilitadas en el Menú de Accesibilidad
+								</label>
+								<p class="description" style="margin-bottom: 15px;">Selecciona las utilidades que los usuarios podrán activar desde el widget flotante:</p>
+
+								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;">
+									<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; background: #f8fafc; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
+										<input type="checkbox" name="wpat_settings[accessibility_text_zoom]" value="1" <?php checked( $a11y_zoom ); ?> style="border-radius: 4px;" />
+										<span>🔍 <strong>Aumentar / Disminuir Texto</strong> (+40px máx)</span>
+									</label>
+
+									<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; background: #f8fafc; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
+										<input type="checkbox" name="wpat_settings[accessibility_reading_guide]" value="1" <?php checked( $a11y_guide ); ?> style="border-radius: 4px;" />
+										<span>🎯 <strong>Guía de Lectura</strong> (Línea para dislexia)</span>
+									</label>
+
+									<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; background: #f8fafc; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
+										<input type="checkbox" name="wpat_settings[accessibility_big_cursor]" value="1" <?php checked( $a11y_cursor ); ?> style="border-radius: 4px;" />
+										<span>🖱️ <strong>Cursor Grande</strong> (Puntero ampliado)</span>
+									</label>
+
+									<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; background: #f8fafc; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
+										<input type="checkbox" name="wpat_settings[accessibility_stop_animations]" value="1" <?php checked( $a11y_anim ); ?> style="border-radius: 4px;" />
+										<span>⏸️ <strong>Detener Animaciones</strong> (Anti-mareos)</span>
+									</label>
+
+									<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; background: #f8fafc; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
+										<input type="checkbox" name="wpat_settings[accessibility_text_spacing]" value="1" <?php checked( $a11y_spacing ); ?> style="border-radius: 4px;" />
+										<span>↔️ <strong>Espaciado de Texto</strong> (WCAG 1.4.12)</span>
+									</label>
+
+									<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; background: #f8fafc; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
+										<input type="checkbox" name="wpat_settings[accessibility_dyslexic_font]" value="1" <?php checked( $a11y_dyslexic ); ?> style="border-radius: 4px;" />
+										<span>🔤 <strong>Fuente para Dislexia</strong> (OpenDyslexic)</span>
+									</label>
+
+									<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; background: #f8fafc; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
+										<input type="checkbox" name="wpat_settings[accessibility_grayscale]" value="1" <?php checked( $a11y_gray ); ?> style="border-radius: 4px;" />
+										<span>⚪ <strong>Escala de Grises</strong></span>
+									</label>
+
+									<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; background: #f8fafc; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
+										<input type="checkbox" name="wpat_settings[accessibility_high_contrast]" value="1" <?php checked( $a11y_contrast ); ?> style="border-radius: 4px;" />
+										<span>🌓 <strong>Alto Contraste</strong> (Fondo negro)</span>
+									</label>
+
+									<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; background: #f8fafc; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
+										<input type="checkbox" name="wpat_settings[accessibility_negative_contrast]" value="1" <?php checked( $a11y_neg ); ?> style="border-radius: 4px;" />
+										<span>👁️ <strong>Contraste Negativo</strong> (Invertir)</span>
+									</label>
+
+									<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; background: #f8fafc; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
+										<input type="checkbox" name="wpat_settings[accessibility_light_bg]" value="1" <?php checked( $a11y_light ); ?> style="border-radius: 4px;" />
+										<span>💡 <strong>Fondo Claro</strong></span>
+									</label>
+
+									<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; background: #f8fafc; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
+										<input type="checkbox" name="wpat_settings[accessibility_underline_links]" value="1" <?php checked( $a11y_links ); ?> style="border-radius: 4px;" />
+										<span>🔗 <strong>Subrayar Enlaces</strong></span>
+									</label>
+
+									<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; background: #f8fafc; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
+										<input type="checkbox" name="wpat_settings[accessibility_readable_font]" value="1" <?php checked( $a11y_font ); ?> style="border-radius: 4px;" />
+										<span>🅰️ <strong>Fuente Legible</strong> (Sans-Serif)</span>
+									</label>
+								</div>
+							</div>
+
+							<!-- Integración y Shortcode -->
+							<div style="border-top: 1px solid #e2e8f0; padding-top: 16px; margin-bottom: 20px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 14px 18px; border-radius: 6px;">
+								<strong style="color: #166534; font-size: 13px; display: block; margin-bottom: 4px;">Disparador Personalizado y Shortcodes:</strong>
+								<span style="font-size: 12.5px; color: #374151;">
+									Puedes abrir el menú de accesibilidad desde cualquier enlace o menú de tu tema añadiendo la clase CSS <code>wpat-open-a11y</code> o usando el shortcode <code>[wpat_accessibility text="Accesibilidad"]</code>.
+								</span>
+							</div>
+
+							<div style="display: flex; justify-content: flex-end;">
+								<button type="submit" class="button button-primary" style="height: 36px; padding: 0 20px; font-weight: 600;">
+									Guardar Ajustes de Accesibilidad
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
 				<?php
 				break;
 			case 'svg-support':
@@ -7149,108 +7717,255 @@ class WPAT_Admin {
 				<?php
 				break;
 			case 'smtp':
+				require_once WPAT_PATH . 'includes/modules/class-wpat-smtp.php';
+				$smtp_logs = WPAT_SMTP::get_delivery_log();
+				$site_domain = wp_parse_url( home_url(), PHP_URL_HOST );
 				?>
-<div class="wpat-module-card">
-								<div class="wpat-module-header">
-									<div class="wpat-module-info">
-										<h3>Servidor de Correo SMTP</h3>
-										<p>Activa y define la conexión con tu proveedor SMTP (Gmail, SendGrid, Outlook, Mailgun o tu propio servidor de hosting).</p>
-									</div>
-									<?php $this->render_module_toggle( 'smtp', $settings, true ); ?>
-								</div>
-								<div class="wpat-module-body" style="display: block;">
-									
-									<div style="display: flex; flex-wrap: wrap; gap: 20px;">
-										<div class="wpat-field-group" style="flex: 2; min-width: 250px;">
-											<label for="wpat_smtp_host">Servidor SMTP (Host)</label>
-											<input type="text" name="wpat_settings[smtp_host]" id="wpat_smtp_host" value="<?php echo esc_attr( $settings['smtp_host'] ); ?>" class="regular-text" placeholder="smtp.ejemplo.com" style="width:100%;" />
-											<p class="description">El host SMTP provisto por tu proveedor de correo.</p>
-										</div>
+				<div class="wpat-module-card">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Servidor de Correo SMTP & Registro de Envíos</h3>
+							<p>Enruta de forma segura y fiable todos los correos transaccionales y notificaciones de WordPress mediante conexión SMTP autenticada, con presets de proveedores y registro de entregas.</p>
+						</div>
+						<?php $this->render_module_toggle( 'smtp', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block; padding: 20px;">
+						
+						<!-- 1. Plantillas Rápidas de Proveedores SMTP (Presets) -->
+						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;">
+							<h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+								<span class="dashicons dashicons-flash" style="color: #f59e0b;"></span>
+								Plantillas Rápidas de Configuración (1 Clic)
+							</h4>
+							<p style="margin: 0 0 14px 0; font-size: 13px; color: #64748b;">
+								Haz clic en tu proveedor para autocompletar el Servidor (Host), Puerto y Cifrado recomendados al instante:
+							</p>
+							<div style="display: flex; flex-wrap: wrap; gap: 8px;" id="wpat_smtp_presets_wrapper">
+								<button type="button" class="button wpat-smtp-preset-btn" data-host="smtp.gmail.com" data-port="587" data-secure="tls" data-auth="1" data-provider="Gmail / Workspace" title="Requiere contraseña de aplicación de Google">
+									<span class="dashicons dashicons-google" style="vertical-align: middle; margin-right: 2px;"></span> Gmail / Google Workspace
+								</button>
+								<button type="button" class="button wpat-smtp-preset-btn" data-host="smtp.office365.com" data-port="587" data-secure="tls" data-auth="1" data-provider="Microsoft 365">
+									<span class="dashicons dashicons-microsoft" style="vertical-align: middle; margin-right: 2px;"></span> Microsoft 365 / Outlook
+								</button>
+								<button type="button" class="button wpat-smtp-preset-btn" data-host="smtp.sendgrid.net" data-port="587" data-secure="tls" data-auth="1" data-user="apikey" data-provider="SendGrid">
+									<span class="dashicons dashicons-email-alt2" style="vertical-align: middle; margin-right: 2px;"></span> SendGrid
+								</button>
+								<button type="button" class="button wpat-smtp-preset-btn" data-host="smtp-relay.brevo.com" data-port="587" data-secure="tls" data-auth="1" data-provider="Brevo">
+									<span class="dashicons dashicons-email-alt" style="vertical-align: middle; margin-right: 2px;"></span> Brevo (Sendinblue)
+								</button>
+								<button type="button" class="button wpat-smtp-preset-btn" data-host="smtp.mailgun.org" data-port="587" data-secure="tls" data-auth="1" data-provider="Mailgun">
+									<span class="dashicons dashicons-cloud" style="vertical-align: middle; margin-right: 2px;"></span> Mailgun
+								</button>
+								<button type="button" class="button wpat-smtp-preset-btn" data-host="smtp.hostinger.com" data-port="465" data-secure="ssl" data-auth="1" data-provider="Hostinger">
+									<span class="dashicons dashicons-admin-generic" style="vertical-align: middle; margin-right: 2px;"></span> Hostinger
+								</button>
+								<button type="button" class="button wpat-smtp-preset-btn" data-host="mail.<?php echo esc_attr( $site_domain ); ?>" data-port="465" data-secure="ssl" data-auth="1" data-provider="cPanel / Hosting">
+									<span class="dashicons dashicons-server" style="vertical-align: middle; margin-right: 2px;"></span> cPanel / Hosting Propio
+								</button>
+							</div>
+							<div id="wpat_smtp_preset_notice" style="display:none; margin-top: 10px; font-size: 12px; color: #0284c7; background: #e0f2fe; padding: 6px 12px; border-radius: 4px;"></div>
+						</div>
 
-										<div class="wpat-field-group" style="flex: 1; min-width: 120px;">
-											<label for="wpat_smtp_port">Puerto SMTP</label>
-											<input type="text" name="wpat_settings[smtp_port]" id="wpat_smtp_port" value="<?php echo esc_attr( $settings['smtp_port'] ); ?>" class="regular-text" placeholder="465" style="width:100%;" />
-											<p class="description">Generalmente: 465 (SSL), 587 (TLS/STARTTLS) o 25.</p>
-										</div>
-									</div>
-
-									<div class="wpat-field-group" style="margin-top: 15px;">
-										<label for="wpat_smtp_secure">Cifrado de Seguridad</label>
-										<select name="wpat_settings[smtp_secure]" id="wpat_smtp_secure">
-											<option value="none" <?php selected( $settings['smtp_secure'], 'none' ); ?>>Ninguno (Sin cifrado)</option>
-											<option value="ssl" <?php selected( $settings['smtp_secure'], 'ssl' ); ?>>SSL (Recomendado para puerto 465)</option>
-											<option value="tls" <?php selected( $settings['smtp_secure'], 'tls' ); ?>>TLS / STARTTLS (Recomendado para puerto 587)</option>
-										</select>
-									</div>
-
-									<div class="wpat-field-group" style="margin-top: 15px;">
-										<label>
-											<input type="checkbox" name="wpat_settings[smtp_insecure]" value="1" <?php checked( $settings['smtp_insecure'], '1' ); ?>>
-											Desactivar verificación de certificados SSL (Útil si tu hosting tiene problemas de verificación SSL/TLS)
-										</label>
-									</div>
-
-									<div class="wpat-field-group" style="margin-top: 15px;">
-										<label>
-											<input type="checkbox" name="wpat_settings[smtp_auth]" value="1" id="wpat_smtp_auth" <?php checked( $settings['smtp_auth'], '1' ); ?>>
-											El servidor SMTP requiere autenticación
-										</label>
-									</div>
-
-									<div class="wpat-smtp-auth-fields wpat-sub-field" <?php $this->style_conditional_display( $settings['smtp_auth'] ); ?>>
-										<div style="display: flex; flex-wrap: wrap; gap: 20px;">
-											<div class="wpat-field-group" style="flex: 1; min-width: 200px;">
-												<label for="wpat_smtp_username">Usuario SMTP (Email completo)</label>
-												<input type="text" name="wpat_settings[smtp_username]" id="wpat_smtp_username" value="<?php echo esc_attr( $settings['smtp_username'] ); ?>" class="regular-text" placeholder="usuario@ejemplo.com" style="width:100%;" />
-											</div>
-											<div class="wpat-field-group" style="flex: 1; min-width: 200px;">
-												<label for="wpat_smtp_password">Contraseña SMTP</label>
-												<input type="password" name="wpat_settings[smtp_password]" id="wpat_smtp_password" value="<?php echo esc_attr( $settings['smtp_password'] ); ?>" class="regular-text" placeholder="••••••••••••" style="width:100%;" />
-											</div>
-										</div>
-									</div>
-
-									<hr style="border:none; border-top: 1px dashed var(--wpat-border); margin: 25px 0;" />
-
-									<div style="display: flex; flex-wrap: wrap; gap: 20px;">
-										<div class="wpat-field-group" style="flex: 1; min-width: 200px;">
-											<label for="wpat_smtp_from_email">Email del Remitente (Opcional)</label>
-											<input type="email" name="wpat_settings[smtp_from_email]" id="wpat_smtp_from_email" value="<?php echo esc_attr( $settings['smtp_from_email'] ); ?>" class="regular-text" placeholder="webmaster@ejemplo.com" style="width:100%;" />
-											<p class="description">Forzará esta dirección en todos los emails salientes (evita rebotes).</p>
-										</div>
-										<div class="wpat-field-group" style="flex: 1; min-width: 200px;">
-											<label for="wpat_smtp_from_name">Nombre del Remitente (Opcional)</label>
-											<input type="text" name="wpat_settings[smtp_from_name]" id="wpat_smtp_from_name" value="<?php echo esc_attr( $settings['smtp_from_name'] ); ?>" class="regular-text" placeholder="Mi Sitio Web" style="width:100%;" />
-											<p class="description">Forzará el nombre del remitente en el correo.</p>
-										</div>
-									</div>
-
-									
-								</div>
+						<!-- 2. Credenciales y Conexión SMTP -->
+						<div style="display: flex; flex-wrap: wrap; gap: 20px;">
+							<div class="wpat-field-group" style="flex: 2; min-width: 250px;">
+								<label for="wpat_smtp_host" style="font-weight: 600;">Servidor SMTP (Host)</label>
+								<input type="text" name="wpat_settings[smtp_host]" id="wpat_smtp_host" value="<?php echo esc_attr( $settings['smtp_host'] ); ?>" class="regular-text" placeholder="smtp.ejemplo.com" style="width:100%;" />
+								<p class="description">El host del servidor de correo saliente.</p>
 							</div>
 
-							<!-- Caja de Correo de Prueba -->
-							<div class="wpat-module-card" style="margin-top: 30px;">
-								<div class="wpat-module-header" style="border-bottom: 1px solid var(--wpat-border);">
-									<div class="wpat-module-info">
-										<h3 style="color:#0f172a;">Diagnóstico: Enviar correo de prueba</h3>
-										<p>Introduce una dirección de destino para verificar la correcta comunicación con tu servidor SMTP.</p>
-									</div>
+							<div class="wpat-field-group" style="flex: 1; min-width: 120px;">
+								<label for="wpat_smtp_port" style="font-weight: 600;">Puerto SMTP</label>
+								<input type="number" name="wpat_settings[smtp_port]" id="wpat_smtp_port" value="<?php echo esc_attr( ! empty( $settings['smtp_port'] ) ? $settings['smtp_port'] : '587' ); ?>" class="regular-text" placeholder="587" style="width:100%;" />
+								<p class="description">587 (TLS), 465 (SSL) o 25.</p>
+							</div>
+
+							<div class="wpat-field-group" style="flex: 1; min-width: 150px;">
+								<label for="wpat_smtp_secure" style="font-weight: 600;">Cifrado de Seguridad</label>
+								<select name="wpat_settings[smtp_secure]" id="wpat_smtp_secure" style="width: 100%;">
+									<option value="none" <?php selected( $settings['smtp_secure'], 'none' ); ?>>Ninguno (Sin cifrado)</option>
+									<option value="ssl" <?php selected( $settings['smtp_secure'], 'ssl' ); ?>>SSL (Recomendado para 465)</option>
+									<option value="tls" <?php selected( $settings['smtp_secure'], 'tls' ); ?>>TLS / STARTTLS (Recomendado para 587)</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="wpat-field-group" style="margin-top: 15px;">
+							<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+								<input type="checkbox" name="wpat_settings[smtp_insecure]" value="1" <?php checked( $settings['smtp_insecure'], '1' ); ?>>
+								<span><strong>Ignorar verificación de certificados SSL/TLS</strong> (Útil en servidores con certificados auto-firmados o desarrollo local).</span>
+							</label>
+						</div>
+
+						<div class="wpat-field-group" style="margin-top: 15px;">
+							<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+								<input type="checkbox" name="wpat_settings[smtp_auth]" value="1" id="wpat_smtp_auth" <?php checked( $settings['smtp_auth'], '1' ); ?>>
+								<span><strong>El servidor SMTP requiere autenticación</strong> (Recomendado para la mayoría de proveedores).</span>
+							</label>
+						</div>
+
+						<div class="wpat-smtp-auth-fields wpat-sub-field" <?php $this->style_conditional_display( $settings['smtp_auth'] ); ?> style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin-top: 15px;">
+							<div style="display: flex; flex-wrap: wrap; gap: 20px;">
+								<div class="wpat-field-group" style="flex: 1; min-width: 220px;">
+									<label for="wpat_smtp_username" style="font-weight: 600;">Usuario SMTP (Email o API Key)</label>
+									<input type="text" name="wpat_settings[smtp_username]" id="wpat_smtp_username" value="<?php echo esc_attr( $settings['smtp_username'] ); ?>" class="regular-text" placeholder="usuario@ejemplo.com o apikey" style="width:100%;" autocomplete="off" />
+									<p class="description">Tu cuenta de correo o identificador de API.</p>
 								</div>
-								<div class="wpat-module-body" style="background:#ffffff;">
-									<!-- Nonce de Seguridad para el test SMTP -->
-									<?php wp_nonce_field( 'wpat_smtp_test_nonce_action', 'wpat_smtp_test_nonce' ); ?>
-									
-									<div style="display:flex; gap:12px; align-items:flex-end; max-width: 500px;">
-										<div style="flex:1;">
-											<label for="wpat_smtp_test_email" style="font-weight: 600; font-size:12px; margin-bottom:5px; display:block;">Email Destinatario</label>
-											<input type="email" id="wpat_smtp_test_email" class="regular-text" placeholder="tu-email@dominio.com" style="width:100%;" />
-										</div>
-										<button type="button" class="button button-secondary" id="wpat_smtp_send_test_btn" style="height:30px;">Enviar Prueba</button>
-									</div>
-									<div id="wpat_smtp_test_result" style="display:none; margin-top:15px; padding:15px; border-radius:6px; font-size:13px; line-height:1.5; font-family: monospace;"></div>
+								<div class="wpat-field-group" style="flex: 1; min-width: 220px;">
+									<label for="wpat_smtp_password" style="font-weight: 600;">Contraseña SMTP o Token API</label>
+									<input type="password" name="wpat_settings[smtp_password]" id="wpat_smtp_password" value="<?php echo esc_attr( $settings['smtp_password'] ); ?>" class="regular-text" placeholder="••••••••••••••••" style="width:100%;" autocomplete="new-password" />
+									<p class="description">Contraseña o clave de aplicación generada.</p>
 								</div>
 							</div>
+						</div>
+
+						<hr style="border:none; border-top: 1px solid #e2e8f0; margin: 25px 0;" />
+
+						<!-- 3. Encabezados de Remitente (From / Reply-To) -->
+						<h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 600; color: #1e293b;">
+							<span class="dashicons dashicons-email" style="color: var(--wpat-primary, #2563eb);"></span>
+							Configuración del Remitente (From & Reply-To)
+						</h4>
+
+						<div style="display: flex; flex-wrap: wrap; gap: 20px;">
+							<div class="wpat-field-group" style="flex: 1; min-width: 220px;">
+								<label for="wpat_smtp_from_email" style="font-weight: 600;">Email del Remitente</label>
+								<input type="email" name="wpat_settings[smtp_from_email]" id="wpat_smtp_from_email" value="<?php echo esc_attr( $settings['smtp_from_email'] ); ?>" class="regular-text" placeholder="webmaster@ejemplo.com" style="width:100%;" />
+								<p class="description">Dirección visible de origen de los correos salientes.</p>
+							</div>
+							<div class="wpat-field-group" style="flex: 1; min-width: 220px;">
+								<label for="wpat_smtp_from_name" style="font-weight: 600;">Nombre del Remitente</label>
+								<input type="text" name="wpat_settings[smtp_from_name]" id="wpat_smtp_from_name" value="<?php echo esc_attr( $settings['smtp_from_name'] ); ?>" class="regular-text" placeholder="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>" style="width:100%;" />
+								<p class="description">Nombre mostrado al receptor del mensaje.</p>
+							</div>
+							<div class="wpat-field-group" style="flex: 1; min-width: 220px;">
+								<label for="wpat_smtp_reply_to" style="font-weight: 600;">Email de Respuesta (Reply-To Opcional)</label>
+								<input type="email" name="wpat_settings[smtp_reply_to]" id="wpat_smtp_reply_to" value="<?php echo esc_attr( isset( $settings['smtp_reply_to'] ) ? $settings['smtp_reply_to'] : '' ); ?>" class="regular-text" placeholder="soporte@ejemplo.com" style="width:100%;" />
+								<p class="description">A dónde irán dirigidas las respuestas de los usuarios.</p>
+							</div>
+						</div>
+
+						<div class="wpat-field-group" style="margin-top: 15px;">
+							<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+								<input type="checkbox" name="wpat_settings[smtp_force_from]" value="1" <?php checked( isset( $settings['smtp_force_from'] ) ? $settings['smtp_force_from'] : '0', '1' ); ?>>
+								<span><strong>Forzar remitente en todos los correos</strong> (Sobrescribe cualquier remitente enviado por otros plugins o formularios para evitar rechazos por SPF/DKIM).</span>
+							</label>
+						</div>
+
+						<div class="wpat-field-group" style="margin-top: 10px;">
+							<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+								<input type="checkbox" name="wpat_settings[smtp_log_enabled]" value="1" <?php checked( ! isset( $settings['smtp_log_enabled'] ) || '1' === $settings['smtp_log_enabled'] ); ?>>
+								<span><strong>Activar registro automático de envíos (Delivery Log)</strong> para monitorizar el estado de entrega en tiempo real.</span>
+							</label>
+						</div>
+
+					</div>
+				</div>
+
+				<!-- 4. Caja de Diagnóstico y Envío de Prueba -->
+				<div class="wpat-module-card" style="margin-top: 24px;">
+					<div class="wpat-module-header" style="border-bottom: 1px solid var(--wpat-border);">
+						<div class="wpat-module-info">
+							<h3 style="color:#0f172a; display: flex; align-items: center; gap: 8px;">
+								<span class="dashicons dashicons-testimonial" style="color: #2563eb;"></span>
+								Diagnóstico: Enviar Correo de Prueba en Tiempo Real
+							</h3>
+							<p>Verifica al instante si tu conexión SMTP, autenticación y certificados funcionan sin errores antes de poner el sitio en producción.</p>
+						</div>
+					</div>
+					<div class="wpat-module-body" style="background:#ffffff; padding: 20px;">
+						<?php wp_nonce_field( 'wpat_smtp_test_nonce_action', 'wpat_smtp_test_nonce' ); ?>
+						
+						<div style="display:flex; gap:12px; align-items:flex-end; max-width: 600px; flex-wrap: wrap;">
+							<div style="flex:1; min-width: 240px;">
+								<label for="wpat_smtp_test_email" style="font-weight: 600; font-size:13px; margin-bottom:6px; display:block;">Email Destinatario de la Prueba</label>
+								<input type="email" id="wpat_smtp_test_email" class="regular-text" placeholder="tu-email@dominio.com" value="<?php echo esc_attr( wp_get_current_user()->user_email ); ?>" style="width:100%;" />
+							</div>
+							<button type="button" class="button button-primary" id="wpat_smtp_send_test_btn" style="height:36px; padding: 0 18px; display: inline-flex; align-items: center; gap: 6px;">
+								<span class="dashicons dashicons-email-alt" style="margin-top: 2px;"></span> Enviar Prueba
+							</button>
+						</div>
+						<div id="wpat_smtp_test_result" style="display:none; margin-top:16px; padding:16px; border-radius:8px; font-size:13px; line-height:1.5;"></div>
+					</div>
+				</div>
+
+				<!-- 5. Historial de Envíos Recientes (Email Delivery Log) -->
+				<div class="wpat-module-card" style="margin-top: 24px;">
+					<div class="wpat-module-header" style="border-bottom: 1px solid var(--wpat-border); display: flex; justify-content: space-between; align-items: center;">
+						<div class="wpat-module-info">
+							<h3 style="color:#0f172a; display: flex; align-items: center; gap: 8px;">
+								<span class="dashicons dashicons-list-view" style="color: #10b981;"></span>
+								Historial de Envíos Recientes (Últimos 30 correos)
+							</h3>
+							<p>Supervisa el estado de entrega de todos los emails transaccionales emitidos por WordPress, formularios y WooCommerce.</p>
+						</div>
+						<div>
+							<button type="button" class="button button-secondary" id="wpat_smtp_clear_log_btn" style="display: inline-flex; align-items: center; gap: 5px;">
+								<span class="dashicons dashicons-trash" style="font-size: 16px; line-height: 20px;"></span> Vaciar Historial
+							</button>
+						</div>
+					</div>
+					<div class="wpat-module-body" style="background:#ffffff; padding: 0;">
+						<div style="overflow-x: auto;">
+							<table class="wp-list-table widefat fixed striped" style="border: none;" id="wpat_smtp_log_table">
+								<thead>
+									<tr>
+										<th style="width: 110px; padding: 12px 16px;">Estado</th>
+										<th style="padding: 12px 16px;">Destinatario</th>
+										<th style="padding: 12px 16px;">Asunto</th>
+										<th style="width: 170px; padding: 12px 16px;">Fecha y Hora</th>
+									</tr>
+								</thead>
+								<tbody id="wpat_smtp_log_tbody">
+									<?php if ( empty( $smtp_logs ) ) : ?>
+										<tr id="wpat_smtp_no_logs_row">
+											<td colspan="4" style="text-align: center; padding: 30px; color: #64748b;">
+												<span class="dashicons dashicons-info" style="font-size: 28px; width: 28px; height: 28px; display: block; margin: 0 auto 8px; color: #94a3b8;"></span>
+												No hay envíos registrados todavía. Realiza un envío de prueba o espera a que tu sitio emita un correo.
+											</td>
+										</tr>
+									<?php else : ?>
+										<?php foreach ( $smtp_logs as $log_entry ) : 
+											$is_ok    = isset( $log_entry['status'] ) && 'success' === $log_entry['status'];
+											$time_str = isset( $log_entry['time'] ) ? wp_date( 'd/m/Y H:i:s', $log_entry['time'] ) : '-';
+											$to_str   = isset( $log_entry['to'] ) ? esc_html( $log_entry['to'] ) : '-';
+											$sub_str  = isset( $log_entry['subject'] ) ? esc_html( $log_entry['subject'] ) : '-';
+											$err_str  = isset( $log_entry['error'] ) && ! empty( $log_entry['error'] ) ? esc_html( $log_entry['error'] ) : '';
+										?>
+											<tr>
+												<td style="padding: 12px 16px;">
+													<?php if ( $is_ok ) : ?>
+														<span style="display: inline-flex; align-items: center; gap: 4px; background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600;">
+															<span class="dashicons dashicons-yes-alt" style="font-size: 14px; width: 14px; height: 14px;"></span> Enviado
+														</span>
+													<?php else : ?>
+														<span style="display: inline-flex; align-items: center; gap: 4px; background: #fee2e2; color: #b91c1c; padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600;" title="<?php echo esc_attr( $err_str ); ?>">
+															<span class="dashicons dashicons-dismiss" style="font-size: 14px; width: 14px; height: 14px;"></span> Error
+														</span>
+													<?php endif; ?>
+												</td>
+												<td style="padding: 12px 16px; font-weight: 500; color: #1e293b;">
+													<?php echo $to_str; ?>
+												</td>
+												<td style="padding: 12px 16px; color: #334155;">
+													<strong><?php echo $sub_str; ?></strong>
+													<?php if ( ! $is_ok && ! empty( $err_str ) ) : ?>
+														<div style="font-size: 11px; color: #b91c1c; margin-top: 4px; font-family: monospace;">
+															<?php echo $err_str; ?>
+														</div>
+													<?php endif; ?>
+												</td>
+												<td style="padding: 12px 16px; color: #64748b; font-size: 12px;">
+													<?php echo esc_html( $time_str ); ?>
+												</td>
+											</tr>
+										<?php endforeach; ?>
+									<?php endif; ?>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
 				<?php
 				break;
 			case 'sitemap-xml':
@@ -8294,348 +9009,433 @@ class WPAT_Admin {
 						<div class="wpat-module-card" style="margin-bottom: 20px;">
 							<div class="wpat-module-header">
 								<div class="wpat-module-info">
-									<h3>Integraciones de Terceros</h3>
-									<p>Gestiona e inyecta códigos de herramientas externas en tu web de forma ultra-ligera, limpia y sin sobrecargar la web.</p>
+									<h3>Integraciones & Inyección de Scripts</h3>
+									<p>Gestiona e inyecta códigos de herramientas externas, analítica, píxeles de conversión, metaetiquetas de verificación y scripts personalizados (Header/Body/Footer) de forma ultra-ligera, limpia y con cero bloat.</p>
 								</div>
+								<?php $this->render_module_toggle( 'integrations', $settings, true ); ?>
 							</div>
-						</div>
-						<div class="wpat-module-card">
+							<div class="wpat-module-body" style="display: block; padding: 20px;">
+								<!-- Opción de Exclusión de Administradores -->
+								<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 25px;">
+									<label style="font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #1e293b; font-size: 14px;">
+										<input type="checkbox" name="wpat_settings[integrations_exclude_admins]" value="1" <?php checked( isset( $settings['integrations_exclude_admins'] ) && '1' === (string) $settings['integrations_exclude_admins'] ); ?> />
+										Excluir a los Administradores del Rastreo / Seguimiento
+									</label>
+									<p class="description" style="margin: 5px 0 0 25px; color: #64748b;">
+										Recomendado para agencias: Oculta e inhabilita automáticamente Google Analytics, Tag Manager, Píxeles de conversión y Clarity cuando navegue un usuario administrador para no distorsionar las métricas de tráfico y conversión del cliente.
+									</p>
+								</div>
+
+								<!-- SECCIÓN 1: ANALÍTICA Y PÍXELES -->
+								<h4 style="margin: 0 0 15px 0; font-size: 15px; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+									<span class="dashicons dashicons-chart-bar" style="color: var(--wpat-primary);"></span> 1. Herramientas de Analítica & Píxeles de Conversión
+								</h4>
+
+								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; margin-bottom: 25px;">
+									<!-- Google Analytics GA4 -->
+									<div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #fff;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+											<strong style="font-size: 13px;">Google Analytics (GA4)</strong>
+											<?php if ( ! empty( $settings['google_analytics_id'] ) && preg_match( '/^G-[A-Z0-9]+$/i', trim( $settings['google_analytics_id'] ) ) ) : ?>
+												<span style="background: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">Conectado</span>
+											<?php else : ?>
+												<span style="background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 10px; font-size: 11px;">Sin configurar</span>
+											<?php endif; ?>
+										</div>
+										<input type="text" name="wpat_settings[google_analytics_id]" value="<?php echo esc_attr( isset( $settings['google_analytics_id'] ) ? $settings['google_analytics_id'] : '' ); ?>" class="large-text" placeholder="G-XXXXXXXXXX" style="width:100%; margin-bottom: 6px;" />
+										<p class="description" style="font-size: 11px; margin: 0;">ID de flujo de datos GA4. <a href="https://analytics.google.com/analytics/web/#/admin" target="_blank" rel="noopener noreferrer">Obtener en Google Analytics &rarr;</a></p>
+									</div>
+
+									<!-- Google Tag Manager -->
+									<div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #fff;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+											<strong style="font-size: 13px;">Google Tag Manager (GTM)</strong>
+											<?php if ( ! empty( $settings['gtm_container_id'] ) && preg_match( '/^GTM-[A-Z0-9]+$/i', trim( $settings['gtm_container_id'] ) ) ) : ?>
+												<span style="background: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">Conectado</span>
+											<?php else : ?>
+												<span style="background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 10px; font-size: 11px;">Sin configurar</span>
+											<?php endif; ?>
+										</div>
+										<input type="text" name="wpat_settings[gtm_container_id]" value="<?php echo esc_attr( isset( $settings['gtm_container_id'] ) ? $settings['gtm_container_id'] : '' ); ?>" class="large-text" placeholder="GTM-XXXXXXX" style="width:100%; margin-bottom: 6px;" />
+										<p class="description" style="font-size: 11px; margin: 0;">Inyecta script en <code>&lt;head&gt;</code> y noscript en <code>&lt;body&gt;</code>. <a href="https://tagmanager.google.com/" target="_blank" rel="noopener noreferrer">Obtener en GTM &rarr;</a></p>
+									</div>
+
+									<!-- Meta / Facebook Pixel -->
+									<div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #fff;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+											<strong style="font-size: 13px;">Meta / Facebook Pixel</strong>
+											<?php if ( ! empty( $settings['facebook_pixel_id'] ) && preg_match( '/^[0-9]+$/', trim( $settings['facebook_pixel_id'] ) ) ) : ?>
+												<span style="background: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">Conectado</span>
+											<?php else : ?>
+												<span style="background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 10px; font-size: 11px;">Sin configurar</span>
+											<?php endif; ?>
+										</div>
+										<input type="text" name="wpat_settings[facebook_pixel_id]" value="<?php echo esc_attr( isset( $settings['facebook_pixel_id'] ) ? $settings['facebook_pixel_id'] : '' ); ?>" class="large-text" placeholder="Ej: 123456789012345" style="width:100%; margin-bottom: 6px;" />
+										<p class="description" style="font-size: 11px; margin: 0;">ID numérico de Pixel. <a href="https://eventsmanager.facebook.com/" target="_blank" rel="noopener noreferrer">Meta Events Manager &rarr;</a></p>
+									</div>
+
+									<!-- Microsoft Clarity -->
+									<div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #fff;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+											<strong style="font-size: 13px;">Microsoft Clarity (Mapas de Calor)</strong>
+											<?php if ( ! empty( $settings['clarity_project_id'] ) ) : ?>
+												<span style="background: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">Conectado</span>
+											<?php else : ?>
+												<span style="background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 10px; font-size: 11px;">Sin configurar</span>
+											<?php endif; ?>
+										</div>
+										<input type="text" name="wpat_settings[clarity_project_id]" value="<?php echo esc_attr( isset( $settings['clarity_project_id'] ) ? $settings['clarity_project_id'] : '' ); ?>" class="large-text" placeholder="Ej: abc123def4" style="width:100%; margin-bottom: 6px;" />
+										<p class="description" style="font-size: 11px; margin: 0;">ID de Proyecto Clarity (100% gratuito). <a href="https://clarity.microsoft.com/" target="_blank" rel="noopener noreferrer">Ir a Clarity &rarr;</a></p>
+									</div>
+
+									<!-- TikTok Pixel -->
+									<div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #fff;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+											<strong style="font-size: 13px;">TikTok Pixel</strong>
+											<?php if ( ! empty( $settings['tiktok_pixel_id'] ) ) : ?>
+												<span style="background: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">Conectado</span>
+											<?php else : ?>
+												<span style="background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 10px; font-size: 11px;">Sin configurar</span>
+											<?php endif; ?>
+										</div>
+										<input type="text" name="wpat_settings[tiktok_pixel_id]" value="<?php echo esc_attr( isset( $settings['tiktok_pixel_id'] ) ? $settings['tiktok_pixel_id'] : '' ); ?>" class="large-text" placeholder="Ej: C1234567890ABCDEF" style="width:100%; margin-bottom: 6px;" />
+										<p class="description" style="font-size: 11px; margin: 0;">ID de Pixel TikTok Ads.</p>
+									</div>
+
+									<!-- Pinterest Tag -->
+									<div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #fff;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+											<strong style="font-size: 13px;">Pinterest Tag</strong>
+											<?php if ( ! empty( $settings['pinterest_tag_id'] ) ) : ?>
+												<span style="background: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">Conectado</span>
+											<?php else : ?>
+												<span style="background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 10px; font-size: 11px;">Sin configurar</span>
+											<?php endif; ?>
+										</div>
+										<input type="text" name="wpat_settings[pinterest_tag_id]" value="<?php echo esc_attr( isset( $settings['pinterest_tag_id'] ) ? $settings['pinterest_tag_id'] : '' ); ?>" class="large-text" placeholder="Ej: 2612345678901" style="width:100%; margin-bottom: 6px;" />
+										<p class="description" style="font-size: 11px; margin: 0;">ID de Tag de Pinterest.</p>
+									</div>
+								</div>
+
+								<!-- SECCIÓN 2: VERIFICACIONES DE PROPIEDAD -->
+								<h4 style="margin: 0 0 15px 0; font-size: 15px; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+									<span class="dashicons dashicons-yes-alt" style="color: var(--wpat-primary);"></span> 2. Verificaciones de Propiedad & Motores de Búsqueda
+								</h4>
+
 								<?php
-								// Comprobar si hay un archivo de verificación en el directorio raíz (ABSPATH)
-								$google_files = glob( ABSPATH . 'google*.html' );
+								// Comprobar archivo de verificación Google en el directorio raíz (ABSPATH)
+								$google_files      = glob( ABSPATH . 'google*.html' );
 								$google_file_found = false;
-								$google_file_name = '';
+								$google_file_name  = '';
 								if ( ! empty( $google_files ) ) {
 									foreach ( $google_files as $file ) {
 										$filename = basename( $file );
 										if ( preg_match( '/^google[a-f0-9]+\.html$/i', $filename ) ) {
 											$google_file_found = true;
-											$google_file_name = $filename;
+											$google_file_name  = $filename;
 											break;
 										}
 									}
 								}
-
 								$sc_connected = ! empty( $settings['google_search_console_code'] ) || $google_file_found;
 								?>
-								<div class="wpat-module-header" style="cursor: pointer; border-bottom: none;">
-									<div class="wpat-module-info" style="width: 100%;">
-										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-											<h3 style="margin: 0; font-size: 15px;">Google Search Console</h3>
-											<div style="display: flex; align-items: center; gap: 10px;">
-												<?php if ( $sc_connected ) : ?>
-													<span class="wpat-status-indicator" style="background: #e6f4ea; color: #137333; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-														<span style="width: 6px; height: 6px; background: #137333; border-radius: 50%;"></span> 
-														<?php 
-														if ( $google_file_found ) {
-															echo 'Conectado (Archivo: ' . esc_html( $google_file_name ) . ')';
-														} else {
-															echo 'Conectado (Metaetiqueta)';
-														}
-														?>
-													</span>
-												<?php else : ?>
-													<span class="wpat-status-indicator" style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
-													</span>
-												<?php endif; ?>
-												
-												</span>
-											</div>
-										</div>
-										<p style="margin: 0 0 4px 0; color: #64748b; font-size: 13px;">El plugin detecta automáticamente si has subido un archivo de verificación de Google (tipo <code>googleXXXX.html</code>) a la carpeta raíz de tu hosting, o si prefieres puedes pegar el código meta abajo. Puedes conseguir tu código en <a href="https://search.google.com/search-console/welcome" target="_blank" rel="noopener noreferrer" style="color: var(--wpat-primary); font-weight: 600; text-decoration: underline;">Google Search Console</a>.</p>
-									</div>
-								</div>
-								<div class="wpat-module-body" style="display: none; padding: 15px 20px 20px 20px;">
-									<div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-										<div style="flex: 1; min-width: 300px;">
-											<input type="text" name="wpat_settings[google_search_console_code]" id="wpat_google_search_console_code" value="<?php echo esc_attr( $settings['google_search_console_code'] ); ?>" class="large-text" placeholder="Ej: <meta name=&quot;google-site-verification&quot; content=&quot;xyz123...&quot; />" style="width:100%; margin:0;" />
-										</div>
-										<a href="<?php echo esc_url( 'https://search.google.com/search-console?resource_id=' . urlencode( home_url( '/' ) ) ); ?>" target="_blank" rel="noopener noreferrer" class="button button-secondary" style="height: 30px; display: inline-flex; align-items: center; gap: 5px;">
-											<span class="dashicons dashicons-external" style="font-size: 16px; width: 16px; height: 16px; margin: 0;"></span> Acceder a Search Console
-										</a>
-									</div>
-								</div>
-							</div>
 
-							<!-- Tarjeta: Google Analytics (GA4) -->
-							<div class="wpat-module-card" style="margin-top: 20px;">
-								<div class="wpat-module-header" style="cursor: pointer; border-bottom: none;">
-									<div class="wpat-module-info" style="width: 100%;">
-										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-											<h3 style="margin: 0; font-size: 15px;">Google Analytics (GA4)</h3>
-											<div style="display: flex; align-items: center; gap: 10px;">
-												<?php if ( ! empty( $settings['google_analytics_id'] ) && preg_match( '/^G-[A-Z0-9]+$/i', trim( $settings['google_analytics_id'] ) ) ) : ?>
-													<span class="wpat-status-indicator" style="background: #e6f4ea; color: #137333; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-														<span style="width: 6px; height: 6px; background: #137333; border-radius: 50%;"></span> Conectado
-													</span>
-												<?php else : ?>
-													<span class="wpat-status-indicator" style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
-													</span>
-												<?php endif; ?>
-												
+								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; margin-bottom: 25px;">
+									<!-- Google Search Console -->
+									<div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #fff;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+											<strong style="font-size: 13px;">Google Search Console</strong>
+											<?php if ( $sc_connected ) : ?>
+												<span style="background: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
+													<?php echo $google_file_found ? 'Conectado (Archivo: ' . esc_html( $google_file_name ) . ')' : 'Conectado (Meta)'; ?>
 												</span>
-											</div>
+											<?php else : ?>
+												<span style="background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 10px; font-size: 11px;">Sin configurar</span>
+											<?php endif; ?>
 										</div>
-										<p style="margin: 0 0 4px 0; color: #64748b; font-size: 13px;">Introduce tu ID de medición de Google Analytics 4 (debe comenzar con <code>G-</code>). Puedes conseguir tu ID G-XXXX en la sección de flujos de datos de administración de <a href="https://analytics.google.com/analytics/web/#/admin" target="_blank" rel="noopener noreferrer" style="color: var(--wpat-primary); font-weight: 600; text-decoration: underline;">Google Analytics</a>.</p>
+										<input type="text" name="wpat_settings[google_search_console_code]" value="<?php echo esc_attr( isset( $settings['google_search_console_code'] ) ? $settings['google_search_console_code'] : '' ); ?>" class="large-text" placeholder='Ej: xyz123... o &lt;meta name="google-site-verification"...' style="width:100%; margin-bottom: 6px;" />
+										<p class="description" style="font-size: 11px; margin: 0;">Pega el código o la etiqueta meta completa. <a href="https://search.google.com/search-console/welcome" target="_blank" rel="noopener noreferrer">Search Console &rarr;</a></p>
 									</div>
-								</div>
-								<div class="wpat-module-body" style="display: none; padding: 15px 20px 20px 20px;">
-									<div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-										<div style="flex: 1; min-width: 300px;">
-											<input type="text" name="wpat_settings[google_analytics_id]" id="wpat_google_analytics_id" value="<?php echo esc_attr( $settings['google_analytics_id'] ); ?>" class="large-text" placeholder="Ej: G-XXXXXXXXXX" style="width:100%; margin:0;" />
-										</div>
-										<a href="https://analytics.google.com/" target="_blank" rel="noopener noreferrer" class="button button-secondary" style="height: 30px; display: inline-flex; align-items: center; gap: 5px;">
-											<span class="dashicons dashicons-external" style="font-size: 16px; width: 16px; height: 16px; margin: 0;"></span> Acceder a Google Analytics
-										</a>
-									</div>
-								</div>
-							</div>
 
-							<!-- Tarjeta: Google Tag Manager (GTM) -->
-							<div class="wpat-module-card" style="margin-top: 20px;">
-								<div class="wpat-module-header" style="cursor: pointer; border-bottom: none;">
-									<div class="wpat-module-info" style="width: 100%;">
-										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-											<h3 style="margin: 0; font-size: 15px;">Google Tag Manager (GTM)</h3>
-											<div style="display: flex; align-items: center; gap: 10px;">
-												<?php if ( ! empty( $settings['gtm_container_id'] ) && preg_match( '/^GTM-[A-Z0-9]+$/i', trim( $settings['gtm_container_id'] ) ) ) : ?>
-													<span class="wpat-status-indicator" style="background: #e6f4ea; color: #137333; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-														<span style="width: 6px; height: 6px; background: #137333; border-radius: 50%;"></span> Conectado
-													</span>
-												<?php else : ?>
-													<span class="wpat-status-indicator" style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
-													</span>
-												<?php endif; ?>
-											</div>
+									<!-- Bing Webmaster -->
+									<div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #fff;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+											<strong style="font-size: 13px;">Bing / Microsoft Webmaster</strong>
+											<?php if ( ! empty( $settings['bing_verification_code'] ) ) : ?>
+												<span style="background: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">Conectado</span>
+											<?php else : ?>
+												<span style="background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 10px; font-size: 11px;">Sin configurar</span>
+											<?php endif; ?>
 										</div>
-										<p style="margin: 0 0 4px 0; color: #64748b; font-size: 13px;">Introduce el ID de contenedor de Google Tag Manager (debe comenzar con <code>GTM-</code>). Obtén tu ID en <a href="https://tagmanager.google.com/" target="_blank" rel="noopener noreferrer" style="color: var(--wpat-primary); font-weight: 600; text-decoration: underline;">Google Tag Manager</a>.</p>
+										<input type="text" name="wpat_settings[bing_verification_code]" value="<?php echo esc_attr( isset( $settings['bing_verification_code'] ) ? $settings['bing_verification_code'] : '' ); ?>" class="large-text" placeholder='Ej: A1B2C3D4... o &lt;meta name="msvalidate.01"...' style="width:100%; margin-bottom: 6px;" />
+										<p class="description" style="font-size: 11px; margin: 0;">Código de autenticación <code>msvalidate.01</code> para Bing Webmaster Tools.</p>
 									</div>
-								</div>
-								<div class="wpat-module-body" style="display: none; padding: 15px 20px 20px 20px;">
-									<div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-										<div style="flex: 1; min-width: 300px;">
-											<input type="text" name="wpat_settings[gtm_container_id]" id="wpat_gtm_container_id" value="<?php echo esc_attr( isset( $settings['gtm_container_id'] ) ? $settings['gtm_container_id'] : '' ); ?>" class="large-text" placeholder="Ej: GTM-XXXXXXX" style="width:100%; margin:0;" />
-										</div>
-										<a href="https://tagmanager.google.com/" target="_blank" rel="noopener noreferrer" class="button button-secondary" style="height: 30px; display: inline-flex; align-items: center; gap: 5px;">
-											<span class="dashicons dashicons-external" style="font-size: 16px; width: 16px; height: 16px; margin: 0;"></span> Acceder a GTM
-										</a>
-									</div>
-								</div>
-							</div>
 
-							<!-- Tarjeta: Facebook / Meta Pixel -->
-							<div class="wpat-module-card" style="margin-top: 20px;">
-								<div class="wpat-module-header" style="cursor: pointer; border-bottom: none;">
-									<div class="wpat-module-info" style="width: 100%;">
-										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-											<h3 style="margin: 0; font-size: 15px;">Facebook / Meta Pixel</h3>
-											<div style="display: flex; align-items: center; gap: 10px;">
-												<?php if ( ! empty( $settings['facebook_pixel_id'] ) && preg_match( '/^[0-9]+$/', trim( $settings['facebook_pixel_id'] ) ) ) : ?>
-													<span class="wpat-status-indicator" style="background: #e6f4ea; color: #137333; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-														<span style="width: 6px; height: 6px; background: #137333; border-radius: 50%;"></span> Conectado
-													</span>
-												<?php else : ?>
-													<span class="wpat-status-indicator" style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
-													</span>
-												<?php endif; ?>
-											</div>
+									<!-- Pinterest Verification -->
+									<div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #fff;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+											<strong style="font-size: 13px;">Pinterest Domain Verification</strong>
+											<?php if ( ! empty( $settings['pinterest_verification_code'] ) ) : ?>
+												<span style="background: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">Conectado</span>
+											<?php else : ?>
+												<span style="background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 10px; font-size: 11px;">Sin configurar</span>
+											<?php endif; ?>
 										</div>
-										<p style="margin: 0 0 4px 0; color: #64748b; font-size: 13px;">Introduce tu ID de Pixel de Meta/Facebook (sólo dígitos). Obtén tu ID en el <a href="https://eventsmanager.facebook.com/" target="_blank" rel="noopener noreferrer" style="color: var(--wpat-primary); font-weight: 600; text-decoration: underline;">Administrador de Eventos de Meta</a>.</p>
+										<input type="text" name="wpat_settings[pinterest_verification_code]" value="<?php echo esc_attr( isset( $settings['pinterest_verification_code'] ) ? $settings['pinterest_verification_code'] : '' ); ?>" class="large-text" placeholder='Ej: 1a2b3c... o &lt;meta name="p:domain_verify"...' style="width:100%; margin-bottom: 6px;" />
+										<p class="description" style="font-size: 11px; margin: 0;">Código <code>p:domain_verify</code> para reclamar tu dominio en Pinterest.</p>
 									</div>
 								</div>
-								<div class="wpat-module-body" style="display: none; padding: 15px 20px 20px 20px;">
-									<div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-										<div style="flex: 1; min-width: 300px;">
-											<input type="text" name="wpat_settings[facebook_pixel_id]" id="wpat_facebook_pixel_id" value="<?php echo esc_attr( isset( $settings['facebook_pixel_id'] ) ? $settings['facebook_pixel_id'] : '' ); ?>" class="large-text" placeholder="Ej: 123456789012345" style="width:100%; margin:0;" />
-										</div>
-										<a href="https://eventsmanager.facebook.com/" target="_blank" rel="noopener noreferrer" class="button button-secondary" style="height: 30px; display: inline-flex; align-items: center; gap: 5px;">
-											<span class="dashicons dashicons-external" style="font-size: 16px; width: 16px; height: 16px; margin: 0;"></span> Meta Events Manager
-										</a>
-									</div>
-								</div>
-							</div>
 
-							<!-- Tarjeta: Google PageSpeed Insights -->
-							<div class="wpat-module-card" style="margin-top: 20px;">
-								<div class="wpat-module-header" style="cursor: pointer; border-bottom: none;">
-									<div class="wpat-module-info" style="width: 100%;">
-										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-											<h3 style="margin: 0; font-size: 15px;">Google PageSpeed Insights</h3>
-											<div style="display: flex; align-items: center; gap: 10px;">
-												<span class="wpat-status-indicator" style="background: #e0f2fe; color: #0369a1; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-													<span style="width: 6px; height: 6px; background: #0369a1; border-radius: 50%;"></span> Listo
-												</span>
-												
-												</span>
-											</div>
-										</div>
-										<p style="margin: 0 0 4px 0; color: #64748b; font-size: 13px;">Audita el rendimiento, la velocidad de carga real y la optimización móvil/escritorio del sitio web de forma externa y gratuita en Google PageSpeed.</p>
+								<!-- SECCIÓN 3: INYECCIÓN DE SCRIPTS PERSONALIZADOS (HEADER, BODY, FOOTER) -->
+								<h4 style="margin: 0 0 15px 0; font-size: 15px; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+									<span class="dashicons dashicons-editor-code" style="color: var(--wpat-primary);"></span> 3. Inyección de Scripts Personalizados (Zero-Bloat Header & Footer)
+								</h4>
+
+								<div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px;">
+									<!-- Scripts en Cabecera (<head>) -->
+									<div class="wpat-field-group" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
+										<label for="wpat_header_custom_scripts" style="font-weight: 600; display: block; margin-bottom: 5px; color: #1e293b;">
+											Scripts en Cabecera (Inyectados en <code>&lt;head&gt;</code>)
+										</label>
+										<p class="description" style="margin-bottom: 8px;">Ideal para metaetiquetas adicionales, estilos CSS personalizados con <code>&lt;style&gt;</code>, o scripts de seguimiento que deben cargar al inicio.</p>
+										<textarea name="wpat_settings[header_custom_scripts]" id="wpat_header_custom_scripts" rows="4" class="large-text" placeholder="<!-- Códigos en <head> -->&#10;<script>...</script>&#10;<style>...</style>" style="font-family: monospace; font-size: 12px; width: 100%;"><?php echo esc_textarea( isset( $settings['header_custom_scripts'] ) ? $settings['header_custom_scripts'] : '' ); ?></textarea>
+									</div>
+
+									<!-- Scripts en Apertura de Body (<body>) -->
+									<div class="wpat-field-group" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
+										<label for="wpat_body_custom_scripts" style="font-weight: 600; display: block; margin-bottom: 5px; color: #1e293b;">
+											Scripts en Apertura de Body (Inyectados justo tras abrir <code>&lt;body&gt;</code>)
+										</label>
+										<p class="description" style="margin-bottom: 8px;">Inyectado mediante el gancho nativo <code>wp_body_open</code>. Perfecto para etiquetas <code>&lt;noscript&gt;</code>, contenedores o avisos flotantes.</p>
+										<textarea name="wpat_settings[body_custom_scripts]" id="wpat_body_custom_scripts" rows="3" class="large-text" placeholder="<!-- Códigos tras abrir <body> -->&#10;<noscript>...</noscript>" style="font-family: monospace; font-size: 12px; width: 100%;"><?php echo esc_textarea( isset( $settings['body_custom_scripts'] ) ? $settings['body_custom_scripts'] : '' ); ?></textarea>
+									</div>
+
+									<!-- Scripts en Pie de Página (</body>) -->
+									<div class="wpat-field-group" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
+										<label for="wpat_footer_custom_scripts" style="font-weight: 600; display: block; margin-bottom: 5px; color: #1e293b;">
+											Scripts en Pie de Página (Inyectados antes de cerrar <code>&lt;/body&gt;</code>)
+										</label>
+										<p class="description" style="margin-bottom: 8px;">Inyectado mediante <code>wp_footer</code>. Recomendado para scripts de chat, eventos de conversión de ecommerce o JavaScript de optimización diferida.</p>
+										<textarea name="wpat_settings[footer_custom_scripts]" id="wpat_footer_custom_scripts" rows="4" class="large-text" placeholder="<!-- Códigos en </body> -->&#10;<script>...</script>" style="font-family: monospace; font-size: 12px; width: 100%;"><?php echo esc_textarea( isset( $settings['footer_custom_scripts'] ) ? $settings['footer_custom_scripts'] : '' ); ?></textarea>
 									</div>
 								</div>
-								<div class="wpat-module-body" style="display: none; padding: 15px 20px 20px 20px;">
+
+								<!-- SECCIÓN 4: ALMACENAMIENTO EN LA NUBE (CLOUD STORAGE) -->
+								<h4 style="margin: 0 0 15px 0; font-size: 15px; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+									<span class="dashicons dashicons-cloud" style="color: var(--wpat-primary);"></span> 4. Sincronización con Almacenamiento en la Nube (Google Drive, Dropbox, OneDrive)
+								</h4>
+								<p class="description" style="margin-bottom: 15px;">Sincroniza y almacena copias de seguridad de los archivos y documentos cargados por los clientes en los campos extra de compra directamente en tu servicio de nube.</p>
+
+								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; margin-bottom: 25px;">
+									<!-- Google Drive -->
+									<div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #fff;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+											<strong style="font-size: 13px;">Google Drive Storage</strong>
+											<?php if ( ! empty( $settings['google_drive_token'] ) ) : ?>
+												<span style="background: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">Listo</span>
+											<?php else : ?>
+												<span style="background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 10px; font-size: 11px;">Sin configurar</span>
+											<?php endif; ?>
+										</div>
+										<label style="font-size: 11px; font-weight: 600; color: #475569; display: block; margin-bottom: 3px;">Token OAuth2 Bearer</label>
+										<input type="text" name="wpat_settings[google_drive_token]" value="<?php echo esc_attr( isset( $settings['google_drive_token'] ) ? $settings['google_drive_token'] : '' ); ?>" class="large-text" placeholder="ya29.a0..." style="width:100%; margin-bottom: 8px;" />
+										<label style="font-size: 11px; font-weight: 600; color: #475569; display: block; margin-bottom: 3px;">ID Carpeta Destino (Opcional)</label>
+										<input type="text" name="wpat_settings[google_drive_folder]" value="<?php echo esc_attr( isset( $settings['google_drive_folder'] ) ? $settings['google_drive_folder'] : '' ); ?>" class="large-text" placeholder="Ej: 1A2b3C4d5E6f7G8h9I0J" style="width:100%;" />
+									</div>
+
+									<!-- Dropbox -->
+									<div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #fff;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+											<strong style="font-size: 13px;">Dropbox Storage</strong>
+											<?php if ( ! empty( $settings['dropbox_token'] ) ) : ?>
+												<span style="background: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">Listo</span>
+											<?php else : ?>
+												<span style="background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 10px; font-size: 11px;">Sin configurar</span>
+											<?php endif; ?>
+										</div>
+										<label style="font-size: 11px; font-weight: 600; color: #475569; display: block; margin-bottom: 3px;">Token de Acceso Personal</label>
+										<input type="text" name="wpat_settings[dropbox_token]" value="<?php echo esc_attr( isset( $settings['dropbox_token'] ) ? $settings['dropbox_token'] : '' ); ?>" class="large-text" placeholder="sl.B... / Generated Access Token" style="width:100%; margin-bottom: 8px;" />
+										<p class="description" style="font-size: 11px; margin: 0;">Generable en Dropbox Developer Console.</p>
+									</div>
+
+									<!-- Microsoft OneDrive -->
+									<div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #fff;">
+										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+											<strong style="font-size: 13px;">Microsoft OneDrive Storage</strong>
+											<?php if ( ! empty( $settings['onedrive_token'] ) ) : ?>
+												<span style="background: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">Listo</span>
+											<?php else : ?>
+												<span style="background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 10px; font-size: 11px;">Sin configurar</span>
+											<?php endif; ?>
+										</div>
+										<label style="font-size: 11px; font-weight: 600; color: #475569; display: block; margin-bottom: 3px;">Token Microsoft Graph API</label>
+										<input type="text" name="wpat_settings[onedrive_token]" value="<?php echo esc_attr( isset( $settings['onedrive_token'] ) ? $settings['onedrive_token'] : '' ); ?>" class="large-text" placeholder="EwB... / OAuth Access Token" style="width:100%; margin-bottom: 8px;" />
+										<p class="description" style="font-size: 11px; margin: 0;">Token de autenticación Microsoft Graph.</p>
+									</div>
+								</div>
+
+								<!-- SECCIÓN 5: ACCESO DIRECTO AUDITORÍA DE RENDIMIENTO -->
+								<div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
 									<div>
-										<a href="<?php echo esc_url( 'https://pagespeed.web.dev/analysis?url=' . urlencode( home_url( '/' ) ) ); ?>" target="_blank" rel="noopener noreferrer" class="button button-primary" style="height: 32px; display: inline-flex; align-items: center; gap: 5px;">
-											<span class="dashicons dashicons-performance" style="font-size: 16px; width: 16px; height: 16px; margin: 0;"></span> Analizar Velocidad del Sitio
-										</a>
+										<strong style="color: #0369a1; font-size: 13px; display: block; margin-bottom: 2px;">Google PageSpeed Insights</strong>
+										<span style="color: #0c4a6e; font-size: 12px;">Audita el rendimiento, Core Web Vitals y velocidad real de la web en Google sin salir del navegador.</span>
 									</div>
+									<a href="<?php echo esc_url( 'https://pagespeed.web.dev/analysis?url=' . urlencode( home_url( '/' ) ) ); ?>" target="_blank" rel="noopener noreferrer" class="button button-secondary" style="height: 32px; display: inline-flex; align-items: center; gap: 5px;">
+										<span class="dashicons dashicons-performance" style="font-size: 16px; width: 16px; height: 16px; margin: 0;"></span> Auditar Rendimiento
+									</a>
+								</div>
+
+								<!-- BOTÓN DE GUARDADO -->
+								<div style="margin-top: 25px; border-top: 1px dashed var(--wpat-border); padding-top: 20px;">
+									<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes de Integraciones" style="height: 36px; padding: 0 20px;" />
 								</div>
 							</div>
-
-							<!-- Tarjeta: Almacenamiento en Google Drive -->
-							<div class="wpat-module-card" style="margin-top: 20px;">
-								<div class="wpat-module-header" style="cursor: pointer; border-bottom: none;">
-									<div class="wpat-module-info" style="width: 100%;">
-										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-											<h3 style="margin: 0; font-size: 15px;">Google Drive Storage</h3>
-											<div style="display: flex; align-items: center; gap: 10px;">
-												<?php if ( ! empty( $settings['google_drive_token'] ) ) : ?>
-													<span class="wpat-status-indicator" style="background: #e0f2fe; color: #0369a1; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-														<span style="width: 6px; height: 6px; background: #0369a1; border-radius: 50%;"></span> Listo
-													</span>
-												<?php else : ?>
-													<span class="wpat-status-indicator" style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
-													</span>
-												<?php endif; ?>
-												
-												</span>
-											</div>
-										</div>
-										<p style="margin: 0 0 4px 0; color: #64748b; font-size: 13px;">Sincroniza y sube automáticamente los archivos cargados por los clientes en los campos de producto extra directamente a tu cuenta de Google Drive.</p>
-									</div>
-								</div>
-								<div class="wpat-module-body" style="display: none; padding: 15px 20px 20px 20px;">
-									<div class="wpat-field-group">
-										<label for="wpat_google_drive_token" style="display:block; font-weight:600; margin-bottom:5px;">Token de Acceso (OAuth Bearer Token / API Key)</label>
-										<input type="text" name="wpat_settings[google_drive_token]" id="wpat_google_drive_token" value="<?php echo esc_attr( isset( $settings['google_drive_token'] ) ? $settings['google_drive_token'] : '' ); ?>" class="large-text" placeholder="ya29.a0... / Token OAuth2 Google Drive API" style="width:100%; margin:0 0 10px 0;" />
-									</div>
-									<div class="wpat-field-group">
-										<label for="wpat_google_drive_folder" style="display:block; font-weight:600; margin-bottom:5px;">ID de Carpeta Destino (Opcional)</label>
-										<input type="text" name="wpat_settings[google_drive_folder]" id="wpat_google_drive_folder" value="<?php echo esc_attr( isset( $settings['google_drive_folder'] ) ? $settings['google_drive_folder'] : '' ); ?>" class="regular-text" placeholder="Ej: 1A2b3C4d5E6f7G8h9I0J" style="width:100%; margin:0;" />
-										<p class="description" style="margin-top:4px;">Dejar en blanco para guardar en la raíz de Google Drive o indica el ID de la carpeta de tu unidad.</p>
-									</div>
-								</div>
-							</div>
-
-							<!-- Tarjeta: Almacenamiento en Dropbox -->
-							<div class="wpat-module-card" style="margin-top: 20px;">
-								<div class="wpat-module-header" style="cursor: pointer; border-bottom: none;">
-									<div class="wpat-module-info" style="width: 100%;">
-										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-											<h3 style="margin: 0; font-size: 15px;">Dropbox Storage</h3>
-											<div style="display: flex; align-items: center; gap: 10px;">
-												<?php if ( ! empty( $settings['dropbox_token'] ) ) : ?>
-													<span class="wpat-status-indicator" style="background: #e0f2fe; color: #0369a1; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-														<span style="width: 6px; height: 6px; background: #0369a1; border-radius: 50%;"></span> Listo
-													</span>
-												<?php else : ?>
-													<span class="wpat-status-indicator" style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
-													</span>
-												<?php endif; ?>
-												
-												</span>
-											</div>
-										</div>
-										<p style="margin: 0 0 4px 0; color: #64748b; font-size: 13px;">Almacena copias de seguridad de las imágenes, PDFs y archivos adjuntos por los compradores en tu cuenta de Dropbox.</p>
-									</div>
-								</div>
-								<div class="wpat-module-body" style="display: none; padding: 15px 20px 20px 20px;">
-									<div class="wpat-field-group">
-										<label for="wpat_dropbox_token" style="display:block; font-weight:600; margin-bottom:5px;">Token de Acceso Personal de Dropbox (OAuth Access Token)</label>
-										<input type="text" name="wpat_settings[dropbox_token]" id="wpat_dropbox_token" value="<?php echo esc_attr( isset( $settings['dropbox_token'] ) ? $settings['dropbox_token'] : '' ); ?>" class="large-text" placeholder="sl.B... / Generated Access Token de Dropbox Developer Console" style="width:100%; margin:0;" />
-									</div>
-								</div>
-							</div>
-
-							<!-- Tarjeta: Almacenamiento en Microsoft OneDrive -->
-							<div class="wpat-module-card" style="margin-top: 20px;">
-								<div class="wpat-module-header" style="cursor: pointer; border-bottom: none;">
-									<div class="wpat-module-info" style="width: 100%;">
-										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-											<h3 style="margin: 0; font-size: 15px;">Microsoft OneDrive Storage</h3>
-											<div style="display: flex; align-items: center; gap: 10px;">
-												<?php if ( ! empty( $settings['onedrive_token'] ) ) : ?>
-													<span class="wpat-status-indicator" style="background: #e0f2fe; color: #0369a1; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-														<span style="width: 6px; height: 6px; background: #0369a1; border-radius: 50%;"></span> Listo
-													</span>
-												<?php else : ?>
-													<span class="wpat-status-indicator" style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-														<span style="width: 6px; height: 6px; background: #64748b; border-radius: 50%;"></span> Sin configurar
-													</span>
-												<?php endif; ?>
-												
-												</span>
-											</div>
-										</div>
-										<p style="margin: 0 0 4px 0; color: #64748b; font-size: 13px;">Envía los archivos recibidos durante el proceso de compra directamente a tu almacenamiento en la nube de Microsoft OneDrive.</p>
-									</div>
-								</div>
-								<div class="wpat-module-body" style="display: none; padding: 15px 20px 20px 20px;">
-									<div class="wpat-field-group">
-										<label for="wpat_onedrive_token" style="display:block; font-weight:600; margin-bottom:5px;">Token de Acceso Microsoft Graph (OneDrive Access Token)</label>
-										<input type="text" name="wpat_settings[onedrive_token]" id="wpat_onedrive_token" value="<?php echo esc_attr( isset( $settings['onedrive_token'] ) ? $settings['onedrive_token'] : '' ); ?>" class="large-text" placeholder="EwB... / Token OAuth Microsoft Graph API" style="width:100%; margin:0;" />
-									</div>
-								</div>
+						</div>
 				<?php
 				break;
 			case 'whatsapp':
 				?>
-<div class="wpat-module-card" style="margin-top: 20px;">
-								<div class="wpat-module-header">
-									<div class="wpat-module-info">
-										<h3>Botón Flotante de WhatsApp (Ultra-ligero)</h3>
-										<p>Muestra un botón flotante directo a WhatsApp en tu web sin librerías pesadas, con soporte para mensaje personalizado y múltiples agentes.</p>
-									</div>
-									<?php $this->render_module_toggle( 'whatsapp', $settings, true ); ?>
-								</div>
-								<div class="wpat-module-body" style="display: block;">
-									
+				<div class="wpat-module-card">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Botón Flotante de WhatsApp (Ultra-ligero)</h3>
+							<p>Muestra un botón flotante directo a WhatsApp en tu web sin librerías externas pesadas, con soporte para mensajes dinámicos con etiquetas, múltiples agentes, horario comercial y seguimiento de conversiones.</p>
+						</div>
+						<?php $this->render_module_toggle( 'whatsapp', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block; padding: 20px;">
+						
+						<!-- SECCIÓN 1: CONFIGURACIÓN BÁSICA -->
+						<h4 style="margin: 0 0 15px 0; font-size: 15px; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+							<span class="dashicons dashicons-phone" style="color: #25D366;"></span> 1. Teléfono & Mensaje Predeterminado
+						</h4>
 
-									<div class="wpat-field-group" style="margin-top: 15px;">
-										<label for="wpat_whatsapp_phone">Número de Teléfono Principal (con prefijo de país)</label>
-										<input type="text" name="wpat_settings[whatsapp_phone]" id="wpat_whatsapp_phone" value="<?php echo esc_attr( isset( $settings['whatsapp_phone'] ) ? $settings['whatsapp_phone'] : '' ); ?>" class="regular-text" placeholder="Ej: 34600000000" style="display:block; margin-top: 5px;" />
-										<p class="description">Introduce el número internacional sin espacios ni signos +. Ejemplo para España: 34600000000.</p>
-									</div>
-
-									<div class="wpat-field-group" style="margin-top: 15px;">
-										<label for="wpat_whatsapp_message">Mensaje Predeterminado de Inicio</label>
-										<input type="text" name="wpat_settings[whatsapp_message]" id="wpat_whatsapp_message" value="<?php echo esc_attr( isset( $settings['whatsapp_message'] ) ? $settings['whatsapp_message'] : '¡Hola! Quisiera más información.' ); ?>" class="large-text" style="display:block; margin-top: 5px;" />
-										<p class="description">Texto inicial con el que el usuario empezará el chat.</p>
-									</div>
-
-									<div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 15px;">
-										<div class="wpat-field-group" style="flex: 1; min-width: 220px;">
-											<label for="wpat_whatsapp_position">Posición en la pantalla</label>
-											<select name="wpat_settings[whatsapp_position]" id="wpat_whatsapp_position" style="display:block; margin-top: 5px; width: 100%;">
-												<option value="bottom-right" <?php selected( isset( $settings['whatsapp_position'] ) ? $settings['whatsapp_position'] : 'bottom-right', 'bottom-right' ); ?>>Inferior Derecha</option>
-												<option value="bottom-left" <?php selected( isset( $settings['whatsapp_position'] ) ? $settings['whatsapp_position'] : 'bottom-right', 'bottom-left' ); ?>>Inferior Izquierda</option>
-											</select>
-										</div>
-										<div class="wpat-field-group" style="flex: 2; min-width: 260px;">
-											<label for="wpat_whatsapp_tooltip">Globo de Saludo / Tooltip (Opcional)</label>
-											<input type="text" name="wpat_settings[whatsapp_tooltip]" id="wpat_whatsapp_tooltip" value="<?php echo esc_attr( isset( $settings['whatsapp_tooltip'] ) ? $settings['whatsapp_tooltip'] : '' ); ?>" class="regular-text" placeholder="Ej. ¿Necesitas ayuda? ¡Escríbenos!" style="display:block; margin-top: 5px; width: 100%;" />
-										</div>
-									</div>
-
-									<div class="wpat-field-group" style="margin-top: 15px;">
-										<label for="wpat_whatsapp_agents">Múltiples Agentes / Departamentos (Opcional)</label>
-										<textarea name="wpat_settings[whatsapp_agents]" id="wpat_whatsapp_agents" rows="3" class="large-text" placeholder="Soporte | 34600000001 | Técnico&#10;Ventas | 34600000002 | Comercial" style="font-family: monospace; display:block; margin-top: 5px;"><?php echo esc_textarea( isset( $settings['whatsapp_agents'] ) ? $settings['whatsapp_agents'] : '' ); ?></textarea>
-										<p class="description">Escribe un agente por línea en formato: <code>Nombre | Teléfono | Cargo/Departamento</code>. Si se define, al pulsar el icono de WhatsApp se desplegará una lista emergente para elegir agente.</p>
-									</div>
-
-									
-								</div>
+						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
+							<div class="wpat-field-group">
+								<label for="wpat_whatsapp_phone" style="font-weight: 600; display: block; margin-bottom: 5px;">Número de Teléfono Principal (con prefijo de país)</label>
+								<input type="text" name="wpat_settings[whatsapp_phone]" id="wpat_whatsapp_phone" value="<?php echo esc_attr( isset( $settings['whatsapp_phone'] ) ? $settings['whatsapp_phone'] : '' ); ?>" class="large-text" placeholder="Ej: 34600000000" style="width: 100%;" />
+								<p class="description" style="margin-top: 4px;">Introduce el número internacional sin espacios ni signos +. Ejemplo para España: <code>34600000000</code>.</p>
 							</div>
 
-							<div style="margin-top: 30px; border-top: 1px dashed var(--wpat-border); padding-top: 20px;">
-								<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes" style="height: 36px; padding: 0 20px;" />
+							<div class="wpat-field-group">
+								<label for="wpat_whatsapp_work_hours" style="font-weight: 600; display: block; margin-bottom: 5px;">Horario de Atención (Opcional)</label>
+								<input type="text" name="wpat_settings[whatsapp_work_hours]" id="wpat_whatsapp_work_hours" value="<?php echo esc_attr( isset( $settings['whatsapp_work_hours'] ) ? $settings['whatsapp_work_hours'] : '' ); ?>" class="large-text" placeholder="Ej: Lun - Vie: 09:00 a 19:00" style="width: 100%;" />
+								<p class="description" style="margin-top: 4px;">Se muestra como una pequeña insignia informativa en la cabecera del panel multi-agente.</p>
 							</div>
 						</div>
+
+						<div class="wpat-field-group" style="margin-bottom: 25px;">
+							<label for="wpat_whatsapp_message" style="font-weight: 600; display: block; margin-bottom: 5px;">Plantilla de Mensaje Inicial</label>
+							<input type="text" name="wpat_settings[whatsapp_message]" id="wpat_whatsapp_message" value="<?php echo esc_attr( isset( $settings['whatsapp_message'] ) ? $settings['whatsapp_message'] : '¡Hola! Quisiera más información sobre {title}.' ); ?>" class="large-text" style="width: 100%;" />
+							<p class="description" style="margin-top: 5px;">
+								Puedes usar etiquetas dinámicas: <code>{title}</code> (Título de la página o producto), <code>{url}</code> (URL actual), <code>{price}</code> (Precio del producto WooCommerce), <code>{sku}</code> (SKU del producto), <code>{site}</code> (Nombre de la web).
+							</p>
+						</div>
+
+						<!-- SECCIÓN 2: MULTI-AGENTE -->
+						<h4 style="margin: 0 0 15px 0; font-size: 15px; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+							<span class="dashicons dashicons-groups" style="color: #25D366;"></span> 2. Múltiples Agentes / Departamentos (Pop-up Emergente)
+						</h4>
+
+						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 15px;">
+							<div class="wpat-field-group">
+								<label for="wpat_whatsapp_popup_title" style="font-weight: 600; display: block; margin-bottom: 5px;">Título del Pop-up</label>
+								<input type="text" name="wpat_settings[whatsapp_popup_title]" id="wpat_whatsapp_popup_title" value="<?php echo esc_attr( isset( $settings['whatsapp_popup_title'] ) ? $settings['whatsapp_popup_title'] : 'Contacta con nuestro equipo' ); ?>" class="large-text" style="width: 100%;" />
+							</div>
+
+							<div class="wpat-field-group">
+								<label for="wpat_whatsapp_popup_subtitle" style="font-weight: 600; display: block; margin-bottom: 5px;">Subtítulo del Pop-up</label>
+								<input type="text" name="wpat_settings[whatsapp_popup_subtitle]" id="wpat_whatsapp_popup_subtitle" value="<?php echo esc_attr( isset( $settings['whatsapp_popup_subtitle'] ) ? $settings['whatsapp_popup_subtitle'] : 'Selecciona un asesor para iniciar el chat' ); ?>" class="large-text" style="width: 100%;" />
+							</div>
+						</div>
+
+						<div class="wpat-field-group" style="margin-bottom: 25px;">
+							<label for="wpat_whatsapp_agents" style="font-weight: 600; display: block; margin-bottom: 5px;">Lista de Agentes y Departamentos (Opcional)</label>
+							<textarea name="wpat_settings[whatsapp_agents]" id="wpat_whatsapp_agents" rows="3" class="large-text" placeholder="Soporte Técnico | 34600000001 | Departamento Técnico&#10;Ventas y Presupuestos | 34600000002 | Asesor Comercial" style="font-family: monospace; font-size: 12px; width: 100%;"><?php echo esc_textarea( isset( $settings['whatsapp_agents'] ) ? $settings['whatsapp_agents'] : '' ); ?></textarea>
+							<p class="description" style="margin-top: 4px;">Escribe un asesor por línea en formato: <code>Nombre | Teléfono | Cargo/Departamento</code>. Si se definen agentes, al hacer clic en el botón de WhatsApp se abrirá una elegante ventana modal con la lista de asesores.</p>
+						</div>
+
+						<!-- SECCIÓN 3: DISEÑO Y COMPORTAMIENTO -->
+						<h4 style="margin: 0 0 15px 0; font-size: 15px; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+							<span class="dashicons dashicons-admin-appearance" style="color: #25D366;"></span> 3. Posición, Diseño & Dispositivos
+						</h4>
+
+						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 20px;">
+							<div class="wpat-field-group">
+								<label for="wpat_whatsapp_position" style="font-weight: 600; display: block; margin-bottom: 5px;">Posición en Pantalla</label>
+								<select name="wpat_settings[whatsapp_position]" id="wpat_whatsapp_position" style="width: 100%;">
+									<option value="bottom-right" <?php selected( isset( $settings['whatsapp_position'] ) ? $settings['whatsapp_position'] : 'bottom-right', 'bottom-right' ); ?>>Inferior Derecha</option>
+									<option value="bottom-left" <?php selected( isset( $settings['whatsapp_position'] ) ? $settings['whatsapp_position'] : 'bottom-right', 'bottom-left' ); ?>>Inferior Izquierda</option>
+								</select>
+							</div>
+
+							<div class="wpat-field-group">
+								<label for="wpat_whatsapp_offset_x" style="font-weight: 600; display: block; margin-bottom: 5px;">Margen Lateral (px)</label>
+								<input type="number" name="wpat_settings[whatsapp_offset_x]" id="wpat_whatsapp_offset_x" value="<?php echo esc_attr( isset( $settings['whatsapp_offset_x'] ) ? $settings['whatsapp_offset_x'] : '20' ); ?>" min="0" max="200" style="width: 100%;" />
+							</div>
+
+							<div class="wpat-field-group">
+								<label for="wpat_whatsapp_offset_y" style="font-weight: 600; display: block; margin-bottom: 5px;">Margen Inferior (px)</label>
+								<input type="number" name="wpat_settings[whatsapp_offset_y]" id="wpat_whatsapp_offset_y" value="<?php echo esc_attr( isset( $settings['whatsapp_offset_y'] ) ? $settings['whatsapp_offset_y'] : '20' ); ?>" min="0" max="200" style="width: 100%;" />
+							</div>
+
+							<div class="wpat-field-group">
+								<label for="wpat_whatsapp_bg_color" style="font-weight: 600; display: block; margin-bottom: 5px;">Color de Fondo</label>
+								<input type="text" name="wpat_settings[whatsapp_bg_color]" id="wpat_whatsapp_bg_color" value="<?php echo esc_attr( isset( $settings['whatsapp_bg_color'] ) ? $settings['whatsapp_bg_color'] : '#25D366' ); ?>" class="wpat-color-picker" data-default-color="#25D366" />
+							</div>
+						</div>
+
+						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
+							<div class="wpat-field-group">
+								<label for="wpat_whatsapp_tooltip" style="font-weight: 600; display: block; margin-bottom: 5px;">Globo de Saludo / Tooltip (Opcional)</label>
+								<input type="text" name="wpat_settings[whatsapp_tooltip]" id="wpat_whatsapp_tooltip" value="<?php echo esc_attr( isset( $settings['whatsapp_tooltip'] ) ? $settings['whatsapp_tooltip'] : '' ); ?>" class="large-text" placeholder="Ej: ¿Necesitas ayuda? ¡Escríbenos!" style="width: 100%;" />
+							</div>
+
+							<div class="wpat-field-group">
+								<label for="wpat_whatsapp_devices" style="font-weight: 600; display: block; margin-bottom: 5px;">Mostrar en Dispositivos</label>
+								<select name="wpat_settings[whatsapp_devices]" id="wpat_whatsapp_devices" style="width: 100%;">
+									<option value="all" <?php selected( isset( $settings['whatsapp_devices'] ) ? $settings['whatsapp_devices'] : 'all', 'all' ); ?>>Todos los dispositivos (Móvil y Escritorio)</option>
+									<option value="mobile" <?php selected( isset( $settings['whatsapp_devices'] ) ? $settings['whatsapp_devices'] : 'all', 'mobile' ); ?>>Sólo en Dispositivos Móviles</option>
+									<option value="desktop" <?php selected( isset( $settings['whatsapp_devices'] ) ? $settings['whatsapp_devices'] : 'all', 'desktop' ); ?>>Sólo en Ordenadores de Escritorio</option>
+								</select>
+							</div>
+						</div>
+
+						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 25px; display: flex; flex-direction: column; gap: 10px;">
+							<label style="font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; color: #1e293b;">
+								<input type="checkbox" name="wpat_settings[whatsapp_pulse]" value="1" <?php checked( ! isset( $settings['whatsapp_pulse'] ) || '1' === (string) $settings['whatsapp_pulse'] ); ?> />
+								Activar efecto de pulso / animación de llamada a la acción (Ripple)
+							</label>
+
+							<label style="font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; color: #1e293b;">
+								<input type="checkbox" name="wpat_settings[whatsapp_track_events]" value="1" <?php checked( ! isset( $settings['whatsapp_track_events'] ) || '1' === (string) $settings['whatsapp_track_events'] ); ?> />
+								Registrar automáticamente clics en Google Analytics (evento <code>whatsapp_click</code>) y Meta Pixel
+							</label>
+
+							<label style="font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; color: #1e293b;">
+								<input type="checkbox" name="wpat_settings[whatsapp_hide_on_checkout]" value="1" <?php checked( isset( $settings['whatsapp_hide_on_checkout'] ) && '1' === (string) $settings['whatsapp_hide_on_checkout'] ); ?> />
+								Ocultar botón en páginas de Finalizar Compra (Checkout) y Carrito para evitar distracciones
+							</label>
+						</div>
+
+						<!-- SECCIÓN 4: SHORTCODES Y ATAJOS -->
+						<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px;">
+							<h4 style="margin: 0 0 8px 0; font-size: 13px; color: #166534; display: flex; align-items: center; gap: 6px;">
+								<span class="dashicons dashicons-shortcode"></span> Shortcodes & Atajos Disponibles
+							</h4>
+							<ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #14532d; line-height: 1.6;">
+								<li><strong>Shortcode botón estándar:</strong> <code>[wpat_whatsapp text="Contactar por WhatsApp" message="Hola, tengo una consulta"]</code></li>
+								<li><strong>Disparador por clase CSS:</strong> Añade la clase <code>.wpat-open-whatsapp</code> a cualquier enlace, menú o botón de tu constructor visual (Elementor, Divi, Gutenberg) para abrir directamente la ventana modal de WhatsApp.</li>
+							</ul>
+						</div>
+
+						<!-- BOTÓN GUARDAR -->
+						<div style="margin-top: 25px; border-top: 1px dashed var(--wpat-border); padding-top: 20px;">
+							<input type="submit" name="wpat_save_settings" class="button button-primary" value="Guardar Ajustes de WhatsApp" style="height: 36px; padding: 0 20px;" />
+						</div>
+
+					</div>
+				</div>
 				<?php
 				break;
 			case 'initial-setup':
@@ -8650,40 +9450,56 @@ class WPAT_Admin {
 					</div>
 					<div class="wpat-module-body" style="display: block; padding: 20px;">
 
-						<!-- Limpieza de contenido -->
+						<!-- 1. Limpieza de contenido y plugins basura -->
 						<div class="wpat-field-group" style="margin-bottom: 20px;">
-							<label style="font-weight: 600; display: block; margin-bottom: 8px;">1. Limpieza de Contenido por Defecto</label>
-							<div style="margin-left: 10px; display: flex; flex-direction: column; gap: 8px;">
-								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
-									<input type="checkbox" name="wpat_init[delete_post]" value="1" class="wpat-init-action-checkbox" />
-									Eliminar entrada de ejemplo "Hola mundo"
+							<label style="font-weight: 600; display: block; margin-bottom: 8px; font-size: 14px; color: #1e293b;">
+								<span class="dashicons dashicons-trash" style="color: #ef4444; vertical-align: middle;"></span> 1. Limpieza de Contenido & Plugins por Defecto
+							</label>
+							<div style="margin-left: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px;">
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px;">
+									<input type="checkbox" name="wpat_init[delete_post]" value="1" class="wpat-init-action-checkbox" style="margin-right: 8px;" />
+									Eliminar entrada "Hola mundo" y comentarios
 								</label>
-								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
-									<input type="checkbox" name="wpat_init[delete_page]" value="1" class="wpat-init-action-checkbox" />
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px;">
+									<input type="checkbox" name="wpat_init[delete_page]" value="1" class="wpat-init-action-checkbox" style="margin-right: 8px;" />
 									Eliminar "Página de ejemplo" (Sample Page)
 								</label>
-								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
-									<input type="checkbox" name="wpat_init[delete_hello_dolly]" value="1" class="wpat-init-action-checkbox" />
-									Eliminar plugin por defecto "Hello Dolly"
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px;">
+									<input type="checkbox" name="wpat_init[delete_hello_dolly]" value="1" class="wpat-init-action-checkbox" style="margin-right: 8px;" />
+									Eliminar plugin "Hello Dolly"
+								</label>
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px;">
+									<input type="checkbox" name="wpat_init[delete_akismet]" value="1" class="wpat-init-action-checkbox" style="margin-right: 8px;" />
+									Eliminar plugin "Akismet Anti-spam"
+								</label>
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px;">
+									<input type="checkbox" name="wpat_init[clean_tagline]" value="1" class="wpat-init-action-checkbox" style="margin-right: 8px;" />
+									Limpiar descripción corta por defecto
 								</label>
 							</div>
 						</div>
 
-						<!-- Creación de páginas -->
-						<div class="wpat-field-group" style="margin-bottom: 20px; border-top: 1px dotted var(--wpat-border); padding-top: 15px;">
-							<label style="font-weight: 600; display: block; margin-bottom: 8px;">2. Crear Estructura de Páginas Básicas</label>
+						<!-- 2. Creación de páginas y menú -->
+						<div class="wpat-field-group" style="margin-bottom: 20px; border-top: 1px solid #e2e8f0; padding-top: 18px;">
+							<label style="font-weight: 600; display: block; margin-bottom: 8px; font-size: 14px; color: #1e293b;">
+								<span class="dashicons dashicons-admin-page" style="color: var(--wpat-primary); vertical-align: middle;"></span> 2. Crear Estructura de Páginas & Menú Principal
+							</label>
 							
 							<div style="display: flex; justify-content: space-between; align-items: center; margin: 0 0 12px 10px; flex-wrap: wrap; gap: 10px;">
-								<p class="description" style="margin: 0;">Marca las páginas individuales que deseas que el asistente cree automáticamente en tu sitio:</p>
+								<p class="description" style="margin: 0;">Selecciona las páginas que deseas crear automáticamente:</p>
 								<label style="font-weight: 600; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; padding: 4px 10px; border-radius: 4px; border: 1px solid var(--wpat-border); color: #475569;">
 									<input type="checkbox" name="wpat_init[create_pages]" id="wpat_init_create_pages" value="1" class="wpat-init-action-checkbox" style="margin: 0;" />
-									Seleccionar todo
+									Seleccionar todas las páginas
 								</label>
 							</div>
-							<div style="margin-left: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid var(--wpat-border);">
+							<div style="margin-left: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid var(--wpat-border);">
 								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
 									<input type="checkbox" name="wpat_init[pages_list][]" value="home" class="wpat-init-page-checkbox" />
-									Inicio (y establecer como Portada)
+									<strong>Inicio</strong> (y fijar como Portada)
+								</label>
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+									<input type="checkbox" name="wpat_init[pages_list][]" value="blog" class="wpat-init-page-checkbox" />
+									<strong>Blog</strong> (y fijar como Entradas)
 								</label>
 								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
 									<input type="checkbox" name="wpat_init[pages_list][]" value="about" class="wpat-init-page-checkbox" />
@@ -8696,6 +9512,14 @@ class WPAT_Admin {
 								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
 									<input type="checkbox" name="wpat_init[pages_list][]" value="contact" class="wpat-init-page-checkbox" />
 									Contacto
+								</label>
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+									<input type="checkbox" name="wpat_init[pages_list][]" value="portfolio" class="wpat-init-page-checkbox" />
+									Proyectos / Portfolio
+								</label>
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
+									<input type="checkbox" name="wpat_init[pages_list][]" value="faq" class="wpat-init-page-checkbox" />
+									Preguntas frecuentes
 								</label>
 								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
 									<input type="checkbox" name="wpat_init[pages_list][]" value="legal" class="wpat-init-page-checkbox" />
@@ -8711,53 +9535,80 @@ class WPAT_Admin {
 								</label>
 							</div>
 
+							<div style="margin-top: 12px; margin-left: 10px;">
+								<label style="font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; color: #0f766e;">
+									<input type="checkbox" name="wpat_init[create_main_menu]" value="1" class="wpat-init-action-checkbox" style="margin-right: 8px;" />
+									Crear automáticamente el "Menú Principal" y asignarlo a la cabecera del tema
+								</label>
+							</div>
+
 							<div style="margin-top: 15px; margin-left: 10px;">
 								<label for="wpat_init_custom_pages" style="font-weight: 500; font-size: 13px; display: block; margin-bottom: 6px; color: #475569;">
 									Crear páginas personalizadas adicionales (separadas por comas):
 								</label>
-								<input type="text" name="wpat_init[custom_pages]" id="wpat_init_custom_pages" class="large-text" placeholder="Ej: Blog, Portfolio, Preguntas Frecuentes, Tienda" style="width: 100%; max-width: 600px; margin: 0; height: 32px;" />
-								<p class="description" style="margin-top: 4px;">Introduce los nombres de las páginas adicionales que quieras crear separándolos con comas.</p>
+								<input type="text" name="wpat_init[custom_pages]" id="wpat_init_custom_pages" class="large-text" placeholder="Ej: Equipo, Testimonios, Tienda, Presupuestos" style="width: 100%; max-width: 600px; margin: 0; height: 32px;" />
+								<p class="description" style="margin-top: 4px;">Introduce nombres de páginas extra separándolos por comas.</p>
 							</div>
 						</div>
 
-						<!-- Temas y Plugins -->
-						<div class="wpat-field-group" style="margin-bottom: 20px; border-top: 1px dotted var(--wpat-border); padding-top: 15px;">
-							<label style="font-weight: 600; display: block; margin-bottom: 8px;">3. Temas y Plugins de Trabajo</label>
-							<div style="margin-left: 10px; display: flex; flex-direction: column; gap: 8px;">
-								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
-									<input type="checkbox" name="wpat_init[clean_themes]" value="1" class="wpat-init-action-checkbox" />
-									Eliminar todos los temas inactivos (Conservar solo el tema activo actual)
+						<!-- 3. Temas y Plugins de Trabajo -->
+						<div class="wpat-field-group" style="margin-bottom: 20px; border-top: 1px solid #e2e8f0; padding-top: 18px;">
+							<label style="font-weight: 600; display: block; margin-bottom: 8px; font-size: 14px; color: #1e293b;">
+								<span class="dashicons dashicons-admin-plugins" style="color: var(--wpat-primary); vertical-align: middle;"></span> 3. Temas & Plugins de Trabajo Esenciales
+							</label>
+							<div style="margin-left: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px;">
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px;">
+									<input type="checkbox" name="wpat_init[clean_themes]" value="1" class="wpat-init-action-checkbox" style="margin-right: 8px;" />
+									Eliminar todos los temas inactivos (Conserva solo el activo)
 								</label>
-								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
-									<input type="checkbox" name="wpat_init[install_hello]" value="1" class="wpat-init-action-checkbox" />
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px;">
+									<input type="checkbox" name="wpat_init[install_hello]" value="1" class="wpat-init-action-checkbox" style="margin-right: 8px;" />
 									Instalar y activar tema oficial "Hello Elementor"
 								</label>
-								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
-									<input type="checkbox" name="wpat_init[install_elementor]" value="1" class="wpat-init-action-checkbox" />
-									Instalar y activar plugin gratuito "Elementor"
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px;">
+									<input type="checkbox" name="wpat_init[install_elementor]" value="1" class="wpat-init-action-checkbox" style="margin-right: 8px;" />
+									Instalar y activar plugin "Elementor"
 								</label>
-								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
-									<input type="checkbox" name="wpat_init[install_translatepress]" value="1" class="wpat-init-action-checkbox" />
-									Instalar y activar plugin gratuito "TranslatePress"
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px;">
+									<input type="checkbox" name="wpat_init[install_translatepress]" value="1" class="wpat-init-action-checkbox" style="margin-right: 8px;" />
+									Instalar y activar plugin "TranslatePress"
+								</label>
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px;">
+									<input type="checkbox" name="wpat_init[install_woocommerce]" value="1" class="wpat-init-action-checkbox" style="margin-right: 8px;" />
+									Instalar y activar plugin oficial "WooCommerce"
+								</label>
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px;">
+									<input type="checkbox" name="wpat_init[install_fluentforms]" value="1" class="wpat-init-action-checkbox" style="margin-right: 8px;" />
+									Instalar y activar plugin "Fluent Forms" (Formularios)
 								</label>
 							</div>
 						</div>
 
-						<!-- Ajustes generales -->
-						<div class="wpat-field-group" style="margin-bottom: 20px; border-top: 1px dotted var(--wpat-border); padding-top: 15px;">
-							<label style="font-weight: 600; display: block; margin-bottom: 8px;">4. Optimización de Ajustes del Sistema</label>
-							<div style="margin-left: 10px; display: flex; flex-direction: column; gap: 8px;">
-								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
-									<input type="checkbox" name="wpat_init[media_sizes]" value="1" class="wpat-init-action-checkbox" />
-									Optimizar tamaños de medios (Miniatura 300x300, Medio 800x800, Grande 1920x1080)
+						<!-- 4. Ajustes generales del sistema -->
+						<div class="wpat-field-group" style="margin-bottom: 20px; border-top: 1px solid #e2e8f0; padding-top: 18px;">
+							<label style="font-weight: 600; display: block; margin-bottom: 8px; font-size: 14px; color: #1e293b;">
+								<span class="dashicons dashicons-admin-settings" style="color: var(--wpat-primary); vertical-align: middle;"></span> 4. Optimización de Ajustes del Sistema
+							</label>
+							<div style="margin-left: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px;">
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px;">
+									<input type="checkbox" name="wpat_init[media_sizes]" value="1" class="wpat-init-action-checkbox" style="margin-right: 8px;" />
+									Optimizar tamaños de medios (300px, 800px, 1920px)
 								</label>
-								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
-									<input type="checkbox" name="wpat_init[permalinks]" value="1" class="wpat-init-action-checkbox" />
-									Cambiar Enlaces Permanentes a "Nombre de la entrada" (postname)
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px;">
+									<input type="checkbox" name="wpat_init[permalinks]" value="1" class="wpat-init-action-checkbox" style="margin-right: 8px;" />
+									Cambiar Enlaces Permanentes a "Nombre de entrada" (/%postname%/)
 								</label>
-								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center;">
-									<input type="checkbox" name="wpat_init[discourage_indexing]" value="1" class="wpat-init-action-checkbox" />
-									Disuadir indexación a motores de búsqueda (Ajustes de Lectura)
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px;">
+									<input type="checkbox" name="wpat_init[disable_default_comments]" value="1" class="wpat-init-action-checkbox" style="margin-right: 8px;" />
+									Desactivar comentarios y avatares por defecto
+								</label>
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px;">
+									<input type="checkbox" name="wpat_init[set_timezone_es]" value="1" class="wpat-init-action-checkbox" style="margin-right: 8px;" />
+									Fijar zona horaria Europe/Madrid y formato d/m/Y
+								</label>
+								<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px;">
+									<input type="checkbox" name="wpat_init[discourage_indexing]" value="1" class="wpat-init-action-checkbox" style="margin-right: 8px;" />
+									Disuadir indexación a buscadores (Sitio en desarrollo)
 								</label>
 							</div>
 						</div>
@@ -8777,13 +9628,105 @@ class WPAT_Admin {
 				<div class="wpat-module-card">
 					<div class="wpat-module-header">
 						<div class="wpat-module-info">
-							<h3>Ocultar Huella WPAT (Marca Blanca)</h3>
-							<p>Oculta la presencia del plugin WP Agency Toolkit en el panel de administración para clientes, renombrando u ocultando menús y referencias de marca.</p>
+							<h3>Ocultar Huella WPAT (Marca Blanca & Modo Silencioso)</h3>
+							<p>Oculta o renombra la presencia del plugin WP Agency Toolkit en el panel de administración, permitiendo ofrecer un entorno 100% marca blanca para tus clientes.</p>
 						</div>
-						<?php $this->render_module_toggle( 'silent-skin', $settings, false ); ?>
+						<?php $this->render_module_toggle( 'silent-skin', $settings, true ); ?>
 					</div>
-					<div class="wpat-module-body" style="display: block; padding: 20px;">
-						<p style="margin: 0; color: #475569; font-size: 14px;">Este módulo opera de forma automática cuando se encuentra activado. Oculta la huella y marca del plugin WP Agency Toolkit en la interfaz de administración para mantener un entorno de marca blanca limpio para tus clientes.</p>
+					<div class="wpat-module-body" style="display: block;">
+
+						<!-- Modo de Visibilidad -->
+						<div class="wpat-field-group" style="margin-bottom: 20px;">
+							<label for="wpat_white_label_mode" style="font-weight: 600; display: block; margin-bottom: 6px;">Comportamiento en la Lista de Plugins (plugins.php)</label>
+							<select name="wpat_settings[white_label_mode]" id="wpat_white_label_mode" class="regular-text" style="width: 100%; max-width: 450px;">
+								<option value="rename" <?php selected( isset( $settings['white_label_mode'] ) ? $settings['white_label_mode'] : 'rename', 'rename' ); ?>>Renombrar Plugin y Aplicar Marca Blanca Personalizada</option>
+								<option value="hide" <?php selected( isset( $settings['white_label_mode'] ) ? $settings['white_label_mode'] : 'rename', 'hide' ); ?>>Ocultar Totalmente de la Lista de Plugins (Modo Invisible)</option>
+							</select>
+							<p class="description">Elige si prefieres que el plugin aparezca con la marca de tu agencia o que no aparezca en absoluto en la lista de plugins instalados.</p>
+						</div>
+
+						<!-- Grid de Rebranding -->
+						<div class="wpat-field-group-row" style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 15px;">
+							<div class="wpat-field-group" style="flex: 1; min-width: 250px;">
+								<label for="wpat_white_label_plugin_name" style="font-weight: 600; display: block; margin-bottom: 6px;">Nombre del Plugin</label>
+								<input type="text" name="wpat_settings[white_label_plugin_name]" id="wpat_white_label_plugin_name" value="<?php echo esc_attr( isset( $settings['white_label_plugin_name'] ) ? $settings['white_label_plugin_name'] : 'Herramientas del Sitio Web' ); ?>" class="regular-text" style="width: 100%;" />
+								<p class="description">Nombre que se mostrará en plugins.php y en la cabecera del panel.</p>
+							</div>
+							<div class="wpat-field-group" style="flex: 1; min-width: 250px;">
+								<label for="wpat_white_label_menu_title" style="font-weight: 600; display: block; margin-bottom: 6px;">Título en el Menú Lateral de WordPress</label>
+								<input type="text" name="wpat_settings[white_label_menu_title]" id="wpat_white_label_menu_title" value="<?php echo esc_attr( isset( $settings['white_label_menu_title'] ) ? $settings['white_label_menu_title'] : 'Herramientas Web' ); ?>" class="regular-text" style="width: 100%;" />
+								<p class="description">Texto del elemento en el menú de navegación lateral de administración.</p>
+							</div>
+						</div>
+
+						<div class="wpat-field-group-row" style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 15px;">
+							<div class="wpat-field-group" style="flex: 1; min-width: 250px;">
+								<label for="wpat_white_label_author" style="font-weight: 600; display: block; margin-bottom: 6px;">Nombre de la Agencia / Autor</label>
+								<input type="text" name="wpat_settings[white_label_author]" id="wpat_white_label_author" value="<?php echo esc_attr( isset( $settings['white_label_author'] ) ? $settings['white_label_author'] : 'Equipo de Desarrollo Web' ); ?>" class="regular-text" style="width: 100%;" />
+								<p class="description">Firma o nombre de agencia visible en los créditos del plugin.</p>
+							</div>
+							<div class="wpat-field-group" style="flex: 1; min-width: 250px;">
+								<label for="wpat_white_label_author_url" style="font-weight: 600; display: block; margin-bottom: 6px;">URL de la Agencia / Soporte</label>
+								<input type="url" name="wpat_settings[white_label_author_url]" id="wpat_white_label_author_url" value="<?php echo esc_attr( isset( $settings['white_label_author_url'] ) ? $settings['white_label_author_url'] : '' ); ?>" placeholder="https://tuagencia.com" class="regular-text" style="width: 100%;" />
+								<p class="description">Enlace hacia la web de tu agencia o portal de clientes.</p>
+							</div>
+						</div>
+
+						<div class="wpat-field-group" style="margin-bottom: 15px;">
+							<label for="wpat_white_label_plugin_desc" style="font-weight: 600; display: block; margin-bottom: 6px;">Descripción Personalizada del Plugin</label>
+							<textarea name="wpat_settings[white_label_plugin_desc]" id="wpat_white_label_plugin_desc" rows="2" class="large-text" placeholder="Módulo de optimización, seguridad y utilidades para la administración de este sitio."><?php echo esc_textarea( isset( $settings['white_label_plugin_desc'] ) ? $settings['white_label_plugin_desc'] : 'Módulo de optimización, seguridad y utilidades para la administración de este sitio.' ); ?></textarea>
+							<p class="description">Descripción que aparecerá bajo el plugin en la tabla de plugins instalados.</p>
+						</div>
+
+						<div class="wpat-field-group" style="margin-bottom: 20px;">
+							<label for="wpat_white_label_menu_icon" style="font-weight: 600; display: block; margin-bottom: 6px;">Icono del Menú de Administración</label>
+							<select name="wpat_settings[white_label_menu_icon]" id="wpat_white_label_menu_icon" class="regular-text" style="width: 100%; max-width: 320px;">
+								<option value="dashicons-admin-generic" <?php selected( isset( $settings['white_label_menu_icon'] ) ? $settings['white_label_menu_icon'] : 'dashicons-admin-generic', 'dashicons-admin-generic' ); ?>>⚙️ Ajustes Generales (dashicons-admin-generic)</option>
+								<option value="dashicons-shield" <?php selected( isset( $settings['white_label_menu_icon'] ) ? $settings['white_label_menu_icon'] : '', 'dashicons-shield' ); ?>>🛡️ Escudo de Seguridad (dashicons-shield)</option>
+								<option value="dashicons-admin-tools" <?php selected( isset( $settings['white_label_menu_icon'] ) ? $settings['white_label_menu_icon'] : '', 'dashicons-admin-tools' ); ?>>🔧 Herramientas (dashicons-admin-tools)</option>
+								<option value="dashicons-art" <?php selected( isset( $settings['white_label_menu_icon'] ) ? $settings['white_label_menu_icon'] : '', 'dashicons-art' ); ?>>🎨 Diseño & Marca (dashicons-art)</option>
+								<option value="dashicons-star-filled" <?php selected( isset( $settings['white_label_menu_icon'] ) ? $settings['white_label_menu_icon'] : '', 'dashicons-star-filled' ); ?>>⭐ Estrella Premium (dashicons-star-filled)</option>
+								<option value="dashicons-dashboard" <?php selected( isset( $settings['white_label_menu_icon'] ) ? $settings['white_label_menu_icon'] : '', 'dashicons-dashboard' ); ?>>📊 Dashboard (dashicons-dashboard)</option>
+								<option value="dashicons-cloud" <?php selected( isset( $settings['white_label_menu_icon'] ) ? $settings['white_label_menu_icon'] : '', 'dashicons-cloud' ); ?>>☁️ Nube & Red (dashicons-cloud)</option>
+								<option value="dashicons-superhero" <?php selected( isset( $settings['white_label_menu_icon'] ) ? $settings['white_label_menu_icon'] : '', 'dashicons-superhero' ); ?>>🦸 Pro Toolkit (dashicons-superhero)</option>
+							</select>
+							<p class="description">Icono Dashicon que lucirá en la barra lateral del panel de control de WordPress.</p>
+						</div>
+
+						<!-- Restricción de Acceso & Ocultación -->
+						<div class="wpat-field-group" style="margin-top: 20px; border-top: 1px dotted var(--wpat-border); padding-top: 15px;">
+							<label style="font-weight: 600; display: block; margin-bottom: 10px;">Seguridad y Restricción de Acceso al Panel</label>
+							
+							<div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+								<label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[white_label_hide_from_non_admins]" value="1" <?php checked( isset( $settings['white_label_hide_from_non_admins'] ) ? $settings['white_label_hide_from_non_admins'] : '1', '1' ); ?> />
+									<strong>Restringir acceso al menú:</strong> Ocultar el menú de administración a todos los usuarios excepto al Administrador principal o usuarios autorizados.
+								</label>
+
+								<label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[white_label_prevent_deactivation]" value="1" <?php checked( isset( $settings['white_label_prevent_deactivation'] ) ? $settings['white_label_prevent_deactivation'] : '0', '1' ); ?> />
+									<strong>Prevenir desactivación accidental:</strong> Ocultar el botón "Desactivar" en la lista de plugins.
+								</label>
+							</div>
+
+							<div class="wpat-field-group" style="margin-top: 10px;">
+								<label for="wpat_white_label_allowed_users" style="font-weight: 600; display: block; margin-bottom: 4px;">Usuarios o Emails Autorizados</label>
+								<input type="text" name="wpat_settings[white_label_allowed_users]" id="wpat_white_label_allowed_users" value="<?php echo esc_attr( isset( $settings['white_label_allowed_users'] ) ? $settings['white_label_allowed_users'] : '' ); ?>" placeholder="admin, mi_agencia@correo.com" class="regular-text" style="width: 100%; max-width: 450px;" />
+								<p class="description">Nombres de usuario o correos electrónicos (separados por coma) que podrán ver y gestionar este panel. Si está vacío, solo tendrá acceso el usuario ID 1 o Superadministrador.</p>
+							</div>
+						</div>
+
+						<!-- Caja de Ayuda / Clave de Desbloqueo -->
+						<div style="margin-top: 20px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 14px 18px; font-size: 13px; color: #1e40af; line-height: 1.5;">
+							<div style="display: flex; align-items: center; gap: 8px; font-weight: 700; margin-bottom: 4px;">
+								<span>💡 Enlace de Desbloqueo Directo (Emergencia)</span>
+							</div>
+							<p style="margin: 0;">Si en algún momento el menú lateral queda oculto para tu usuario, siempre puedes acceder directamente a la configuración introduciendo esta URL en tu navegador:</p>
+							<code style="display: block; margin-top: 6px; padding: 6px 10px; background: #fff; border: 1px solid #dbeafe; border-radius: 4px; color: #1d4ed8; word-break: break-all;">
+								<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&wpat_unlock=1' ) ); ?>
+							</code>
+						</div>
+
 					</div>
 				</div>
 				<?php
@@ -9169,6 +10112,27 @@ class WPAT_Admin {
 			$canonical = get_post_meta( $id, '_wpat_seo_canonical', true );
 			if ( empty( $canonical ) ) {
 				update_post_meta( $id, '_wpat_seo_canonical', get_permalink( $id ) );
+			}
+
+			// 4. Rellenar Frase Clave si está vacía
+			$keyword = get_post_meta( $id, '_wpat_seo_keyword', true );
+			if ( empty( $keyword ) ) {
+				$post_title = get_the_title( $id );
+				if ( ! empty( $post_title ) ) {
+					$stopwords = array( 'de', 'la', 'el', 'en', 'y', 'a', 'los', 'del', 'las', 'un', 'por', 'con', 'no', 'una', 'su', 'para', 'es', 'al', 'lo', 'como', 'más', 'o', 'pero', 'sus', 'le', 'ha', 'me', 'si', 'sin', 'sobre', 'este', 'ya', 'entre', 'cuando', 'todo', 'esta', 'ser', 'son', 'dos', 'también', 'fue', 'había', 'era', 'muy', 'hasta', 'desde', 'está', 'mi', 'porque', 'qué', 'solo', 'han', 'yo', 'hay', 'vez', 'puede', 'todos', 'así', 'nos', 'ni', 'parte', 'tiene', 'él', 'uno', 'donde', 'bien', 'guía', 'completa', 'cómo', 'paso' );
+					$clean_pt  = mb_strtolower( preg_replace( '/[^\p{L}\p{N}\s]/u', ' ', $post_title ) );
+					$words     = preg_split( '/\s+/', $clean_pt, -1, PREG_SPLIT_NO_EMPTY );
+					$filtered  = array();
+					foreach ( $words as $w ) {
+						if ( mb_strlen( $w ) > 2 && ! in_array( $w, $stopwords, true ) ) {
+							$filtered[] = $w;
+						}
+					}
+					if ( ! empty( $filtered ) ) {
+						$suggested_kw = implode( ' ', array_slice( $filtered, 0, 3 ) );
+						update_post_meta( $id, '_wpat_seo_keyword', sanitize_text_field( $suggested_kw ) );
+					}
+				}
 			}
 
 			if ( $title_filled || $desc_filled ) {

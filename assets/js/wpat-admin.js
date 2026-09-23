@@ -1732,6 +1732,7 @@ jQuery(document).ready(function($) {
 	});
 
 	// 10. Mostrar/Ocultar campos de autenticación SMTP
+	// 10. Mostrar/Ocultar campos de autenticación SMTP
 	$(document).on('change', '#wpat_smtp_auth', function() {
 		var $fields = $('.wpat-smtp-auth-fields');
 		if ($(this).is(':checked')) {
@@ -1739,6 +1740,33 @@ jQuery(document).ready(function($) {
 		} else {
 			$fields.slideUp(250);
 		}
+	});
+
+	// 10.1 Presets rápidos de proveedor SMTP
+	$(document).on('click', '.wpat-smtp-preset-btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var host = $btn.data('host') || '';
+		var port = $btn.data('port') || '587';
+		var secure = $btn.data('secure') || 'tls';
+		var auth = $btn.data('auth') || '1';
+		var user = $btn.data('user') || '';
+		var provider = $btn.data('provider') || 'Proveedor';
+
+		$('#wpat_smtp_host').val(host);
+		$('#wpat_smtp_port').val(port);
+		$('#wpat_smtp_secure').val(secure);
+		
+		if (auth === '1' || auth === 1) {
+			$('#wpat_smtp_auth').prop('checked', true).trigger('change');
+		}
+
+		if (user) {
+			$('#wpat_smtp_username').val(user);
+		}
+
+		var $notice = $('#wpat_smtp_preset_notice');
+		$notice.html('✔ Plantilla de <strong>' + provider + '</strong> aplicada (Host: <code>' + host + '</code>, Puerto: <code>' + port + '</code>, Cifrado: <code>' + secure.toUpperCase() + '</code>). Introduce tu usuario y contraseña si es necesario.').fadeIn(200);
 	});
 
 	// 11. Acción: Enviar correo de prueba SMTP
@@ -1767,14 +1795,26 @@ jQuery(document).ready(function($) {
 				test_email: email
 			},
 			success: function(response) {
-				$btn.prop('disabled', false).text('Enviar Prueba');
+				$btn.prop('disabled', false).html('<span class="dashicons dashicons-email-alt" style="margin-top: 2px;"></span> Enviar Prueba');
 				$result.fadeIn(200);
 				if (response.success) {
 					$result.css({
 						'background': '#e6f4ea',
 						'color': '#137333',
 						'border': '1px solid #c3e6cb'
-					}).html(response.data.message);
+					}).html('<strong>' + response.data.message + '</strong>');
+
+					// Si la tabla de logs existe, añadir el nuevo registro arriba
+					if ($('#wpat_smtp_log_tbody').length) {
+						$('#wpat_smtp_no_logs_row').remove();
+						var newRow = '<tr>' +
+							'<td style="padding: 12px 16px;"><span style="display: inline-flex; align-items: center; gap: 4px; background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600;"><span class="dashicons dashicons-yes-alt" style="font-size: 14px; width: 14px; height: 14px;"></span> Enviado</span></td>' +
+							'<td style="padding: 12px 16px; font-weight: 500; color: #1e293b;">' + $('<div>').text(email).html() + '</td>' +
+							'<td style="padding: 12px 16px; color: #334155;"><strong>WP Agency Toolkit - Correo de prueba SMTP</strong></td>' +
+							'<td style="padding: 12px 16px; color: #64748b; font-size: 12px;">' + (response.data.time || 'Ahora mismo') + '</td>' +
+						'</tr>';
+						$('#wpat_smtp_log_tbody').prepend(newRow);
+					}
 				} else {
 					var html = '<strong>' + response.data.message + '</strong>';
 					if (response.data.debug) {
@@ -1788,12 +1828,51 @@ jQuery(document).ready(function($) {
 				}
 			},
 			error: function() {
-				$btn.prop('disabled', false).text('Enviar Prueba');
+				$btn.prop('disabled', false).html('<span class="dashicons dashicons-email-alt" style="margin-top: 2px;"></span> Enviar Prueba');
 				$result.fadeIn(200).css({
 					'background': '#fce8e6',
 					'color': '#c5221f',
 					'border': '1px solid #f5c6cb'
 				}).html('Error de conexión o tiempo de espera agotado al conectar con el servidor.');
+			}
+		});
+	});
+
+	// 11.1 Vaciar historial de envíos SMTP
+	$(document).on('click', '#wpat_smtp_clear_log_btn', function(e) {
+		e.preventDefault();
+		if (!confirm('¿Estás seguro de que deseas vaciar el historial de envíos de correo?')) {
+			return;
+		}
+		var $btn = $(this);
+		var nonce = $('#wpat_smtp_test_nonce').val();
+		$btn.prop('disabled', true);
+
+		$.ajax({
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
+			type: 'POST',
+			data: {
+				action: 'wpat_smtp_clear_log',
+				security: nonce
+			},
+			success: function(response) {
+				$btn.prop('disabled', false);
+				if (response.success) {
+					$('#wpat_smtp_log_tbody').html(
+						'<tr id="wpat_smtp_no_logs_row">' +
+							'<td colspan="4" style="text-align: center; padding: 30px; color: #64748b;">' +
+								'<span class="dashicons dashicons-info" style="font-size: 28px; width: 28px; height: 28px; display: block; margin: 0 auto 8px; color: #94a3b8;"></span>' +
+								'No hay envíos registrados todavía. Realiza un envío de prueba o espera a que tu sitio emita un correo.' +
+							'</td>' +
+						'</tr>'
+					);
+				} else {
+					alert(response.data && response.data.message ? response.data.message : 'Error al vaciar el registro.');
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false);
+				alert('Error de conexión al vaciar el historial.');
 			}
 		});
 	});
@@ -2412,6 +2491,76 @@ jQuery(document).ready(function($) {
 				seoIssues.push('<strong>Meta descripción vacía:</strong> Escribe una meta descripción para capturar visitas.');
 			}
 
+			// G. Palabra clave en el Slug / URL
+			var slugVal = $('#wpat_seo_slug_input').val() || "";
+			if (slugVal) {
+				var normalizedSlug = removeAccents(slugVal.toLowerCase()).replace(/[^a-z0-9]/g, '-');
+				var slugFound = [];
+				var slugMissing = [];
+				keywords.forEach(function(kw) {
+					var kwSlug = removeAccents(kw.toLowerCase()).trim().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+					if (kwSlug && normalizedSlug.indexOf(kwSlug) !== -1) {
+						slugFound.push(kw);
+					} else {
+						slugMissing.push(kw);
+					}
+				});
+				if (slugMissing.length === 0) {
+					seoGood.push('<strong>Frases clave en el Slug (URL):</strong> ¡Excelente! El enlace permanente contiene la frase clave.');
+				} else if (slugFound.length > 0) {
+					seoImprovements.push('<strong>Frases clave en el Slug (URL):</strong> Se encontraron en la URL ("' + slugFound.join('", "') + '"), pero faltan ("' + slugMissing.join('", "') + '").');
+				} else {
+					seoImprovements.push('<strong>Frases clave en el Slug (URL):</strong> Tu URL no incluye la frase clave objetivo.');
+				}
+			}
+
+			// H. Palabra clave en subtítulos H2/H3
+			if (content) {
+				var hMatches = content.match(/<h[2-4][^>]*>([\s\S]*?)<\/h[2-4]>/gi);
+				var headersHtml = hMatches ? removeAccents(hMatches.join(' ').toLowerCase()) : "";
+				if (headersHtml) {
+					var hFound = false;
+					keywords.forEach(function(kw) {
+						var normalizedKw = removeAccents(kw);
+						if (normalizedKw && headersHtml.indexOf(normalizedKw) !== -1) {
+							hFound = true;
+						}
+					});
+					if (hFound) {
+						seoGood.push('<strong>Subtítulos (H2/H3):</strong> ¡Genial! Usas la frase clave en encabezados de sección.');
+					} else {
+						seoImprovements.push('<strong>Subtítulos (H2/H3):</strong> Se aconseja incluir la frase clave en al menos un subtítulo H2 o H3.');
+					}
+				}
+			}
+
+			// I. Palabra clave en atributos Alt de imágenes
+			if (content) {
+				var imgTags = content.match(/<img[^>]+>/gi);
+				if (imgTags && imgTags.length > 0) {
+					var altTexts = [];
+					imgTags.forEach(function(img) {
+						var altMatch = img.match(/alt=["']([^"']*)["']/i);
+						if (altMatch && altMatch[1]) {
+							altTexts.push(removeAccents(altMatch[1].toLowerCase()));
+						}
+					});
+					var allAlts = altTexts.join(' ');
+					var altFound = false;
+					keywords.forEach(function(kw) {
+						var normalizedKw = removeAccents(kw);
+						if (normalizedKw && allAlts.indexOf(normalizedKw) !== -1) {
+							altFound = true;
+						}
+					});
+					if (altFound) {
+						seoGood.push('<strong>Texto alternativo (Alt) de imágenes:</strong> ¡Correcto! Tus imágenes incluyen la frase clave.');
+					} else {
+						seoImprovements.push('<strong>Texto alternativo (Alt) de imágenes:</strong> Añade la frase clave al atributo Alt de tus imágenes para posicionar en Google Imágenes.');
+					}
+				}
+			}
+
 			// Renderizar lista SEO
 			var seoHTML = "";
 			if (seoIssues.length > 0) {
@@ -2577,9 +2726,74 @@ jQuery(document).ready(function($) {
 		}
 	}
 
+	// Debounce timer para comprobar canibalización
+	var canDebounceTimer = null;
+	function checkKeywordCannibalization() {
+		clearTimeout(canDebounceTimer);
+		canDebounceTimer = setTimeout(function() {
+			var kw = $('#wpat_seo_keyword_input').val() ? $('#wpat_seo_keyword_input').val().trim() : '';
+			if (!kw || typeof wpat_seo_data === 'undefined') {
+				$('#wpat_seo_cannibalization_alert').slideUp(150).empty();
+				return;
+			}
+			$.ajax({
+				url: wpat_seo_data.ajax_url,
+				type: 'POST',
+				dataType: 'json',
+				data: {
+					action: 'wpat_seo_check_cannibalization',
+					_wpnonce: wpat_seo_data.nonce,
+					keyword: kw,
+					post_id: wpat_seo_data.post_id || 0
+				},
+				success: function(res) {
+					if (res.success && res.data && res.data.cannibalized && res.data.duplicates.length > 0) {
+						var html = '<div style="display:flex; align-items:flex-start; gap:8px;">' +
+							'<span class="dashicons dashicons-warning" style="color:#ef4444; font-size:18px; width:18px; height:18px; line-height:18px; margin-top:2px;"></span>' +
+							'<div><strong>¡Alerta de Canibalización SEO!</strong> Esta palabra clave ya está asignada a otros contenidos:<ul style="margin:4px 0 6px 0; padding-left:18px; list-style-type:disc;">';
+						res.data.duplicates.forEach(function(d) {
+							html += '<li><a href="' + d.edit_url + '" target="_blank" style="color:#b91c1c; text-decoration:underline; font-weight:600;">' + d.title + '</a> (Clave: "<em>' + d.keyword + '</em>")</li>';
+						});
+						html += '</ul><span style="font-size:11px; color:#7f1d1d;">Evita repetir la misma palabra clave objetivo en múltiples páginas para no competir contigo mismo en Google.</span></div></div>';
+						$('#wpat_seo_cannibalization_alert').html(html).slideDown(200);
+					} else {
+						$('#wpat_seo_cannibalization_alert').slideUp(150).empty();
+					}
+				}
+			});
+		}, 500);
+	}
+
+	// Sugerir palabra clave desde el título
+	$(document).on('click', '#wpat_seo_suggest_kw_btn', function(e) {
+		e.preventDefault();
+		var title = $('#wpat_seo_title_input').val() || $('#wpat_seo_title_input').attr('placeholder') || "";
+		if (title) {
+			title = title.split(' - ')[0].trim();
+		}
+		if (!title && $('#title').length) {
+			title = $('#title').val() ? $('#title').val().trim() : "";
+		}
+		if (!title) return;
+
+		var stopwords = ['de', 'la', 'el', 'en', 'y', 'a', 'los', 'del', 'las', 'un', 'por', 'con', 'no', 'una', 'su', 'para', 'es', 'al', 'lo', 'como', 'más', 'o', 'pero', 'sus', 'le', 'ha', 'me', 'si', 'sin', 'sobre', 'este', 'ya', 'entre', 'cuando', 'todo', 'esta', 'ser', 'son', 'dos', 'también', 'fue', 'había', 'era', 'muy', 'hasta', 'desde', 'está', 'mi', 'porque', 'qué', 'solo', 'han', 'yo', 'hay', 'vez', 'puede', 'todos', 'así', 'nos', 'ni', 'parte', 'tiene', 'él', 'uno', 'donde', 'bien', 'guía', 'completa', 'cómo', 'paso'];
+		var cleanTitle = title.toLowerCase().replace(/[^a-z0-9áéíóúüñ\s]/gi, ' ');
+		var wordsArr = cleanTitle.split(/\s+/).filter(function(w) {
+			return w.length > 2 && stopwords.indexOf(w) === -1;
+		});
+
+		if (wordsArr.length > 0) {
+			var suggested = wordsArr.slice(0, 3).join(' ');
+			$('#wpat_seo_keyword_input').val(suggested).trigger('input');
+		}
+	});
+
 	// Escuchar cambios de escritura en vivo para actualizar análisis
 	$(document).on('input keyup change', '#wpat_seo_keyword_input, #wpat_seo_title_input, #wpat_seo_desc_input', function() {
 		runSeoAndReadabilityAnalysis();
+		if ($(this).attr('id') === 'wpat_seo_keyword_input') {
+			checkKeywordCannibalization();
+		}
 	});
 
 	// Escuchar conmutador de contenido esencial (Cornerstone)
@@ -3272,11 +3486,18 @@ jQuery(document).ready(function($) {
 
 	/* ==========================================================================
 	   IMPORTADOR Y EXPORTADOR DE ENTRADAS EN CSV (EXCEL)
+	/* ==========================================================================
+	   27. EXPORTACIÓN E IMPORTACIÓN MASIVA (CSV & JSON)
 	   ========================================================================== */
 	$(document).on('click', '#wpat_csv_export_btn', function(e) {
 		e.preventDefault();
-		var postType = $('#wpat_csv_export_post_type').val() || 'post';
-		window.location.href = ajaxurl + '?action=wpat_csv_export_posts&post_type=' + postType;
+		var postType   = $('#wpat_csv_export_post_type').val() || 'post';
+		var status     = $('#wpat_csv_export_status').val() || 'any';
+		var formatType = $('#wpat_export_format_type').val() || 'csv';
+		var ajaxTarget = (typeof ajaxurl !== 'undefined' && ajaxurl) ? ajaxurl : ((typeof wpat_object !== 'undefined') ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php');
+		
+		var actionName = (formatType === 'json') ? 'wpat_json_export_posts' : 'wpat_csv_export_posts';
+		window.location.href = ajaxTarget + '?action=' + actionName + '&post_type=' + postType + '&post_status=' + status;
 	});
 
 	var csvParsedRows = [];
@@ -3290,17 +3511,36 @@ jQuery(document).ready(function($) {
 		var file = e.target.files[0];
 		if (!file) return;
 
-		$('#wpat_csv_file_name').text('📄 ' + file.name).show();
+		$('#wpat_csv_file_name').text('📄 ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)').show();
 
 		var reader = new FileReader();
 		reader.onload = function(evt) {
 			var text = evt.target.result;
-			csvParsedRows = parseCSV(text);
-			if (csvParsedRows.length > 0) {
-				$('#wpat_csv_start_import_btn').prop('disabled', false).text('Iniciar Importación (' + csvParsedRows.length + ' entradas)');
+			csvParsedRows = [];
+
+			// Detectar si es archivo JSON o CSV
+			var isJSON = file.name.toLowerCase().endsWith('.json') || text.trim().startsWith('[') || text.trim().startsWith('{');
+
+			if (isJSON) {
+				try {
+					var parsed = JSON.parse(text);
+					if (Array.isArray(parsed)) {
+						csvParsedRows = parsed;
+					} else if (parsed && typeof parsed === 'object') {
+						csvParsedRows = [parsed];
+					}
+				} catch (err) {
+					alert('El archivo JSON contiene errores de sintaxis y no pudo ser interpretado.');
+				}
 			} else {
-				alert('El archivo CSV está vacío o no tiene un formato válido.');
-				$('#wpat_csv_start_import_btn').prop('disabled', true).text('Iniciar Importación CSV');
+				csvParsedRows = parseCSV(text);
+			}
+
+			if (csvParsedRows.length > 0) {
+				$('#wpat_csv_start_import_btn').prop('disabled', false).html('<span class="dashicons dashicons-update" style="font-size: 16px; width: 16px; height: 16px; line-height: 16px;"></span> Iniciar Importación (' + csvParsedRows.length + ' elementos)');
+			} else {
+				alert('El archivo está vacío o no tiene un formato compatible.');
+				$('#wpat_csv_start_import_btn').prop('disabled', true).html('<span class="dashicons dashicons-update" style="font-size: 16px; width: 16px; height: 16px; line-height: 16px;"></span> Iniciar Importación');
 			}
 		};
 		reader.readAsText(file);
@@ -3365,23 +3605,27 @@ jQuery(document).ready(function($) {
 		if (!csvParsedRows || !csvParsedRows.length) return;
 
 		var $btn = $(this);
-		$btn.prop('disabled', true);
+		$btn.prop('disabled', true).text('Importando elementos...');
 
-		var $progressWrapper = $('#wpat_csv_progress_wrapper').show();
+		var $progressWrapper = $('#wpat_csv_progress_wrapper').slideDown(200);
 		var $progressLabel = $('#wpat_csv_progress_label');
 		var $progressPercent = $('#wpat_csv_progress_percent');
 		var $progressBar = $('#wpat_csv_progress_bar');
 
 		var targetPostType = $('#wpat_csv_import_post_type').val() || 'post';
-		var totalRows = csvParsedRows.length;
-		var batchSize = 10;
-		var currentIndex = 0;
-		var totalImported = 0;
-		var totalUpdated = 0;
+		var strategy       = $('#wpat_csv_import_strategy').val() || 'update';
+		var totalRows      = csvParsedRows.length;
+		var batchSize      = 10;
+		var currentIndex   = 0;
+		var totalImported  = 0;
+		var totalUpdated   = 0;
+		var totalSkipped   = 0;
 
 		function processNextBatch() {
 			if (currentIndex >= totalRows) {
-				$progressLabel.html('<span style="color:#10b981;">✓ ¡Importación completada! ' + totalImported + ' creadas, ' + totalUpdated + ' actualizadas.</span>');
+				var summaryMsg = '<span style="color:#10b981; font-weight:700;">✓ ¡Importación completada con éxito!</span> ' +
+					'(' + totalImported + ' creadas, ' + totalUpdated + ' actualizadas' + (totalSkipped > 0 ? ', ' + totalSkipped + ' omitidas' : '') + ').';
+				$progressLabel.html(summaryMsg);
 				$progressPercent.text('100%');
 				$progressBar.css('width', '100%');
 				$btn.text('Importación Finalizada').prop('disabled', false);
@@ -3391,32 +3635,36 @@ jQuery(document).ready(function($) {
 			var chunk = csvParsedRows.slice(currentIndex, currentIndex + batchSize);
 			var percent = Math.round((currentIndex / totalRows) * 100);
 
-			$progressLabel.text('Importando entradas ' + (currentIndex + 1) + ' a ' + Math.min(currentIndex + batchSize, totalRows) + ' de ' + totalRows + '...');
+			$progressLabel.text('Procesando ' + (currentIndex + 1) + ' a ' + Math.min(currentIndex + batchSize, totalRows) + ' de ' + totalRows + '...');
 			$progressPercent.text(percent + '%');
 			$progressBar.css('width', percent + '%');
 
+			var ajaxTarget = (typeof ajaxurl !== 'undefined' && ajaxurl) ? ajaxurl : ((typeof wpat_object !== 'undefined') ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php');
+
 			$.ajax({
-				url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
+				url: ajaxTarget,
 				type: 'POST',
 				data: {
 					action: 'wpat_csv_import_batch',
 					target_post_type: targetPostType,
+					strategy: strategy,
 					rows: chunk
 				},
 				success: function(response) {
 					if (response.success) {
 						totalImported += response.data.imported || 0;
-						totalUpdated += response.data.updated || 0;
-						currentIndex += batchSize;
+						totalUpdated  += response.data.updated || 0;
+						totalSkipped  += response.data.skipped || 0;
+						currentIndex  += batchSize;
 						processNextBatch();
 					} else {
 						alert('Error durante la importación: ' + (response.data ? response.data.message : 'Error desconocido'));
-						$btn.prop('disabled', false).text('Reintentar Importación CSV');
+						$btn.prop('disabled', false).text('Reintentar Importación');
 					}
 				},
 				error: function() {
-					alert('Fallo de conexión al importar lote CSV.');
-					$btn.prop('disabled', false).text('Reintentar Importación CSV');
+					alert('Fallo de conexión al importar el lote.');
+					$btn.prop('disabled', false).text('Reintentar Importación');
 				}
 			});
 		}

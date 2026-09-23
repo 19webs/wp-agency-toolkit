@@ -327,13 +327,24 @@ class WPAT_Conflict_Detector {
 			return;
 		}
 
+		$settings  = class_exists( 'WPAT_Main' ) ? WPAT_Main::get_instance()->get_settings() : get_option( 'wpat_settings', array() );
 		$conflicts = self::get_active_conflicts();
 		if ( empty( $conflicts ) ) {
 			return;
 		}
 
 		foreach ( $conflicts as $plugin_file => $info ) {
+			// Solo actuar si el plugin externo está ACTIVO en WordPress
 			if ( 'active' !== $info['status'] ) {
+				continue;
+			}
+
+			// Solo mostrar aviso si el módulo equivalente de WP Agency Toolkit también está ACTIVO.
+			// Si nuestro módulo está desactivado, no se ejecutan sus funciones ni hay colisión alguna.
+			$wpat_mod      = isset( $info['wpat_module'] ) ? $info['wpat_module'] : '';
+			$is_mod_active = ! empty( $wpat_mod ) && isset( $settings[ $wpat_mod ] ) && '1' === (string) $settings[ $wpat_mod ];
+
+			if ( ! $is_mod_active ) {
 				continue;
 			}
 

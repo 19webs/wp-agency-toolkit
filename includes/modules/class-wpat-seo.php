@@ -35,6 +35,7 @@ class WPAT_SEO {
 		add_action( 'save_post', array( $this, 'save_seo_meta_box_data' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_editor_assets' ) );
 		add_action( 'admin_init', array( $this, 'register_seo_list_columns' ) );
+		add_action( 'wp_ajax_wpat_seo_check_cannibalization', array( $this, 'ajax_check_cannibalization' ) );
 
 		// Acciones en el frontend (Inyección en cabecera)
 		add_filter( 'pre_get_document_title', array( $this, 'filter_frontend_title' ), 999 );
@@ -45,11 +46,16 @@ class WPAT_SEO {
 	 * Carga assets específicos para el editor de WordPress.
 	 */
 	public function enqueue_editor_assets( $hook ) {
-		global $pagenow;
+		global $pagenow, $post;
 		if ( in_array( $pagenow, array( 'post.php', 'post-new.php' ), true ) ) {
 			wp_enqueue_media();
 			wp_enqueue_style( 'wpat-admin-css', WPAT_URL . 'assets/css/wpat-admin.css', array(), WPAT_VERSION );
 			wp_enqueue_script( 'wpat-admin-js', WPAT_URL . 'assets/js/wpat-admin.js', array( 'jquery' ), WPAT_VERSION, true );
+			wp_localize_script( 'wpat-admin-js', 'wpat_seo_data', array(
+				'post_id'  => ( $post && isset( $post->ID ) ) ? (int) $post->ID : 0,
+				'ajax_url' => admin_url( 'admin-ajax.php' ),
+				'nonce'    => wp_create_nonce( 'wpat_seo_cannibalization_nonce' ),
+			) );
 		}
 	}
 
@@ -148,13 +154,19 @@ class WPAT_SEO {
 				<div class="wpat-seo-tab-content active" id="wpat-seo-tab-seo">
 					
 					<!-- Frase clave objetivo y Cornerstone Switch -->
-					<div style="margin-bottom:20px; display:flex; gap:20px; flex-wrap:wrap; align-items:center;">
+					<div style="margin-bottom:20px; display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start;">
 						<div style="flex:2; min-width:250px;">
-							<label for="wpat_seo_keyword_input" style="font-weight:700; font-size:13px; color:#475569; display:block; margin-bottom:4px;">Frase clave objetivo</label>
+							<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+								<label for="wpat_seo_keyword_input" style="font-weight:700; font-size:13px; color:#475569;">Frase clave objetivo</label>
+								<button type="button" id="wpat_seo_suggest_kw_btn" class="button button-small" style="font-size:11.5px; height:24px; line-height:22px; display:inline-flex; align-items:center; gap:4px; padding:0 8px; border-radius:4px; color:#0284c7; border-color:#bae6fd; background:#f0f9ff;">
+									<span class="dashicons dashicons-admin-customizer" style="font-size:13px; width:13px; height:13px; line-height:13px;"></span> Sugerir desde Título
+								</button>
+							</div>
 							<input type="text" id="wpat_seo_keyword_input" name="wpat_seo_keyword" value="<?php echo esc_attr( $keyword ); ?>" placeholder="Ej: diseño web, desarrollo wordpress" style="width:100%; height:36px; padding:6px 12px; border-radius:6px; border:1px solid #cbd5e1; font-size:13px; box-sizing:border-box;" />
-							<p class="description" style="margin-top:4px; margin-bottom:0;">Puedes escribir varias frases clave separadas por comas.</p>
+							<p class="description" style="margin-top:4px; margin-bottom:0;">Puedes escribir una o varias frases clave separadas por comas.</p>
+							<div id="wpat_seo_cannibalization_alert" style="display:none; margin-top:8px; padding:10px 12px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; font-size:12px; color:#991b1b; line-height:1.4;"></div>
 						</div>
-						<div style="flex:1; min-width:200px; margin-top: 15px;">
+						<div style="flex:1; min-width:200px; margin-top: 24px;">
 							<label style="display:inline-flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:#475569; cursor:pointer;">
 								<input type="checkbox" id="wpat_seo_cornerstone_input" name="wpat_seo_cornerstone" value="1" <?php checked( $cornerstone, '1' ); ?> style="border-radius:4px;" />
 								<span>¿Es contenido esencial?</span>
@@ -559,6 +571,132 @@ class WPAT_SEO {
 		if ( ! empty( $og_img ) ) {
 			echo '<meta name="twitter:image" content="' . esc_url( $og_img ) . '" />' . "\n";
 		}
+
+		// 5. Datos Estructurados Schema.org JSON-LD
+		$schema_page_type    = get_post_meta( $post_id, '_wpat_seo_schema_page_type', true );
+		$schema_article_type = get_post_meta( $post_id, '_wpat_seo_schema_article_type', true );
+		if ( empty( $schema_page_type ) ) {
+			$schema_page_type = is_single() ? 'ItemPage' : 'WebPage';
+		}
+		if ( empty( $schema_article_type ) ) {
+			$schema_article_type = 'Article';
+		}
+
+		$post_obj    = get_post( $post_id );
+		$author_id   = $post_obj ? (int) $post_obj->post_author : 0;
+		$author_name = $author_id ? get_the_author_meta( 'display_name', $author_id ) : $site_name;
+
+		$schema = array(
+			'@context' => 'https://schema.org',
+			'@graph'   => array(
+				array(
+					'@type'       => $schema_page_type,
+					'@id'         => get_permalink( $post_id ) . '#webpage',
+					'url'         => get_permalink( $post_id ),
+					'name'        => $social_title,
+					'description' => $social_desc,
+					'isPartOf'    => array(
+						'@type' => 'WebSite',
+						'@id'   => home_url( '/#website' ),
+						'name'  => $site_name,
+						'url'   => home_url( '/' ),
+					),
+				),
+			),
+		);
+
+		if ( is_singular() && ( 'Article' === $schema_article_type || 'BlogPosting' === $schema_article_type || 'NewsArticle' === $schema_article_type || 'TechArticle' === $schema_article_type ) ) {
+			$article_data = array(
+				'@type'            => $schema_article_type,
+				'@id'              => get_permalink( $post_id ) . '#article',
+				'isPartOf'         => array( '@id' => get_permalink( $post_id ) . '#webpage' ),
+				'headline'         => $social_title,
+				'description'      => $social_desc,
+				'datePublished'    => get_the_date( 'c', $post_id ),
+				'dateModified'     => get_the_modified_date( 'c', $post_id ),
+				'mainEntityOfPage' => get_permalink( $post_id ),
+				'author'           => array(
+					'@type' => 'Person',
+					'name'  => $author_name,
+				),
+				'publisher'        => array(
+					'@type' => 'Organization',
+					'name'  => $site_name,
+					'url'   => home_url( '/' ),
+				),
+			);
+			if ( ! empty( $og_img ) ) {
+				$article_data['image'] = array(
+					'@type' => 'ImageObject',
+					'url'   => $og_img,
+				);
+			}
+			$schema['@graph'][] = $article_data;
+		}
+
+		echo '<script type="application/ld+json">' . wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT ) . '</script>' . "\n";
+	}
+
+	/**
+	 * AJAX: Comprueba si una palabra clave ya está siendo utilizada por otra entrada o página (detección de canibalización).
+	 */
+	public function ajax_check_cannibalization() {
+		check_ajax_referer( 'wpat_seo_cannibalization_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
+		}
+
+		$keyword    = isset( $_POST['keyword'] ) ? sanitize_text_field( $_POST['keyword'] ) : '';
+		$current_id = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : 0;
+
+		if ( empty( $keyword ) ) {
+			wp_send_json_success( array( 'cannibalized' => false ) );
+		}
+
+		$keywords   = array_map( 'trim', explode( ',', $keyword ) );
+		$duplicates = array();
+
+		global $wpdb;
+
+		foreach ( $keywords as $kw ) {
+			if ( empty( $kw ) || mb_strlen( $kw ) < 3 ) {
+				continue;
+			}
+
+			$sql = $wpdb->prepare(
+				"SELECT p.ID, p.post_title, p.post_type FROM {$wpdb->posts} p
+				INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+				WHERE pm.meta_key = '_wpat_seo_keyword'
+				AND pm.meta_value LIKE %s
+				AND p.ID != %d
+				AND p.post_status IN ('publish', 'future', 'draft')
+				LIMIT 5",
+				'%' . $wpdb->esc_like( $kw ) . '%',
+				$current_id
+			);
+
+			$found = $wpdb->get_results( $sql );
+			if ( ! empty( $found ) ) {
+				foreach ( $found as $row ) {
+					$duplicates[] = array(
+						'keyword'  => $kw,
+						'id'       => (int) $row->ID,
+						'title'    => ! empty( $row->post_title ) ? $row->post_title : '(Sin título #' . $row->ID . ')',
+						'edit_url' => get_edit_post_link( $row->ID, 'raw' ),
+					);
+				}
+			}
+		}
+
+		if ( ! empty( $duplicates ) ) {
+			wp_send_json_success( array(
+				'cannibalized' => true,
+				'duplicates'   => $duplicates,
+			) );
+		}
+
+		wp_send_json_success( array( 'cannibalized' => false ) );
 	}
 
 	/**

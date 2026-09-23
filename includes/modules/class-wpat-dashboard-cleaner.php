@@ -409,15 +409,16 @@ class WPAT_Dashboard_Cleaner {
 							$clean_text  = preg_replace( '/\s+/', ' ', $clean_text );
 							if ( ! empty( $clean_text ) ) {
 								$desc = $clean_text;
-								if ( mb_strlen( $desc ) > 155 ) {
-									$desc = mb_substr( $desc, 0, 152 ) . '...';
+								$desc_len = function_exists( 'mb_strlen' ) ? mb_strlen( $desc ) : strlen( $desc );
+								if ( $desc_len > 155 ) {
+									$desc = function_exists( 'mb_substr' ) ? mb_substr( $desc, 0, 152 ) . '...' : substr( $desc, 0, 152 ) . '...';
 								}
 							}
 						}
 					}
 
-					$t_len = mb_strlen( $title );
-					$d_len = mb_strlen( $desc );
+					$t_len = function_exists( 'mb_strlen' ) ? mb_strlen( $title ) : strlen( $title );
+					$d_len = function_exists( 'mb_strlen' ) ? mb_strlen( $desc ) : strlen( $desc );
 
 					// Rangos óptimos recomendados para el análisis global
 					$title_ok = ( $t_len >= 40 && $t_len <= 70 );
@@ -619,8 +620,8 @@ class WPAT_Dashboard_Cleaner {
 		$ajax_updates_nonce = wp_create_nonce( 'updates' );
 
 		// 8. Configuración de soporte de la Agencia
-		$support_title = 'Soporte y Gestión';
-		$support_text  = 'Bienvenido al panel de administración de tu sitio web. Si necesitas asistencia, puedes ponerte en contacto con nosotros a través del formulario de soporte.';
+		$support_title = ! empty( $settings['dashboard_welcome_title'] ) ? $settings['dashboard_welcome_title'] : 'Soporte y Gestión';
+		$support_text  = ! empty( $settings['dashboard_welcome_text'] ) ? $settings['dashboard_welcome_text'] : 'Bienvenido al panel de administración de tu sitio web. Si necesitas asistencia, puedes ponerte en contacto con nosotros a través del formulario de soporte.';
 		?>
 		<div class="wpat-custom-dashboard-wrapper">
 			
@@ -987,12 +988,13 @@ class WPAT_Dashboard_Cleaner {
 			</div>
 
 			<!-- 5. SOPORTE DE LA AGENCIA (Formulario de Contacto & Info del Sistema) -->
+			<?php if ( ! isset( $settings['db_card_support'] ) || '1' === $settings['db_card_support'] ) : ?>
 			<div class="wpat-db-support-card">
 				<h3>
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
 						<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-2 0c0 .993-.241 1.929-.668 2.754l-1.524-1.525a3.997 3.997 0 00.078-2.183l1.555-1.555A7.962 7.962 0 0116 10zm-9.965 5.085a7.977 7.977 0 01-2.22-2.22l1.555-1.554a3.997 3.997 0 002.22 2.22l-1.555 1.554zm9.18-9.18a7.978 7.978 0 012.22 2.22l-1.555 1.554a3.997 3.997 0 00-2.22-2.22l1.555-1.554zM2 10c0-.993.24-1.93.668-2.755l1.524 1.525a3.997 3.997 0 00-.078 2.183L2.56 12.508A7.962 7.962 0 012 10zm7 3a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
 					</svg>
-					Soporte y Gestión
+					<?php echo esc_html( $support_title ); ?>
 				</h3>
 				<div style="display: flex; gap: 24px; flex-wrap: wrap; margin-top: 15px;">
 					<!-- Formulario de Consulta -->
@@ -1091,6 +1093,7 @@ class WPAT_Dashboard_Cleaner {
 					</div>
 				</div>
 			</div>
+			<?php endif; ?>
 
 		</div>
 		<?php
@@ -1549,7 +1552,7 @@ class WPAT_Dashboard_Cleaner {
 			foreach ( $files as $file ) {
 				$total_size += $file->getSize();
 			}
-		} catch ( Exception $e ) {
+		} catch ( \Throwable $e ) {
 			$total_size = 0;
 		}
 		
@@ -1573,19 +1576,28 @@ class WPAT_Dashboard_Cleaner {
 	 * Handler de AJAX para enviar consultas de soporte técnico.
 	 */
 	public function ajax_send_support_email() {
+		// Validar que el usuario esté logueado en la administración
+		if ( ! is_user_logged_in() ) {
+			wp_send_json_error( array( 'message' => 'Acceso no autorizado.' ) );
+		}
+
 		// Validar token nonce de seguridad
-		check_ajax_referer( 'wpat_dashboard_support_nonce', 'security' );
+		check_ajax_referer( 'wpat_dashboard_support_nonce', 'wpat_support_security' );
 
 		$client_email = isset( $_POST['email'] ) ? sanitize_email( $_POST['email'] ) : '';
 		$subject      = isset( $_POST['subject'] ) ? sanitize_text_field( $_POST['subject'] ) : '';
 		$message      = isset( $_POST['message'] ) ? sanitize_textarea_field( $_POST['message'] ) : '';
 
-		if ( empty( $client_email ) || empty( $subject ) || empty( $message ) ) {
-			wp_send_json_error( array( 'message' => 'Por favor, rellena todos los campos del formulario.' ) );
+		if ( empty( $client_email ) || ! is_email( $client_email ) || empty( $subject ) || empty( $message ) ) {
+			wp_send_json_error( array( 'message' => 'Por favor, rellena todos los campos con datos válidos.' ) );
 		}
 
 		$settings = WPAT_Main::get_instance()->get_settings();
-		$to = ! empty( $settings['dashboard_support_email'] ) ? $settings['dashboard_support_email'] : get_option( 'admin_email' );
+		$to = ! empty( $settings['dashboard_support_email'] ) ? sanitize_email( $settings['dashboard_support_email'] ) : sanitize_email( get_option( 'admin_email' ) );
+
+		if ( ! is_email( $to ) ) {
+			$to = sanitize_email( get_option( 'admin_email' ) );
+		}
 
 		$site_name = get_bloginfo( 'name' );
 		$headers = array(
@@ -1605,7 +1617,7 @@ class WPAT_Dashboard_Cleaner {
 		if ( $sent ) {
 			wp_send_json_success( array( 'message' => 'Consulta enviada correctamente.' ) );
 		} else {
-			wp_send_json_error( array( 'message' => 'Error al enviar el correo mediante php mail.' ) );
+			wp_send_json_error( array( 'message' => 'Error al enviar el correo mediante el servidor.' ) );
 		}
 	}
 }

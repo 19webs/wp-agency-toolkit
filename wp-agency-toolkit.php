@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.74
+ * Version:     4.3.75
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.74' );
+define( 'WPAT_VERSION', '4.3.75' );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -143,6 +143,10 @@ class WPAT_Main {
 		'accessibility' => array(
 			'file'  => 'includes/modules/class-wpat-accessibility.php',
 			'class' => 'WPAT_Accessibility',
+		),
+		'silent-skin' => array(
+			'file'  => 'includes/modules/class-wpat-silent-skin.php',
+			'class' => 'WPAT_Silent_Skin',
 		),
 		'woo-checkout-editor' => array(
 			'file'  => 'includes/modules/class-wpat-woo-checkout-editor.php',
@@ -279,6 +283,15 @@ class WPAT_Main {
 			'woo_catalog_form_email'    => '',
 			'woo-zoom'                  => '0',
 			'duplicator'                => '0',
+			'duplicator_title_suffix'   => ' (Copia)',
+			'duplicator_post_status'    => 'draft',
+			'duplicator_redirect_to'    => 'edit',
+			'duplicator_post_types'     => array( 'post', 'page', 'product' ),
+			'duplicator_show_admin_bar' => '1',
+			'duplicator_copy_taxonomies'=> '1',
+			'duplicator_copy_meta'      => '1',
+			'duplicator_copy_author'    => 'current',
+			'duplicator_copy_date'      => 'current',
 			'snippets'                  => '0',
 			'performance'               => '0',
 			'perf_disable_emojis'       => '1',
@@ -338,6 +351,9 @@ class WPAT_Main {
 			'smtp_password'             => '',
 			'smtp_from_email'           => '',
 			'smtp_from_name'            => '',
+			'smtp_force_from'           => '0',
+			'smtp_reply_to'             => '',
+			'smtp_log_enabled'          => '1',
 
 			// Opciones de Login Customizer
 			'login_style'               => 'default',
@@ -351,8 +367,8 @@ class WPAT_Main {
 			'admin_footer_text'         => '',
 			'hide_admin_bar'            => '0',
 			'dashboard_cleaner'         => '0',
-			'dashboard_welcome_title'   => 'Soporte y GestiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n',
-			'dashboard_welcome_text'    => 'Bienvenido al panel de administraciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n de tu sitio web.',
+			'dashboard_welcome_title'   => 'Soporte y Gestión',
+			'dashboard_welcome_text'    => 'Bienvenido al panel de administración de tu sitio web.',
 
 			// Opciones del Bloqueador de Bots
 			'bot_blocker'               => '0',
@@ -372,19 +388,44 @@ class WPAT_Main {
 			// Opciones de Importador CSV
 			'post-csv-importer'         => '1',
 
-			// Opciones de Integraciones
+			// Opciones de Integraciones & Scripts
 			'integrations'                => '1',
+			'integrations_exclude_admins' => '0',
 			'google_search_console_code'  => '',
+			'bing_verification_code'      => '',
+			'pinterest_verification_code' => '',
 			'google_analytics_id'         => '',
+			'gtm_container_id'            => '',
+			'facebook_pixel_id'           => '',
+			'clarity_project_id'          => '',
+			'tiktok_pixel_id'             => '',
+			'pinterest_tag_id'            => '',
+			'header_custom_scripts'       => '',
+			'body_custom_scripts'         => '',
+			'footer_custom_scripts'       => '',
+			'google_drive_token'          => '',
+			'google_drive_folder'         => '',
+			'dropbox_token'               => '',
+			'onedrive_token'              => '',
 
 			// Opciones de WhatsApp
 			'whatsapp'                    => '0',
 			'whatsapp_enabled'            => '0',
 			'whatsapp_phone'              => '',
-			'whatsapp_message'            => '¡Hola! Quisiera más información.',
+			'whatsapp_message'            => '¡Hola! Quisiera más información sobre {title}.',
 			'whatsapp_position'           => 'bottom-right',
+			'whatsapp_offset_x'           => '20',
+			'whatsapp_offset_y'           => '20',
+			'whatsapp_bg_color'           => '#25D366',
 			'whatsapp_tooltip'            => '',
 			'whatsapp_agents'             => '',
+			'whatsapp_devices'            => 'all',
+			'whatsapp_pulse'              => '1',
+			'whatsapp_track_events'       => '1',
+			'whatsapp_popup_title'        => 'Contacta con nuestro equipo',
+			'whatsapp_popup_subtitle'     => 'Selecciona un asesor para iniciar el chat',
+			'whatsapp_work_hours'         => '',
+			'whatsapp_hide_on_checkout'   => '0',
 
 			// Opciones de Barra y Tiempo de Lectura
 			'reading-progress'            => '0',
@@ -407,6 +448,11 @@ class WPAT_Main {
 			'accessibility_offset_y'          => '25',
 			'accessibility_bg_color'          => '#2563eb',
 			'accessibility_text_zoom'         => '1',
+			'accessibility_reading_guide'     => '1',
+			'accessibility_big_cursor'        => '1',
+			'accessibility_stop_animations'   => '1',
+			'accessibility_text_spacing'      => '1',
+			'accessibility_dyslexic_font'     => '1',
 			'accessibility_grayscale'         => '1',
 			'accessibility_high_contrast'     => '1',
 			'accessibility_negative_contrast' => '1',
@@ -521,6 +567,36 @@ class WPAT_Main {
 			'db_card_jet'               => '1',
 			'db_card_woo'               => '1',
 			'db_card_media'             => '1',
+			'db_card_support'           => '1',
+			'dashboard_support_email'   => '',
+
+			// Opciones de Ocultar Huella WPAT / Marca Blanca
+			'silent-skin'                      => '0',
+			'white_label_mode'                 => 'rename',
+			'white_label_plugin_name'          => 'Herramientas del Sitio Web',
+			'white_label_plugin_desc'          => 'Módulo de optimización, seguridad y utilidades para la administración de este sitio.',
+			'white_label_author'               => 'Equipo de Desarrollo Web',
+			'white_label_author_url'           => '',
+			'white_label_menu_title'           => 'Herramientas Web',
+			'white_label_menu_icon'            => 'dashicons-admin-generic',
+			'white_label_hide_from_non_admins' => '1',
+			'white_label_allowed_users'        => '',
+			'white_label_prevent_deactivation' => '0',
+
+			// Opciones de Restringir Barra & Acceso Admin
+			'hide_admin_bar'                     => '0',
+			'admin_bar_hide_mode'                => 'all_except_admin',
+			'admin_bar_hidden_roles'             => array( 'subscriber', 'customer' ),
+			'admin_access_restrict_enabled'      => '1',
+			'admin_access_restricted_roles'      => array( 'subscriber', 'customer' ),
+			'admin_access_redirect_to'           => 'home',
+			'admin_access_custom_redirect_url'   => '',
+			'admin_access_excluded_users'        => '',
+			'admin_bar_remove_wp_logo'           => '1',
+			'admin_bar_remove_comments'          => '0',
+			'admin_bar_remove_new_content'       => '0',
+			'admin_bar_remove_updates'           => '0',
+			'admin_bar_remove_customize'         => '0',
 		);
 
 		$saved = get_option( 'wpat_settings', array() );

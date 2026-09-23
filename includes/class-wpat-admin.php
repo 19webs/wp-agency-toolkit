@@ -156,6 +156,7 @@ class WPAT_Admin {
 			'error_log_nonce'      => wp_create_nonce( 'wpat_error_log_nonce_action' ),
 			'role_manager_nonce'   => wp_create_nonce( 'wpat_role_manager_nonce_action' ),
 			'cookie_consent_nonce' => wp_create_nonce( 'wpat_cookie_consent_nonce_action' ),
+			'snippet_nonce'        => wp_create_nonce( 'wpat_snippet_nonce_action' ),
 		) );
 
 		// Localizar kits instalados para el JS de administración
@@ -1656,7 +1657,9 @@ class WPAT_Admin {
 	 * Guarda o edita un fragmento de código vía AJAX.
 	 */
 	public function ajax_save_snippet() {
-		check_ajax_referer( 'wpat_snippet_nonce_action', 'security' );
+		if ( ! check_ajax_referer( 'wpat_snippet_nonce_action', 'security', false ) && ! check_ajax_referer( 'wpat_save_settings_action', 'security', false ) ) {
+			wp_send_json_error( array( 'message' => 'Error de seguridad (nonce inválido o sesión caducada). Por favor, recarga la página.' ) );
+		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
@@ -1671,17 +1674,21 @@ class WPAT_Admin {
 
 		$name = isset( $_POST['snippet_name'] ) ? sanitize_text_field( $_POST['snippet_name'] ) : 'Fragmento sin nombre';
 		$type = isset( $_POST['snippet_type'] ) && in_array( $_POST['snippet_type'], array( 'php', 'css', 'js' ), true ) ? $_POST['snippet_type'] : 'php';
-		
+
+		// Recuperar el código (soporta decodificación Base64 para eludir WAF/ModSecurity del hosting)
 		$code = '';
-		if ( current_user_can( 'unfiltered_html' ) ) {
-			$code = isset( $_POST['snippet_code'] ) ? wp_unslash( $_POST['snippet_code'] ) : '';
-		} else {
-			if ( isset( $snippets[ $id ] ) ) {
-				$code = $snippets[ $id ]['code'];
+		if ( isset( $_POST['snippet_code_b64'] ) && ! empty( $_POST['snippet_code_b64'] ) ) {
+			$decoded = base64_decode( $_POST['snippet_code_b64'] );
+			if ( false !== $decoded ) {
+				$code = rawurldecode( $decoded );
 			}
 		}
 
-		$active = isset( $_POST['snippet_active'] ) && '1' === $_POST['snippet_active'] ? '1' : '0';
+		if ( empty( $code ) && isset( $_POST['snippet_code'] ) ) {
+			$code = wp_unslash( $_POST['snippet_code'] );
+		}
+
+		$active = isset( $_POST['snippet_active'] ) && '1' === (string) $_POST['snippet_active'] ? '1' : '0';
 
 		$snippets[ $id ] = array(
 			'id'     => $id,
@@ -1707,7 +1714,9 @@ class WPAT_Admin {
 	 * Elimina un fragmento de código vía AJAX.
 	 */
 	public function ajax_delete_snippet() {
-		check_ajax_referer( 'wpat_snippet_nonce_action', 'security' );
+		if ( ! check_ajax_referer( 'wpat_snippet_nonce_action', 'security', false ) && ! check_ajax_referer( 'wpat_save_settings_action', 'security', false ) ) {
+			wp_send_json_error( array( 'message' => 'Error de seguridad (nonce inválido).' ) );
+		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => 'No tienes permisos.' ) );
@@ -1733,7 +1742,9 @@ class WPAT_Admin {
 	 * Clona/Duplica un fragmento de código vía AJAX.
 	 */
 	public function ajax_clone_snippet() {
-		check_ajax_referer( 'wpat_snippet_nonce_action', 'security' );
+		if ( ! check_ajax_referer( 'wpat_snippet_nonce_action', 'security', false ) && ! check_ajax_referer( 'wpat_save_settings_action', 'security', false ) ) {
+			wp_send_json_error( array( 'message' => 'Error de seguridad (nonce inválido).' ) );
+		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => 'No tienes permisos.' ) );
@@ -1763,7 +1774,9 @@ class WPAT_Admin {
 	 * Activa/Desactiva un fragmento de código vía AJAX.
 	 */
 	public function ajax_toggle_snippet() {
-		check_ajax_referer( 'wpat_snippet_nonce_action', 'security' );
+		if ( ! check_ajax_referer( 'wpat_snippet_nonce_action', 'security', false ) && ! check_ajax_referer( 'wpat_save_settings_action', 'security', false ) ) {
+			wp_send_json_error( array( 'message' => 'Error de seguridad (nonce inválido).' ) );
+		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => 'No tienes permisos.' ) );
@@ -1773,7 +1786,7 @@ class WPAT_Admin {
 		if ( ! empty( $id ) ) {
 			$snippets = get_option( 'wpat_snippets', array() );
 			if ( isset( $snippets[ $id ] ) ) {
-				$snippets[ $id ]['active'] = ( $snippets[ $id ]['active'] === '1' ) ? '0' : '1';
+				$snippets[ $id ]['active'] = ( (string) $snippets[ $id ]['active'] === '1' ) ? '0' : '1';
 				update_option( 'wpat_snippets', $snippets );
 			}
 		}

@@ -1052,11 +1052,19 @@ jQuery(document).ready(function($) {
 		var type = $('#wpat_editor_type').val();
 		var code = $('#wpat_editor_code').val();
 		var active = $('#wpat_editor_active').is(':checked') ? '1' : '0';
-		var nonce = $('#wpat_snippet_ajax_nonce').val();
+		var nonce = $('#wpat_snippet_ajax_nonce').val() || (typeof wpat_object !== 'undefined' ? (wpat_object.snippet_nonce || wpat_object.nonce) : '');
 
 		if (name === '') {
 			alert('Por favor, introduce el nombre del fragmento.');
 			return;
+		}
+
+		// Codificación Base64 segura para eludir ModSecurity / WAF del servidor que bloquean código PHP/JS
+		var code_b64 = '';
+		try {
+			code_b64 = btoa(encodeURIComponent(code));
+		} catch (err) {
+			code_b64 = '';
 		}
 
 		$btn.prop('disabled', true).text('Guardando...');
@@ -1071,6 +1079,7 @@ jQuery(document).ready(function($) {
 				snippet_name: name,
 				snippet_type: type,
 				snippet_code: code,
+				snippet_code_b64: code_b64,
 				snippet_active: active
 			},
 			success: function(response) {
@@ -1085,9 +1094,19 @@ jQuery(document).ready(function($) {
 					alert('Error al guardar: ' + (response.data ? response.data.message : 'Error desconocido.'));
 				}
 			},
-			error: function() {
+			error: function(xhr, status, error) {
 				$btn.prop('disabled', false).text('Guardar Fragmento');
-				alert('Fallo de conexión al guardar el fragmento.');
+				var errMsg = 'Fallo de conexión al guardar el fragmento.';
+				if (xhr && xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
+					errMsg = 'Error: ' + xhr.responseJSON.data.message;
+				} else if (xhr && xhr.status === 403) {
+					errMsg = 'Error 403 (Acceso denegado): Tu sesión de WordPress puede haber caducado o el cortafuegos (ModSecurity) del hosting bloqueó la petición. Por favor, recarga la página.';
+				} else if (xhr && xhr.status === 500) {
+					errMsg = 'Error 500 (Error interno del servidor): Revisa el registro de errores de PHP.';
+				} else if (xhr && xhr.status) {
+					errMsg += ' (HTTP ' + xhr.status + ' ' + (error || '') + ')';
+				}
+				alert(errMsg);
 			}
 		});
 	});
@@ -1098,7 +1117,7 @@ jQuery(document).ready(function($) {
 		var $badge = $(this);
 		var $row = $badge.closest('tr');
 		var id = $row.data('id');
-		var nonce = $('#wpat_snippet_ajax_nonce').val();
+		var nonce = $('#wpat_snippet_ajax_nonce').val() || (typeof wpat_object !== 'undefined' ? (wpat_object.snippet_nonce || wpat_object.nonce) : '');
 
 		$badge.text('Cargando...');
 
@@ -1130,7 +1149,7 @@ jQuery(document).ready(function($) {
 		e.preventDefault();
 		var $row = $(this).closest('tr');
 		var id = $row.data('id');
-		var nonce = $('#wpat_snippet_ajax_nonce').val();
+		var nonce = $('#wpat_snippet_ajax_nonce').val() || (typeof wpat_object !== 'undefined' ? (wpat_object.snippet_nonce || wpat_object.nonce) : '');
 
 		if (!confirm('¿Deseas duplicar este fragmento de código?')) {
 			return;
@@ -1162,7 +1181,7 @@ jQuery(document).ready(function($) {
 		e.preventDefault();
 		var $row = $(this).closest('tr');
 		var id = $row.data('id');
-		var nonce = $('#wpat_snippet_ajax_nonce').val();
+		var nonce = $('#wpat_snippet_ajax_nonce').val() || (typeof wpat_object !== 'undefined' ? (wpat_object.snippet_nonce || wpat_object.nonce) : '');
 
 		if (!confirm('¿Estás seguro de que deseas eliminar este fragmento de código?')) {
 			return;

@@ -150,9 +150,10 @@ class WPAT_Admin {
 		wp_enqueue_script( 'wpat-admin-js', WPAT_URL . 'assets/js/wpat-admin.js', array( 'jquery', 'wp-color-picker' ), time(), true );
 
 		wp_localize_script( 'wpat-admin-js', 'wpat_object', array(
-			'ajax_url'      => admin_url( 'admin-ajax.php' ),
-			'nonce'         => wp_create_nonce( 'wpat_save_settings_action' ),
-			'cleanup_nonce' => wp_create_nonce( 'wpat_cleanup_nonce_action' ),
+			'ajax_url'        => admin_url( 'admin-ajax.php' ),
+			'nonce'           => wp_create_nonce( 'wpat_save_settings_action' ),
+			'cleanup_nonce'   => wp_create_nonce( 'wpat_cleanup_nonce_action' ),
+			'error_log_nonce' => wp_create_nonce( 'wpat_error_log_nonce_action' ),
 		) );
 
 		// Localizar kits instalados para el JS de administración
@@ -2623,6 +2624,7 @@ class WPAT_Admin {
 				'wpat-login-customizer'  => 'login-customizer',
 				'wpat-seo'               => 'seo',
 				'wpat-sitemap-xml'       => 'sitemap-xml',
+				'wpat-error-log-viewer'  => 'error-log-viewer',
 				'wpat-tools'             => 'tools',
 			);
 			if ( isset( $map[ $page_slug ] ) ) {
@@ -2745,7 +2747,7 @@ class WPAT_Admin {
 										<div class="wpat-cat-nav-list" style="display: flex; flex-direction: column; gap: 4px;">
 											<button type="button" class="wpat-cat-item active" data-cat="all">
 												<span class="wpat-cat-label">📌 Todos</span>
-												<span class="wpat-cat-badge">36</span>
+												<span class="wpat-cat-badge">37</span>
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="woocommerce">
 												<span class="wpat-cat-label">🛍️ WooCommerce</span>
@@ -2761,11 +2763,11 @@ class WPAT_Admin {
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="tools">
 												<span class="wpat-cat-label">🛠️ Herramientas</span>
-												<span class="wpat-cat-badge">6</span>
+												<span class="wpat-cat-badge">7</span>
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="system">
 												<span class="wpat-cat-label">⚙️ Sistema & Admin</span>
-												<span class="wpat-cat-badge">7</span>
+												<span class="wpat-cat-badge">8</span>
 											</button>
 											<div class="wpat-sidebar-divider"></div>
 											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=tools' ) ); ?>" class="wpat-cat-direct-link">
@@ -2778,12 +2780,12 @@ class WPAT_Admin {
 									<div class="wpat-mobile-cat-container" style="display: none; width: 100%; margin-bottom: 15px;">
 										<label for="wpat_mobile_cat_select" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 6px;">Categoría:</label>
 										<select id="wpat_mobile_cat_select" style="width: 100%; height: 38px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 0 12px; font-weight: 600; font-size: 13px; background: #fff;">
-											<option value="all">📌 Todos (36)</option>
+											<option value="all">📌 Todos (37)</option>
 											<option value="woocommerce">🛍️ WooCommerce (10)</option>
 											<option value="security">🛡️ Seguridad (6)</option>
 											<option value="performance">⚡ Rendimiento & SEO (7)</option>
-											<option value="tools">🛠️ Herramientas (6)</option>
-											<option value="system">⚙️ Sistema & Admin (7)</option>
+											<option value="tools">🛠️ Herramientas (7)</option>
+											<option value="system">⚙️ Sistema & Admin (8)</option>
 										</select>
 									</div>
 
@@ -3305,6 +3307,18 @@ class WPAT_Admin {
 				'icon'        => '📥',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'importador kits plantillas envato elementor'
+			),
+			array(
+				'id'          => 'error-log-viewer',
+				'is_new'      => true,
+				'title'       => 'Visor de Logs de Error',
+				'badge'       => 'Subpágina',
+				'badge_class' => 'subpage',
+				'desc'        => 'Monitor en tiempo real de debug.log con detección de severidades, stack traces colapsables, filtrado y vaciado.',
+				'cat_class'   => 'cat-system cat-admin cat-tools',
+				'icon'        => '📜',
+				'icon_bg'     => 'admin',
+				'keywords'    => 'logs debug error fatal warning visor depuracion monitor registro errores'
 			),
 			array(
 				'id'          => 'tools',
@@ -10208,6 +10222,9 @@ class WPAT_Admin {
 			case 'post-csv-importer':
 				$this->render_tab_tools_content( $settings );
 				break;
+			case 'error-log-viewer':
+				$this->render_error_log_viewer_content( $settings );
+				break;
 			case 'tools':
 				echo '<div id="wpat_health_content_wrapper">';
 				$this->render_health_tab_content();
@@ -10217,6 +10234,277 @@ class WPAT_Admin {
 				echo '<div class="notice notice-info"><p>Módulo de configuración en preparación.</p></div>';
 				break;
 		}
+	}
+
+	/**
+	 * Renderiza la interfaz del Visor y Monitor de Logs de Error en tiempo real.
+	 *
+	 * @param array $settings Ajustes del plugin.
+	 */
+	public function render_error_log_viewer_content( $settings ) {
+		if ( ! class_exists( 'WPAT_Error_Log_Viewer' ) ) {
+			require_once WPAT_PATH . 'includes/modules/class-wpat-error-log-viewer.php';
+		}
+
+		$log_data   = WPAT_Error_Log_Viewer::read_last_log_lines( 250 );
+		$debug_info = WPAT_Error_Log_Viewer::get_debug_status();
+		$entries    = $log_data['entries'];
+
+		$count_total      = count( $entries );
+		$count_fatal      = 0;
+		$count_warning    = 0;
+		$count_notice     = 0;
+		$count_deprecated = 0;
+
+		foreach ( $entries as $entry ) {
+			if ( 'fatal' === $entry['badge_class'] ) {
+				$count_fatal++;
+			} elseif ( 'warning' === $entry['badge_class'] ) {
+				$count_warning++;
+			} elseif ( 'deprecated' === $entry['badge_class'] ) {
+				$count_deprecated++;
+			} else {
+				$count_notice++;
+			}
+		}
+
+		$download_url = wp_nonce_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=error-log-viewer&wpat_action=download_error_log' ), 'wpat_download_log_nonce' );
+		?>
+		<div class="wpat-module-card wpat-error-log-wrapper">
+			<div class="wpat-module-header">
+				<div class="wpat-module-info">
+					<h3>Visor y Monitor de Logs de Error (<code>debug.log</code>)</h3>
+					<p>Supervisa en tiempo real los registros y errores de PHP/WordPress, clasifica por severidad, expande stack traces y vacía el archivo con un clic.</p>
+				</div>
+				<?php $this->render_module_toggle( 'error-log-viewer', $settings, true ); ?>
+			</div>
+
+			<div class="wpat-module-body" style="display: block; padding: 22px;">
+
+				<!-- BARRA DE DIAGNÓSTICO DEL SISTEMA Y CONSTANTES WP_DEBUG -->
+				<div class="wpat-log-diagnostics-bar" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 20px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+					<div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+						<div style="font-size: 13px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+							<span class="dashicons dashicons-admin-settings" style="color: #6366f1;"></span> Diagnóstico:
+						</div>
+
+						<div class="wpat-diag-badge <?php echo $debug_info['wp_debug'] ? 'active' : 'inactive'; ?>" title="<?php echo $debug_info['wp_debug'] ? 'WP_DEBUG está habilitado' : 'WP_DEBUG está deshabilitado'; ?>">
+							<span class="dot"></span> WP_DEBUG: <strong><?php echo $debug_info['wp_debug'] ? 'ACTIVO' : 'INACTIVO'; ?></strong>
+						</div>
+
+						<div class="wpat-diag-badge <?php echo $debug_info['wp_debug_log'] ? 'active' : 'warning'; ?>" title="<?php echo $debug_info['wp_debug_log'] ? 'WP_DEBUG_LOG guardando errores en debug.log' : 'WP_DEBUG_LOG desactivado. No se generará debug.log'; ?>">
+							<span class="dot"></span> WP_DEBUG_LOG: <strong><?php echo $debug_info['wp_debug_log'] ? 'ACTIVO' : 'DESACTIVADO'; ?></strong>
+						</div>
+
+						<div class="wpat-diag-badge <?php echo $debug_info['wp_debug_display'] ? 'warning' : 'active'; ?>" title="<?php echo $debug_info['wp_debug_display'] ? 'WP_DEBUG_DISPLAY activo (Muestra errores en pantalla frontend)' : 'WP_DEBUG_DISPLAY oculto (Recomendado en producción)'; ?>">
+							<span class="dot"></span> WP_DEBUG_DISPLAY: <strong><?php echo $debug_info['wp_debug_display'] ? 'VISIBLE' : 'OCULTO'; ?></strong>
+						</div>
+
+						<div class="wpat-diag-badge neutral" title="Versión de PHP del servidor">
+							PHP <strong><?php echo esc_html( $debug_info['php_version'] ); ?></strong>
+						</div>
+
+						<div class="wpat-diag-badge neutral" title="Límite de memoria PHP">
+							Memoria: <strong><?php echo esc_html( $debug_info['memory_limit'] ); ?></strong>
+						</div>
+					</div>
+
+					<div class="wpat-log-file-meta" style="font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 10px;">
+						<span>Archivo: <code style="font-size: 11px; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #0f172a;" title="<?php echo esc_attr( $log_data['path'] ); ?>"><?php echo esc_html( basename( $log_data['path'] ) ); ?></code></span>
+						<span>Tamaño: <strong id="wpat_log_filesize_badge" style="color: #0f172a;"><?php echo esc_html( $log_data['size_fmt'] ); ?></strong></span>
+					</div>
+				</div>
+
+				<?php if ( ! $debug_info['wp_debug_log'] ) : ?>
+					<!-- AVISO DE WP_DEBUG_LOG DESACTIVADO CON SNIPPET -->
+					<div class="wpat-debug-log-notice" style="background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 14px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+						<div>
+							<h4 style="margin: 0 0 4px 0; color: #92400e; font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+								<span class="dashicons dashicons-info" style="color: #f59e0b;"></span> El registro de errores en archivo (<code>WP_DEBUG_LOG</code>) está desactivado
+							</h4>
+							<p style="margin: 0; color: #b45309; font-size: 12.5px;">
+								Para que WordPress guarde los errores en <code>wp-content/debug.log</code>, añade estas líneas en tu archivo <code>wp-config.php</code> justo antes de <em>/* That's all, stop editing! */</em>:
+							</p>
+						</div>
+						<div style="display: flex; align-items: center; gap: 8px;">
+							<button type="button" class="button button-secondary" id="wpat_copy_wp_config_snippet" data-snippet="define( 'WP_DEBUG', true );&#10;define( 'WP_DEBUG_LOG', true );&#10;define( 'WP_DEBUG_DISPLAY', false );&#10;@ini_set( 'display_errors', 0 );" style="background: #fff; border-color: #f59e0b; color: #92400e; font-weight: 600; height: 32px; display: inline-flex; align-items: center; gap: 6px;">
+								<span class="dashicons dashicons-clipboard" style="font-size: 16px; width: 16px; height: 16px;"></span> Copiar Código para wp-config.php
+							</button>
+						</div>
+					</div>
+				<?php endif; ?>
+
+				<!-- TARJETAS DE CONTADORES DE SEVERIDAD -->
+				<div class="wpat-log-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 22px;">
+					<div class="wpat-log-stat-card total" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; text-align: center;">
+						<div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px;">Total Errores</div>
+						<div class="wpat-stat-num" id="wpat_stat_total" style="font-size: 22px; font-weight: 800; color: #0f172a; margin-top: 4px;"><?php echo esc_html( $count_total ); ?></div>
+					</div>
+					<div class="wpat-log-stat-card fatal" style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px 14px; text-align: center;">
+						<div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #b91c1c; letter-spacing: 0.5px;">Fatal Errors</div>
+						<div class="wpat-stat-num" id="wpat_stat_fatal" style="font-size: 22px; font-weight: 800; color: #dc2626; margin-top: 4px;"><?php echo esc_html( $count_fatal ); ?></div>
+					</div>
+					<div class="wpat-log-stat-card warning" style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 14px; text-align: center;">
+						<div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #b45309; letter-spacing: 0.5px;">Warnings</div>
+						<div class="wpat-stat-num" id="wpat_stat_warning" style="font-size: 22px; font-weight: 800; color: #d97706; margin-top: 4px;"><?php echo esc_html( $count_warning ); ?></div>
+					</div>
+					<div class="wpat-log-stat-card notice" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 14px; text-align: center;">
+						<div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #1d4ed8; letter-spacing: 0.5px;">Notices</div>
+						<div class="wpat-stat-num" id="wpat_stat_notice" style="font-size: 22px; font-weight: 800; color: #2563eb; margin-top: 4px;"><?php echo esc_html( $count_notice ); ?></div>
+					</div>
+					<div class="wpat-log-stat-card deprecated" style="background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 8px; padding: 12px 14px; text-align: center;">
+						<div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6d28d9; letter-spacing: 0.5px;">Deprecated</div>
+						<div class="wpat-stat-num" id="wpat_stat_deprecated" style="font-size: 22px; font-weight: 800; color: #7c3aed; margin-top: 4px;"><?php echo esc_html( $count_deprecated ); ?></div>
+					</div>
+				</div>
+
+				<!-- BARRA DE HERRAMIENTAS Y CONTROLES -->
+				<div class="wpat-log-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+					<!-- Buscador y Filtro por Severidad -->
+					<div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1; min-width: 280px;">
+						<div class="wpat-log-search-box" style="position: relative; flex: 1; max-width: 320px;">
+							<span class="dashicons dashicons-search" style="position: absolute; left: 10px; top: 8px; color: #94a3b8; font-size: 18px; width: 18px; height: 18px;"></span>
+							<input type="text" id="wpat_log_search" placeholder="Buscar por error, archivo o línea..." style="width: 100%; height: 36px; padding: 0 12px 0 34px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;" />
+						</div>
+
+						<div class="wpat-log-severity-filters" style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+							<button type="button" class="wpat-log-filter-btn active" data-filter="all">Todos</button>
+							<button type="button" class="wpat-log-filter-btn fatal" data-filter="fatal">Fatal (<span class="f-count"><?php echo esc_html( $count_fatal ); ?></span>)</button>
+							<button type="button" class="wpat-log-filter-btn warning" data-filter="warning">Warning (<span class="w-count"><?php echo esc_html( $count_warning ); ?></span>)</button>
+							<button type="button" class="wpat-log-filter-btn notice" data-filter="notice">Notice (<span class="n-count"><?php echo esc_html( $count_notice ); ?></span>)</button>
+							<button type="button" class="wpat-log-filter-btn deprecated" data-filter="deprecated">Deprecated (<span class="d-count"><?php echo esc_html( $count_deprecated ); ?></span>)</button>
+						</div>
+					</div>
+
+					<!-- Acciones: Auto-refresh, Refrescar, Copiar, Descargar, Vaciar -->
+					<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+						<!-- Auto Refresco Switch -->
+						<div class="wpat-log-live-toggle" style="display: flex; align-items: center; gap: 6px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 4px 10px; border-radius: 6px;" title="Actualiza automáticamente los errores cada 5 segundos">
+							<label class="wpat-switch" style="transform: scale(0.75); margin: 0;">
+								<input type="checkbox" id="wpat_log_auto_refresh_toggle">
+								<span class="wpat-slider"></span>
+							</label>
+							<span style="font-size: 12px; font-weight: 600; color: #475569;" id="wpat_log_live_status_label">Auto-refresco (5s)</span>
+						</div>
+
+						<button type="button" class="button button-secondary" id="wpat_refresh_logs_btn" style="height: 34px; line-height: 32px; display: inline-flex; align-items: center; gap: 5px; font-weight: 600; border-radius: 6px;" title="Comprobar registros ahora">
+							<span class="dashicons dashicons-update" style="font-size: 16px; width: 16px; height: 16px; line-height: 1;"></span> Actualizar
+						</button>
+
+						<button type="button" class="button button-secondary" id="wpat_copy_last_error_btn" style="height: 34px; line-height: 32px; display: inline-flex; align-items: center; gap: 5px; font-weight: 600; border-radius: 6px;" title="Copiar el error más reciente al portapapeles">
+							<span class="dashicons dashicons-clipboard" style="font-size: 16px; width: 16px; height: 16px; line-height: 1;"></span> Copiar Último
+						</button>
+
+						<a href="<?php echo esc_url( $download_url ); ?>" class="button button-secondary" id="wpat_download_log_btn" style="height: 34px; line-height: 32px; display: inline-flex; align-items: center; gap: 5px; font-weight: 600; border-radius: 6px;" title="Descargar archivo debug.log completo">
+							<span class="dashicons dashicons-download" style="font-size: 16px; width: 16px; height: 16px; line-height: 1;"></span> Descargar Log
+						</a>
+
+						<button type="button" class="button button-link-delete" id="wpat_clear_log_btn" style="background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; height: 34px; line-height: 32px; padding: 0 12px; display: inline-flex; align-items: center; gap: 5px; font-weight: 700; border-radius: 6px;" title="Vaciar completamente el archivo de log">
+							<span class="dashicons dashicons-trash" style="font-size: 16px; width: 16px; height: 16px; line-height: 1;"></span> Vaciar Log
+						</button>
+					</div>
+				</div>
+
+				<!-- SUB-PESTAÑAS: VISTA ESTRUCTURADA VS TERMINAL BRUTO -->
+				<div class="wpat-log-view-tabs" style="display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-bottom: 18px;">
+					<button type="button" class="wpat-log-tab-btn active" data-target="structured" style="background: none; border: none; padding: 10px 16px; font-weight: 700; font-size: 13.5px; color: #2563eb; border-bottom: 2px solid #2563eb; margin-bottom: -2px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+						<span class="dashicons dashicons-list-view"></span> Vista Estructurada
+					</button>
+					<button type="button" class="wpat-log-tab-btn" data-target="raw" style="background: none; border: none; padding: 10px 16px; font-weight: 600; font-size: 13.5px; color: #64748b; border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+						<span class="dashicons dashicons-editor-code"></span> Vista Terminal / Bruto
+					</button>
+				</div>
+
+				<!-- TAB 1: VISTA ESTRUCTURADA (TABLA INTERACTIVA) -->
+				<div class="wpat-log-tab-content active" id="wpat_log_view_structured">
+					<div class="wpat-log-table-container" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+						<table class="wpat-log-table widefat" style="border: none; margin: 0;">
+							<thead>
+								<tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+									<th style="width: 100px; font-weight: 700; color: #475569; padding: 12px 14px;">Severidad</th>
+									<th style="width: 160px; font-weight: 700; color: #475569; padding: 12px 14px;">Fecha / Hora</th>
+									<th style="font-weight: 700; color: #475569; padding: 12px 14px;">Mensaje de Error</th>
+									<th style="width: 250px; font-weight: 700; color: #475569; padding: 12px 14px;">Archivo y Línea</th>
+									<th style="width: 110px; font-weight: 700; color: #475569; padding: 12px 14px; text-align: right;">Acciones</th>
+								</tr>
+							</thead>
+							<tbody id="wpat_log_entries_tbody">
+								<?php if ( empty( $entries ) ) : ?>
+									<tr class="wpat-log-empty-row">
+										<td colspan="5" style="text-align: center; padding: 40px 20px;">
+											<div style="font-size: 38px; margin-bottom: 10px;">✨</div>
+											<strong style="font-size: 15px; color: #0f172a; display: block;">¡Excelente! No hay errores registrados</strong>
+											<p style="color: #64748b; font-size: 13px; margin: 4px 0 0 0;">El archivo <code>debug.log</code> está completamente limpio o no ha registrado incidentes.</p>
+										</td>
+									</tr>
+								<?php else : ?>
+									<?php foreach ( $entries as $idx => $entry ) : ?>
+										<tr class="wpat-log-entry-row severity-<?php echo esc_attr( $entry['badge_class'] ); ?>" data-severity="<?php echo esc_attr( $entry['badge_class'] ); ?>" data-search="<?php echo esc_attr( strtolower( $entry['message'] . ' ' . $entry['file'] . ' ' . $entry['line'] . ' ' . $entry['severity'] ) ); ?>">
+											<td style="padding: 12px 14px; vertical-align: top;">
+												<span class="wpat-severity-badge <?php echo esc_attr( $entry['badge_class'] ); ?>">
+													<?php echo esc_html( $entry['severity'] ); ?>
+												</span>
+											</td>
+											<td style="padding: 12px 14px; vertical-align: top; white-space: nowrap;">
+												<strong style="font-size: 12px; color: #1e293b; display: block;"><?php echo esc_html( $entry['time_human'] ); ?></strong>
+												<span style="font-size: 11px; color: #94a3b8;" title="<?php echo esc_attr( $entry['timestamp'] ); ?>"><?php echo esc_html( $entry['timestamp'] ); ?></span>
+											</td>
+											<td style="padding: 12px 14px; vertical-align: top;">
+												<div class="wpat-log-msg-text" style="font-size: 13px; color: #0f172a; font-weight: 500; word-break: break-word; line-height: 1.4;">
+													<?php echo esc_html( $entry['message'] ); ?>
+												</div>
+												<?php if ( ! empty( $entry['stack_trace'] ) ) : ?>
+													<div class="wpat-log-trace-box" id="wpat_trace_<?php echo esc_attr( $idx ); ?>" style="display: none; margin-top: 10px; background: #0f172a; color: #f8fafc; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 11.5px; white-space: pre-wrap; line-height: 1.5; max-height: 250px; overflow-y: auto;">
+														<?php echo esc_html( $entry['stack_trace'] ); ?>
+													</div>
+												<?php endif; ?>
+											</td>
+											<td style="padding: 12px 14px; vertical-align: top;">
+												<?php if ( ! empty( $entry['file'] ) ) : ?>
+													<div style="font-family: monospace; font-size: 11.5px; color: #475569; word-break: break-all;" title="<?php echo esc_attr( $entry['file'] ); ?>">
+														<?php echo esc_html( $entry['file'] ); ?>
+														<?php if ( ! empty( $entry['line'] ) ) : ?>
+															<span class="wpat-log-line-num" style="background: #e2e8f0; color: #0f172a; padding: 1px 5px; border-radius: 4px; font-weight: 700; margin-left: 4px;">:<?php echo esc_html( $entry['line'] ); ?></span>
+														<?php endif; ?>
+													</div>
+												<?php else : ?>
+													<span style="color: #94a3b8; font-size: 12px;">—</span>
+												<?php endif; ?>
+											</td>
+											<td style="padding: 12px 14px; vertical-align: top; text-align: right; white-space: nowrap;">
+												<div style="display: flex; gap: 4px; justify-content: flex-end;">
+													<?php if ( ! empty( $entry['stack_trace'] ) ) : ?>
+														<button type="button" class="button button-small wpat-toggle-trace-btn" data-target="#wpat_trace_<?php echo esc_attr( $idx ); ?>" title="Ver Stack Trace de ejecución" style="padding: 0 6px; height: 26px; line-height: 24px;">
+															<span class="dashicons dashicons-arrow-down-alt2" style="font-size: 14px; width: 14px; height: 14px; line-height: 1;"></span> Stack
+														</button>
+													<?php endif; ?>
+													<button type="button" class="button button-small wpat-copy-single-error-btn" data-raw="<?php echo esc_attr( $entry['raw_line'] . ( ! empty( $entry['stack_trace'] ) ? "\n" . $entry['stack_trace'] : '' ) ); ?>" title="Copiar este error completo" style="padding: 0 6px; height: 26px; line-height: 24px;">
+														<span class="dashicons dashicons-clipboard" style="font-size: 14px; width: 14px; height: 14px; line-height: 1;"></span>
+													</button>
+												</div>
+											</td>
+										</tr>
+									<?php endforeach; ?>
+								<?php endif; ?>
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+				<!-- TAB 2: VISTA TERMINAL / BRUTO (RAW) -->
+				<div class="wpat-log-tab-content" id="wpat_log_view_raw" style="display: none;">
+					<div class="wpat-raw-terminal-header" style="display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 8px 16px; border-radius: 8px 8px 0 0;">
+						<span style="color: #94a3b8; font-size: 12px; font-family: monospace;">debug.log (Últimos 2MB)</span>
+						<button type="button" class="button button-small" id="wpat_copy_raw_log_btn" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: #fff; font-size: 11px; height: 26px; display: inline-flex; align-items: center; gap: 4px;">
+							<span class="dashicons dashicons-clipboard" style="font-size: 14px; width: 14px; height: 14px;"></span> Copiar Todo en Bruto
+						</button>
+					</div>
+					<pre id="wpat_log_raw_pre" style="background: #0f172a; color: #38bdf8; padding: 16px; border-radius: 0 0 8px 8px; margin: 0; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 12px; line-height: 1.6; max-height: 550px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; border: 1px solid #1e293b; border-top: none;"><?php echo esc_html( $log_data['raw'] ); ?></pre>
+				</div>
+
+			</div>
+		</div>
+		<?php
 	}
 
 	public function style_conditional_display( $setting ) {

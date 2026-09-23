@@ -4194,6 +4194,313 @@ jQuery(document).ready(function($) {
 		});
 	});
 
+	// ==========================================
+	// MÓDULO: VISOR Y MONITOR DE LOGS DE ERROR
+	// ==========================================
+
+	var logPollInterval = null;
+
+	// 1. Cambio de subpestañas: Estructurada vs Bruto (Raw)
+	$(document).on('click', '.wpat-log-tab-btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var target = $btn.data('target');
+
+		$('.wpat-log-tab-btn').removeClass('active').css({
+			'color': '#64748b',
+			'border-bottom-color': 'transparent'
+		});
+		$btn.addClass('active').css({
+			'color': '#2563eb',
+			'border-bottom-color': '#2563eb'
+		});
+
+		$('.wpat-log-tab-content').hide();
+		$('#wpat_log_view_' + target).show();
+	});
+
+	// 2. Filtros combinados (Severidad + Búsqueda en tiempo real)
+	function applyLogFilters() {
+		var activeFilter = $('.wpat-log-filter-btn.active').data('filter') || 'all';
+		var searchTerm = ($('#wpat_log_search').val() || '').toLowerCase().trim();
+		var visibleCount = 0;
+
+		$('.wpat-log-entry-row').each(function() {
+			var $row = $(this);
+			var rowSeverity = $row.data('severity') || '';
+			var rowSearch = $row.data('search') || '';
+
+			var matchesFilter = (activeFilter === 'all' || rowSeverity === activeFilter);
+			var matchesSearch = (searchTerm === '' || rowSearch.indexOf(searchTerm) !== -1);
+
+			if (matchesFilter && matchesSearch) {
+				$row.show();
+				visibleCount++;
+			} else {
+				$row.hide();
+			}
+		});
+
+		// Manejar fila vacía por filtro
+		if ($('.wpat-log-entry-row').length > 0) {
+			if (visibleCount === 0) {
+				if ($('#wpat_log_no_filter_match').length === 0) {
+					$('#wpat_log_entries_tbody').append('<tr id="wpat_log_no_filter_match"><td colspan="5" style="text-align:center; padding:30px; color:#64748b;">No se encontraron registros que coincidan con los filtros seleccionados.</td></tr>');
+				}
+				$('#wpat_log_no_filter_match').show();
+			} else {
+				$('#wpat_log_no_filter_match').hide();
+			}
+		}
+	}
+
+	$(document).on('click', '.wpat-log-filter-btn', function(e) {
+		e.preventDefault();
+		$('.wpat-log-filter-btn').removeClass('active');
+		$(this).addClass('active');
+		applyLogFilters();
+	});
+
+	$(document).on('input', '#wpat_log_search', function() {
+		applyLogFilters();
+	});
+
+	// 3. Desplegar / Colapsar Stack Trace
+	$(document).on('click', '.wpat-toggle-trace-btn', function(e) {
+		e.preventDefault();
+		var targetId = $(this).data('target');
+		$(targetId).slideToggle(150);
+	});
+
+	// 4. Copiar Snippet para wp-config.php
+	$(document).on('click', '#wpat_copy_wp_config_snippet', function(e) {
+		e.preventDefault();
+		var snippet = $(this).data('snippet') || '';
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			navigator.clipboard.writeText(snippet).then(function() {
+				showToast('Código de wp-config.php copiado al portapapeles', false);
+			});
+		} else {
+			var $temp = $('<textarea>');
+			$('body').append($temp);
+			$temp.val(snippet).select();
+			document.execCommand('copy');
+			$temp.remove();
+			showToast('Código de wp-config.php copiado al portapapeles', false);
+		}
+	});
+
+	// 5. Copiar Error Individual
+	$(document).on('click', '.wpat-copy-single-error-btn', function(e) {
+		e.preventDefault();
+		var raw = $(this).data('raw') || '';
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			navigator.clipboard.writeText(raw).then(function() {
+				showToast('Error copiado al portapapeles', false);
+			});
+		} else {
+			var $temp = $('<textarea>');
+			$('body').append($temp);
+			$temp.val(raw).select();
+			document.execCommand('copy');
+			$temp.remove();
+			showToast('Error copiado al portapapeles', false);
+		}
+	});
+
+	// 6. Copiar Último Error Registrado
+	$(document).on('click', '#wpat_copy_last_error_btn', function(e) {
+		e.preventDefault();
+		var $firstBtn = $('.wpat-copy-single-error-btn').first();
+		if ($firstBtn.length > 0) {
+			$firstBtn.trigger('click');
+		} else {
+			showToast('No hay errores registrados para copiar', true);
+		}
+	});
+
+	// 7. Copiar Todo en Bruto (Raw)
+	$(document).on('click', '#wpat_copy_raw_log_btn', function(e) {
+		e.preventDefault();
+		var rawText = $('#wpat_log_raw_pre').text() || '';
+		if (!rawText.trim()) {
+			showToast('El log está vacío', true);
+			return;
+		}
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			navigator.clipboard.writeText(rawText).then(function() {
+				showToast('Log completo copiado al portapapeles', false);
+			});
+		} else {
+			var $temp = $('<textarea>');
+			$('body').append($temp);
+			$temp.val(rawText).select();
+			document.execCommand('copy');
+			$temp.remove();
+			showToast('Log completo copiado al portapapeles', false);
+		}
+	});
+
+	// 8. Actualizar Logs vía AJAX (Live Fetch)
+	function renderLogRows(entries) {
+		var $tbody = $('#wpat_log_entries_tbody');
+		$tbody.empty();
+
+		if (!entries || entries.length === 0) {
+			$tbody.html('<tr class="wpat-log-empty-row"><td colspan="5" style="text-align: center; padding: 40px 20px;"><div style="font-size: 38px; margin-bottom: 10px;">✨</div><strong style="font-size: 15px; color: #0f172a; display: block;">¡Excelente! No hay errores registrados</strong><p style="color: #64748b; font-size: 13px; margin: 4px 0 0 0;">El archivo <code>debug.log</code> está completamente limpio o no ha registrado incidentes.</p></td></tr>');
+			return;
+		}
+
+		$.each(entries, function(idx, entry) {
+			var traceBtn = '';
+			var traceBox = '';
+			if (entry.stack_trace && entry.stack_trace.trim() !== '') {
+				traceBtn = '<button type="button" class="button button-small wpat-toggle-trace-btn" data-target="#wpat_trace_' + idx + '" title="Ver Stack Trace de ejecución" style="padding: 0 6px; height: 26px; line-height: 24px;"><span class="dashicons dashicons-arrow-down-alt2" style="font-size: 14px; width: 14px; height: 14px; line-height: 1;"></span> Stack</button>';
+				traceBox = '<div class="wpat-log-trace-box" id="wpat_trace_' + idx + '" style="display: none; margin-top: 10px; background: #0f172a; color: #f8fafc; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 11.5px; white-space: pre-wrap; line-height: 1.5; max-height: 250px; overflow-y: auto;">' + $('<div>').text(entry.stack_trace).html() + '</div>';
+			}
+
+			var fileHtml = '—';
+			if (entry.file) {
+				var lineBadge = entry.line ? '<span class="wpat-log-line-num" style="background: #e2e8f0; color: #0f172a; padding: 1px 5px; border-radius: 4px; font-weight: 700; margin-left: 4px;">:' + $('<div>').text(entry.line).html() + '</span>' : '';
+				fileHtml = '<div style="font-family: monospace; font-size: 11.5px; color: #475569; word-break: break-all;" title="' + $('<div>').text(entry.file).html() + '">' + $('<div>').text(entry.file).html() + lineBadge + '</div>';
+			}
+
+			var rawCombined = (entry.raw_line || '') + (entry.stack_trace ? '\n' + entry.stack_trace : '');
+			var searchStr = ((entry.message || '') + ' ' + (entry.file || '') + ' ' + (entry.line || '') + ' ' + (entry.severity || '')).toLowerCase();
+
+			var rowHtml = '<tr class="wpat-log-entry-row severity-' + entry.badge_class + '" data-severity="' + entry.badge_class + '" data-search="' + $('<div>').text(searchStr).html() + '">' +
+				'<td style="padding: 12px 14px; vertical-align: top;"><span class="wpat-severity-badge ' + entry.badge_class + '">' + $('<div>').text(entry.severity).html() + '</span></td>' +
+				'<td style="padding: 12px 14px; vertical-align: top; white-space: nowrap;"><strong style="font-size: 12px; color: #1e293b; display: block;">' + $('<div>').text(entry.time_human).html() + '</strong><span style="font-size: 11px; color: #94a3b8;" title="' + $('<div>').text(entry.timestamp).html() + '">' + $('<div>').text(entry.timestamp).html() + '</span></td>' +
+				'<td style="padding: 12px 14px; vertical-align: top;"><div class="wpat-log-msg-text" style="font-size: 13px; color: #0f172a; font-weight: 500; word-break: break-word; line-height: 1.4;">' + $('<div>').text(entry.message).html() + '</div>' + traceBox + '</td>' +
+				'<td style="padding: 12px 14px; vertical-align: top;">' + fileHtml + '</td>' +
+				'<td style="padding: 12px 14px; vertical-align: top; text-align: right; white-space: nowrap;"><div style="display: flex; gap: 4px; justify-content: flex-end;">' + traceBtn + '<button type="button" class="button button-small wpat-copy-single-error-btn" data-raw="' + $('<div>').text(rawCombined).html() + '" title="Copiar este error completo" style="padding: 0 6px; height: 26px; line-height: 24px;"><span class="dashicons dashicons-clipboard" style="font-size: 14px; width: 14px; height: 14px; line-height: 1;"></span></button></div></td>' +
+			'</tr>';
+
+			$tbody.append(rowHtml);
+		});
+
+		applyLogFilters();
+	}
+
+	function fetchErrorLogs(silent) {
+		if ($('#wpat_log_entries_tbody').length === 0) {
+			return;
+		}
+
+		var $btn = $('#wpat_refresh_logs_btn');
+		if (!silent) {
+			$btn.prop('disabled', true).find('.dashicons').addClass('dashicons-update-spin');
+		}
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_get_error_logs',
+				security: wpat_object.error_log_nonce
+			},
+			success: function(response) {
+				if (!silent) {
+					$btn.prop('disabled', false).find('.dashicons').removeClass('dashicons-update-spin');
+				}
+
+				if (response.success && response.data) {
+					var d = response.data;
+					// Actualizar tamaño de archivo
+					$('#wpat_log_filesize_badge').text(d.size_fmt || '0 B');
+
+					// Actualizar contadores
+					if (d.stats) {
+						$('#wpat_stat_total').text(d.stats.total || 0);
+						$('#wpat_stat_fatal').text(d.stats.fatal || 0);
+						$('#wpat_stat_warning').text(d.stats.warning || 0);
+						$('#wpat_stat_notice').text(d.stats.notice || 0);
+						$('#wpat_stat_deprecated').text(d.stats.deprecated || 0);
+
+						$('.f-count').text(d.stats.fatal || 0);
+						$('.w-count').text(d.stats.warning || 0);
+						$('.n-count').text(d.stats.notice || 0);
+						$('.d-count').text(d.stats.deprecated || 0);
+					}
+
+					// Actualizar consola Raw
+					$('#wpat_log_raw_pre').text(d.raw || '');
+
+					// Renderizar filas de tabla
+					renderLogRows(d.entries || []);
+
+					if (!silent) {
+						showToast('Registros de error actualizados', false);
+					}
+				}
+			},
+			error: function() {
+				if (!silent) {
+					$btn.prop('disabled', false).find('.dashicons').removeClass('dashicons-update-spin');
+					showToast('Error al conectar para actualizar logs', true);
+				}
+			}
+		});
+	}
+
+	$(document).on('click', '#wpat_refresh_logs_btn', function(e) {
+		e.preventDefault();
+		fetchErrorLogs(false);
+	});
+
+	// 9. Auto-refresco en vivo (Polling)
+	$(document).on('change', '#wpat_log_auto_refresh_toggle', function() {
+		var isChecked = $(this).is(':checked');
+		if (isChecked) {
+			$('#wpat_log_live_status_label').html('<span style="color:#10b981;">● En vivo</span> (5s)');
+			logPollInterval = setInterval(function() {
+				fetchErrorLogs(true);
+			}, 5000);
+			showToast('Auto-refresco activado (cada 5s)', false);
+		} else {
+			$('#wpat_log_live_status_label').text('Auto-refresco (5s)');
+			if (logPollInterval) {
+				clearInterval(logPollInterval);
+				logPollInterval = null;
+			}
+			showToast('Auto-refresco pausado', false);
+		}
+	});
+
+	// 10. Vaciar Archivo de Log
+	$(document).on('click', '#wpat_clear_log_btn', function(e) {
+		e.preventDefault();
+		if (!confirm('¿Estás seguro de que deseas vaciar completamente el registro debug.log? Esta acción borrará todos los errores almacenados.')) {
+			return;
+		}
+
+		var $btn = $(this);
+		var origHtml = $btn.html();
+		$btn.prop('disabled', true).html('⏳ Vaciando...');
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_clear_error_log',
+				security: wpat_object.error_log_nonce
+			},
+			success: function(response) {
+				$btn.prop('disabled', false).html(origHtml);
+				if (response.success) {
+					showToast(response.data.message || 'El registro se ha vaciado correctamente', false);
+					fetchErrorLogs(true);
+				} else {
+					showToast(response.data.message || 'No se pudo vaciar el archivo de log', true);
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).html(origHtml);
+				showToast('Error de conexión AJAX al vaciar log', true);
+			}
+		});
+	});
+
 });
 
 

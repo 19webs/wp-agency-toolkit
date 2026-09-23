@@ -150,10 +150,11 @@ class WPAT_Admin {
 		wp_enqueue_script( 'wpat-admin-js', WPAT_URL . 'assets/js/wpat-admin.js', array( 'jquery', 'wp-color-picker' ), time(), true );
 
 		wp_localize_script( 'wpat-admin-js', 'wpat_object', array(
-			'ajax_url'        => admin_url( 'admin-ajax.php' ),
-			'nonce'           => wp_create_nonce( 'wpat_save_settings_action' ),
-			'cleanup_nonce'   => wp_create_nonce( 'wpat_cleanup_nonce_action' ),
-			'error_log_nonce' => wp_create_nonce( 'wpat_error_log_nonce_action' ),
+			'ajax_url'           => admin_url( 'admin-ajax.php' ),
+			'nonce'              => wp_create_nonce( 'wpat_save_settings_action' ),
+			'cleanup_nonce'      => wp_create_nonce( 'wpat_cleanup_nonce_action' ),
+			'error_log_nonce'    => wp_create_nonce( 'wpat_error_log_nonce_action' ),
+			'role_manager_nonce' => wp_create_nonce( 'wpat_role_manager_nonce_action' ),
 		) );
 
 		// Localizar kits instalados para el JS de administración
@@ -2625,6 +2626,7 @@ class WPAT_Admin {
 				'wpat-seo'               => 'seo',
 				'wpat-sitemap-xml'       => 'sitemap-xml',
 				'wpat-error-log-viewer'  => 'error-log-viewer',
+				'wpat-role-manager'      => 'role-manager',
 				'wpat-tools'             => 'tools',
 			);
 			if ( isset( $map[ $page_slug ] ) ) {
@@ -2747,7 +2749,7 @@ class WPAT_Admin {
 										<div class="wpat-cat-nav-list" style="display: flex; flex-direction: column; gap: 4px;">
 											<button type="button" class="wpat-cat-item active" data-cat="all">
 												<span class="wpat-cat-label">📌 Todos</span>
-												<span class="wpat-cat-badge">37</span>
+												<span class="wpat-cat-badge">38</span>
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="woocommerce">
 												<span class="wpat-cat-label">🛍️ WooCommerce</span>
@@ -2763,11 +2765,11 @@ class WPAT_Admin {
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="tools">
 												<span class="wpat-cat-label">🛠️ Herramientas</span>
-												<span class="wpat-cat-badge">7</span>
+												<span class="wpat-cat-badge">8</span>
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="system">
 												<span class="wpat-cat-label">⚙️ Sistema & Admin</span>
-												<span class="wpat-cat-badge">8</span>
+												<span class="wpat-cat-badge">9</span>
 											</button>
 											<div class="wpat-sidebar-divider"></div>
 											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=tools' ) ); ?>" class="wpat-cat-direct-link">
@@ -2780,12 +2782,12 @@ class WPAT_Admin {
 									<div class="wpat-mobile-cat-container" style="display: none; width: 100%; margin-bottom: 15px;">
 										<label for="wpat_mobile_cat_select" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 6px;">Categoría:</label>
 										<select id="wpat_mobile_cat_select" style="width: 100%; height: 38px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 0 12px; font-weight: 600; font-size: 13px; background: #fff;">
-											<option value="all">📌 Todos (37)</option>
+											<option value="all">📌 Todos (38)</option>
 											<option value="woocommerce">🛍️ WooCommerce (10)</option>
 											<option value="security">🛡️ Seguridad (6)</option>
 											<option value="performance">⚡ Rendimiento & SEO (7)</option>
-											<option value="tools">🛠️ Herramientas (7)</option>
-											<option value="system">⚙️ Sistema & Admin (8)</option>
+											<option value="tools">🛠️ Herramientas (8)</option>
+											<option value="system">⚙️ Sistema & Admin (9)</option>
 										</select>
 									</div>
 
@@ -3319,6 +3321,18 @@ class WPAT_Admin {
 				'icon'        => '📜',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'logs debug error fatal warning visor depuracion monitor registro errores'
+			),
+			array(
+				'id'          => 'role-manager',
+				'is_new'      => true,
+				'title'       => 'Gestor de Roles y Permisos',
+				'badge'       => 'Subpágina',
+				'badge_class' => 'subpage',
+				'desc'        => 'Administra, crea, clona y audita roles de usuario y permisos de WordPress y WooCommerce con matriz visual y protección anti-bloqueo.',
+				'cat_class'   => 'cat-system cat-admin cat-tools',
+				'icon'        => '👥',
+				'icon_bg'     => 'admin',
+				'keywords'    => 'roles permisos capabilities usuarios roles perfil editor administrador permisos capacidades clonar reset'
 			),
 			array(
 				'id'          => 'tools',
@@ -10225,6 +10239,9 @@ class WPAT_Admin {
 			case 'error-log-viewer':
 				$this->render_error_log_viewer_content( $settings );
 				break;
+			case 'role-manager':
+				$this->render_role_manager_content( $settings );
+				break;
 			case 'tools':
 				echo '<div id="wpat_health_content_wrapper">';
 				$this->render_health_tab_content();
@@ -10257,11 +10274,11 @@ class WPAT_Admin {
 		$count_deprecated = 0;
 
 		foreach ( $entries as $entry ) {
-			if ( 'fatal' === $entry['badge_class'] ) {
+			if ( 'wpat-fatal' === $entry['badge_class'] ) {
 				$count_fatal++;
-			} elseif ( 'warning' === $entry['badge_class'] ) {
+			} elseif ( 'wpat-warning' === $entry['badge_class'] ) {
 				$count_warning++;
-			} elseif ( 'deprecated' === $entry['badge_class'] ) {
+			} elseif ( 'wpat-deprecated' === $entry['badge_class'] ) {
 				$count_deprecated++;
 			} else {
 				$count_notice++;
@@ -10336,23 +10353,23 @@ class WPAT_Admin {
 
 				<!-- TARJETAS DE CONTADORES DE SEVERIDAD -->
 				<div class="wpat-log-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 22px;">
-					<div class="wpat-log-stat-card total" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; text-align: center;">
+					<div class="wpat-log-stat-card wpat-card-total" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; text-align: center;">
 						<div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px;">Total Errores</div>
 						<div class="wpat-stat-num" id="wpat_stat_total" style="font-size: 22px; font-weight: 800; color: #0f172a; margin-top: 4px;"><?php echo esc_html( $count_total ); ?></div>
 					</div>
-					<div class="wpat-log-stat-card fatal" style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px 14px; text-align: center;">
+					<div class="wpat-log-stat-card wpat-card-fatal" style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px 14px; text-align: center;">
 						<div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #b91c1c; letter-spacing: 0.5px;">Fatal Errors</div>
 						<div class="wpat-stat-num" id="wpat_stat_fatal" style="font-size: 22px; font-weight: 800; color: #dc2626; margin-top: 4px;"><?php echo esc_html( $count_fatal ); ?></div>
 					</div>
-					<div class="wpat-log-stat-card warning" style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 14px; text-align: center;">
+					<div class="wpat-log-stat-card wpat-card-warning" style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 14px; text-align: center;">
 						<div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #b45309; letter-spacing: 0.5px;">Warnings</div>
 						<div class="wpat-stat-num" id="wpat_stat_warning" style="font-size: 22px; font-weight: 800; color: #d97706; margin-top: 4px;"><?php echo esc_html( $count_warning ); ?></div>
 					</div>
-					<div class="wpat-log-stat-card notice" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 14px; text-align: center;">
+					<div class="wpat-log-stat-card wpat-card-notice" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 14px; text-align: center;">
 						<div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #1d4ed8; letter-spacing: 0.5px;">Notices</div>
 						<div class="wpat-stat-num" id="wpat_stat_notice" style="font-size: 22px; font-weight: 800; color: #2563eb; margin-top: 4px;"><?php echo esc_html( $count_notice ); ?></div>
 					</div>
-					<div class="wpat-log-stat-card deprecated" style="background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 8px; padding: 12px 14px; text-align: center;">
+					<div class="wpat-log-stat-card wpat-card-deprecated" style="background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 8px; padding: 12px 14px; text-align: center;">
 						<div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6d28d9; letter-spacing: 0.5px;">Deprecated</div>
 						<div class="wpat-stat-num" id="wpat_stat_deprecated" style="font-size: 22px; font-weight: 800; color: #7c3aed; margin-top: 4px;"><?php echo esc_html( $count_deprecated ); ?></div>
 					</div>
@@ -10369,10 +10386,10 @@ class WPAT_Admin {
 
 						<div class="wpat-log-severity-filters" style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
 							<button type="button" class="wpat-log-filter-btn active" data-filter="all">Todos</button>
-							<button type="button" class="wpat-log-filter-btn fatal" data-filter="fatal">Fatal (<span class="f-count"><?php echo esc_html( $count_fatal ); ?></span>)</button>
-							<button type="button" class="wpat-log-filter-btn warning" data-filter="warning">Warning (<span class="w-count"><?php echo esc_html( $count_warning ); ?></span>)</button>
-							<button type="button" class="wpat-log-filter-btn notice" data-filter="notice">Notice (<span class="n-count"><?php echo esc_html( $count_notice ); ?></span>)</button>
-							<button type="button" class="wpat-log-filter-btn deprecated" data-filter="deprecated">Deprecated (<span class="d-count"><?php echo esc_html( $count_deprecated ); ?></span>)</button>
+							<button type="button" class="wpat-log-filter-btn wpat-filter-fatal" data-filter="wpat-fatal">Fatal (<span class="f-count"><?php echo esc_html( $count_fatal ); ?></span>)</button>
+							<button type="button" class="wpat-log-filter-btn wpat-filter-warning" data-filter="wpat-warning">Warning (<span class="w-count"><?php echo esc_html( $count_warning ); ?></span>)</button>
+							<button type="button" class="wpat-log-filter-btn wpat-filter-notice" data-filter="wpat-notice">Notice (<span class="n-count"><?php echo esc_html( $count_notice ); ?></span>)</button>
+							<button type="button" class="wpat-log-filter-btn wpat-filter-deprecated" data-filter="wpat-deprecated">Deprecated (<span class="d-count"><?php echo esc_html( $count_deprecated ); ?></span>)</button>
 						</div>
 					</div>
 
@@ -10502,6 +10519,226 @@ class WPAT_Admin {
 					<pre id="wpat_log_raw_pre" style="background: #0f172a; color: #38bdf8; padding: 16px; border-radius: 0 0 8px 8px; margin: 0; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 12px; line-height: 1.6; max-height: 550px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; border: 1px solid #1e293b; border-top: none;"><?php echo esc_html( $log_data['raw'] ); ?></pre>
 				</div>
 
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Renderiza la interfaz del Gestor de Roles y Permisos (Role Manager).
+	 *
+	 * @param array $settings Ajustes del plugin.
+	 */
+	public function render_role_manager_content( $settings ) {
+		if ( ! class_exists( 'WPAT_Role_Manager' ) ) {
+			require_once WPAT_PATH . 'includes/modules/class-wpat-role-manager.php';
+		}
+
+		$roles          = WPAT_Role_Manager::get_all_roles_with_meta();
+		$categories     = WPAT_Role_Manager::get_categorized_capabilities_map();
+		$active_role_slug = isset( $_GET['role'] ) && isset( $roles[ sanitize_key( $_GET['role'] ) ] ) ? sanitize_key( $_GET['role'] ) : ( isset( $roles['administrator'] ) ? 'administrator' : key( $roles ) );
+		$active_role    = isset( $roles[ $active_role_slug ] ) ? $roles[ $active_role_slug ] : reset( $roles );
+		?>
+		<div class="wpat-module-card wpat-role-manager-wrapper">
+			<div class="wpat-module-header">
+				<div class="wpat-module-info">
+					<h3>Gestor de Roles y Permisos (<code>Capabilities</code>)</h3>
+					<p>Crea, clona, personaliza y audita los permisos de usuarios y tiendas de forma visual, segura y sin dependencias externas.</p>
+				</div>
+				<?php $this->render_module_toggle( 'role-manager', $settings, true ); ?>
+			</div>
+
+			<div class="wpat-module-body" style="display: block; padding: 22px;">
+
+				<!-- CONTENEDOR PRINCIPAL: SIDEBAR DE ROLES + PANEL DE CAPABILITIES -->
+				<div class="wpat-roles-layout" style="display: flex; gap: 24px; align-items: flex-start;">
+
+					<!-- COLUMNA IZQUIERDA: LISTA DE ROLES -->
+					<aside class="wpat-roles-sidebar" style="width: 270px; flex-shrink: 0; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0;">
+							<span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px;">Roles Registrados</span>
+							<button type="button" class="button button-primary button-small" id="wpat_open_create_role_modal_btn" style="background: #2563eb; border-color: #1d4ed8; font-size: 11px; height: 26px; line-height: 24px; border-radius: 5px; display: inline-flex; align-items: center; gap: 4px;">
+								<span class="dashicons dashicons-plus-alt2" style="font-size: 13px; width: 13px; height: 13px; line-height: 1;"></span> Nuevo Rol
+							</button>
+						</div>
+
+						<div class="wpat-roles-list" id="wpat_roles_list_container" style="display: flex; flex-direction: column; gap: 4px; max-height: 520px; overflow-y: auto;">
+							<?php foreach ( $roles as $slug => $r ) : ?>
+								<?php
+								$is_active = ( $slug === $active_role_slug );
+								$badge_color = ( 'core' === $r['type'] ) ? '#2563eb' : ( ( 'woocommerce' === $r['type'] ) ? '#7c3aed' : '#059669' );
+								$badge_bg    = ( 'core' === $r['type'] ) ? '#eff6ff' : ( ( 'woocommerce' === $r['type'] ) ? '#f5f3ff' : '#ecfdf5' );
+								?>
+								<button type="button" class="wpat-role-item <?php echo $is_active ? 'active' : ''; ?>" data-role="<?php echo esc_attr( $slug ); ?>" style="text-align: left; background: <?php echo $is_active ? '#ffffff' : 'transparent'; ?>; border: 1px solid <?php echo $is_active ? '#2563eb' : 'transparent'; ?>; border-radius: 8px; padding: 10px 12px; cursor: pointer; transition: all 0.15s ease-in-out; display: flex; justify-content: space-between; align-items: center; width: 100%; box-shadow: <?php echo $is_active ? '0 2px 6px rgba(37,99,235,0.1)' : 'none'; ?>;">
+									<div style="min-width: 0; flex: 1;">
+										<div style="font-weight: 700; font-size: 13px; color: <?php echo $is_active ? '#1e40af' : '#1e293b'; ?>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+											<?php echo esc_html( $r['name'] ); ?>
+										</div>
+										<div style="font-size: 11px; color: #64748b; font-family: monospace; margin-top: 2px;">
+											<code><?php echo esc_html( $slug ); ?></code>
+										</div>
+									</div>
+									<div style="text-align: right; flex-shrink: 0; margin-left: 8px;">
+										<span style="font-size: 10px; font-weight: 700; color: <?php echo esc_attr( $badge_color ); ?>; background: <?php echo esc_attr( $badge_bg ); ?>; padding: 2px 6px; border-radius: 4px; display: block; margin-bottom: 3px;">
+											<?php echo esc_html( $r['type_label'] ); ?>
+										</span>
+										<span style="font-size: 10.5px; color: #94a3b8; font-weight: 600;">
+											<?php echo esc_html( $r['user_count'] ); ?> <?php echo ( 1 === $r['user_count'] ) ? 'usuario' : 'usuarios'; ?>
+										</span>
+									</div>
+								</button>
+							<?php endforeach; ?>
+						</div>
+
+						<div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid #e2e8f0; text-align: center;">
+							<button type="button" class="button button-link-delete" id="wpat_reset_roles_btn" style="font-size: 11.5px; color: #64748b; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+								<span class="dashicons dashicons-undo" style="font-size: 14px; width: 14px; height: 14px; line-height: 1;"></span> Restaurar Roles Predeterminados
+							</button>
+						</div>
+					</aside>
+
+					<!-- COLUMNA DERECHA: MATRIZ DE CAPABILITIES DEL ROL ACTIVO -->
+					<main class="wpat-role-main-panel" style="flex: 1; min-width: 0;">
+
+						<!-- CABECERA DEL ROL ACTIVO -->
+						<div class="wpat-role-active-header" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+							<div>
+								<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+									<h3 id="wpat_active_role_title" style="margin: 0; font-size: 17px; font-weight: 800; color: #0f172a;">
+										<?php echo esc_html( $active_role['name'] ); ?>
+									</h3>
+									<code id="wpat_active_role_slug" style="font-size: 12px; background: #f1f5f9; padding: 3px 8px; border-radius: 4px; color: #334155;"><?php echo esc_html( $active_role_slug ); ?></code>
+									<span id="wpat_active_role_type_badge" class="wpat-role-type-badge" style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px; background: #eff6ff; color: #1d4ed8;">
+										<?php echo esc_html( $active_role['type_label'] ); ?>
+									</span>
+								</div>
+								<p class="description" style="margin: 4px 0 0 0; color: #64748b; font-size: 12.5px;">
+									<span id="wpat_active_role_user_count"><?php echo esc_html( $active_role['user_count'] ); ?></span> usuarios tienen asignado este rol actualmente.
+								</p>
+							</div>
+
+							<div style="display: flex; align-items: center; gap: 8px;">
+								<button type="button" class="button button-secondary" id="wpat_clone_active_role_btn" data-slug="<?php echo esc_attr( $active_role_slug ); ?>" data-name="<?php echo esc_attr( $active_role['name'] ); ?>" style="font-weight: 600; height: 32px; display: inline-flex; align-items: center; gap: 5px;">
+									<span class="dashicons dashicons-admin-page" style="font-size: 15px; width: 15px; height: 15px; line-height: 1;"></span> Clonar Rol
+								</button>
+								<button type="button" class="button button-link-delete" id="wpat_delete_active_role_btn" data-slug="<?php echo esc_attr( $active_role_slug ); ?>" style="background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; font-weight: 600; height: 32px; padding: 0 10px; border-radius: 4px; display: <?php echo $active_role['is_core'] ? 'none' : 'inline-flex'; ?>; align-items: center; gap: 4px;">
+									<span class="dashicons dashicons-trash" style="font-size: 15px; width: 15px; height: 15px; line-height: 1;"></span> Eliminar Rol
+								</button>
+							</div>
+						</div>
+
+						<!-- BARRA DE BÚSQUEDA Y FILTRADO DE PERMISOS -->
+						<div class="wpat-cap-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px;">
+							<div style="position: relative; flex: 1; max-width: 360px;">
+								<span class="dashicons dashicons-search" style="position: absolute; left: 10px; top: 8px; color: #94a3b8; font-size: 18px; width: 18px; height: 18px;"></span>
+								<input type="text" id="wpat_cap_search_input" placeholder="Filtrar permisos por nombre o clave..." style="width: 100%; height: 36px; padding: 0 12px 0 34px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;" />
+							</div>
+
+							<div style="display: flex; align-items: center; gap: 12px;">
+								<span style="font-size: 12.5px; color: #475569; font-weight: 600;">
+									Permisos concedidos: <strong id="wpat_granted_caps_counter" style="color: #2563eb;">0</strong>
+								</span>
+								<button type="button" class="button button-secondary button-small" id="wpat_check_all_caps_btn" style="height: 30px; font-weight: 600;">Conceder Todos</button>
+								<button type="button" class="button button-secondary button-small" id="wpat_uncheck_all_caps_btn" style="height: 30px; font-weight: 600;">Revocar Todos</button>
+							</div>
+						</div>
+
+						<!-- FORMULARIO DE CAPABILITIES POR CATEGORÍAS -->
+						<form id="wpat_role_caps_form" method="post" action="">
+							<input type="hidden" id="wpat_current_editing_role" name="role" value="<?php echo esc_attr( $active_role_slug ); ?>" />
+
+							<div class="wpat-cap-categories-wrapper" style="display: flex; flex-direction: column; gap: 16px;">
+								<?php foreach ( $categories as $cat_key => $cat ) : ?>
+									<div class="wpat-cap-category-card" data-category="<?php echo esc_attr( $cat_key ); ?>" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+										<div class="wpat-cap-cat-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
+											<div style="display: flex; align-items: center; gap: 8px;">
+												<span class="dashicons <?php echo esc_attr( $cat['icon'] ); ?>" style="color: #2563eb; font-size: 18px; width: 18px; height: 18px;"></span>
+												<strong style="font-size: 13.5px; color: #1e293b;"><?php echo esc_html( $cat['title'] ); ?></strong>
+												<span class="wpat-cat-count-badge" style="background: #e2e8f0; color: #475569; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 10px;">
+													<span class="granted-count">0</span> / <?php echo count( $cat['caps'] ); ?>
+												</span>
+											</div>
+											<div style="display: flex; align-items: center; gap: 6px;">
+												<button type="button" class="button button-small wpat-cat-check-all" data-cat="<?php echo esc_attr( $cat_key ); ?>" style="font-size: 11px; height: 24px; line-height: 22px;">Marcar bloque</button>
+												<button type="button" class="button button-small wpat-cat-uncheck-all" data-cat="<?php echo esc_attr( $cat_key ); ?>" style="font-size: 11px; height: 24px; line-height: 22px;">Desmarcar</button>
+											</div>
+										</div>
+
+										<div class="wpat-cap-cat-body" style="padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px;">
+											<?php foreach ( $cat['caps'] as $cap_slug => $cap_label ) : ?>
+												<?php
+												$has_cap = ! empty( $active_role['capabilities'][ $cap_slug ] );
+												$is_admin_crit = ( 'administrator' === $active_role_slug && in_array( $cap_slug, array( 'manage_options', 'edit_users', 'promote_users', 'activate_plugins', 'edit_plugins', 'edit_theme_options', 'read' ), true ) );
+												?>
+												<label class="wpat-cap-item <?php echo $has_cap ? 'active' : ''; ?>" data-cap="<?php echo esc_attr( $cap_slug ); ?>" data-search="<?php echo esc_attr( strtolower( $cap_label . ' ' . $cap_slug ) ); ?>" style="display: flex; align-items: flex-start; gap: 10px; background: <?php echo $has_cap ? '#f0fdf4' : '#ffffff'; ?>; border: 1px solid <?php echo $has_cap ? '#bbf7d0' : '#e2e8f0'; ?>; border-radius: 8px; padding: 10px 12px; cursor: <?php echo $is_admin_crit ? 'not-allowed' : 'pointer'; ?>; transition: all 0.15s ease;">
+													<input type="checkbox" class="wpat-cap-checkbox" name="capabilities[<?php echo esc_attr( $cap_slug ); ?>]" value="1" <?php checked( $has_cap ); ?> <?php disabled( $is_admin_crit ); ?> style="margin-top: 2px;" />
+													<div style="min-width: 0; flex: 1;">
+														<div style="font-size: 12.5px; font-weight: 600; color: #1e293b; line-height: 1.3;">
+															<?php echo esc_html( $cap_label ); ?>
+															<?php if ( $is_admin_crit ) : ?>
+																<span class="dashicons dashicons-lock" style="font-size: 13px; width: 13px; height: 13px; color: #94a3b8; vertical-align: middle;" title="Permiso protegido para Administrador"></span>
+															<?php endif; ?>
+														</div>
+														<code style="font-size: 11px; color: #64748b; margin-top: 3px; display: inline-block; background: rgba(0,0,0,0.04); padding: 1px 4px; border-radius: 3px;"><?php echo esc_html( $cap_slug ); ?></code>
+													</div>
+												</label>
+											<?php endforeach; ?>
+										</div>
+									</div>
+								<?php endforeach; ?>
+							</div>
+
+							<!-- BOTÓN GUARDAR STICKY INFERIOR -->
+							<div class="wpat-role-save-bar" style="position: sticky; bottom: 20px; margin-top: 24px; background: #1e293b; color: #fff; padding: 14px 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; gap: 15px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); z-index: 10;">
+								<div>
+									<strong style="font-size: 13.5px; display: block;">Modificando permisos de: <span id="wpat_save_bar_role_name" style="color: #60a5fa;"><?php echo esc_html( $active_role['name'] ); ?></span></strong>
+									<span style="font-size: 11.5px; color: #94a3b8;">Los cambios se aplicarán inmediatamente a todos los usuarios con este rol.</span>
+								</div>
+								<button type="button" class="button button-primary" id="wpat_save_role_caps_btn" style="background: #2563eb; border-color: #1d4ed8; font-weight: 700; height: 36px; line-height: 34px; padding: 0 22px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
+									<span class="dashicons dashicons-saved" style="font-size: 16px; width: 16px; height: 16px; line-height: 1;"></span> Guardar Permisos
+								</button>
+							</div>
+						</form>
+					</main>
+				</div>
+			</div>
+		</div>
+
+		<!-- MODAL: CREAR / CLONAR ROL -->
+		<div id="wpat_create_role_modal" class="wpat-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px); z-index: 999999; align-items: center; justify-content: center;">
+			<div class="wpat-modal-content" style="background: #fff; border-radius: 12px; width: 100%; max-width: 480px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); position: relative;">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
+					<h3 id="wpat_role_modal_title" style="margin: 0; font-size: 17px; font-weight: 800; color: #0f172a;">Crear Nuevo Rol</h3>
+					<button type="button" class="wpat-close-modal-btn" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #94a3b8;">&times;</button>
+				</div>
+
+				<form id="wpat_create_role_form">
+					<div class="wpat-field-group" style="margin-bottom: 14px;">
+						<label for="wpat_new_role_name" style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 5px;">Nombre Visible del Rol *</label>
+						<input type="text" id="wpat_new_role_name" name="role_name" placeholder="Ej: Gestor de Clientes" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" required />
+					</div>
+
+					<div class="wpat-field-group" style="margin-bottom: 14px;">
+						<label for="wpat_new_role_slug" style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 5px;">Identificador del Rol (Slug / Opcional)</label>
+						<input type="text" id="wpat_new_role_slug" name="role_slug" placeholder="Ej: gestor_clientes (auto-generado si vacío)" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+						<p class="description" style="margin-top: 4px; font-size: 11.5px;">Solo letras minúsculas, números y guiones bajos.</p>
+					</div>
+
+					<div class="wpat-field-group" style="margin-bottom: 22px;">
+						<label for="wpat_new_role_clone_from" style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 5px;">Heredar / Clonar Permisos de:</label>
+						<select id="wpat_new_role_clone_from" name="clone_from" style="width: 100%; height: 38px; border-radius: 6px; font-size: 13px;">
+							<option value="">Desde cero (Solo permiso de lectura básico)</option>
+							<?php foreach ( $roles as $slug => $r ) : ?>
+								<option value="<?php echo esc_attr( $slug ); ?>">Clonar permisos de: <?php echo esc_html( $r['name'] ); ?> (<?php echo esc_html( $slug ); ?>)</option>
+							<?php endforeach; ?>
+						</select>
+					</div>
+
+					<div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+						<button type="button" class="button button-secondary wpat-close-modal-btn" style="height: 36px; font-weight: 600;">Cancelar</button>
+						<button type="submit" class="button button-primary" id="wpat_submit_create_role_btn" style="background: #2563eb; border-color: #1d4ed8; font-weight: 700; height: 36px; padding: 0 18px;">Crear Rol</button>
+					</div>
+				</form>
 			</div>
 		</div>
 		<?php

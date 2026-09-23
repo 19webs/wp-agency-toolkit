@@ -188,7 +188,7 @@ class WPAT_Error_Log_Viewer {
 	 */
 	public static function parse_log_message( $message ) {
 		$severity    = 'Notice';
-		$badge_class = 'notice';
+		$badge_class = 'wpat-notice';
 		$clean_msg   = $message;
 		$file        = '';
 		$line        = '';
@@ -196,22 +196,22 @@ class WPAT_Error_Log_Viewer {
 		// Extraer severidad
 		if ( stripos( $message, 'PHP Fatal error' ) !== false || stripos( $message, 'Fatal error' ) !== false || stripos( $message, 'Uncaught Error' ) !== false ) {
 			$severity    = 'Fatal Error';
-			$badge_class = 'fatal';
+			$badge_class = 'wpat-fatal';
 		} elseif ( stripos( $message, 'PHP Parse error' ) !== false || stripos( $message, 'Parse error' ) !== false || stripos( $message, 'syntax error' ) !== false ) {
 			$severity    = 'Parse Error';
-			$badge_class = 'fatal';
+			$badge_class = 'wpat-fatal';
 		} elseif ( stripos( $message, 'PHP Warning' ) !== false || stripos( $message, 'Warning:' ) !== false ) {
 			$severity    = 'Warning';
-			$badge_class = 'warning';
+			$badge_class = 'wpat-warning';
 		} elseif ( stripos( $message, 'PHP Deprecated' ) !== false || stripos( $message, 'Deprecated:' ) !== false ) {
 			$severity    = 'Deprecated';
-			$badge_class = 'deprecated';
+			$badge_class = 'wpat-deprecated';
 		} elseif ( stripos( $message, 'PHP Notice' ) !== false || stripos( $message, 'Notice:' ) !== false ) {
 			$severity    = 'Notice';
-			$badge_class = 'notice';
+			$badge_class = 'wpat-notice';
 		} elseif ( stripos( $message, 'WordPress database error' ) !== false ) {
 			$severity    = 'DB Error';
-			$badge_class = 'fatal';
+			$badge_class = 'wpat-fatal';
 		}
 
 		// Extraer archivo y línea si coincide con " in /path/to/file.php on line 123"
@@ -295,11 +295,11 @@ class WPAT_Error_Log_Viewer {
 		);
 
 		foreach ( $log_data['entries'] as $entry ) {
-			if ( 'fatal' === $entry['badge_class'] ) {
+			if ( 'wpat-fatal' === $entry['badge_class'] ) {
 				$stats['fatal']++;
-			} elseif ( 'warning' === $entry['badge_class'] ) {
+			} elseif ( 'wpat-warning' === $entry['badge_class'] ) {
 				$stats['warning']++;
-			} elseif ( 'deprecated' === $entry['badge_class'] ) {
+			} elseif ( 'wpat-deprecated' === $entry['badge_class'] ) {
 				$stats['deprecated']++;
 			} else {
 				$stats['notice']++;

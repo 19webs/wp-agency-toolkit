@@ -4501,6 +4501,411 @@ jQuery(document).ready(function($) {
 		});
 	});
 
+	// ==========================================
+	// MÓDULO: GESTOR DE ROLES Y PERMISOS (ROLE MANAGER)
+	// ==========================================
+
+	// Función para recalcular contadores de permisos (concedidos / totales)
+	function updateRoleManagerCounters() {
+		var totalGranted = 0;
+
+		$('.wpat-cap-category-card').each(function() {
+			var $cat = $(this);
+			var catGranted = $cat.find('.wpat-cap-checkbox:checked').length;
+			$cat.find('.granted-count').text(catGranted);
+			totalGranted += catGranted;
+		});
+
+		$('#wpat_granted_caps_counter').text(totalGranted);
+	}
+
+	// Inicializar contadores si estamos en la vista de roles
+	if ($('.wpat-role-manager-wrapper').length > 0) {
+		updateRoleManagerCounters();
+	}
+
+	// 1. Cambio de Rol activo desde el Sidebar
+	$(document).on('click', '.wpat-role-item', function(e) {
+		e.preventDefault();
+		var $item = $(this);
+		var roleSlug = $item.data('role');
+
+		if ($item.hasClass('active')) {
+			return;
+		}
+
+		$('.wpat-role-item').removeClass('active').css({
+			'background': 'transparent',
+			'border-color': 'transparent',
+			'box-shadow': 'none'
+		}).find('div[style*="font-weight: 700"]').css('color', '#1e293b');
+
+		$item.addClass('active').css({
+			'background': '#ffffff',
+			'border-color': '#2563eb',
+			'box-shadow': '0 2px 6px rgba(37,99,235,0.1)'
+		}).find('div[style*="font-weight: 700"]').css('color', '#1e40af');
+
+		$('#wpat_current_editing_role').val(roleSlug);
+		$('#wpat_active_role_slug').text(roleSlug);
+		$('#wpat_save_bar_role_name').text($item.find('div[style*="font-weight: 700"]').text().trim());
+		$('#wpat_active_role_title').text($item.find('div[style*="font-weight: 700"]').text().trim());
+
+		// Botón de clonar
+		$('#wpat_clone_active_role_btn').data('slug', roleSlug).data('name', $item.find('div[style*="font-weight: 700"]').text().trim());
+
+		// Cargar capabilities vía AJAX
+		$('body').css('cursor', 'wait');
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_get_role_caps',
+				security: wpat_object.role_manager_nonce,
+				role: roleSlug
+			},
+			success: function(response) {
+				$('body').css('cursor', 'default');
+				if (response.success && response.data) {
+					var d = response.data;
+					var caps = d.capabilities || {};
+					var isAdmin = d.is_admin;
+					var isCore = d.is_core;
+
+					// Mostrar/Ocultar botón eliminar
+					if (isCore) {
+						$('#wpat_delete_active_role_btn').hide();
+					} else {
+						$('#wpat_delete_active_role_btn').show().data('slug', roleSlug);
+					}
+
+					// Actualizar checkboxes
+					$('.wpat-cap-checkbox').each(function() {
+						var $cb = $(this);
+						var cap = $cb.closest('.wpat-cap-item').data('cap');
+						var hasCap = (caps[cap] === true || caps[cap] === '1' || caps[cap] === 1);
+
+						$cb.prop('checked', hasCap);
+
+						// Bloqueo de caps críticas si es admin
+						var critCaps = ['manage_options', 'edit_users', 'promote_users', 'activate_plugins', 'edit_plugins', 'edit_theme_options', 'read'];
+						if (isAdmin && critCaps.indexOf(cap) !== -1) {
+							$cb.prop('disabled', true);
+							$cb.closest('.wpat-cap-item').css('cursor', 'not-allowed');
+						} else {
+							$cb.prop('disabled', false);
+							$cb.closest('.wpat-cap-item').css('cursor', 'pointer');
+						}
+
+						if (hasCap) {
+							$cb.closest('.wpat-cap-item').addClass('active').css({
+								'background': '#f0fdf4',
+								'border-color': '#bbf7d0'
+							});
+						} else {
+							$cb.closest('.wpat-cap-item').removeClass('active').css({
+								'background': '#ffffff',
+								'border-color': '#e2e8f0'
+							});
+						}
+					});
+
+					updateRoleManagerCounters();
+				}
+			},
+			error: function() {
+				$('body').css('cursor', 'default');
+				showToast('Error de conexión al cargar permisos del rol', true);
+			}
+		});
+	});
+
+	// 2. Conmutar visual de checkbox individual
+	$(document).on('change', '.wpat-cap-checkbox', function() {
+		var $cb = $(this);
+		var $item = $cb.closest('.wpat-cap-item');
+
+		if ($cb.is(':checked')) {
+			$item.addClass('active').css({
+				'background': '#f0fdf4',
+				'border-color': '#bbf7d0'
+			});
+		} else {
+			$item.removeClass('active').css({
+				'background': '#ffffff',
+				'border-color': '#e2e8f0'
+			});
+		}
+
+		updateRoleManagerCounters();
+	});
+
+	// 3. Búsqueda y filtrado en tiempo real de permisos
+	$(document).on('input', '#wpat_cap_search_input', function() {
+		var term = ($(this).val() || '').toLowerCase().trim();
+
+		$('.wpat-cap-category-card').each(function() {
+			var $cat = $(this);
+			var visibleInCat = 0;
+
+			$cat.find('.wpat-cap-item').each(function() {
+				var $item = $(this);
+				var searchText = $item.data('search') || '';
+
+				if (term === '' || searchText.indexOf(term) !== -1) {
+					$item.show();
+					visibleInCat++;
+				} else {
+					$item.hide();
+				}
+			});
+
+			if (visibleInCat === 0 && term !== '') {
+				$cat.hide();
+			} else {
+				$cat.show();
+			}
+		});
+	});
+
+	// 4. Marcar / Desmarcar bloque de categoría
+	$(document).on('click', '.wpat-cat-check-all', function(e) {
+		e.stopPropagation();
+		var cat = $(this).data('cat');
+		var $card = $('.wpat-cap-category-card[data-category="' + cat + '"]');
+
+		$card.find('.wpat-cap-checkbox:not(:disabled)').prop('checked', true).each(function() {
+			$(this).closest('.wpat-cap-item').addClass('active').css({
+				'background': '#f0fdf4',
+				'border-color': '#bbf7d0'
+			});
+		});
+
+		updateRoleManagerCounters();
+	});
+
+	$(document).on('click', '.wpat-cat-uncheck-all', function(e) {
+		e.stopPropagation();
+		var cat = $(this).data('cat');
+		var $card = $('.wpat-cap-category-card[data-category="' + cat + '"]');
+
+		$card.find('.wpat-cap-checkbox:not(:disabled)').prop('checked', false).each(function() {
+			$(this).closest('.wpat-cap-item').removeClass('active').css({
+				'background': '#ffffff',
+				'border-color': '#e2e8f0'
+			});
+		});
+
+		updateRoleManagerCounters();
+	});
+
+	// 5. Conceder Todos / Revocar Todos
+	$(document).on('click', '#wpat_check_all_caps_btn', function(e) {
+		e.preventDefault();
+		$('.wpat-cap-checkbox:not(:disabled)').prop('checked', true).each(function() {
+			$(this).closest('.wpat-cap-item').addClass('active').css({
+				'background': '#f0fdf4',
+				'border-color': '#bbf7d0'
+			});
+		});
+		updateRoleManagerCounters();
+	});
+
+	$(document).on('click', '#wpat_uncheck_all_caps_btn', function(e) {
+		e.preventDefault();
+		$('.wpat-cap-checkbox:not(:disabled)').prop('checked', false).each(function() {
+			$(this).closest('.wpat-cap-item').removeClass('active').css({
+				'background': '#ffffff',
+				'border-color': '#e2e8f0'
+			});
+		});
+		updateRoleManagerCounters();
+	});
+
+	// 6. Guardar Permisos del Rol vía AJAX
+	$(document).on('click', '#wpat_save_role_caps_btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var origHtml = $btn.html();
+		var roleSlug = $('#wpat_current_editing_role').val();
+
+		var capsObj = {};
+		$('.wpat-cap-checkbox').each(function() {
+			var capSlug = $(this).closest('.wpat-cap-item').data('cap');
+			if ($(this).is(':checked')) {
+				capsObj[capSlug] = 1;
+			}
+		});
+
+		$btn.prop('disabled', true).html('⏳ Guardando permisos...');
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_save_role_caps',
+				security: wpat_object.role_manager_nonce,
+				role: roleSlug,
+				capabilities: capsObj
+			},
+			success: function(response) {
+				$btn.prop('disabled', false).html(origHtml);
+				if (response.success) {
+					showToast(response.data.message || 'Permisos actualizados correctamente', false);
+				} else {
+					showToast(response.data.message || 'Error al guardar permisos', true);
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).html(origHtml);
+				showToast('Error de conexión AJAX al guardar permisos', true);
+			}
+		});
+	});
+
+	// 7. Modal Crear / Clonar Rol
+	$(document).on('click', '#wpat_open_create_role_modal_btn', function(e) {
+		e.preventDefault();
+		$('#wpat_role_modal_title').text('Crear Nuevo Rol');
+		$('#wpat_new_role_name').val('');
+		$('#wpat_new_role_slug').val('');
+		$('#wpat_new_role_clone_from').val('');
+		$('#wpat_create_role_modal').css('display', 'flex').hide().fadeIn(150);
+	});
+
+	$(document).on('click', '#wpat_clone_active_role_btn', function(e) {
+		e.preventDefault();
+		var sourceSlug = $(this).data('slug') || '';
+		var sourceName = $(this).data('name') || '';
+
+		$('#wpat_role_modal_title').text('Clonar Rol: ' + sourceName);
+		$('#wpat_new_role_name').val(sourceName + ' (Copia)');
+		$('#wpat_new_role_slug').val(sourceSlug + '_copia');
+		$('#wpat_new_role_clone_from').val(sourceSlug);
+		$('#wpat_create_role_modal').css('display', 'flex').hide().fadeIn(150);
+	});
+
+	$(document).on('click', '.wpat-close-modal-btn', function(e) {
+		e.preventDefault();
+		$('#wpat_create_role_modal').fadeOut(150);
+	});
+
+	$(document).on('click', '#wpat_create_role_modal', function(e) {
+		if ($(e.target).is('#wpat_create_role_modal')) {
+			$('#wpat_create_role_modal').fadeOut(150);
+		}
+	});
+
+	$(document).on('submit', '#wpat_create_role_form', function(e) {
+		e.preventDefault();
+		var $submitBtn = $('#wpat_submit_create_role_btn');
+		var origText = $submitBtn.text();
+
+		$submitBtn.prop('disabled', true).text('Creando...');
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_create_custom_role',
+				security: wpat_object.role_manager_nonce,
+				role_name: $('#wpat_new_role_name').val(),
+				role_slug: $('#wpat_new_role_slug').val(),
+				clone_from: $('#wpat_new_role_clone_from').val()
+			},
+			success: function(response) {
+				$submitBtn.prop('disabled', false).text(origText);
+				if (response.success) {
+					$('#wpat_create_role_modal').hide();
+					showToast(response.data.message || 'Rol creado con éxito', false);
+					// Recargar la página con el nuevo rol seleccionado
+					setTimeout(function() {
+						window.location.href = window.location.pathname + '?page=wp-agency-toolkit&mod=role-manager&role=' + encodeURIComponent(response.data.role_slug || '');
+					}, 800);
+				} else {
+					showToast(response.data.message || 'Error al crear el rol', true);
+				}
+			},
+			error: function() {
+				$submitBtn.prop('disabled', false).text(origText);
+				showToast('Error de conexión AJAX al crear rol', true);
+			}
+		});
+	});
+
+	// 8. Eliminar Rol Personalizado
+	$(document).on('click', '#wpat_delete_active_role_btn', function(e) {
+		e.preventDefault();
+		var roleSlug = $(this).data('slug') || $('#wpat_current_editing_role').val();
+
+		if (!confirm('¿Estás seguro de que deseas eliminar este rol personalizado? Si hay usuarios con este rol, serán reasignados automáticamente al rol "Suscriptor".')) {
+			return;
+		}
+
+		var $btn = $(this);
+		$btn.prop('disabled', true);
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_delete_custom_role',
+				security: wpat_object.role_manager_nonce,
+				role: roleSlug
+			},
+			success: function(response) {
+				if (response.success) {
+					showToast(response.data.message || 'Rol eliminado con éxito', false);
+					setTimeout(function() {
+						window.location.href = window.location.pathname + '?page=wp-agency-toolkit&mod=role-manager';
+					}, 800);
+				} else {
+					$btn.prop('disabled', false);
+					showToast(response.data.message || 'No se pudo eliminar el rol', true);
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false);
+				showToast('Error de conexión AJAX al eliminar rol', true);
+			}
+		});
+	});
+
+	// 9. Restaurar Roles Nativos por Defecto
+	$(document).on('click', '#wpat_reset_roles_btn', function(e) {
+		e.preventDefault();
+		if (!confirm('¿Estás seguro de que deseas restaurar los roles nativos de WordPress (Administrador, Editor, Autor, Colaborador, Suscriptor) a sus capacidades predeterminadas de fábrica? Esta acción sobrescribirá cualquier permiso modificado en ellos.')) {
+			return;
+		}
+
+		var $btn = $(this);
+		$btn.prop('disabled', true);
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_reset_default_roles',
+				security: wpat_object.role_manager_nonce
+			},
+			success: function(response) {
+				if (response.success) {
+					showToast(response.data.message || 'Roles nativos restaurados a fábrica', false);
+					setTimeout(function() {
+						window.location.reload();
+					}, 800);
+				} else {
+					$btn.prop('disabled', false);
+					showToast(response.data.message || 'No se pudieron restaurar los roles', true);
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false);
+				showToast('Error de conexión AJAX al restaurar roles', true);
+			}
+		});
+	});
+
 });
 
 

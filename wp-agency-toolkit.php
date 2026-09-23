@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.82
+ * Version:     4.3.83
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.82' );
+define( 'WPAT_VERSION', '4.3.83' );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -195,6 +195,10 @@ class WPAT_Main {
 		'error-log-viewer' => array(
 			'file'  => 'includes/modules/class-wpat-error-log-viewer.php',
 			'class' => 'WPAT_Error_Log_Viewer',
+		),
+		'role-manager' => array(
+			'file'  => 'includes/modules/class-wpat-role-manager.php',
+			'class' => 'WPAT_Role_Manager',
 		),
 	);
 
@@ -609,6 +613,9 @@ class WPAT_Main {
 
 			// Opciones del Visor de Logs de Error
 			'error-log-viewer'                   => '1',
+
+			// Opciones del Gestor de Roles y Permisos
+			'role-manager'                       => '1',
 		);
 
 		$saved = get_option( 'wpat_settings', array() );

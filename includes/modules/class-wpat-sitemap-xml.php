@@ -70,13 +70,13 @@ class WPAT_Sitemap_XML {
 		}
 
 		// 2. Servir hoja de estilo XSL
-		if ( 'sitemap.xsl' === $lower_path ) {
+		if ( 'sitemap.xsl' === $lower_path || isset( $_GET['wpat_sitemap_xsl'] ) ) {
 			$this->render_xsl_stylesheet();
 			exit;
 		}
 
 		// 3. Servir sitemap.xml
-		if ( 'sitemap.xml' === $lower_path ) {
+		if ( 'sitemap.xml' === $lower_path || isset( $_GET['wpat_sitemap'] ) || ( isset( $_GET['sitemap'] ) && '1' === (string) $_GET['sitemap'] ) ) {
 			$this->generate_xml_sitemap();
 			exit;
 		}
@@ -296,10 +296,10 @@ class WPAT_Sitemap_XML {
 	 * Genera la plantilla XSL para visualización estética en el navegador.
 	 */
 	public function render_xsl_stylesheet() {
-		header( 'Content-Type: text/xsl; charset=utf-8' );
+		header( 'Content-Type: text/xml; charset=utf-8' );
 		echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 		?>
-<xsl:stylesheet version="2.0" 
+<xsl:stylesheet version="1.0" 
 	xmlns:html="http://www.w3.org/TR/REC-html40"
 	xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
 	xmlns:sitemap="http://www.sitemaps.org/schemas/sitemap/0.9"
@@ -432,7 +432,7 @@ class WPAT_Sitemap_XML {
 										<xsl:value-of select="sitemap:changefreq"/>
 									</td>
 									<td style="color: #64748b; font-size: 12px;">
-										<xsl:value-of select="concat(substring(sitemap:lastmod,0,11), ' ', substring(sitemap:lastmod,12,5))"/>
+										<xsl:value-of select="substring(sitemap:lastmod, 1, 10)"/>
 									</td>
 								</tr>
 							</xsl:for-each>

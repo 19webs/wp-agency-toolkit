@@ -71,17 +71,30 @@ class WPAT_Disable_Comments {
 	}
 
 	/**
+	 * Comprueba si la desactivación global está activa.
+	 *
+	 * @return bool
+	 */
+	public static function is_global_disabled() {
+		$settings = WPAT_Main::get_instance()->get_settings();
+		if ( isset( $settings['disable_comments_mode'] ) ) {
+			return 'global' === $settings['disable_comments_mode'];
+		}
+		return ! isset( $settings['disable_comments_global'] ) || '1' === (string) $settings['disable_comments_global'];
+	}
+
+	/**
 	 * Comprueba si los comentarios deben estar deshabilitados para un tipo de post dado.
 	 *
 	 * @param string $post_type Tipo de contenido.
 	 * @return bool
 	 */
 	public static function is_post_type_disabled( $post_type ) {
-		$settings  = WPAT_Main::get_instance()->get_settings();
-		$is_global = isset( $settings['disable_comments_global'] ) && '1' === (string) $settings['disable_comments_global'];
+		$settings     = WPAT_Main::get_instance()->get_settings();
+		$is_global    = self::is_global_disabled();
+		$keep_reviews = isset( $settings['disable_comments_keep_reviews'] ) && '1' === (string) $settings['disable_comments_keep_reviews'];
 
 		// Si WooCommerce está activo y el usuario desea preservar reseñas de productos
-		$keep_reviews = isset( $settings['disable_comments_keep_reviews'] ) && '1' === (string) $settings['disable_comments_keep_reviews'];
 		if ( 'product' === $post_type && $keep_reviews ) {
 			return false;
 		}
@@ -147,10 +160,7 @@ class WPAT_Disable_Comments {
 	public function disable_comments_on_admin_init() {
 		global $pagenow;
 
-		$settings  = WPAT_Main::get_instance()->get_settings();
-		$is_global = isset( $settings['disable_comments_global'] ) && '1' === (string) $settings['disable_comments_global'];
-
-		if ( $is_global ) {
+		if ( self::is_global_disabled() ) {
 			if ( 'edit-comments.php' === $pagenow || 'comment.php' === $pagenow || 'options-discussion.php' === $pagenow ) {
 				wp_safe_redirect( admin_url() );
 				exit;
@@ -172,10 +182,7 @@ class WPAT_Disable_Comments {
 	 * Remueve el menú "Comentarios" y "Ajustes de Discusión" de la barra lateral de administración.
 	 */
 	public function remove_comments_admin_menu() {
-		$settings  = WPAT_Main::get_instance()->get_settings();
-		$is_global = isset( $settings['disable_comments_global'] ) && '1' === (string) $settings['disable_comments_global'];
-
-		if ( $is_global ) {
+		if ( self::is_global_disabled() ) {
 			remove_menu_page( 'edit-comments.php' );
 			remove_submenu_page( 'options-general.php', 'options-discussion.php' );
 		}
@@ -185,10 +192,7 @@ class WPAT_Disable_Comments {
 	 * Remueve el nodo de comentarios del menú de la barra superior de administración.
 	 */
 	public function remove_comments_admin_bar() {
-		$settings  = WPAT_Main::get_instance()->get_settings();
-		$is_global = isset( $settings['disable_comments_global'] ) && '1' === (string) $settings['disable_comments_global'];
-
-		if ( $is_global ) {
+		if ( self::is_global_disabled() ) {
 			global $wp_admin_bar;
 			if ( $wp_admin_bar ) {
 				$wp_admin_bar->remove_menu( 'comments' );
@@ -200,10 +204,7 @@ class WPAT_Disable_Comments {
 	 * Remueve el widget "Actividad / Comentarios recientes" del panel de control de WordPress.
 	 */
 	public function remove_comments_dashboard_widget() {
-		$settings  = WPAT_Main::get_instance()->get_settings();
-		$is_global = isset( $settings['disable_comments_global'] ) && '1' === (string) $settings['disable_comments_global'];
-
-		if ( $is_global ) {
+		if ( self::is_global_disabled() ) {
 			remove_meta_box( 'dashboard_recent_comments', 'dashboard', 'normal' );
 		}
 	}
@@ -275,10 +276,7 @@ class WPAT_Disable_Comments {
 	 * Desregistra el widget nativo de WordPress de comentarios recientes.
 	 */
 	public function disable_recent_comments_widget() {
-		$settings  = WPAT_Main::get_instance()->get_settings();
-		$is_global = isset( $settings['disable_comments_global'] ) && '1' === (string) $settings['disable_comments_global'];
-
-		if ( $is_global ) {
+		if ( self::is_global_disabled() ) {
 			unregister_widget( 'WP_Widget_Recent_Comments' );
 		}
 	}
@@ -300,10 +298,7 @@ class WPAT_Disable_Comments {
 	 * @return array
 	 */
 	public function filter_rest_endpoints( $endpoints ) {
-		$settings  = WPAT_Main::get_instance()->get_settings();
-		$is_global = isset( $settings['disable_comments_global'] ) && '1' === (string) $settings['disable_comments_global'];
-
-		if ( $is_global ) {
+		if ( self::is_global_disabled() ) {
 			if ( isset( $endpoints['/wp/v2/comments'] ) ) {
 				unset( $endpoints['/wp/v2/comments'] );
 			}

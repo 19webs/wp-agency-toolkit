@@ -4464,45 +4464,76 @@ class WPAT_Admin {
 					</div>
 					<div class="wpat-module-body" style="display: block; padding: 20px;">
 
+						<!-- Barra Superior: Enlace Rápido de Gestión -->
+						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px 18px;">
+							<div>
+								<strong style="color: #1e40af; font-size: 13.5px; display: block;"><?php esc_html_e( 'Gestión de Comentarios de WordPress', 'wp-agency-toolkit' ); ?></strong>
+								<span style="color: #3b82f6; font-size: 12px;"><?php esc_html_e( 'Accede a la bandeja nativa de comentarios de WordPress para moderar, responder o eliminarlos.', 'wp-agency-toolkit' ); ?></span>
+							</div>
+							<a href="<?php echo esc_url( admin_url( 'edit-comments.php' ) ); ?>" class="button button-secondary" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; background: #ffffff; color: #1d4ed8; border-color: #93c5fd;">
+								<span class="dashicons dashicons-admin-comments" style="color: #2563eb; font-size: 16px; width: 16px; height: 16px;"></span>
+								<?php esc_html_e( 'Ver y Gestionar Comentarios en WordPress', 'wp-agency-toolkit' ); ?>
+							</a>
+						</div>
+
 						<!-- 1. Alcance de Desactivación -->
 						<h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
-							<span class="dashicons dashicons-admin-comments" style="color: #6366f1;"></span>
-							<?php esc_html_e( 'Alcance y Tipos de Contenido', 'wp-agency-toolkit' ); ?>
+							<span class="dashicons dashicons-admin-settings" style="color: #6366f1;"></span>
+							<?php esc_html_e( 'Modo de Desactivación y Alcance', 'wp-agency-toolkit' ); ?>
 						</h4>
 
-						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-							<label style="font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: flex-start; gap: 10px;">
-								<input type="checkbox" name="wpat_settings[disable_comments_global]" id="wpat_disable_comments_global" value="1" <?php checked( ! isset( $settings['disable_comments_global'] ) || '1' === (string) $settings['disable_comments_global'] ); ?> style="margin-top: 2px;" />
-								<div>
-									<span style="color: #1e293b;"><?php esc_html_e( 'Desactivar comentarios en TODO el sitio web (Recomendado)', 'wp-agency-toolkit' ); ?></span>
-									<p class="description" style="margin: 4px 0 0 0; font-weight: normal;">
-										<?php esc_html_e( 'Desactiva completamente el sistema de discusión en entradas, páginas, medios y cualquier tipo de contenido personalizado, además de remover los menús de administración.', 'wp-agency-toolkit' ); ?>
-									</p>
-								</div>
-							</label>
+						<?php
+						$current_mode = isset( $settings['disable_comments_mode'] ) ? $settings['disable_comments_mode'] : ( ( ! isset( $settings['disable_comments_global'] ) || '1' === (string) $settings['disable_comments_global'] ) ? 'global' : 'selective' );
+						?>
 
-							<div id="wpat-granular-comments-box" style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed #e2e8f0; <?php echo ( ! isset( $settings['disable_comments_global'] ) || '1' === (string) $settings['disable_comments_global'] ) ? 'display: none;' : ''; ?>">
-								<p style="font-weight: 600; margin: 0 0 10px 0; font-size: 13px; color: #334155;">
-									<?php esc_html_e( 'O desactiva comentarios únicamente en los siguientes tipos de contenido:', 'wp-agency-toolkit' ); ?>
+						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+							<div style="display: flex; flex-direction: column; gap: 14px;">
+								<!-- Opción 1: Global -->
+								<label style="font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: flex-start; gap: 10px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px;">
+									<input type="radio" name="wpat_settings[disable_comments_mode]" class="wpat-comments-mode-radio" value="global" <?php checked( 'global', $current_mode ); ?> style="margin-top: 3px;" />
+									<div>
+										<span style="color: #1e293b;"><?php esc_html_e( 'Desactivar en TODO el sitio web (Global / Recomendado)', 'wp-agency-toolkit' ); ?></span>
+										<p class="description" style="margin: 4px 0 0 0; font-weight: normal;">
+											<?php esc_html_e( 'Cierra completamente el sistema de discusión en entradas, páginas, medios y cualquier contenido, eliminando también la pestaña de comentarios de la administración.', 'wp-agency-toolkit' ); ?>
+										</p>
+									</div>
+								</label>
+
+								<!-- Opción 2: Selectivo -->
+								<label style="font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: flex-start; gap: 10px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px;">
+									<input type="radio" name="wpat_settings[disable_comments_mode]" class="wpat-comments-mode-radio" value="selective" <?php checked( 'selective', $current_mode ); ?> style="margin-top: 3px;" />
+									<div>
+										<span style="color: #1e293b;"><?php esc_html_e( 'Desactivar de forma selectiva por tipo de contenido (Personalizado)', 'wp-agency-toolkit' ); ?></span>
+										<p class="description" style="margin: 4px 0 0 0; font-weight: normal;">
+											<?php esc_html_e( 'Elige exactamente en qué tipos de contenido deseas bloquear comentarios y permite que sigan abiertos en los demás.', 'wp-agency-toolkit' ); ?>
+										</p>
+									</div>
+								</label>
+							</div>
+
+							<!-- Opciones granulares -->
+							<div id="wpat-granular-comments-box" style="margin-top: 16px; padding: 16px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; <?php echo ( 'selective' !== $current_mode ) ? 'display: none;' : ''; ?>">
+								<p style="font-weight: 700; margin: 0 0 10px 0; font-size: 13px; color: #1e293b;">
+									<?php esc_html_e( 'Selecciona los tipos de contenido donde se desactivarán los comentarios:', 'wp-agency-toolkit' ); ?>
 								</p>
-								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-									<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
+									<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
 										<input type="checkbox" name="wpat_settings[disable_comments_posts]" value="1" <?php checked( ! isset( $settings['disable_comments_posts'] ) || '1' === (string) $settings['disable_comments_posts'] ); ?> />
-										<?php esc_html_e( 'Entradas del Blog (Posts)', 'wp-agency-toolkit' ); ?>
+										<span><?php esc_html_e( 'Entradas del Blog (Posts)', 'wp-agency-toolkit' ); ?></span>
 									</label>
-									<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+									<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
 										<input type="checkbox" name="wpat_settings[disable_comments_pages]" value="1" <?php checked( ! isset( $settings['disable_comments_pages'] ) || '1' === (string) $settings['disable_comments_pages'] ); ?> />
-										<?php esc_html_e( 'Páginas Estáticas (Pages)', 'wp-agency-toolkit' ); ?>
+										<span><?php esc_html_e( 'Páginas Estáticas (Pages)', 'wp-agency-toolkit' ); ?></span>
 									</label>
-									<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+									<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
 										<input type="checkbox" name="wpat_settings[disable_comments_media]" value="1" <?php checked( ! isset( $settings['disable_comments_media'] ) || '1' === (string) $settings['disable_comments_media'] ); ?> />
-										<?php esc_html_e( 'Archivos Adjuntos (Media)', 'wp-agency-toolkit' ); ?>
+										<span><?php esc_html_e( 'Archivos Adjuntos (Media)', 'wp-agency-toolkit' ); ?></span>
 									</label>
 									<?php foreach ( $public_cpts as $cpt_slug => $cpt_obj ) : ?>
 										<?php if ( 'product' === $cpt_slug ) continue; ?>
-										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+										<label style="font-weight: normal; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
 											<input type="checkbox" name="wpat_settings[disable_comments_cpts][]" value="<?php echo esc_attr( $cpt_slug ); ?>" <?php checked( in_array( $cpt_slug, $saved_cpts, true ) ); ?> />
-											<?php echo esc_html( $cpt_obj->labels->name ); ?> (<code><?php echo esc_html( $cpt_slug ); ?></code>)
+											<span><?php echo esc_html( $cpt_obj->labels->name ); ?> (<code><?php echo esc_html( $cpt_slug ); ?></code>)</span>
 										</label>
 									<?php endforeach; ?>
 								</div>
@@ -4615,11 +4646,15 @@ class WPAT_Admin {
 
 						<script type="text/javascript">
 							document.addEventListener('DOMContentLoaded', function() {
-								var globalCheckbox = document.getElementById('wpat_disable_comments_global');
+								var modeRadios = document.querySelectorAll('.wpat-comments-mode-radio');
 								var granularBox = document.getElementById('wpat-granular-comments-box');
-								if (globalCheckbox && granularBox) {
-									globalCheckbox.addEventListener('change', function() {
-										granularBox.style.display = this.checked ? 'none' : 'block';
+								if (modeRadios.length && granularBox) {
+									modeRadios.forEach(function(r) {
+										r.addEventListener('change', function() {
+											if (this.checked) {
+												granularBox.style.display = (this.value === 'selective') ? 'block' : 'none';
+											}
+										});
 									});
 								}
 
@@ -6875,103 +6910,106 @@ class WPAT_Admin {
 									Guardar Ajustes de Duplicador
 								</button>
 							</div>
-						</form>
+						</div>
 					</div>
 				</div>
+				<?php
+				break;
 			case 'snippets':
 				?>
-<div class="wpat-module-card">
-								<div class="wpat-module-header">
-									<div class="wpat-module-info">
-										<h3>Fragmentos de Código Personalizados (Snippets)</h3>
-										<p>Inyecta CSS en la cabecera, Javascript en el footer y ejecuta código PHP dinámico sin tocar los archivos de tu tema.</p>
-									</div>
-									<?php $this->render_module_toggle( 'snippets', $settings, true ); ?>
+				<div class="wpat-module-card">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Fragmentos de Código Personalizados (Snippets)</h3>
+							<p>Inyecta CSS en la cabecera, Javascript en el footer y ejecuta código PHP dinámico sin tocar los archivos de tu tema.</p>
+						</div>
+						<?php $this->render_module_toggle( 'snippets', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block; padding: 20px;">
+						
+						<!-- Nonce para acciones AJAX -->
+						<?php wp_nonce_field( 'wpat_snippet_nonce_action', 'wpat_snippet_ajax_nonce' ); ?>
+
+						<!-- Contenedor del Editor de Snippets (oculto por defecto) -->
+						<div class="wpat-snippet-editor" style="display: none; border-top: 1px dashed var(--wpat-border); padding-top: 20px;">
+							<h4 class="wpat-editor-title" style="margin: 0 0 15px 0; font-size: 14px; font-weight: 600;">Añadir Nuevo Fragmento</h4>
+							
+							<div style="background: #f8fafc; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 6px; margin-top: 10px;">
+								<input type="hidden" id="wpat_editor_id" value="" />
+								
+								<div class="wpat-field-group">
+									<label for="wpat_editor_name" style="font-weight: 600;">Nombre del Fragmento</label>
+									<input type="text" id="wpat_editor_name" class="regular-text" placeholder="Ej. Filtro de WooCommerce o Analytics Global" style="width: 100%; max-width: 400px; margin-top: 5px;" />
 								</div>
-								<div class="wpat-module-body" style="display: block;">
+
+								<div class="wpat-field-group" style="margin-top: 15px;">
+									<label for="wpat_editor_type" style="font-weight: 600;">Tipo de Código</label>
+									<select id="wpat_editor_type" style="display: block; margin-top: 5px;">
+										<option value="php">PHP (Ejecución segura backend)</option>
+										<option value="css">CSS (Inyección cabecera wp_head)</option>
+										<option value="js">Javascript (Inyección pie wp_footer)</option>
+									</select>
+								</div>
+
+								<div class="wpat-field-group" style="margin-top: 15px;">
+									<label for="wpat_editor_code" style="font-weight: 600;">Código</label>
+									<textarea id="wpat_editor_code" rows="12" class="large-text code" placeholder="/* Escribe tu código aquí. No incluyas etiquetas de apertura &lt;?php o scripts de JS */" style="width:100%; font-family: monospace; margin-top: 5px;"></textarea>
+									<p class="description">Si es PHP, no añadas la etiqueta de apertura &lt;?php. Si es JS, no agregues etiquetas &lt;script&gt;.</p>
+								</div>
+
+								<div class="wpat-field-group" style="margin-top: 15px;">
+									<label style="font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+										<input type="checkbox" id="wpat_editor_active" value="1" checked /> Activar este fragmento
+									</label>
+								</div>
+
+								<div style="margin-top: 20px; display: flex; gap: 10px;">
+									<button type="button" class="button button-primary" id="wpat_save_snippet_btn">Guardar Fragmento</button>
+									<button type="button" class="button button-secondary" id="wpat_cancel_snippet_btn">Cancelar</button>
+								</div>
+							</div>
+						</div>
+
+						<!-- Contenedor del Listado (siempre visible al inicio) -->
+						<div class="wpat-snippets-list" style="border-top: 1px dashed var(--wpat-border); padding-top: 20px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+								<h4 style="margin: 0; font-size: 14px; font-weight: 600;">Fragmentos de Código</h4>
+								<div style="display: flex; gap: 8px;">
+									<input type="file" name="wpat_import_snippets_only_file" id="wpat_import_snippets_only_file" accept=".json" style="display:none;" />
+									<input type="submit" name="wpat_execute_import_snippets_only_btn" id="wpat_execute_import_snippets_only_submit" style="display:none;" />
 									
-									<!-- Nonce para acciones AJAX -->
-									<?php wp_nonce_field( 'wpat_snippet_nonce_action', 'wpat_snippet_ajax_nonce' ); ?>
-
-									<!-- Contenedor del Editor de Snippets (oculto por defecto) -->
-									<div class="wpat-snippet-editor" style="display: none; border-top: 1px dashed var(--wpat-border); padding-top: 20px;">
-										<h4 class="wpat-editor-title" style="margin: 0 0 15px 0; font-size: 14px; font-weight: 600;">Añadir Nuevo Fragmento</h4>
-										
-										<div style="background: #f8fafc; border: 1px solid var(--wpat-border); padding: 15px; border-radius: 6px; margin-top: 10px;">
-											<input type="hidden" id="wpat_editor_id" value="" />
-											
-											<div class="wpat-field-group">
-												<label for="wpat_editor_name" style="font-weight: 600;">Nombre del Fragmento</label>
-												<input type="text" id="wpat_editor_name" class="regular-text" placeholder="Ej. Filtro de WooCommerce o Analytics Global" style="width: 100%; max-width: 400px; margin-top: 5px;" />
-											</div>
-
-											<div class="wpat-field-group" style="margin-top: 15px;">
-												<label for="wpat_editor_type" style="font-weight: 600;">Tipo de Código</label>
-												<select id="wpat_editor_type" style="display: block; margin-top: 5px;">
-													<option value="php">PHP (Ejecución segura backend)</option>
-													<option value="css">CSS (Inyección cabecera wp_head)</option>
-													<option value="js">Javascript (Inyección pie wp_footer)</option>
-												</select>
-											</div>
-
-											<div class="wpat-field-group" style="margin-top: 15px;">
-												<label for="wpat_editor_code" style="font-weight: 600;">Código</label>
-												<textarea id="wpat_editor_code" rows="12" class="large-text code" placeholder="/* Escribe tu código aquí. No incluyas etiquetas de apertura &lt;?php o scripts de JS */" style="width:100%; font-family: monospace; margin-top: 5px;"></textarea>
-												<p class="description">Si es PHP, no añadas la etiqueta de apertura &lt;?php. Si es JS, no agregues etiquetas &lt;script&gt;.</p>
-											</div>
-
-											<div class="wpat-field-group" style="margin-top: 15px;">
-												<label style="font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
-													<input type="checkbox" id="wpat_editor_active" value="1" checked /> Activar este fragmento
-												</label>
-											</div>
-
-											<div style="margin-top: 20px; display: flex; gap: 10px;">
-												<button type="button" class="button button-primary" id="wpat_save_snippet_btn">Guardar Fragmento</button>
-												<button type="button" class="button button-secondary" id="wpat_cancel_snippet_btn">Cancelar</button>
-											</div>
-										</div>
-									</div>
-
-									<!-- Contenedor del Listado (siempre visible al inicio) -->
-									<div class="wpat-snippets-list" style="border-top: 1px dashed var(--wpat-border); padding-top: 20px;">
-										<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-											<h4 style="margin: 0; font-size: 14px; font-weight: 600;">Fragmentos de Código</h4>
-											<div style="display: flex; gap: 8px;">
-												<input type="file" name="wpat_import_snippets_only_file" id="wpat_import_snippets_only_file" accept=".json" style="display:none;" />
-												<input type="submit" name="wpat_execute_import_snippets_only_btn" id="wpat_execute_import_snippets_only_submit" style="display:none;" />
-												
-												<button type="button" class="button button-secondary" id="wpat_import_snippets_only_btn" title="Importar fragmentos (.json)">
-													<span class="dashicons dashicons-download" style="vertical-align: middle; font-size: 16px; width:16px; height:16px; margin-right: 3px;"></span> Importar
-												</button>
-												<button type="submit" name="wpat_export_snippets_only_btn" class="button button-secondary" title="Exportar todos los fragmentos">
-													<span class="dashicons dashicons-upload" style="vertical-align: middle; font-size: 16px; width:16px; height:16px; margin-right: 3px;"></span> Exportar
-												</button>
-												<button type="button" class="button button-primary" id="wpat_add_new_snippet_btn">
-													<span class="dashicons dashicons-plus" style="vertical-align: middle; font-size: 16px; width:16px; height:16px; margin-right: 3px;"></span> Añadir Nuevo
-												</button>
-											</div>
-										</div>
-
-										<table class="wp-list-table widefat fixed striped table-view-list" style="border: 1px solid #dcdcde; border-radius: 6px; overflow: hidden; margin-top: 10px; box-shadow: none;">
-											<thead>
-												<tr>
-													<th style="width: 80px; font-weight: 700; padding: 10px;">Estado</th>
-													<th style="font-weight: 700; padding: 10px;">Nombre</th>
-													<th style="width: 100px; font-weight: 700; padding: 10px;">Tipo</th>
-													<th style="width: 130px; font-weight: 700; text-align: right; padding: 10px;">Acciones</th>
-												</tr>
-											</thead>
-											<tbody id="wpat_snippets_table_body">
-												<?php
-												$snippets = get_option( 'wpat_snippets', array() );
-												$this->render_snippets_table_rows( $snippets );
-												?>
-											</tbody>
-										</table>
-									</div>
-
+									<button type="button" class="button button-secondary" id="wpat_import_snippets_only_btn" title="Importar fragmentos (.json)">
+										<span class="dashicons dashicons-download" style="vertical-align: middle; font-size: 16px; width:16px; height:16px; margin-right: 3px;"></span> Importar
+									</button>
+									<button type="submit" name="wpat_export_snippets_only_btn" class="button button-secondary" title="Exportar todos los fragmentos">
+										<span class="dashicons dashicons-upload" style="vertical-align: middle; font-size: 16px; width:16px; height:16px; margin-right: 3px;"></span> Exportar
+									</button>
+									<button type="button" class="button button-primary" id="wpat_add_new_snippet_btn">
+										<span class="dashicons dashicons-plus" style="vertical-align: middle; font-size: 16px; width:16px; height:16px; margin-right: 3px;"></span> Añadir Nuevo
+									</button>
 								</div>
+							</div>
+
+							<table class="wp-list-table widefat fixed striped table-view-list" style="border: 1px solid #dcdcde; border-radius: 6px; overflow: hidden; margin-top: 10px; box-shadow: none;">
+								<thead>
+									<tr>
+										<th style="width: 80px; font-weight: 700; padding: 10px;">Estado</th>
+										<th style="font-weight: 700; padding: 10px;">Nombre</th>
+										<th style="width: 100px; font-weight: 700; padding: 10px;">Tipo</th>
+										<th style="width: 130px; font-weight: 700; text-align: right; padding: 10px;">Acciones</th>
+									</tr>
+								</thead>
+								<tbody id="wpat_snippets_table_body">
+									<?php
+									$snippets = get_option( 'wpat_snippets', array() );
+									$this->render_snippets_table_rows( $snippets );
+									?>
+								</tbody>
+							</table>
+						</div>
+
+					</div>
+				</div>
 				<?php
 				break;
 			case 'performance':
@@ -10428,15 +10466,15 @@ class WPAT_Admin {
 		delete_site_transient( 'update_plugins' );
 
 		$new_version = '';
-		$github_url = 'https://github.com/19webs/wp-agency-toolkit';
+		$github_url  = 'https://github.com/19webs/wp-agency-toolkit';
 		
 		if ( class_exists( 'WPAT_Updater' ) ) {
 			$updater = WPAT_Updater::get_instance();
-			// Esto forzará una llamada real porque acabamos de borrar el transient
-			$release = $updater->get_latest_github_release();
-			if ( $release && isset( $release['tag_name'] ) ) {
-				$new_version = ltrim( $release['tag_name'], 'v' );
-				$github_url = isset( $release['html_url'] ) ? $release['html_url'] : $github_url;
+			// Forzar llamada real en tiempo real a GitHub
+			$release = $updater->get_latest_github_release( true );
+			if ( $release && ! empty( $release['version'] ) ) {
+				$new_version = $release['version'];
+				$github_url  = isset( $release['html_url'] ) ? $release['html_url'] : $github_url;
 			}
 		}
 

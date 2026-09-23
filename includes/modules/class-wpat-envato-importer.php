@@ -51,6 +51,7 @@ class WPAT_Envato_Importer {
 		// Registrar endpoints AJAX
 		add_action( 'wp_ajax_wpat_upload_envato_kit', array( $this, 'ajax_upload_envato_kit' ) );
 		add_action( 'wp_ajax_wpat_import_envato_template', array( $this, 'ajax_import_envato_template' ) );
+		add_action( 'wp_ajax_wpat_create_page_from_template', array( $this, 'ajax_create_page_from_template' ) );
 		add_action( 'wp_ajax_wpat_delete_envato_kit', array( $this, 'ajax_delete_envato_kit' ) );
 		add_action( 'wp_ajax_wpat_import_and_get_template_id', array( $this, 'ajax_import_and_get_template_id' ) );
 		add_action( 'wp_ajax_wpat_enable_elementor_setting', array( $this, 'ajax_enable_elementor_setting' ) );
@@ -642,6 +643,181 @@ class WPAT_Envato_Importer {
 	}
 
 	/**
+	 * AJAX: Crea una página en WordPress a partir de una plantilla del kit (1 Clic).
+	 */
+	public function ajax_create_page_from_template() {
+		check_ajax_referer( 'wpat_envato_importer_nonce', 'security' );
+
+		if ( ! current_user_can( 'edit_pages' ) ) {
+			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes para crear páginas.' ) );
+		}
+
+		$kit_slug    = isset( $_POST['kit_slug'] ) ? sanitize_title( $_POST['kit_slug'] ) : '';
+		$template_id = isset( $_POST['template_id'] ) ? sanitize_title( $_POST['template_id'] ) : '';
+		$page_title  = isset( $_POST['page_title'] ) ? sanitize_text_field( wp_unslash( $_POST['page_title'] ) ) : '';
+
+		$kits = get_option( 'wpat_envato_kits', array() );
+		if ( empty( $kits[ $kit_slug ] ) ) {
+			wp_send_json_error( array( 'message' => 'El kit especificado no existe.' ) );
+		}
+
+		$kit = $kits[ $kit_slug ];
+		$target_template = null;
+
+		foreach ( $kit['templates'] as $tpl ) {
+			if ( $tpl['id'] === $template_id ) {
+				$target_template = $tpl;
+				break;
+			}
+		}
+
+		if ( ! $target_template ) {
+			wp_send_json_error( array( 'message' => 'La plantilla especificada no se encuentra en el kit.' ) );
+		}
+
+		$file_path = $this->upload_base_dir . '/' . $kit['folder'] . '/' . $target_template['file'];
+		if ( ! file_exists( $file_path ) ) {
+			wp_send_json_error( array( 'message' => 'No se encuentra el archivo JSON de la plantilla en el servidor.' ) );
+		}
+
+		$json_content = file_get_contents( $file_path );
+		$data         = json_decode( $json_content, true );
+
+		if ( ! is_array( $data ) ) {
+			wp_send_json_error( array( 'message' => 'El archivo JSON de la plantilla está corrupto o es inválido.' ) );
+		}
+
+		if ( empty( $page_title ) ) {
+			$page_title = $target_template['title'];
+		}
+
+		// Crear la página en WordPress
+		$page_id = wp_insert_post( array(
+			'post_title'   => $page_title,
+			'post_type'    => 'page',
+			'post_status'  => 'publish',
+			'post_content' => '',
+		) );
+
+		if ( is_wp_error( $page_id ) || ! $page_id ) {
+			wp_send_json_error( array( 'message' => 'Error al crear la página en WordPress.' ) );
+		}
+
+		$content_elements = isset( $data['content'] ) ? $data['content'] : $data;
+
+		// Procesar descarga local de imágenes remotas de forma segura
+		if ( function_exists( 'wp_raise_memory_limit' ) ) {
+			wp_raise_memory_limit( 'admin' );
+		}
+		@set_time_limit( 300 );
+		$this->process_elementor_images_recursive( $content_elements, $page_id );
+
+		// Asignar metas de Elementor para edición completa
+		update_post_meta( $page_id, '_elementor_edit_mode', 'builder' );
+		update_post_meta( $page_id, '_elementor_template_type', 'wp-page' );
+		update_post_meta( $page_id, '_elementor_data', wp_slash( wp_json_encode( $content_elements ) ) );
+		update_post_meta( $page_id, '_wp_page_template', 'elementor_header_footer' );
+
+		if ( defined( 'ELEMENTOR_VERSION' ) ) {
+			update_post_meta( $page_id, '_elementor_version', ELEMENTOR_VERSION );
+		}
+
+		if ( class_exists( '\Elementor\Plugin' ) ) {
+			\Elementor\Plugin::$instance->files_manager->clear_cache();
+		}
+
+		$edit_url = admin_url( 'post.php?post=' . $page_id . '&action=elementor' );
+		$view_url = get_permalink( $page_id );
+
+		wp_send_json_success( array(
+			'message'  => '¡Página creada con éxito a partir de la plantilla!',
+			'page_id'  => $page_id,
+			'edit_url' => $edit_url,
+			'view_url' => $view_url,
+		) );
+	}
+
+	/**
+	 * Descarga una imagen remota y la registra de forma segura en la biblioteca de medios local.
+	 *
+	 * @param string $url URL externa.
+	 * @param int    $post_id ID del post al que vincular.
+	 * @return array|false
+	 */
+	private function sideload_remote_image( $url, $post_id = 0 ) {
+		if ( empty( $url ) || ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
+			return false;
+		}
+
+		$site_url = site_url();
+		if ( false !== strpos( $url, $site_url ) ) {
+			return false;
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+
+		// Comprobar si ya existe por URL
+		$existing_id = attachment_url_to_postid( $url );
+		if ( $existing_id ) {
+			return array(
+				'id'  => $existing_id,
+				'url' => wp_get_attachment_url( $existing_id ),
+			);
+		}
+
+		$att_id = media_sideload_image( $url, $post_id, '', 'id' );
+		if ( ! is_wp_error( $att_id ) && $att_id > 0 ) {
+			return array(
+				'id'  => $att_id,
+				'url' => wp_get_attachment_url( $att_id ),
+			);
+		}
+
+		return false;
+	}
+
+	/**
+	 * Recorre recursivamente la estructura JSON de Elementor y sustituye URLs remotas por locales.
+	 *
+	 * @param array $elements Elementos de Elementor por referencia.
+	 * @param int   $post_id ID de post.
+	 */
+	private function process_elementor_images_recursive( &$elements, $post_id = 0 ) {
+		if ( ! is_array( $elements ) ) {
+			return;
+		}
+		foreach ( $elements as &$el ) {
+			if ( isset( $el['settings'] ) && is_array( $el['settings'] ) ) {
+				foreach ( $el['settings'] as $key => &$val ) {
+					if ( is_array( $val ) && isset( $val['url'] ) && ! empty( $val['url'] ) ) {
+						$sideloaded = $this->sideload_remote_image( $val['url'], $post_id );
+						if ( $sideloaded ) {
+							$val['id']  = $sideloaded['id'];
+							$val['url'] = $sideloaded['url'];
+						}
+					}
+					if ( is_array( $val ) ) {
+						foreach ( $val as &$subval ) {
+							if ( is_array( $subval ) && isset( $subval['url'] ) && ! empty( $subval['url'] ) ) {
+								$sideloaded = $this->sideload_remote_image( $subval['url'], $post_id );
+								if ( $sideloaded ) {
+									$subval['id']  = $sideloaded['id'];
+									$subval['url'] = $sideloaded['url'];
+								}
+							}
+						}
+					}
+				}
+			}
+			if ( ! empty( $el['elements'] ) && is_array( $el['elements'] ) ) {
+				$this->process_elementor_images_recursive( $el['elements'], $post_id );
+			}
+		}
+	}
+
+	/**
 	 * Importa y aplica las configuraciones globales (colores, tipografías, layouts) en Elementor.
 	 *
 	 * @param string $file_path Ruta del archivo JSON del kit.
@@ -666,10 +842,35 @@ class WPAT_Envato_Importer {
 			return new WP_Error( 'empty_settings', 'No se encontraron configuraciones globales en el archivo.' );
 		}
 
-		// Obtener el ID del kit activo de Elementor
+		// Obtener el ID del kit activo de Elementor con fallback ultra-resiliente
 		$active_kit_id = get_option( 'elementor_active_kit' );
+		if ( ! $active_kit_id && class_exists( '\Elementor\Plugin' ) && isset( \Elementor\Plugin::$instance->kits_manager ) ) {
+			$active_kit = \Elementor\Plugin::$instance->kits_manager->get_active_kit_for_frontend();
+			if ( $active_kit && method_exists( $active_kit, 'get_main_id' ) && ! empty( $active_kit->get_main_id() ) ) {
+				$active_kit_id = $active_kit->get_main_id();
+			}
+		}
+
 		if ( ! $active_kit_id ) {
-			return new WP_Error( 'no_active_kit', 'No se encontró el kit de configuración activo de Elementor.' );
+			$existing_kits = get_posts( array(
+				'post_type'      => 'elementor_library',
+				'meta_key'       => '_elementor_template_type',
+				'meta_value'     => 'kit',
+				'posts_per_page' => 1,
+				'post_status'    => 'any',
+			) );
+			if ( ! empty( $existing_kits ) ) {
+				$active_kit_id = $existing_kits[0]->ID;
+				update_option( 'elementor_active_kit', $active_kit_id );
+			}
+		}
+
+		if ( ! $active_kit_id && class_exists( '\Elementor\Plugin' ) && isset( \Elementor\Plugin::$instance->kits_manager ) && method_exists( \Elementor\Plugin::$instance->kits_manager, 'create_default_kit' ) ) {
+			$active_kit_id = \Elementor\Plugin::$instance->kits_manager->create_default_kit();
+		}
+
+		if ( ! $active_kit_id ) {
+			return new WP_Error( 'no_active_kit', 'No se encontró ni se pudo generar el kit de configuración activo de Elementor.' );
 		}
 
 		// Obtener las configuraciones actuales

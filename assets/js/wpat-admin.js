@@ -1191,14 +1191,47 @@ jQuery(document).ready(function($) {
 
 	// --- OPTIMIZACIÓN Y LIMPIEZA DE BASE DE DATOS ---
 
+	function syncDbCounters(stats, db_sizes) {
+		if (!stats) return;
+		$.each(stats, function(key, val) {
+			var $counter = $('.wpat-db-counter[data-type="' + key + '"]');
+			var $btn     = $('.wpat-db-clean-btn[data-type="' + key + '"]');
+			if ($counter.length) {
+				$counter.text(val);
+				if (parseInt(val, 10) === 0) {
+					$counter.css('color', '#94a3b8');
+					$btn.prop('disabled', true).text('Limpio');
+				} else {
+					$counter.css('color', '#0f172a');
+					$btn.prop('disabled', false).text('Limpiar');
+				}
+			}
+		});
+
+		// Actualizar contador de optimización de tablas
+		if (db_sizes && db_sizes.overhead_size) {
+			var $optCounter = $('.wpat-db-counter[data-type="optimize_tables"]');
+			var $optBtn     = $('.wpat-db-clean-btn[data-type="optimize_tables"]');
+			$optCounter.text(db_sizes.overhead_size);
+			if (db_sizes.overhead_raw > 0) {
+				$optCounter.css('color', '#ea580c');
+				$optBtn.prop('disabled', false).text('Optimizar');
+			} else {
+				$optCounter.css('color', '#16a34a').text('0 B (Optimizado)');
+				$optBtn.prop('disabled', true).text('Optimizado');
+			}
+		}
+	}
+
 	// Limpiador individual
 	$(document).on('click', '.wpat-db-clean-btn', function(e) {
 		e.preventDefault();
 		var $btn = $(this);
 		var type = $btn.data('type');
 		var nonce = $('#wpat_cleanup_ajax_nonce').val() || (typeof wpat_object !== 'undefined' ? wpat_object.cleanup_nonce : '');
+		var origText = $btn.text();
 
-		$btn.prop('disabled', true).text('Limpiando...');
+		$btn.prop('disabled', true).text(type === 'optimize_tables' ? 'Optimizando...' : 'Limpiando...');
 
 		$.ajax({
 			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
@@ -1210,19 +1243,25 @@ jQuery(document).ready(function($) {
 			},
 			success: function(response) {
 				if (response.success) {
-					// Actualizar contador a 0
-					var $counter = $('.wpat-db-counter[data-type="' + type + '"]');
-					$counter.text('0').css('color', '#94a3b8');
-					$btn.prop('disabled', true).text('Limpio');
-					showToast('Limpieza completada con éxito.', false);
+					if (response.data && response.data.stats) {
+						syncDbCounters(response.data.stats, response.data.db_sizes);
+					} else {
+						var $counter = $('.wpat-db-counter[data-type="' + type + '"]');
+						$counter.text('0').css('color', '#94a3b8');
+						$btn.prop('disabled', true).text('Limpio');
+					}
+					if (type === 'optimize_tables') {
+						$btn.prop('disabled', true).text('Optimizado');
+					}
+					showToast(response.data && response.data.message ? response.data.message : 'Limpieza completada con éxito.', false);
 				} else {
-					$btn.prop('disabled', false).text('Limpiar');
+					$btn.prop('disabled', false).text(origText);
 					alert('Error al limpiar: ' + (response.data ? response.data.message : 'Error desconocido.'));
 				}
 			},
-			error: function() {
-				$btn.prop('disabled', false).text('Limpiar');
-				alert('Fallo de conexión al realizar la limpieza: ' + (xhr && xhr.responseText ? xhr.responseText.substring(0, 100) : (error || 'Error de red')));
+			error: function(xhr, status, error) {
+				$btn.prop('disabled', false).text(origText);
+				alert('Fallo de conexión al realizar el mantenimiento: ' + (xhr && xhr.responseText ? xhr.responseText.substring(0, 100) : (error || 'Error de red')));
 			}
 		});
 	});
@@ -1233,11 +1272,11 @@ jQuery(document).ready(function($) {
 		var $btn = $(this);
 		var nonce = $('#wpat_cleanup_ajax_nonce').val() || (typeof wpat_object !== 'undefined' ? wpat_object.cleanup_nonce : '');
 
-		if (!confirm('¿Estás seguro de que deseas limpiar y optimizar la base de datos por completo? Se vaciarán revisiones, borradores automáticos, papelera, spam y transitorios expirados.')) {
+		if (!confirm('¿Estás seguro de que deseas limpiar y optimizar la base de datos por completo? Se vaciarán revisiones, borradores automáticos, papelera, spam, transitorios expirados, metadatos huérfanos y se optimizarán todas las tablas.')) {
 			return;
 		}
 
-		$btn.prop('disabled', true).text('Optimizando...');
+		$btn.prop('disabled', true).html('<span class="dashicons dashicons-update wpat-spin" style="vertical-align: middle; font-size:16px; width:16px; height:16px; margin-right:5px;"></span> Optimizando Todo...');
 
 		$.ajax({
 			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
@@ -1250,15 +1289,20 @@ jQuery(document).ready(function($) {
 			success: function(response) {
 				$btn.prop('disabled', false).html('<span class="dashicons dashicons-admin-tools" style="vertical-align: middle; font-size:16px; width:16px; height:16px; margin-right:5px;"></span> Limpiar y Optimizar Todo');
 				if (response.success) {
-					// Actualizar todos los contadores a 0 y deshabilitar botones
-					$('.wpat-db-counter').text('0').css('color', '#94a3b8');
-					$('.wpat-db-clean-btn').prop('disabled', true).text('Limpio');
-					showToast('Base de datos optimizada y limpia al completo.', false);
+					if (response.data && response.data.stats) {
+						syncDbCounters(response.data.stats, response.data.db_sizes);
+					} else {
+						$('.wpat-db-counter').text('0').css('color', '#94a3b8');
+						$('.wpat-db-clean-btn').prop('disabled', true).text('Limpio');
+					}
+					$('.wpat-db-counter[data-type="optimize_tables"]').css('color', '#16a34a').text('0 B (Optimizado)');
+					$('.wpat-db-clean-btn[data-type="optimize_tables"]').prop('disabled', true).text('Optimizado');
+					showToast(response.data && response.data.message ? response.data.message : 'Base de datos optimizada y limpia al completo.', false);
 				} else {
 					alert('Error al optimizar: ' + (response.data ? response.data.message : 'Error desconocido.'));
 				}
 			},
-			error: function() {
+			error: function(xhr, status, error) {
 				$btn.prop('disabled', false).html('<span class="dashicons dashicons-admin-tools" style="vertical-align: middle; font-size:16px; width:16px; height:16px; margin-right:5px;"></span> Limpiar y Optimizar Todo');
 				alert('Fallo de conexión al optimizar la base de datos: ' + (xhr && xhr.responseText ? xhr.responseText.substring(0, 100) : (error || 'Error de red')));
 			}
@@ -1648,7 +1692,82 @@ jQuery(document).ready(function($) {
 				clearInterval(progressInterval);
 				$('.wpat-editor-modal-loader-overlay').remove();
 				$btn.prop('disabled', false).text('Importar a Elementor');
-				alert('Fallo de conexión al importar la plantilla.');
+			}
+		});
+	});
+
+	// Acción: Crear una página directa a partir de una plantilla del kit
+	$(document).on('click', '.wpat-admin-create-page-btn', function(e) {
+		e.preventDefault();
+		$('.wpat-preview-lightbox-overlay').remove();
+		
+		var $btn = $(this);
+		var kitSlug = $btn.data('kit');
+		var tplId   = $btn.data('id');
+		var defaultTitle = $btn.data('title') || 'Nueva Página';
+		var nonce   = $('#wpat_envato_importer_nonce').val();
+
+		var pageTitle = prompt('Introduce el título para la nueva página:', defaultTitle);
+		if (pageTitle === null || pageTitle.trim() === '') {
+			return;
+		}
+
+		$btn.prop('disabled', true).text('Creando...');
+
+		var progress = 0;
+		var progressHtml = 
+			'<div class="wpat-editor-modal-loader-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.7); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:99999; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">' +
+			'  <div class="wpat-editor-modal-loader-card" style="background:#fff; padding:30px; border-radius:12px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); text-align:center; width:360px; border: 1px solid #e2e8f0;">' +
+			'    <h4 style="margin:0 0 15px 0; font-size:16px; font-weight:600; color:#1e293b;">Creando página y procesando imágenes...</h4>' +
+			'    <div class="wpat-import-progress-container" style="background:#f1f5f9; border-radius:9999px; height:8px; width:100%; overflow:hidden; margin-bottom:12px; border:1px solid #e2e8f0;">' +
+			'      <div class="wpat-import-progress-bar" style="width: 0%; height:100%; background:linear-gradient(90deg, #10b981 0%, #059669 100%); transition: width 0.3s ease; border-radius:9999px;"></div>' +
+			'    </div>' +
+			'    <p class="wpat-import-progress-text" style="margin:0; font-size:12px; color:#64748b; font-weight:500;">Descargando assets y configurando Elementor...</p>' +
+			'  </div>' +
+			'</div>';
+		$('body').append(progressHtml);
+
+		var progressInterval = setInterval(function() {
+			if (progress < 90) {
+				progress += Math.floor(Math.random() * 8) + 3;
+				if (progress > 90) progress = 90;
+				$('.wpat-import-progress-bar').css('width', progress + '%');
+			}
+		}, 300);
+
+		$.ajax({
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
+			type: 'POST',
+			data: {
+				action: 'wpat_create_page_from_template',
+				security: nonce,
+				kit_slug: kitSlug,
+				template_id: tplId,
+				page_title: pageTitle
+			},
+			success: function(response) {
+				clearInterval(progressInterval);
+				$('.wpat-import-progress-bar').css('width', '100%');
+				
+				setTimeout(function() {
+					$('.wpat-editor-modal-loader-overlay').remove();
+					$btn.prop('disabled', false).text('⚡ Crear Página');
+					if (response.success) {
+						showToast('¡Página creada correctamente!', false);
+						$btn.parent().html(
+							'<a href="' + response.data.edit_url + '" class="button button-primary" style="flex:1; text-align:center; font-size:11px; padding:0 6px;">✏️ Editar Elementor</a>' +
+							'<a href="' + response.data.view_url + '" target="_blank" class="button button-secondary" style="font-size:11px; padding:0 8px;">Ver Página</a>'
+						);
+					} else {
+						alert('Error al crear la página: ' + (response.data ? response.data.message : 'Error desconocido.'));
+					}
+				}, 500);
+			},
+			error: function() {
+				clearInterval(progressInterval);
+				$('.wpat-editor-modal-loader-overlay').remove();
+				$btn.prop('disabled', false).text('⚡ Crear Página');
+				alert('Fallo de conexión al crear la página.');
 			}
 		});
 	});

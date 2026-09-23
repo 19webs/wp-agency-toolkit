@@ -1782,35 +1782,96 @@ class WPAT_Admin {
 		global $wpdb;
 
 		// 1. Revisiones de entradas
-		$revisions = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'revision'" );
+		$revisions = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'revision'" );
 
 		// 2. Borradores automáticos
-		$auto_drafts = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status = 'auto-draft'" );
+		$auto_drafts = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status = 'auto-draft'" );
 
 		// 3. Entradas/Páginas en la papelera
-		$trash_posts = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status = 'trash'" );
+		$trash_posts = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status = 'trash'" );
 
 		// 4. Comentarios en SPAM y Papelera
-		$trash_comments = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->comments} WHERE comment_approved = 'spam' OR comment_approved = 'trash'" );
+		$trash_comments = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->comments} WHERE comment_approved IN ('spam', 'trash')" );
 
-		// 5. Transients expirados
+		// 5. Transients expirados (estándar y de sitio/red)
 		$now = time();
-		$expired_transients = $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s AND option_value < %d",
+		$expired_transients = (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$wpdb->options} WHERE (option_name LIKE %s OR option_name LIKE %s) AND option_value < %d",
 			'_transient_timeout_%',
+			'_site_transient_timeout_%',
 			$now
 		) );
 
-		// 6. Metadatos huérfanos
-		$orphaned_postmeta = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->postmeta} pm LEFT JOIN {$wpdb->posts} p ON pm.post_id = p.ID WHERE p.ID IS NULL" );
+		// 6. Metadatos de posts huérfanos
+		$orphaned_postmeta = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->postmeta} pm LEFT JOIN {$wpdb->posts} p ON pm.post_id = p.ID WHERE p.ID IS NULL" );
+
+		// 7. Metadatos de comentarios huérfanos
+		$orphaned_commentmeta = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->commentmeta} cm LEFT JOIN {$wpdb->comments} c ON cm.comment_id = c.comment_ID WHERE c.comment_ID IS NULL" );
+
+		// 8. Metadatos de usuarios huérfanos
+		$orphaned_usermeta = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->usermeta} um LEFT JOIN {$wpdb->users} u ON um.user_id = u.ID WHERE u.ID IS NULL" );
+
+		// 9. Relaciones de términos/taxonomías huérfanas
+		$orphaned_term_relationships = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->term_relationships} tr LEFT JOIN {$wpdb->posts} p ON tr.object_id = p.ID WHERE p.ID IS NULL" );
+
+		// 10. Tablas con fragmentación / overhead
+		$db_sizes = $this->get_database_sizes();
 
 		return array(
-			'revisions'          => (int) $revisions,
-			'auto_drafts'        => (int) $auto_drafts,
-			'trash_posts'        => (int) $trash_posts,
-			'trash_comments'     => (int) $trash_comments,
-			'expired_transients' => (int) $expired_transients,
-			'orphaned_postmeta'  => (int) $orphaned_postmeta,
+			'revisions'                   => $revisions,
+			'auto_drafts'                 => $auto_drafts,
+			'trash_posts'                 => $trash_posts,
+			'trash_comments'              => $trash_comments,
+			'expired_transients'          => $expired_transients,
+			'orphaned_postmeta'           => $orphaned_postmeta,
+			'orphaned_commentmeta'        => $orphaned_commentmeta,
+			'orphaned_usermeta'           => $orphaned_usermeta,
+			'orphaned_term_relationships' => $orphaned_term_relationships,
+			'overhead_raw'                => isset( $db_sizes['overhead_raw'] ) ? $db_sizes['overhead_raw'] : 0,
+			'overhead_size'               => isset( $db_sizes['overhead_size'] ) ? $db_sizes['overhead_size'] : '0 B',
+		);
+	}
+
+	/**
+	 * Obtiene métricas del tamaño y tablas de la Base de Datos de WordPress.
+	 *
+	 * @return array
+	 */
+	public function get_database_sizes() {
+		global $wpdb;
+		$tables = $wpdb->get_results( "SHOW TABLE STATUS LIKE '{$wpdb->prefix}%'", ARRAY_A );
+		$total_size    = 0;
+		$data_size     = 0;
+		$index_size    = 0;
+		$overhead_size = 0;
+		$table_count   = 0;
+		$engine        = 'InnoDB';
+
+		if ( ! empty( $tables ) ) {
+			foreach ( $tables as $table ) {
+				$table_count++;
+				if ( isset( $table['Engine'] ) && ! empty( $table['Engine'] ) ) {
+					$engine = $table['Engine'];
+				}
+				$d_size         = isset( $table['Data_length'] ) ? (float) $table['Data_length'] : 0;
+				$i_size         = isset( $table['Index_length'] ) ? (float) $table['Index_length'] : 0;
+				$o_size         = isset( $table['Data_free'] ) ? (float) $table['Data_free'] : 0;
+				$data_size     += $d_size;
+				$index_size    += $i_size;
+				$overhead_size += $o_size;
+				$total_size    += ( $d_size + $i_size );
+			}
+		}
+
+		return array(
+			'table_count'   => $table_count,
+			'engine'        => $engine,
+			'mysql_version' => method_exists( $wpdb, 'db_version' ) ? $wpdb->db_version() : 'Desconocida',
+			'total_size'    => size_format( $total_size, 2 ),
+			'data_size'     => size_format( $data_size, 2 ),
+			'index_size'    => size_format( $index_size, 2 ),
+			'overhead_size' => size_format( $overhead_size, 2 ),
+			'overhead_raw'  => (int) $overhead_size,
 		);
 	}
 
@@ -1818,44 +1879,80 @@ class WPAT_Admin {
 	 * Ejecuta consultas SQL de limpieza sobre la base de datos vía AJAX.
 	 */
 	public function ajax_cleanup_database() {
-		if ( ! check_ajax_referer( 'wpat_cleanup_nonce_action', 'security', false ) ) { wp_send_json_error( array( 'message' => 'Error de seguridad (nonce de limpieza inválido). Por favor, recarga la página.' ) ); }
+		if ( ! check_ajax_referer( 'wpat_cleanup_nonce_action', 'security', false ) ) {
+			wp_send_json_error( array( 'message' => 'Error de seguridad (nonce de limpieza inválido). Por favor, recarga la página.' ) );
+		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
 		}
 
 		global $wpdb;
-		$type = isset( $_POST['cleanup_type'] ) ? sanitize_key( $_POST['cleanup_type'] ) : '';
+		$type    = isset( $_POST['cleanup_type'] ) ? sanitize_key( $_POST['cleanup_type'] ) : '';
 		$cleared = 0;
 
 		switch ( $type ) {
 			case 'revisions':
-				$cleared = $wpdb->query( "DELETE FROM {$wpdb->posts} WHERE post_type = 'revision'" );
+				$cleared = (int) $wpdb->query( "DELETE FROM {$wpdb->posts} WHERE post_type = 'revision'" );
 				break;
 			case 'auto_drafts':
-				$cleared = $wpdb->query( "DELETE FROM {$wpdb->posts} WHERE post_status = 'auto-draft'" );
+				$cleared = (int) $wpdb->query( "DELETE FROM {$wpdb->posts} WHERE post_status = 'auto-draft'" );
 				break;
 			case 'trash_posts':
-				$cleared = $wpdb->query( "DELETE FROM {$wpdb->posts} WHERE post_status = 'trash'" );
+				$cleared = (int) $wpdb->query( "DELETE FROM {$wpdb->posts} WHERE post_status = 'trash'" );
 				break;
 			case 'trash_comments':
-				$cleared = $wpdb->query( "DELETE FROM {$wpdb->comments} WHERE comment_approved = 'spam' OR comment_approved = 'trash'" );
+				$cleared = (int) $wpdb->query( "DELETE FROM {$wpdb->comments} WHERE comment_approved IN ('spam', 'trash')" );
 				break;
 			case 'expired_transients':
 				$now = time();
+				// Transients estándar
 				$transients = $wpdb->get_col( $wpdb->prepare(
 					"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s AND option_value < %d",
 					'_transient_timeout_%',
 					$now
 				) );
-				foreach ( $transients as $transient_timeout ) {
-					$transient_name = str_replace( '_transient_timeout_', '', $transient_timeout );
-					delete_transient( $transient_name );
-					$cleared++;
+				if ( ! empty( $transients ) ) {
+					foreach ( $transients as $transient_timeout ) {
+						$transient_name = str_replace( '_transient_timeout_', '', $transient_timeout );
+						delete_transient( $transient_name );
+						$cleared++;
+					}
+				}
+				// Transients de red / sitio
+				$site_transients = $wpdb->get_col( $wpdb->prepare(
+					"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s AND option_value < %d",
+					'_site_transient_timeout_%',
+					$now
+				) );
+				if ( ! empty( $site_transients ) ) {
+					foreach ( $site_transients as $site_timeout ) {
+						$transient_name = str_replace( '_site_transient_timeout_', '', $site_timeout );
+						delete_site_transient( $transient_name );
+						$cleared++;
+					}
 				}
 				break;
 			case 'orphaned_postmeta':
-				$cleared = $wpdb->query( "DELETE pm FROM {$wpdb->postmeta} pm LEFT JOIN {$wpdb->posts} p ON pm.post_id = p.ID WHERE p.ID IS NULL" );
+				$cleared = (int) $wpdb->query( "DELETE pm FROM {$wpdb->postmeta} pm LEFT JOIN {$wpdb->posts} p ON pm.post_id = p.ID WHERE p.ID IS NULL" );
+				break;
+			case 'orphaned_commentmeta':
+				$cleared = (int) $wpdb->query( "DELETE cm FROM {$wpdb->commentmeta} cm LEFT JOIN {$wpdb->comments} c ON cm.comment_id = c.comment_ID WHERE c.comment_ID IS NULL" );
+				break;
+			case 'orphaned_usermeta':
+				$cleared = (int) $wpdb->query( "DELETE um FROM {$wpdb->usermeta} um LEFT JOIN {$wpdb->users} u ON um.user_id = u.ID WHERE u.ID IS NULL" );
+				break;
+			case 'orphaned_term_relationships':
+				$cleared = (int) $wpdb->query( "DELETE tr FROM {$wpdb->term_relationships} tr LEFT JOIN {$wpdb->posts} p ON tr.object_id = p.ID WHERE p.ID IS NULL" );
+				break;
+			case 'optimize_tables':
+				$tables = $wpdb->get_col( "SHOW TABLES LIKE '{$wpdb->prefix}%'" );
+				if ( ! empty( $tables ) ) {
+					foreach ( $tables as $table ) {
+						$wpdb->query( "OPTIMIZE TABLE `{$table}`" );
+					}
+				}
+				$cleared = is_array( $tables ) ? count( $tables ) : 0;
 				break;
 			case 'all':
 				// Revisiones
@@ -1865,7 +1962,8 @@ class WPAT_Admin {
 				// Papelera posts
 				$wpdb->query( "DELETE FROM {$wpdb->posts} WHERE post_status = 'trash'" );
 				// Comentarios spam/trash
-				$wpdb->query( "DELETE FROM {$wpdb->comments} WHERE comment_approved = 'spam' OR comment_approved = 'trash'" );
+				$wpdb->query( "DELETE FROM {$wpdb->comments} WHERE comment_approved IN ('spam', 'trash')" );
+				
 				// Transients expirados
 				$now = time();
 				$transients = $wpdb->get_col( $wpdb->prepare(
@@ -1873,24 +1971,51 @@ class WPAT_Admin {
 					'_transient_timeout_%',
 					$now
 				) );
-				foreach ( $transients as $transient_timeout ) {
-					$transient_name = str_replace( '_transient_timeout_', '', $transient_timeout );
-					delete_transient( $transient_name );
+				if ( ! empty( $transients ) ) {
+					foreach ( $transients as $transient_timeout ) {
+						$transient_name = str_replace( '_transient_timeout_', '', $transient_timeout );
+						delete_transient( $transient_name );
+					}
 				}
-				// Meta huérfanos
+				$site_transients = $wpdb->get_col( $wpdb->prepare(
+					"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s AND option_value < %d",
+					'_site_transient_timeout_%',
+					$now
+				) );
+				if ( ! empty( $site_transients ) ) {
+					foreach ( $site_transients as $site_timeout ) {
+						$transient_name = str_replace( '_site_transient_timeout_', '', $site_timeout );
+						delete_site_transient( $transient_name );
+					}
+				}
+
+				// Metadatos y relaciones huérfanas
 				$wpdb->query( "DELETE pm FROM {$wpdb->postmeta} pm LEFT JOIN {$wpdb->posts} p ON pm.post_id = p.ID WHERE p.ID IS NULL" );
+				$wpdb->query( "DELETE cm FROM {$wpdb->commentmeta} cm LEFT JOIN {$wpdb->comments} c ON cm.comment_id = c.comment_ID WHERE c.comment_ID IS NULL" );
+				$wpdb->query( "DELETE um FROM {$wpdb->usermeta} um LEFT JOIN {$wpdb->users} u ON um.user_id = u.ID WHERE u.ID IS NULL" );
+				$wpdb->query( "DELETE tr FROM {$wpdb->term_relationships} tr LEFT JOIN {$wpdb->posts} p ON tr.object_id = p.ID WHERE p.ID IS NULL" );
+
+				// Optimizar tablas
+				$tables = $wpdb->get_col( "SHOW TABLES LIKE '{$wpdb->prefix}%'" );
+				if ( ! empty( $tables ) ) {
+					foreach ( $tables as $table ) {
+						$wpdb->query( "OPTIMIZE TABLE `{$table}`" );
+					}
+				}
 				$cleared = 'all';
 				break;
 			default:
 				wp_send_json_error( array( 'message' => 'Tipo de limpieza no válido.' ) );
 		}
 
-		$stats = $this->get_db_cleanup_stats();
+		$stats    = $this->get_db_cleanup_stats();
+		$db_sizes = $this->get_database_sizes();
 
 		wp_send_json_success( array(
-			'cleared' => $cleared,
-			'stats'   => $stats,
-			'message' => 'Mantenimiento ejecutado correctamente.'
+			'cleared'  => $cleared,
+			'stats'    => $stats,
+			'db_sizes' => $db_sizes,
+			'message'  => 'Mantenimiento y optimización de base de datos ejecutados correctamente.'
 		) );
 	}
 
@@ -2005,9 +2130,26 @@ class WPAT_Admin {
 	 * Renderiza el contenido interno de la pestaña de Salud & Base de Datos.
 	 */
 	public function render_health_tab_content() {
-		$stats = $this->get_db_cleanup_stats();
+		$stats    = $this->get_db_cleanup_stats();
+		$db_sizes = $this->get_database_sizes();
 		?>
 		<?php wp_nonce_field( 'wpat_cleanup_nonce_action', 'wpat_cleanup_ajax_nonce' ); ?>
+		
+		<!-- Cabecera de la sección de Diagnóstico y Salud -->
+		<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+			<div>
+				<h2 style="margin: 0; font-size: 18px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+					<span class="dashicons dashicons-heart" style="color: #ef4444; font-size: 22px; width: 22px; height: 22px;"></span>
+					Salud del Sistema & Limpieza de Base de Datos
+				</h2>
+				<p style="margin: 4px 0 0 0; color: #64748b; font-size: 13px;">Diagnóstico integral de rendimiento del servidor, compatibilidad de módulos y mantenimiento profundo de la base de datos.</p>
+			</div>
+			<button type="button" class="button button-secondary" id="wpat_refresh_health_btn" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+				<span class="dashicons dashicons-update" style="font-size: 16px; width: 16px; height: 16px;"></span>
+				Actualizar Diagnóstico
+			</button>
+		</div>
+
 		<!-- Tarjeta de Diagnóstico: Detector de Incompatibilidades y Salud de Plugins -->
 		<div class="wpat-module-card" style="margin-bottom: 25px; padding: 20px;">
 			<h3 style="margin-top:0; font-size:15px; font-weight:600; display:flex; align-items:center; gap:8px;">
@@ -2060,7 +2202,7 @@ class WPAT_Admin {
 			
 			<!-- PHP Info Card -->
 			<div class="wpat-module-card" style="margin: 0; padding: 20px;">
-				<h3 style="margin-top:0; font-size:15px; font-weight:600;"><span class="dashicons dashicons-dashboard" style="vertical-align: middle;"></span> Servidor & PHP</h3>
+				<h3 style="margin-top:0; font-size:15px; font-weight:600;"><span class="dashicons dashicons-dashboard" style="vertical-align: middle; color: #6366f1;"></span> Servidor & PHP</h3>
 				<table class="wpat-health-table" style="width:100%; border-collapse:collapse; margin-top:15px; font-size:13px;">
 					<tr style="border-bottom:1px solid #f1f5f9;">
 						<td style="padding:8px 0; font-weight:600;">Versión de PHP</td>
@@ -2104,16 +2246,50 @@ class WPAT_Admin {
 						<td style="padding:8px 0; text-align:right;"><?php echo esc_html( ini_get( 'upload_max_filesize' ) ); ?></td>
 					</tr>
 					<tr style="border-bottom:1px solid #f1f5f9;">
-						<td style="padding:8px 0; font-weight:600;">Post Límite Máximo</td>
-						<td style="padding:8px 0; text-align:right;"><?php echo esc_html( ini_get( 'post_max_size' ) ); ?></td>
+						<td style="padding:8px 0; font-weight:600;">Protocolo HTTPS</td>
+						<td style="padding:8px 0; text-align:right;">
+							<?php 
+							echo is_ssl() ? '<span style="color:var(--wpat-success); font-weight:bold;">✔ Forzado (HTTPS)</span>' : '<span style="color:#ea580c; font-weight:bold;">✘ Inseguro (HTTP)</span>';
+							?>
+						</td>
+					</tr>
+					<tr style="border-bottom:1px solid #f1f5f9;">
+						<td style="padding:8px 0; font-weight:600;">Servidor Web</td>
+						<td style="padding:8px 0; text-align:right; font-size:11px; color:#475569; word-break:break-all;">
+							<?php echo esc_html( isset( $_SERVER['SERVER_SOFTWARE'] ) ? $_SERVER['SERVER_SOFTWARE'] : 'Desconocido' ); ?>
+						</td>
 					</tr>
 				</table>
 			</div>
 
-			<!-- PHP Extensions Card -->
+			<!-- Database & Extensions Card -->
 			<div class="wpat-module-card" style="margin: 0; padding: 20px;">
-				<h3 style="margin-top:0; font-size:15px; font-weight:600;"><span class="dashicons dashicons-admin-plugins" style="vertical-align: middle;"></span> Extensiones & Entorno</h3>
+				<h3 style="margin-top:0; font-size:15px; font-weight:600;"><span class="dashicons dashicons-admin-plugins" style="vertical-align: middle; color: #0ea5e9;"></span> Base de Datos & Extensiones</h3>
 				<table class="wpat-health-table" style="width:100%; border-collapse:collapse; margin-top:15px; font-size:13px;">
+					<tr style="border-bottom:1px solid #f1f5f9;">
+						<td style="padding:8px 0; font-weight:600;">Versión MySQL / MariaDB</td>
+						<td style="padding:8px 0; text-align:right;">
+							<span style="background:#e0f2fe; color:#0369a1; font-size:11px; padding:2px 6px; border-radius:4px; font-weight:bold;"><?php echo esc_html( $db_sizes['mysql_version'] ); ?></span>
+						</td>
+					</tr>
+					<tr style="border-bottom:1px solid #f1f5f9;">
+						<td style="padding:8px 0; font-weight:600;">Motor y Tablas</td>
+						<td style="padding:8px 0; text-align:right;"><?php echo esc_html( $db_sizes['engine'] . ' (' . $db_sizes['table_count'] . ' tablas)' ); ?></td>
+					</tr>
+					<tr style="border-bottom:1px solid #f1f5f9;">
+						<td style="padding:8px 0; font-weight:600;">Tamaño Total BD</td>
+						<td style="padding:8px 0; text-align:right; font-weight: 700; color: #0f172a;"><?php echo esc_html( $db_sizes['total_size'] ); ?></td>
+					</tr>
+					<tr style="border-bottom:1px solid #f1f5f9;">
+						<td style="padding:8px 0; font-weight:600;">Espacio Desfragmentable (Overhead)</td>
+						<td style="padding:8px 0; text-align:right;">
+							<?php if ( $db_sizes['overhead_raw'] > 0 ) : ?>
+								<span style="color: #ea580c; font-weight: bold;"><?php echo esc_html( $db_sizes['overhead_size'] ); ?></span>
+							<?php else : ?>
+								<span style="color: var(--wpat-success); font-weight: bold;">0 B (Optimizado)</span>
+							<?php endif; ?>
+						</td>
+					</tr>
 					<tr style="border-bottom:1px solid #f1f5f9;">
 						<td style="padding:8px 0; font-weight:600;">Soporte WebP (GD)</td>
 						<td style="padding:8px 0; text-align:right;">
@@ -2134,39 +2310,10 @@ class WPAT_Admin {
 						</td>
 					</tr>
 					<tr style="border-bottom:1px solid #f1f5f9;">
-						<td style="padding:8px 0; font-weight:600;">Soporte WebP (Imagick)</td>
-						<td style="padding:8px 0; text-align:right;">
-							<?php 
-							$webp_imagick = false;
-							if ( class_exists( 'Imagick' ) ) {
-								$formats = Imagick::queryFormats();
-								if ( in_array( 'WEBP', $formats, true ) ) {
-									$webp_imagick = true;
-								}
-							}
-							echo $webp_imagick ? '<span style="color:var(--wpat-success); font-weight:bold;">✔ Activo</span>' : '<span style="color:#eab308; font-weight:bold;">✘ Inactivo (Opcional)</span>';
-							?>
-						</td>
-					</tr>
-					<tr style="border-bottom:1px solid #f1f5f9;">
-						<td style="padding:8px 0; font-weight:600;">ZipArchive (Backups)</td>
+						<td style="padding:8px 0; font-weight:600;">ZipArchive (Plantillas & Backups)</td>
 						<td style="padding:8px 0; text-align:right;">
 							<?php 
 							echo class_exists( 'ZipArchive' ) ? '<span style="color:var(--wpat-success); font-weight:bold;">✔ Disponible</span>' : '<span style="color:#ea580c; font-weight:bold;">✘ No disponible</span>';
-							?>
-						</td>
-					</tr>
-					<tr style="border-bottom:1px solid #f1f5f9;">
-						<td style="padding:8px 0; font-weight:600;">Servidor Web</td>
-						<td style="padding:8px 0; text-align:right; font-size:11px; color:#475569; word-break:break-all;">
-							<?php echo esc_html( isset( $_SERVER['SERVER_SOFTWARE'] ) ? $_SERVER['SERVER_SOFTWARE'] : 'Desconocido' ); ?>
-						</td>
-					</tr>
-					<tr style="border-bottom:1px solid #f1f5f9;">
-						<td style="padding:8px 0; font-weight:600;">Protocolo seguro HTTPS</td>
-						<td style="padding:8px 0; text-align:right;">
-							<?php 
-							echo is_ssl() ? '<span style="color:var(--wpat-success); font-weight:bold;">✔ Forzado (HTTPS)</span>' : '<span style="color:#ea580c; font-weight:bold;">✘ Inseguro (HTTP)</span>';
 							?>
 						</td>
 					</tr>
@@ -2177,14 +2324,19 @@ class WPAT_Admin {
 
 		<!-- Database Optimization Card -->
 		<div class="wpat-module-card" style="padding: 20px;">
-			<div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--wpat-border); padding-bottom: 15px; margin-bottom: 15px;">
-				<h3 style="margin:0; font-size:15px; font-weight:600;"><span class="dashicons dashicons-database" style="vertical-align: middle;"></span> Limpiador de Base de Datos</h3>
-				<button type="button" class="button button-primary" id="wpat_db_clean_all_btn">
-					<span class="dashicons dashicons-admin-tools" style="vertical-align: middle; font-size:16px; width:16px; height:16px; margin-right:5px;"></span> Limpiar y Optimizar Todo
+			<div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--wpat-border); padding-bottom: 15px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+				<div>
+					<h3 style="margin:0; font-size:16px; font-weight:700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+						<span class="dashicons dashicons-database" style="color: var(--wpat-primary);"></span>
+						Mantenimiento y Limpieza de Base de Datos
+					</h3>
+					<p class="description" style="margin:4px 0 0 0;">Elimina registros redundantes, transitorios huérfanos y datos residuales que ralentizan las consultas de tu base de datos de WordPress.</p>
+				</div>
+				<button type="button" class="button button-primary" id="wpat_db_clean_all_btn" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; padding: 6px 14px; height: auto;">
+					<span class="dashicons dashicons-admin-tools" style="font-size:16px; width:16px; height:16px;"></span>
+					Limpiar y Optimizar Todo
 				</button>
 			</div>
-			
-			<p class="description" style="margin-bottom:20px;">Elimina registros redundantes, transitorios huérfanos y datos residuales que ralentizan las consultas de tu base de datos de WordPress.</p>
 			
 			<table class="wp-list-table widefat fixed striped" style="box-shadow:none; border: 1px solid #dcdcde; border-radius:6px; overflow:hidden;">
 				<thead>
@@ -2195,76 +2347,154 @@ class WPAT_Admin {
 					</tr>
 				</thead>
 				<tbody>
+					<!-- 1. Revisiones -->
 					<tr>
 						<td style="padding:10px; vertical-align:middle;">
 							<strong>Revisiones obsoletas</strong>
-							<p class="description" style="margin:2px 0 0 0;">Copias de seguridad automáticas previas de tus entradas y páginas.</p>
+							<p class="description" style="margin:2px 0 0 0;">Copias de seguridad y versiones previas automáticas de tus entradas y páginas.</p>
 						</td>
-						<td style="text-align:center; padding:10px; vertical-align:middle; font-weight:bold; font-size:14px;" class="wpat-db-counter" data-type="revisions">
+						<td style="text-align:center; padding:10px; vertical-align:middle; font-weight:bold; font-size:14px; <?php echo 0 === $stats['revisions'] ? 'color:#94a3b8;' : 'color:#0f172a;'; ?>" class="wpat-db-counter" data-type="revisions">
 							<?php echo esc_html( $stats['revisions'] ); ?>
 						</td>
 						<td style="text-align:right; padding:10px; vertical-align:middle;">
-							<button type="button" class="button button-small wpat-db-clean-btn" data-type="revisions" <?php disabled( $stats['revisions'], 0 ); ?>>Limpiar</button>
+							<button type="button" class="button button-small wpat-db-clean-btn" data-type="revisions" <?php disabled( $stats['revisions'], 0 ); ?>>
+								<?php echo 0 === $stats['revisions'] ? 'Limpio' : 'Limpiar'; ?>
+							</button>
 						</td>
 					</tr>
+					<!-- 2. Borradores automáticos -->
 					<tr>
 						<td style="padding:10px; vertical-align:middle;">
 							<strong>Borradores automáticos</strong>
 							<p class="description" style="margin:2px 0 0 0;">Borradores temporales huérfanos creados de forma automática al editar.</p>
 						</td>
-						<td style="text-align:center; padding:10px; vertical-align:middle; font-weight:bold; font-size:14px;" class="wpat-db-counter" data-type="auto_drafts">
+						<td style="text-align:center; padding:10px; vertical-align:middle; font-weight:bold; font-size:14px; <?php echo 0 === $stats['auto_drafts'] ? 'color:#94a3b8;' : 'color:#0f172a;'; ?>" class="wpat-db-counter" data-type="auto_drafts">
 							<?php echo esc_html( $stats['auto_drafts'] ); ?>
 						</td>
 						<td style="text-align:right; padding:10px; vertical-align:middle;">
-							<button type="button" class="button button-small wpat-db-clean-btn" data-type="auto_drafts" <?php disabled( $stats['auto_drafts'], 0 ); ?>>Limpiar</button>
+							<button type="button" class="button button-small wpat-db-clean-btn" data-type="auto_drafts" <?php disabled( $stats['auto_drafts'], 0 ); ?>>
+								<?php echo 0 === $stats['auto_drafts'] ? 'Limpio' : 'Limpiar'; ?>
+							</button>
 						</td>
 					</tr>
+					<!-- 3. Papelera de posts -->
 					<tr>
 						<td style="padding:10px; vertical-align:middle;">
 							<strong>Páginas y Entradas en la Papelera</strong>
-							<p class="description" style="margin:2px 0 0 0;">Contenido eliminado que aún está guardado en la papelera.</p>
+							<p class="description" style="margin:2px 0 0 0;">Contenido eliminado que aún permanece ocupando espacio en la papelera.</p>
 						</td>
-						<td style="text-align:center; padding:10px; vertical-align:middle; font-weight:bold; font-size:14px;" class="wpat-db-counter" data-type="trash_posts">
+						<td style="text-align:center; padding:10px; vertical-align:middle; font-weight:bold; font-size:14px; <?php echo 0 === $stats['trash_posts'] ? 'color:#94a3b8;' : 'color:#0f172a;'; ?>" class="wpat-db-counter" data-type="trash_posts">
 							<?php echo esc_html( $stats['trash_posts'] ); ?>
 						</td>
 						<td style="text-align:right; padding:10px; vertical-align:middle;">
-							<button type="button" class="button button-small wpat-db-clean-btn" data-type="trash_posts" <?php disabled( $stats['trash_posts'], 0 ); ?>>Limpiar</button>
+							<button type="button" class="button button-small wpat-db-clean-btn" data-type="trash_posts" <?php disabled( $stats['trash_posts'], 0 ); ?>>
+								<?php echo 0 === $stats['trash_posts'] ? 'Limpio' : 'Limpiar'; ?>
+							</button>
 						</td>
 					</tr>
+					<!-- 4. Spam y papelera comentarios -->
 					<tr>
 						<td style="padding:10px; vertical-align:middle;">
 							<strong>Comentarios de Spam y Papelera</strong>
-							<p class="description" style="margin:2px 0 0 0;">Mensajes molestos marcados como spam o borrados.</p>
+							<p class="description" style="margin:2px 0 0 0;">Comentarios no deseados marcados como spam o pendientes de purga.</p>
 						</td>
-						<td style="text-align:center; padding:10px; vertical-align:middle; font-weight:bold; font-size:14px;" class="wpat-db-counter" data-type="trash_comments">
+						<td style="text-align:center; padding:10px; vertical-align:middle; font-weight:bold; font-size:14px; <?php echo 0 === $stats['trash_comments'] ? 'color:#94a3b8;' : 'color:#0f172a;'; ?>" class="wpat-db-counter" data-type="trash_comments">
 							<?php echo esc_html( $stats['trash_comments'] ); ?>
 						</td>
 						<td style="text-align:right; padding:10px; vertical-align:middle;">
-							<button type="button" class="button button-small wpat-db-clean-btn" data-type="trash_comments" <?php disabled( $stats['trash_comments'], 0 ); ?>>Limpiar</button>
+							<button type="button" class="button button-small wpat-db-clean-btn" data-type="trash_comments" <?php disabled( $stats['trash_comments'], 0 ); ?>>
+								<?php echo 0 === $stats['trash_comments'] ? 'Limpio' : 'Limpiar'; ?>
+							</button>
 						</td>
 					</tr>
+					<!-- 5. Transients expirados -->
 					<tr>
 						<td style="padding:10px; vertical-align:middle;">
 							<strong>Transients expirados</strong>
-							<p class="description" style="margin:2px 0 0 0;">Opciones temporales en caché de WordPress cuyo tiempo límite de vida ya pasó.</p>
+							<p class="description" style="margin:2px 0 0 0;">Opciones y memorias temporales en caché cuyo periodo de validez ha vencido.</p>
 						</td>
-						<td style="text-align:center; padding:10px; vertical-align:middle; font-weight:bold; font-size:14px;" class="wpat-db-counter" data-type="expired_transients">
+						<td style="text-align:center; padding:10px; vertical-align:middle; font-weight:bold; font-size:14px; <?php echo 0 === $stats['expired_transients'] ? 'color:#94a3b8;' : 'color:#0f172a;'; ?>" class="wpat-db-counter" data-type="expired_transients">
 							<?php echo esc_html( $stats['expired_transients'] ); ?>
 						</td>
 						<td style="text-align:right; padding:10px; vertical-align:middle;">
-							<button type="button" class="button button-small wpat-db-clean-btn" data-type="expired_transients" <?php disabled( $stats['expired_transients'], 0 ); ?>>Limpiar</button>
+							<button type="button" class="button button-small wpat-db-clean-btn" data-type="expired_transients" <?php disabled( $stats['expired_transients'], 0 ); ?>>
+								<?php echo 0 === $stats['expired_transients'] ? 'Limpio' : 'Limpiar'; ?>
+							</button>
 						</td>
 					</tr>
+					<!-- 6. Metadatos de Posts Huérfanos -->
 					<tr>
 						<td style="padding:10px; vertical-align:middle;">
-							<strong>Metadatos huérfanos</strong>
-							<p class="description" style="margin:2px 0 0 0;">Ajustes de posts (postmeta) huérfanos de entradas que ya fueron borradas.</p>
+							<strong>Metadatos huérfanos de Entradas (Postmeta)</strong>
+							<p class="description" style="margin:2px 0 0 0;">Registros en <code>wp_postmeta</code> asociados a entradas o páginas ya eliminadas.</p>
 						</td>
-						<td style="text-align:center; padding:10px; vertical-align:middle; font-weight:bold; font-size:14px;" class="wpat-db-counter" data-type="orphaned_postmeta">
+						<td style="text-align:center; padding:10px; vertical-align:middle; font-weight:bold; font-size:14px; <?php echo 0 === $stats['orphaned_postmeta'] ? 'color:#94a3b8;' : 'color:#0f172a;'; ?>" class="wpat-db-counter" data-type="orphaned_postmeta">
 							<?php echo esc_html( $stats['orphaned_postmeta'] ); ?>
 						</td>
 						<td style="text-align:right; padding:10px; vertical-align:middle;">
-							<button type="button" class="button button-small wpat-db-clean-btn" data-type="orphaned_postmeta" <?php disabled( $stats['orphaned_postmeta'], 0 ); ?>>Limpiar</button>
+							<button type="button" class="button button-small wpat-db-clean-btn" data-type="orphaned_postmeta" <?php disabled( $stats['orphaned_postmeta'], 0 ); ?>>
+								<?php echo 0 === $stats['orphaned_postmeta'] ? 'Limpio' : 'Limpiar'; ?>
+							</button>
+						</td>
+					</tr>
+					<!-- 7. Metadatos de Comentarios Huérfanos -->
+					<tr>
+						<td style="padding:10px; vertical-align:middle;">
+							<strong>Metadatos huérfanos de Comentarios (Commentmeta)</strong>
+							<p class="description" style="margin:2px 0 0 0;">Registros en <code>wp_commentmeta</code> asociados a comentarios inexistentes.</p>
+						</td>
+						<td style="text-align:center; padding:10px; vertical-align:middle; font-weight:bold; font-size:14px; <?php echo 0 === $stats['orphaned_commentmeta'] ? 'color:#94a3b8;' : 'color:#0f172a;'; ?>" class="wpat-db-counter" data-type="orphaned_commentmeta">
+							<?php echo esc_html( $stats['orphaned_commentmeta'] ); ?>
+						</td>
+						<td style="text-align:right; padding:10px; vertical-align:middle;">
+							<button type="button" class="button button-small wpat-db-clean-btn" data-type="orphaned_commentmeta" <?php disabled( $stats['orphaned_commentmeta'], 0 ); ?>>
+								<?php echo 0 === $stats['orphaned_commentmeta'] ? 'Limpio' : 'Limpiar'; ?>
+							</button>
+						</td>
+					</tr>
+					<!-- 8. Metadatos de Usuarios Huérfanos -->
+					<tr>
+						<td style="padding:10px; vertical-align:middle;">
+							<strong>Metadatos huérfanos de Usuarios (Usermeta)</strong>
+							<p class="description" style="margin:2px 0 0 0;">Registros en <code>wp_usermeta</code> pertenecientes a cuentas de usuario borradas.</p>
+						</td>
+						<td style="text-align:center; padding:10px; vertical-align:middle; font-weight:bold; font-size:14px; <?php echo 0 === $stats['orphaned_usermeta'] ? 'color:#94a3b8;' : 'color:#0f172a;'; ?>" class="wpat-db-counter" data-type="orphaned_usermeta">
+							<?php echo esc_html( $stats['orphaned_usermeta'] ); ?>
+						</td>
+						<td style="text-align:right; padding:10px; vertical-align:middle;">
+							<button type="button" class="button button-small wpat-db-clean-btn" data-type="orphaned_usermeta" <?php disabled( $stats['orphaned_usermeta'], 0 ); ?>>
+								<?php echo 0 === $stats['orphaned_usermeta'] ? 'Limpio' : 'Limpiar'; ?>
+							</button>
+						</td>
+					</tr>
+					<!-- 9. Relaciones de Términos Huérfanas -->
+					<tr>
+						<td style="padding:10px; vertical-align:middle;">
+							<strong>Relaciones huérfanas de Taxonomías (Term Relationships)</strong>
+							<p class="description" style="margin:2px 0 0 0;">Vínculos en <code>wp_term_relationships</code> que apuntan a posts o términos eliminados.</p>
+						</td>
+						<td style="text-align:center; padding:10px; vertical-align:middle; font-weight:bold; font-size:14px; <?php echo 0 === $stats['orphaned_term_relationships'] ? 'color:#94a3b8;' : 'color:#0f172a;'; ?>" class="wpat-db-counter" data-type="orphaned_term_relationships">
+							<?php echo esc_html( $stats['orphaned_term_relationships'] ); ?>
+						</td>
+						<td style="text-align:right; padding:10px; vertical-align:middle;">
+							<button type="button" class="button button-small wpat-db-clean-btn" data-type="orphaned_term_relationships" <?php disabled( $stats['orphaned_term_relationships'], 0 ); ?>>
+								<?php echo 0 === $stats['orphaned_term_relationships'] ? 'Limpio' : 'Limpiar'; ?>
+							</button>
+						</td>
+					</tr>
+					<!-- 10. Optimización de Tablas -->
+					<tr>
+						<td style="padding:10px; vertical-align:middle;">
+							<strong>Optimización y Desfragmentación de Tablas</strong>
+							<p class="description" style="margin:2px 0 0 0;">Ejecuta <code>OPTIMIZE TABLE</code> en todas las tablas de WordPress para reorganizar índices y liberar espacio libre.</p>
+						</td>
+						<td style="text-align:center; padding:10px; vertical-align:middle; font-weight:bold; font-size:13px; color: <?php echo $stats['overhead_raw'] > 0 ? '#ea580c' : '#16a34a'; ?>;" class="wpat-db-counter" data-type="optimize_tables">
+							<?php echo esc_html( $stats['overhead_size'] ); ?>
+						</td>
+						<td style="text-align:right; padding:10px; vertical-align:middle;">
+							<button type="button" class="button button-small wpat-db-clean-btn" data-type="optimize_tables">
+								Optimizar
+							</button>
 						</td>
 					</tr>
 				</tbody>
@@ -3200,18 +3430,23 @@ class WPAT_Admin {
 												<h5 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 700; color: #1e293b;"><?php echo esc_html( $tpl['title'] ); ?></h5>
 											</div>
 										</div>
-										<div style="padding: 12px 14px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; align-items: center;">
+										<div style="padding: 12px 14px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 8px;">
 											<?php if ( $is_global ) : ?>
-												<button type="button" class="button button-primary wpat-admin-import-template-btn" data-kit="<?php echo esc_attr( $active_slug ); ?>" data-id="<?php echo esc_attr( $tpl['id'] ); ?>" style="flex: 1;">
-													Aplicar Estilos Globales
+												<button type="button" class="button button-primary wpat-admin-import-template-btn" data-kit="<?php echo esc_attr( $active_slug ); ?>" data-id="<?php echo esc_attr( $tpl['id'] ); ?>" style="width: 100%;">
+													🎨 Aplicar Estilos Globales
 												</button>
 											<?php else : ?>
-												<?php if ( ! empty( $tpl['preview_url'] ) ) : ?>
-													<a href="<?php echo esc_url( $tpl['preview_url'] ); ?>" target="_blank" class="button button-secondary" style="padding: 0 8px;" title="Ver vista previa">👁️ Ver</a>
-												<?php endif; ?>
-												<button type="button" class="button button-primary wpat-admin-import-template-btn" data-kit="<?php echo esc_attr( $active_slug ); ?>" data-id="<?php echo esc_attr( $tpl['id'] ); ?>" style="flex: 1;">
-													Importar a Elementor
-												</button>
+												<div style="display: flex; gap: 6px; width: 100%;">
+													<?php if ( ! empty( $tpl['preview_url'] ) ) : ?>
+														<a href="<?php echo esc_url( $tpl['preview_url'] ); ?>" target="_blank" class="button button-secondary" style="padding: 0 8px;" title="Ver vista previa">👁️ Ver</a>
+													<?php endif; ?>
+													<button type="button" class="button button-secondary wpat-admin-import-template-btn" data-kit="<?php echo esc_attr( $active_slug ); ?>" data-id="<?php echo esc_attr( $tpl['id'] ); ?>" style="flex: 1; font-size: 12px;">
+														📥 A Biblioteca
+													</button>
+													<button type="button" class="button button-primary wpat-admin-create-page-btn" data-kit="<?php echo esc_attr( $active_slug ); ?>" data-id="<?php echo esc_attr( $tpl['id'] ); ?>" data-title="<?php echo esc_attr( $tpl['title'] ); ?>" style="flex: 1; font-size: 12px;">
+														⚡ Crear Página
+													</button>
+												</div>
 											<?php endif; ?>
 										</div>
 									</div>
@@ -9897,7 +10132,9 @@ class WPAT_Admin {
 				$this->render_tab_tools_content( $settings );
 				break;
 			case 'tools':
+				echo '<div id="wpat_health_content_wrapper">';
 				$this->render_health_tab_content();
+				echo '</div>';
 				break;
 			default:
 				echo '<div class="notice notice-info"><p>Módulo de configuración en preparación.</p></div>';

@@ -8309,7 +8309,7 @@ class WPAT_Admin {
 										<span class="dashicons dashicons-visibility" style="font-size: 15px; line-height: 20px; width: 15px; height: 15px;"></span>
 										<?php esc_html_e( 'Abrir Sitemap Visual', 'wp-agency-toolkit' ); ?>
 									</a>
-									<a href="<?php echo esc_url( $sitemap_stats['sitemap_url'] ); ?>" target="_blank" class="button button-secondary" style="display: inline-flex; align-items: center; gap: 4px;">
+									<a href="<?php echo esc_url( $sitemap_stats['raw_url'] ); ?>" target="_blank" class="button button-secondary" style="display: inline-flex; align-items: center; gap: 4px;">
 										<span class="dashicons dashicons-external" style="font-size: 15px; line-height: 20px; width: 15px; height: 15px;"></span>
 										<?php esc_html_e( 'Ver XML Raw', 'wp-agency-toolkit' ); ?>
 									</a>

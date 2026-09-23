@@ -308,11 +308,9 @@ class WPAT_Sitemap_XML {
 		header( 'Content-Type: application/xml; charset=utf-8' );
 		header( 'X-Robots-Tag: noindex, follow' );
 
-		$xsl_url = add_query_arg( 'wpat_sitemap_xsl', '1', home_url( '/' ) );
-		$items   = $this->get_sitemap_items();
+		$items = $this->get_sitemap_items();
 
 		echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-		echo '<?xml-stylesheet type="text/xsl" href="' . esc_url( $xsl_url ) . '"?>' . "\n";
 		echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"' . "\n";
 		echo '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">' . "\n";
 
@@ -349,7 +347,7 @@ class WPAT_Sitemap_XML {
 		header( 'Content-Type: text/html; charset=utf-8' );
 		$items       = $this->get_sitemap_items();
 		$site_name   = get_bloginfo( 'name' );
-		$raw_xml_url = home_url( '/sitemap.xml' );
+		$raw_xml_url = add_query_arg( array( 'wpat_sitemap' => '1', 'format' => 'xml' ), home_url( '/' ) );
 		$dl_url      = add_query_arg( array( 'wpat_sitemap' => '1', 'download' => '1' ), home_url( '/' ) );
 		$admin_url   = admin_url( 'admin.php?page=wp-agency-toolkit#wpat-sitemap-xml' );
 		?>
@@ -933,6 +931,7 @@ class WPAT_Sitemap_XML {
 			'taxonomies'  => $tax_total,
 			'total_est'   => ( 1 + $posts_count + $pages_count + $prods_count + $tax_total ),
 			'sitemap_url' => home_url( '/sitemap.xml' ),
+			'raw_url'     => add_query_arg( array( 'wpat_sitemap' => '1', 'format' => 'xml' ), home_url( '/' ) ),
 			'visual_url'  => add_query_arg( array( 'wpat_sitemap' => '1', 'view' => 'visual' ), home_url( '/' ) ),
 			'dl_url'      => add_query_arg( array( 'wpat_sitemap' => '1', 'download' => '1' ), home_url( '/' ) ),
 		);

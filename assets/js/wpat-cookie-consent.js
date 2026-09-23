@@ -137,7 +137,7 @@
 			} catch (e) {}
 		}
 
-		if (currentConsent && currentConsent.timestamp) {
+		if (currentConsent && currentConsent.timestamp && (!currentConsent.version || currentConsent.version === config.policyVersion)) {
 			// El usuario ya tiene consentimiento previo
 			updateGoogleConsent(currentConsent);
 			unblockScripts(currentConsent);

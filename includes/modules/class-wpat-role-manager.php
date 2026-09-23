@@ -504,8 +504,19 @@ class WPAT_Role_Manager {
 		// Incluir archivo de esquema de roles de WordPress si es necesario
 		require_once ABSPATH . 'wp-admin/includes/schema.php';
 
+		// Eliminar primero los roles nativos para que populate_roles los reconstruya desde cero con sus permisos de fábrica
+		$core_roles = array( 'administrator', 'editor', 'author', 'contributor', 'subscriber' );
+		foreach ( $core_roles as $core_role ) {
+			remove_role( $core_role );
+		}
+
 		// Ejecutar reseteo estándar de roles de WordPress
 		populate_roles();
+
+		// Si WooCommerce está instalado, restaurar también sus roles predeterminados
+		if ( class_exists( 'WC_Install' ) && method_exists( 'WC_Install', 'create_roles' ) ) {
+			WC_Install::create_roles();
+		}
 
 		wp_send_json_success(
 			array(

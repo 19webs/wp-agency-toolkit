@@ -309,7 +309,7 @@ gtag('consent', 'default', {
 		$config = array(
 			'consentMode'   => ( ! isset( $settings['cookie_consent_gcm'] ) || '1' === (string) $settings['cookie_consent_gcm'] ),
 			'revokeBadge'   => ( ! isset( $settings['cookie_consent_revoke_badge'] ) || '1' === (string) $settings['cookie_consent_revoke_badge'] ),
-			'policyVersion' => '1.0',
+			'policyVersion' => isset( $settings['cookie_consent_version'] ) && ! empty( $settings['cookie_consent_version'] ) ? (string) $settings['cookie_consent_version'] : '1.0',
 		);
 
 		wp_localize_script( 'wpat-cookie-consent-js', 'wpatCookieConfig', $config );
@@ -337,8 +337,25 @@ gtag('consent', 'default', {
 		$btn_accept    = isset( $settings['cookie_consent_btn_accept'] ) && ! empty( $settings['cookie_consent_btn_accept'] ) ? $settings['cookie_consent_btn_accept'] : 'Aceptar Todas';
 		$btn_reject    = isset( $settings['cookie_consent_btn_reject'] ) && ! empty( $settings['cookie_consent_btn_reject'] ) ? $settings['cookie_consent_btn_reject'] : 'Rechazar Todas';
 		$btn_settings  = isset( $settings['cookie_consent_btn_settings'] ) && ! empty( $settings['cookie_consent_btn_settings'] ) ? $settings['cookie_consent_btn_settings'] : 'Configurar Preferencias';
-		$policy_url    = isset( $settings['cookie_consent_policy_url'] ) ? $settings['cookie_consent_policy_url'] : get_privacy_policy_url();
+		
+		// Enlaces Legales (Cookies, Privacidad, Aviso Legal)
+		$cookie_policy_url  = isset( $settings['cookie_consent_cookie_policy_url'] ) && ! empty( $settings['cookie_consent_cookie_policy_url'] ) ? $settings['cookie_consent_cookie_policy_url'] : ( isset( $settings['cookie_consent_policy_url'] ) ? $settings['cookie_consent_policy_url'] : '' );
+		$privacy_policy_url = isset( $settings['cookie_consent_privacy_policy_url'] ) && ! empty( $settings['cookie_consent_privacy_policy_url'] ) ? $settings['cookie_consent_privacy_policy_url'] : get_privacy_policy_url();
+		$legal_notice_url   = isset( $settings['cookie_consent_legal_notice_url'] ) ? $settings['cookie_consent_legal_notice_url'] : '';
+
+		$legal_links = array();
+		if ( ! empty( $cookie_policy_url ) ) {
+			$legal_links[] = '<a href="' . esc_url( $cookie_policy_url ) . '" target="_blank" rel="noopener noreferrer" class="wpat-cookie-legal-link">Política de Cookies</a>';
+		}
+		if ( ! empty( $privacy_policy_url ) ) {
+			$legal_links[] = '<a href="' . esc_url( $privacy_policy_url ) . '" target="_blank" rel="noopener noreferrer" class="wpat-cookie-legal-link">Política de Privacidad</a>';
+		}
+		if ( ! empty( $legal_notice_url ) ) {
+			$legal_links[] = '<a href="' . esc_url( $legal_notice_url ) . '" target="_blank" rel="noopener noreferrer" class="wpat-cookie-legal-link">Aviso Legal</a>';
+		}
+
 		$revoke_badge  = ( ! isset( $settings['cookie_consent_revoke_badge'] ) || '1' === (string) $settings['cookie_consent_revoke_badge'] );
+		$badge_pos     = isset( $settings['cookie_consent_revoke_badge_pos'] ) && 'bottom-right' === $settings['cookie_consent_revoke_badge_pos'] ? 'bottom-right' : 'bottom-left';
 
 		// Colores personalizados
 		$bg_color          = isset( $settings['cookie_consent_bg_color'] ) && ! empty( $settings['cookie_consent_bg_color'] ) ? $settings['cookie_consent_bg_color'] : '#1e293b';
@@ -366,8 +383,10 @@ gtag('consent', 'default', {
 					<div id="wpat_cookie_title" class="wpat-cookie-title"><?php echo esc_html( $title ); ?></div>
 					<div id="wpat_cookie_desc" class="wpat-cookie-text">
 						<?php echo wp_kses_post( $text ); ?>
-						<?php if ( ! empty( $policy_url ) ) : ?>
-							<a href="<?php echo esc_url( $policy_url ); ?>" target="_blank" rel="noopener noreferrer">Más información</a>
+						<?php if ( ! empty( $legal_links ) ) : ?>
+							<div class="wpat-cookie-legal-links-wrap" style="margin-top: 8px;">
+								<?php echo implode( '<span class="wpat-cookie-links-sep"> • </span>', $legal_links ); ?>
+							</div>
 						<?php endif; ?>
 					</div>
 				</div>
@@ -449,6 +468,12 @@ gtag('consent', 'default', {
 						</div>
 						<p class="wpat-cookie-cat-desc">Permiten recordar información para que el usuario acceda al servicio con determinadas características personalizadas (idioma, aspecto visual o región).</p>
 					</div>
+
+					<?php if ( ! empty( $legal_links ) ) : ?>
+						<div class="wpat-cookie-modal-links" style="margin-top: 15px; padding-top: 12px; border-top: 1px solid #e2e8f0; font-size: 12px; text-align: center; color: #64748b;">
+							Consulta más detalles en nuestra <?php echo implode( ', ', $legal_links ); ?>.
+						</div>
+					<?php endif; ?>
 				</div>
 
 				<div class="wpat-cookie-modal-footer">
@@ -461,8 +486,8 @@ gtag('consent', 'default', {
 
 		<?php if ( $revoke_badge ) : ?>
 			<!-- BOTÓN FLOTANTE PARA REVOCAR / REABRIR CONSENTIMIENTO -->
-			<button type="button" id="wpat_cookie_revoke_badge" style="display: none;" title="Gestionar Preferencias de Cookies">
-				<span>🍪</span> Cookies
+			<button type="button" id="wpat_cookie_revoke_badge" class="<?php echo esc_attr( $badge_pos ); ?>" style="display: none;" title="Gestionar Preferencias de Cookies" aria-label="Gestionar Preferencias de Cookies">
+				<span>🍪</span> <span class="wpat-cookie-badge-label">Cookies</span>
 			</button>
 		<?php endif; ?>
 		<?php

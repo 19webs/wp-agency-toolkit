@@ -4834,10 +4834,16 @@ jQuery(document).ready(function($) {
 		}
 	});
 
-	$(document).on('submit', '#wpat_create_role_form', function(e) {
-		e.preventDefault();
+	function submitCreateRole() {
 		var $submitBtn = $('#wpat_submit_create_role_btn');
 		var origText = $submitBtn.text();
+		var roleName = $('#wpat_new_role_name').val().trim();
+
+		if (!roleName) {
+			showToast('Por favor introduce un nombre para el rol', true);
+			$('#wpat_new_role_name').focus();
+			return;
+		}
 
 		$submitBtn.prop('disabled', true).text('Creando...');
 
@@ -4847,14 +4853,14 @@ jQuery(document).ready(function($) {
 			data: {
 				action: 'wpat_create_custom_role',
 				security: wpat_object.role_manager_nonce,
-				role_name: $('#wpat_new_role_name').val(),
-				role_slug: $('#wpat_new_role_slug').val(),
+				role_name: roleName,
+				role_slug: $('#wpat_new_role_slug').val().trim(),
 				clone_from: $('#wpat_new_role_clone_from').val()
 			},
 			success: function(response) {
 				$submitBtn.prop('disabled', false).text(origText);
 				if (response.success) {
-					$('#wpat_create_role_modal').hide();
+					$('#wpat_create_role_modal').fadeOut(150);
 					showToast(response.data.message || 'Rol creado con éxito', false);
 					// Recargar la página con el nuevo rol seleccionado
 					setTimeout(function() {
@@ -4869,6 +4875,18 @@ jQuery(document).ready(function($) {
 				showToast('Error de conexión AJAX al crear rol', true);
 			}
 		});
+	}
+
+	$(document).on('click', '#wpat_submit_create_role_btn', function(e) {
+		e.preventDefault();
+		submitCreateRole();
+	});
+
+	$(document).on('keypress', '#wpat_new_role_name, #wpat_new_role_slug', function(e) {
+		if (e.which === 13) {
+			e.preventDefault();
+			submitCreateRole();
+		}
 	});
 
 	// 8. Eliminar Rol Personalizado
@@ -4963,6 +4981,7 @@ jQuery(document).ready(function($) {
 
 		$('.wpat-cookie-tab-panel').hide();
 		$('#wpat_cookie_tab_' + tab).fadeIn(200);
+		$('#wpat_cookie_active_subtab').val(tab);
 	});
 
 	// 2. Usar URL de Privacidad de WordPress
@@ -5074,6 +5093,14 @@ jQuery(document).ready(function($) {
 				showToast('Error de conexión AJAX', true);
 			}
 		});
+	// 5. Incrementar Versión de Política (Forzar Re-consentimiento)
+	$(document).on('click', '#wpat_bump_consent_version_btn', function(e) {
+		e.preventDefault();
+		var $input = $('#wpat_cookie_consent_version');
+		var currentVal = parseFloat($input.val()) || 1.0;
+		var nextVal = (Math.round((currentVal + 0.1) * 10) / 10).toFixed(1);
+		$input.val(nextVal);
+		showToast('Versión actualizada a ' + nextVal + '. Guarda los cambios para forzar el banner.', false);
 	});
 
 });

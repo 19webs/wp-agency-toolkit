@@ -2823,6 +2823,7 @@ class WPAT_Admin {
 			// WOOCOMMERCE (9)
 			array(
 				'id'          => 'woo-extra-options',
+				'is_updated'  => true,
 				'title'       => 'Campos Extra',
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
@@ -2834,6 +2835,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'woo-pdf-invoices',
+				'is_updated'  => true,
 				'title'       => 'Facturación PDF',
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
@@ -2845,6 +2847,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'woo-live-search',
+				'is_updated'  => true,
 				'title'       => 'Buscador Live AJAX',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -2868,6 +2871,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'woo-checkout-editor',
+				'is_updated'  => true,
 				'title'       => 'Editor de Campos Checkout',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -2879,6 +2883,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'woo-dni',
+				'is_updated'  => true,
 				'title'       => 'Campo DNI / CIF',
 				'badge'       => 'Automático',
 				'badge_class' => 'tweak',
@@ -2891,6 +2896,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'woo-catalog',
+				'is_updated'  => true,
 				'title'       => 'Modo Catálogo',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -2902,7 +2908,8 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'woo-sale-badges',
-			'title'       => 'Badges y Etiquetas de Oferta',
+				'is_updated'  => true,
+				'title'       => 'Badges y Etiquetas de Oferta',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Añade badges y cintas de oferta de alto impacto personalizables (Soft, Pill, Rect, Circle, Corner Ribbon, Price Tag) con cálculo automático de % de descuento.',
@@ -2914,7 +2921,7 @@ class WPAT_Admin {
 
 			array(
 				'id'          => 'woo-promotions',
-				'is_new'      => true,
+				'is_updated'  => true,
 				'title'       => 'Promociones Dinámicas y Descuentos',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -2926,7 +2933,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'woo-checkout-designer',
-				'is_new'      => true,
+				'is_updated'  => true,
 				'title'       => 'Diseñador de Carrito y Checkout',
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
@@ -2939,7 +2946,7 @@ class WPAT_Admin {
 
 			array(
 				'id'          => 'woo-email-designer',
-				'is_new'      => true,
+				'is_updated'  => true,
 				'title'       => 'Diseñador de Emails',
 				'badge'       => 'Configuración',
 				'badge_class' => 'config',
@@ -2951,7 +2958,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'woo-address-autofill',
-				'is_new'      => true,
+				'is_updated'  => true,
 				'title'       => 'Autocompletado de CP y Provincia',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -2963,6 +2970,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'woo-zoom',
+				'is_updated'  => true,
 				'title'       => 'Zoom en Galería',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -2974,6 +2982,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'woo-variation-swatches',
+				'is_updated'  => true,
 				'title'       => 'Swatches de Variación',
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
@@ -2987,6 +2996,7 @@ class WPAT_Admin {
 			// SEGURIDAD (6)
 			array(
 				'id'          => 'security-hardening',
+				'is_updated'  => true,
 				'title'       => 'Fortalecimiento de Seguridad',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -2998,6 +3008,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'hide-login',
+				'is_updated'  => true,
 				'title'       => 'Ocultar Acceso Admin',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -3009,6 +3020,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'bot-blocker',
+				'is_updated'  => true,
 				'title'       => 'Bloqueador de Bots Anti-DDoS',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -3020,6 +3032,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'anti-spam',
+				'is_updated'  => true,
 				'title'       => 'Anti-Spam en Formularios',
 				'badge'       => 'Automático',
 				'badge_class' => 'tweak',
@@ -3032,6 +3045,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'conflict-detector',
+				'is_updated'  => true,
 				'title'       => 'Detector de Conflictos JS/CSS',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -3043,6 +3057,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'ssl-fixer',
+				'is_updated'  => true,
 				'title'       => 'Forzar SSL & Contenido Mixto',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -3056,6 +3071,7 @@ class WPAT_Admin {
 			// RENDIMIENTO & SEO (7)
 			array(
 				'id'          => 'performance',
+				'is_updated'  => true,
 				'title'       => 'Optimización de Rendimiento',
 				'badge'       => 'Automático',
 				'badge_class' => 'tweak',
@@ -3068,6 +3084,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'disable-comments',
+				'is_updated'  => true,
 				'title'       => 'Deshabilitar Comentarios',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -3079,6 +3096,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'image-optimizer',
+				'is_updated'  => true,
 				'title'       => 'Optimización Medios & WebP',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -3090,6 +3108,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'svg-support',
+				'is_updated'  => true,
 				'title'       => 'Soporte Archivos SVG',
 				'badge'       => 'Automático',
 				'badge_class' => 'tweak',
@@ -3102,6 +3121,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'seo',
+				'is_updated'  => true,
 				'title'       => 'Optimización SEO Integrada',
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
@@ -3113,6 +3133,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'sitemap-xml',
+				'is_updated'  => true,
 				'title'       => 'Generador Sitemap XML',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -3124,6 +3145,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'reading-progress',
+				'is_updated'  => true,
 				'title'       => 'Progreso de Lectura',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -3137,6 +3159,7 @@ class WPAT_Admin {
 			// HERRAMIENTAS (6)
 			array(
 				'id'          => 'snippets',
+				'is_updated'  => true,
 				'title'       => 'Snippets de Código',
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
@@ -3148,6 +3171,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'duplicator',
+				'is_updated'  => true,
 				'title'       => 'Duplicador Entradas/Páginas',
 				'badge'       => 'Automático',
 				'badge_class' => 'tweak',
@@ -3160,6 +3184,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'post-csv-importer',
+				'is_updated'  => true,
 				'title'       => 'Exportar / Importar CSV & JSON',
 				'badge'       => 'Herramienta',
 				'badge_class' => 'tweak',
@@ -3171,6 +3196,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'accessibility',
+				'is_updated'  => true,
 				'title'       => 'Accesibilidad Web',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -3182,6 +3208,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'integrations',
+				'is_updated'  => true,
 				'title'       => 'Integraciones & Scripts',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -3193,6 +3220,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'whatsapp',
+				'is_updated'  => true,
 				'title'       => 'Botón Flotante WhatsApp',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -3206,6 +3234,7 @@ class WPAT_Admin {
 			// SISTEMA & ADMIN (7)
 			array(
 				'id'          => 'initial-setup',
+				'is_updated'  => true,
 				'title'       => 'Configuración Inicial Sitio',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -3217,6 +3246,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'dashboard_cleaner',
+				'is_updated'  => true,
 				'title'       => 'Escritorio Personalizado',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -3228,6 +3258,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'silent-skin',
+				'is_updated'  => true,
 				'title'       => 'Ocultar Huella WPAT',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -3240,6 +3271,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'hide_admin_bar',
+				'is_updated'  => true,
 				'title'       => 'Restringir Barra & Acceso Admin',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -3252,6 +3284,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'smtp',
+				'is_updated'  => true,
 				'title'       => 'Servidor SMTP',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -3263,6 +3296,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'envato-importer',
+				'is_updated'  => true,
 				'title'       => 'Importador Kits Template',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -3274,6 +3308,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'tools',
+				'is_updated'  => true,
 				'title'       => 'Salud & Limpieza BD',
 				'badge'       => 'Herramienta',
 				'badge_class' => 'subpage',

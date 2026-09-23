@@ -582,15 +582,15 @@ textarea.code {
 
 .wpat-card-badge-new {
 	position: absolute;
-	top: 10px;
-	right: -26px;
+	top: 11px;
+	right: -28px;
 	background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 	color: #ffffff !important;
 	font-size: 8px;
 	font-weight: 800;
 	text-transform: uppercase;
 	letter-spacing: 0.8px;
-	padding: 3px 26px;
+	padding: 3px 28px;
 	transform: rotate(45deg);
 	box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);
 	z-index: 5;
@@ -601,15 +601,15 @@ textarea.code {
 
 .wpat-card-badge-updated {
 	position: absolute;
-	top: 12px;
-	right: -30px;
+	top: 11px;
+	right: -32px;
 	background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
 	color: #ffffff !important;
-	font-size: 7px;
+	font-size: 7.5px;
 	font-weight: 800;
 	text-transform: uppercase;
-	letter-spacing: 0.5px;
-	padding: 3px 26px;
+	letter-spacing: 0.6px;
+	padding: 3px 30px;
 	transform: rotate(45deg);
 	box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
 	z-index: 5;

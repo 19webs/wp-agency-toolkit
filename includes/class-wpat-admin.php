@@ -150,11 +150,12 @@ class WPAT_Admin {
 		wp_enqueue_script( 'wpat-admin-js', WPAT_URL . 'assets/js/wpat-admin.js', array( 'jquery', 'wp-color-picker' ), time(), true );
 
 		wp_localize_script( 'wpat-admin-js', 'wpat_object', array(
-			'ajax_url'           => admin_url( 'admin-ajax.php' ),
-			'nonce'              => wp_create_nonce( 'wpat_save_settings_action' ),
-			'cleanup_nonce'      => wp_create_nonce( 'wpat_cleanup_nonce_action' ),
-			'error_log_nonce'    => wp_create_nonce( 'wpat_error_log_nonce_action' ),
-			'role_manager_nonce' => wp_create_nonce( 'wpat_role_manager_nonce_action' ),
+			'ajax_url'             => admin_url( 'admin-ajax.php' ),
+			'nonce'                => wp_create_nonce( 'wpat_save_settings_action' ),
+			'cleanup_nonce'        => wp_create_nonce( 'wpat_cleanup_nonce_action' ),
+			'error_log_nonce'      => wp_create_nonce( 'wpat_error_log_nonce_action' ),
+			'role_manager_nonce'   => wp_create_nonce( 'wpat_role_manager_nonce_action' ),
+			'cookie_consent_nonce' => wp_create_nonce( 'wpat_cookie_consent_nonce_action' ),
 		) );
 
 		// Localizar kits instalados para el JS de administración
@@ -1755,6 +1756,9 @@ class WPAT_Admin {
 			'post-csv-importer',
 			'anti-spam',
 			'silent-skin',
+			'error-log-viewer',
+			'role-manager',
+			'cookie-consent',
 			'tools',
 		);
 
@@ -2627,6 +2631,7 @@ class WPAT_Admin {
 				'wpat-sitemap-xml'       => 'sitemap-xml',
 				'wpat-error-log-viewer'  => 'error-log-viewer',
 				'wpat-role-manager'      => 'role-manager',
+				'wpat-cookie-consent'    => 'cookie-consent',
 				'wpat-tools'             => 'tools',
 			);
 			if ( isset( $map[ $page_slug ] ) ) {
@@ -2749,7 +2754,7 @@ class WPAT_Admin {
 										<div class="wpat-cat-nav-list" style="display: flex; flex-direction: column; gap: 4px;">
 											<button type="button" class="wpat-cat-item active" data-cat="all">
 												<span class="wpat-cat-label">📌 Todos</span>
-												<span class="wpat-cat-badge">38</span>
+												<span class="wpat-cat-badge">39</span>
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="woocommerce">
 												<span class="wpat-cat-label">🛍️ WooCommerce</span>
@@ -2757,15 +2762,15 @@ class WPAT_Admin {
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="security">
 												<span class="wpat-cat-label">🛡️ Seguridad</span>
-												<span class="wpat-cat-badge">6</span>
+												<span class="wpat-cat-badge">7</span>
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="performance">
 												<span class="wpat-cat-label">⚡ Rendimiento & SEO</span>
-												<span class="wpat-cat-badge">7</span>
+												<span class="wpat-cat-badge">8</span>
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="tools">
 												<span class="wpat-cat-label">🛠️ Herramientas</span>
-												<span class="wpat-cat-badge">8</span>
+												<span class="wpat-cat-badge">9</span>
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="system">
 												<span class="wpat-cat-label">⚙️ Sistema & Admin</span>
@@ -2782,11 +2787,11 @@ class WPAT_Admin {
 									<div class="wpat-mobile-cat-container" style="display: none; width: 100%; margin-bottom: 15px;">
 										<label for="wpat_mobile_cat_select" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 6px;">Categoría:</label>
 										<select id="wpat_mobile_cat_select" style="width: 100%; height: 38px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 0 12px; font-weight: 600; font-size: 13px; background: #fff;">
-											<option value="all">📌 Todos (38)</option>
+											<option value="all">📌 Todos (39)</option>
 											<option value="woocommerce">🛍️ WooCommerce (10)</option>
-											<option value="security">🛡️ Seguridad (6)</option>
-											<option value="performance">⚡ Rendimiento & SEO (7)</option>
-											<option value="tools">🛠️ Herramientas (8)</option>
+											<option value="security">🛡️ Seguridad (7)</option>
+											<option value="performance">⚡ Rendimiento & SEO (8)</option>
+											<option value="tools">🛠️ Herramientas (9)</option>
 											<option value="system">⚙️ Sistema & Admin (9)</option>
 										</select>
 									</div>
@@ -3070,6 +3075,18 @@ class WPAT_Admin {
 				'icon'        => '🔒',
 				'icon_bg'     => 'sec',
 				'keywords'    => 'ssl https contenido mixto redireccion 301'
+			),
+			array(
+				'id'          => 'cookie-consent',
+				'is_new'      => true,
+				'title'       => 'Banner de Cookies y RGPD',
+				'badge'       => 'Subpágina',
+				'badge_class' => 'subpage',
+				'desc'        => 'Banner legal RGPD/AEPD con Google Consent Mode v2, bloqueo previo de scripts, modal de preferencias y escáner inteligente de cookies.',
+				'cat_class'   => 'cat-security cat-sec cat-performance cat-perf cat-tools',
+				'icon'        => '🍪',
+				'icon_bg'     => 'sec',
+				'keywords'    => 'cookies rgpd gdpr banner consentimiento consent mode v2 analytics aepd legal aviso privacidad'
 			),
 
 			// RENDIMIENTO & SEO (7)
@@ -10242,6 +10259,9 @@ class WPAT_Admin {
 			case 'role-manager':
 				$this->render_role_manager_content( $settings );
 				break;
+			case 'cookie-consent':
+				$this->render_cookie_consent_content( $settings );
+				break;
 			case 'tools':
 				echo '<div id="wpat_health_content_wrapper">';
 				$this->render_health_tab_content();
@@ -10629,15 +10649,17 @@ class WPAT_Admin {
 
 						<!-- BARRA DE BÚSQUEDA Y FILTRADO DE PERMISOS -->
 						<div class="wpat-cap-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px;">
-							<div style="position: relative; flex: 1; max-width: 360px;">
+							<div style="position: relative; flex: 1; max-width: 340px;">
 								<span class="dashicons dashicons-search" style="position: absolute; left: 10px; top: 8px; color: #94a3b8; font-size: 18px; width: 18px; height: 18px;"></span>
 								<input type="text" id="wpat_cap_search_input" placeholder="Filtrar permisos por nombre o clave..." style="width: 100%; height: 36px; padding: 0 12px 0 34px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;" />
 							</div>
 
-							<div style="display: flex; align-items: center; gap: 12px;">
-								<span style="font-size: 12.5px; color: #475569; font-weight: 600;">
+							<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+								<span style="font-size: 12.5px; color: #475569; font-weight: 600; margin-right: 4px;">
 									Permisos concedidos: <strong id="wpat_granted_caps_counter" style="color: #2563eb;">0</strong>
 								</span>
+								<button type="button" class="button button-secondary button-small" id="wpat_expand_all_cats_btn" style="height: 30px; font-weight: 600;" title="Desplegar todas las secciones">Desplegar Todo</button>
+								<button type="button" class="button button-secondary button-small" id="wpat_collapse_all_cats_btn" style="height: 30px; font-weight: 600;" title="Plegar todas las secciones">Plegar Todo</button>
 								<button type="button" class="button button-secondary button-small" id="wpat_check_all_caps_btn" style="height: 30px; font-weight: 600;">Conceder Todos</button>
 								<button type="button" class="button button-secondary button-small" id="wpat_uncheck_all_caps_btn" style="height: 30px; font-weight: 600;">Revocar Todos</button>
 							</div>
@@ -10647,11 +10669,12 @@ class WPAT_Admin {
 						<form id="wpat_role_caps_form" method="post" action="">
 							<input type="hidden" id="wpat_current_editing_role" name="role" value="<?php echo esc_attr( $active_role_slug ); ?>" />
 
-							<div class="wpat-cap-categories-wrapper" style="display: flex; flex-direction: column; gap: 16px;">
+							<div class="wpat-cap-categories-wrapper" style="display: flex; flex-direction: column; gap: 12px;">
 								<?php foreach ( $categories as $cat_key => $cat ) : ?>
 									<div class="wpat-cap-category-card" data-category="<?php echo esc_attr( $cat_key ); ?>" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
 										<div class="wpat-cap-cat-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
 											<div style="display: flex; align-items: center; gap: 8px;">
+												<span class="dashicons dashicons-arrow-down-alt2 wpat-cat-accordion-arrow" style="transition: transform 0.2s ease; transform: rotate(-90deg); color: #94a3b8; font-size: 16px; width: 16px; height: 16px; line-height: 1;"></span>
 												<span class="dashicons <?php echo esc_attr( $cat['icon'] ); ?>" style="color: #2563eb; font-size: 18px; width: 18px; height: 18px;"></span>
 												<strong style="font-size: 13.5px; color: #1e293b;"><?php echo esc_html( $cat['title'] ); ?></strong>
 												<span class="wpat-cat-count-badge" style="background: #e2e8f0; color: #475569; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 10px;">
@@ -10664,7 +10687,7 @@ class WPAT_Admin {
 											</div>
 										</div>
 
-										<div class="wpat-cap-cat-body" style="padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px;">
+										<div class="wpat-cap-cat-body" style="padding: 16px; display: none; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px;">
 											<?php foreach ( $cat['caps'] as $cap_slug => $cap_label ) : ?>
 												<?php
 												$has_cap = ! empty( $active_role['capabilities'][ $cap_slug ] );
@@ -11174,6 +11197,323 @@ class WPAT_Admin {
 		}
 
 		wp_send_json_error( array( 'message' => 'No se puede eliminar el país nativo o no fue encontrado.' ) );
+	}
+
+	/**
+	 * Renderiza la interfaz de administración del módulo de Banner de Cookies y RGPD.
+	 *
+	 * @param array $settings Ajustes del plugin.
+	 */
+	public function render_cookie_consent_content( $settings ) {
+		$is_active      = isset( $settings['cookie-consent'] ) && '1' === (string) $settings['cookie-consent'];
+		$gcm_enabled    = ! isset( $settings['cookie_consent_gcm'] ) || '1' === (string) $settings['cookie_consent_gcm'];
+		$layout         = isset( $settings['cookie_consent_layout'] ) ? $settings['cookie_consent_layout'] : 'layout-bar';
+		$revoke_badge   = ! isset( $settings['cookie_consent_revoke_badge'] ) || '1' === (string) $settings['cookie_consent_revoke_badge'];
+		$title          = isset( $settings['cookie_consent_title'] ) && ! empty( $settings['cookie_consent_title'] ) ? $settings['cookie_consent_title'] : 'Gestionar Consentimiento de Cookies';
+		$text           = isset( $settings['cookie_consent_text'] ) && ! empty( $settings['cookie_consent_text'] ) ? $settings['cookie_consent_text'] : 'Utilizamos cookies propias y de terceros para fines analíticos y para mostrarle publicidad personalizada según su navegación. Puede aceptar todas las cookies, rechazarlas o configurar sus preferencias.';
+		$btn_accept     = isset( $settings['cookie_consent_btn_accept'] ) && ! empty( $settings['cookie_consent_btn_accept'] ) ? $settings['cookie_consent_btn_accept'] : 'Aceptar Todas';
+		$btn_reject     = isset( $settings['cookie_consent_btn_reject'] ) && ! empty( $settings['cookie_consent_btn_reject'] ) ? $settings['cookie_consent_btn_reject'] : 'Rechazar Todas';
+		$btn_settings   = isset( $settings['cookie_consent_btn_settings'] ) && ! empty( $settings['cookie_consent_btn_settings'] ) ? $settings['cookie_consent_btn_settings'] : 'Configurar Preferencias';
+		$policy_url     = isset( $settings['cookie_consent_policy_url'] ) ? $settings['cookie_consent_policy_url'] : get_privacy_policy_url();
+		$bg_color       = isset( $settings['cookie_consent_bg_color'] ) && ! empty( $settings['cookie_consent_bg_color'] ) ? $settings['cookie_consent_bg_color'] : '#1e293b';
+		$text_color     = isset( $settings['cookie_consent_text_color'] ) && ! empty( $settings['cookie_consent_text_color'] ) ? $settings['cookie_consent_text_color'] : '#f8fafc';
+		$btn_accept_bg  = isset( $settings['cookie_consent_btn_accept_bg'] ) && ! empty( $settings['cookie_consent_btn_accept_bg'] ) ? $settings['cookie_consent_btn_accept_bg'] : '#2563eb';
+		$btn_accept_txt = isset( $settings['cookie_consent_btn_accept_text'] ) && ! empty( $settings['cookie_consent_btn_accept_text'] ) ? $settings['cookie_consent_btn_accept_text'] : '#ffffff';
+		$btn_reject_bg  = isset( $settings['cookie_consent_btn_reject_bg'] ) && ! empty( $settings['cookie_consent_btn_reject_bg'] ) ? $settings['cookie_consent_btn_reject_bg'] : '#475569';
+		$btn_reject_txt = isset( $settings['cookie_consent_btn_reject_text'] ) && ! empty( $settings['cookie_consent_btn_reject_text'] ) ? $settings['cookie_consent_btn_reject_text'] : '#ffffff';
+
+		if ( ! class_exists( 'WPAT_Cookie_Consent' ) ) {
+			require_once WPAT_PATH . 'includes/modules/class-wpat-cookie-consent.php';
+		}
+		$known_cookies = WPAT_Cookie_Consent::get_known_cookies_database();
+		?>
+		<div class="wpat-module-card wpat-cookie-consent-admin-wrap" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+			<!-- CABECERA DEL MÓDULO -->
+			<div class="wpat-module-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 22px;">
+				<div class="wpat-module-info">
+					<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+						<span style="font-size: 26px; line-height: 1;">🍪</span>
+						<h3 style="margin: 0; font-size: 19px; font-weight: 700; color: #1e293b;">Banner de Cookies, RGPD & Google Consent Mode v2</h3>
+						<span class="wpat-badge wpat-badge-new" style="background: #10b981; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px; text-transform: uppercase;">Nuevo</span>
+					</div>
+					<p style="margin: 0; font-size: 13.5px; color: #64748b; line-height: 1.5;">
+						Cumplimiento estricto del RGPD y de la AEPD europea con bloqueo previo de scripts, soporte para <strong>Google Consent Mode v2</strong>, modal de categorías y escáner automático de cookies.
+					</p>
+				</div>
+				<div>
+					<?php $this->render_module_toggle( 'cookie-consent', $settings, true ); ?>
+				</div>
+			</div>
+
+			<!-- SUB-PESTAÑAS -->
+			<div class="wpat-cookie-subtabs" style="display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-bottom: 22px; flex-wrap: wrap;">
+				<button type="button" class="wpat-cookie-tab-btn active" data-tab="general" style="background: none; border: none; padding: 10px 18px; font-weight: 700; font-size: 13.5px; color: #2563eb; border-bottom: 2px solid #2563eb; margin-bottom: -2px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+					<span class="dashicons dashicons-admin-generic"></span> General & GCM v2
+				</button>
+				<button type="button" class="wpat-cookie-tab-btn" data-tab="texts" style="background: none; border: none; padding: 10px 18px; font-weight: 600; font-size: 13.5px; color: #64748b; border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+					<span class="dashicons dashicons-editor-textcolor"></span> Textos y Botones
+				</button>
+				<button type="button" class="wpat-cookie-tab-btn" data-tab="design" style="background: none; border: none; padding: 10px 18px; font-weight: 600; font-size: 13.5px; color: #64748b; border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+					<span class="dashicons dashicons-art"></span> Diseño y Colores
+				</button>
+				<button type="button" class="wpat-cookie-tab-btn" data-tab="scanner" style="background: none; border: none; padding: 10px 18px; font-weight: 600; font-size: 13.5px; color: #64748b; border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+					<span class="dashicons dashicons-search"></span> Escáner & Shortcode
+				</button>
+			</div>
+
+			<!-- CONTENIDO SUB-PESTAÑAS -->
+			<!-- TAB 1: GENERAL & GCM V2 -->
+			<div class="wpat-cookie-tab-panel active" id="wpat_cookie_tab_general">
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+					<!-- Configuración Google Consent Mode v2 -->
+					<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px;">
+						<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+							<div style="display: flex; align-items: center; gap: 8px;">
+								<span style="font-size: 20px;">🛡️</span>
+								<h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">Google Consent Mode v2</h4>
+							</div>
+							<label class="wpat-switch" style="margin: 0;">
+								<input type="hidden" name="wpat_settings[cookie_consent_gcm]" value="0" />
+								<input type="checkbox" name="wpat_settings[cookie_consent_gcm]" value="1" <?php checked( $gcm_enabled ); ?> />
+								<span class="wpat-slider"></span>
+							</label>
+						</div>
+						<p style="font-size: 12.5px; color: #64748b; line-height: 1.5; margin: 0 0 12px 0;">
+							Inyecta la inicialización predeterminada de <code>gtag('consent', 'default', {...})</code> denegando almacenamiento de analítica y publicidad hasta que el visitante otorgue su consentimiento explícito. Obligatorio por Google para medir conversiones en la UE.
+						</p>
+						<div style="background: #eff6ff; border-left: 3px solid #3b82f6; padding: 10px 12px; border-radius: 4px; font-size: 12px; color: #1e40af;">
+							<strong>Compatible con:</strong> Google Analytics 4 (GA4), Google Tag Manager (GTM) y Google Ads.
+						</div>
+					</div>
+
+					<!-- Disposición y Formato del Banner -->
+					<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px;">
+						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+							<span style="font-size: 20px;">📐</span>
+							<h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">Disposición Visual</h4>
+						</div>
+						<div class="wpat-field-group" style="margin-bottom: 16px;">
+							<label for="wpat_cookie_consent_layout" style="font-size: 13px; font-weight: 600; color: #334155; display: block; margin-bottom: 6px;">Posición y Estilo del Banner</label>
+							<select name="wpat_settings[cookie_consent_layout]" id="wpat_cookie_consent_layout" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600;">
+								<option value="layout-bar" <?php selected( $layout, 'layout-bar' ); ?>>Barra Inferior Fija (Ancho Completo)</option>
+								<option value="layout-floating" <?php selected( $layout, 'layout-floating' ); ?>>Ventana Flotante en la Esquina Inferior</option>
+								<option value="layout-modal" <?php selected( $layout, 'layout-modal' ); ?>>Modal Centrado con Fondo Bloqueante (Backdrop)</option>
+							</select>
+						</div>
+
+						<div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+							<div>
+								<div style="font-size: 13px; font-weight: 600; color: #1e293b;">Badge de Revocación</div>
+								<div style="font-size: 12px; color: #64748b;">Botón flotante en esquina para reabrir preferencias</div>
+							</div>
+							<label class="wpat-switch" style="margin: 0;">
+								<input type="hidden" name="wpat_settings[cookie_consent_revoke_badge]" value="0" />
+								<input type="checkbox" name="wpat_settings[cookie_consent_revoke_badge]" value="1" <?php checked( $revoke_badge ); ?> />
+								<span class="wpat-slider"></span>
+							</label>
+						</div>
+					</div>
+				</div>
+
+				<!-- Enlace a Política de Privacidad -->
+				<div style="margin-top: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px;">
+					<div class="wpat-field-group">
+						<label for="wpat_cookie_consent_policy_url" style="font-size: 13px; font-weight: 600; color: #334155; display: block; margin-bottom: 6px;">URL de la Política de Privacidad / Cookies</label>
+						<div style="display: flex; gap: 10px; align-items: center;">
+							<input type="url" name="wpat_settings[cookie_consent_policy_url]" id="wpat_cookie_consent_policy_url" value="<?php echo esc_url( $policy_url ); ?>" placeholder="https://tudominio.com/politica-de-cookies/" class="regular-text" style="flex: 1; height: 38px; border-radius: 6px; border: 1px solid #cbd5e1;" />
+							<?php if ( function_exists( 'get_privacy_policy_url' ) && get_privacy_policy_url() ) : ?>
+								<button type="button" class="button button-secondary" id="wpat_set_wp_privacy_url_btn" data-url="<?php echo esc_url( get_privacy_policy_url() ); ?>" style="height: 38px; line-height: 36px; font-weight: 600;">
+									Usar URL de WP
+								</button>
+							<?php endif; ?>
+						</div>
+						<p class="description" style="margin-top: 6px; font-size: 12px; color: #64748b;">Enlace mostrado en el texto del banner hacia la página legal con información detallada.</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- TAB 2: TEXTOS Y BOTONES -->
+			<div class="wpat-cookie-tab-panel" id="wpat_cookie_tab_texts" style="display: none;">
+				<div style="display: grid; grid-template-columns: 1fr; gap: 18px;">
+					<div class="wpat-field-group">
+						<label for="wpat_cookie_consent_title" style="font-size: 13px; font-weight: 600; color: #334155; display: block; margin-bottom: 6px;">Título del Banner</label>
+						<input type="text" name="wpat_settings[cookie_consent_title]" id="wpat_cookie_consent_title" value="<?php echo esc_attr( $title ); ?>" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600;" />
+					</div>
+
+					<div class="wpat-field-group">
+						<label for="wpat_cookie_consent_text" style="font-size: 13px; font-weight: 600; color: #334155; display: block; margin-bottom: 6px;">Texto Explicativo del Consentimiento</label>
+						<textarea name="wpat_settings[cookie_consent_text]" id="wpat_cookie_consent_text" rows="4" style="width: 100%; border-radius: 6px; border: 1px solid #cbd5e1; padding: 10px; font-size: 13px;"><?php echo esc_textarea( $text ); ?></textarea>
+						<p class="description" style="font-size: 12px; color: #64748b; margin-top: 4px;">Explica de forma clara y accesible el uso de cookies según las directrices de la AEPD y el RGPD.</p>
+					</div>
+
+					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+						<div class="wpat-field-group">
+							<label for="wpat_cookie_consent_btn_accept" style="font-size: 12.5px; font-weight: 600; color: #334155; display: block; margin-bottom: 6px;">Botón Aceptar Todas</label>
+							<input type="text" name="wpat_settings[cookie_consent_btn_accept]" id="wpat_cookie_consent_btn_accept" value="<?php echo esc_attr( $btn_accept ); ?>" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e1;" />
+						</div>
+
+						<div class="wpat-field-group">
+							<label for="wpat_cookie_consent_btn_reject" style="font-size: 12.5px; font-weight: 600; color: #334155; display: block; margin-bottom: 6px;">Botón Rechazar Todas</label>
+							<input type="text" name="wpat_settings[cookie_consent_btn_reject]" id="wpat_cookie_consent_btn_reject" value="<?php echo esc_attr( $btn_reject ); ?>" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e1;" />
+						</div>
+
+						<div class="wpat-field-group">
+							<label for="wpat_cookie_consent_btn_settings" style="font-size: 12.5px; font-weight: 600; color: #334155; display: block; margin-bottom: 6px;">Botón Configurar Preferencias</label>
+							<input type="text" name="wpat_settings[cookie_consent_btn_settings]" id="wpat_cookie_consent_btn_settings" value="<?php echo esc_attr( $btn_settings ); ?>" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e1;" />
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- TAB 3: DISEÑO Y COLORES -->
+			<div class="wpat-cookie-tab-panel" id="wpat_cookie_tab_design" style="display: none;">
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+					<!-- Colores de Fondo y Texto -->
+					<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px;">
+						<h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #1e293b;">🎨 Banner & Modal</h4>
+						<div class="wpat-field-group" style="margin-bottom: 14px;">
+							<label for="wpat_cookie_consent_bg_color" style="font-size: 12.5px; font-weight: 600; display: block; margin-bottom: 6px;">Color de Fondo del Banner</label>
+							<input type="text" name="wpat_settings[cookie_consent_bg_color]" id="wpat_cookie_consent_bg_color" value="<?php echo esc_attr( $bg_color ); ?>" class="wpat-color-picker" />
+						</div>
+						<div class="wpat-field-group">
+							<label for="wpat_cookie_consent_text_color" style="font-size: 12.5px; font-weight: 600; display: block; margin-bottom: 6px;">Color de Texto y Enlaces</label>
+							<input type="text" name="wpat_settings[cookie_consent_text_color]" id="wpat_cookie_consent_text_color" value="<?php echo esc_attr( $text_color ); ?>" class="wpat-color-picker" />
+						</div>
+					</div>
+
+					<!-- Botón Aceptar -->
+					<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px;">
+						<h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #1e293b;">✅ Botón Aceptar</h4>
+						<div class="wpat-field-group" style="margin-bottom: 14px;">
+							<label for="wpat_cookie_consent_btn_accept_bg" style="font-size: 12.5px; font-weight: 600; display: block; margin-bottom: 6px;">Color de Fondo</label>
+							<input type="text" name="wpat_settings[cookie_consent_btn_accept_bg]" id="wpat_cookie_consent_btn_accept_bg" value="<?php echo esc_attr( $btn_accept_bg ); ?>" class="wpat-color-picker" />
+						</div>
+						<div class="wpat-field-group">
+							<label for="wpat_cookie_consent_btn_accept_text" style="font-size: 12.5px; font-weight: 600; display: block; margin-bottom: 6px;">Color de Texto</label>
+							<input type="text" name="wpat_settings[cookie_consent_btn_accept_text]" id="wpat_cookie_consent_btn_accept_text" value="<?php echo esc_attr( $btn_accept_txt ); ?>" class="wpat-color-picker" />
+						</div>
+					</div>
+
+					<!-- Botón Rechazar -->
+					<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px;">
+						<h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #1e293b;">⛔ Botón Rechazar</h4>
+						<div class="wpat-field-group" style="margin-bottom: 14px;">
+							<label for="wpat_cookie_consent_btn_reject_bg" style="font-size: 12.5px; font-weight: 600; display: block; margin-bottom: 6px;">Color de Fondo</label>
+							<input type="text" name="wpat_settings[cookie_consent_btn_reject_bg]" id="wpat_cookie_consent_btn_reject_bg" value="<?php echo esc_attr( $btn_reject_bg ); ?>" class="wpat-color-picker" />
+						</div>
+						<div class="wpat-field-group">
+							<label for="wpat_cookie_consent_btn_reject_text" style="font-size: 12.5px; font-weight: 600; display: block; margin-bottom: 6px;">Color de Texto</label>
+							<input type="text" name="wpat_settings[cookie_consent_btn_reject_text]" id="wpat_cookie_consent_btn_reject_text" value="<?php echo esc_attr( $btn_reject_txt ); ?>" class="wpat-color-picker" />
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- TAB 4: ESCÁNER INTELIGENTE & SHORTCODE -->
+			<div class="wpat-cookie-tab-panel" id="wpat_cookie_tab_scanner" style="display: none;">
+				<!-- Tarjeta del Escáner -->
+				<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 22px;">
+					<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+						<div>
+							<h4 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 700; color: #1e293b;">⚡ Escáner Inteligente de Cookies y Scripts</h4>
+							<p style="margin: 0; font-size: 13px; color: #64748b;">
+								Analiza en tiempo real los plugins activos, pasarelas de pago, píxeles de seguimiento y cabeceras HTTP para listar las cookies utilizadas en tu web.
+							</p>
+						</div>
+						<div>
+							<button type="button" class="button button-primary" id="wpat_scan_cookies_btn" style="height: 38px; line-height: 36px; padding: 0 18px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; background: #2563eb; border-color: #1d4ed8;">
+								<span class="dashicons dashicons-search" style="font-size: 16px; width: 16px; height: 16px; line-height: 1;"></span> Escanear Cookies Ahora
+							</button>
+						</div>
+					</div>
+
+					<div id="wpat_scanner_status_area" style="display: none; padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; margin-bottom: 15px;"></div>
+
+					<!-- Contenedor de Resultados del Escaneo -->
+					<div id="wpat_scan_results_container">
+						<div class="wpat-cookie-table-wrapper" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+							<table class="wpat-cookie-table widefat" style="border: none; margin: 0;">
+								<thead>
+									<tr style="background: #f1f5f9; border-bottom: 1px solid #e2e8f0;">
+										<th style="font-weight: 700; color: #475569; padding: 10px 14px;">Cookie / Script</th>
+										<th style="font-weight: 700; color: #475569; padding: 10px 14px;">Proveedor</th>
+										<th style="font-weight: 700; color: #475569; padding: 10px 14px;">Categoría</th>
+										<th style="font-weight: 700; color: #475569; padding: 10px 14px;">Finalidad Legal</th>
+										<th style="font-weight: 700; color: #475569; padding: 10px 14px;">Caducidad</th>
+									</tr>
+								</thead>
+								<tbody id="wpat_scan_tbody">
+									<?php
+									$preview_cookies = array_slice( $known_cookies, 0, 8, true );
+									foreach ( $preview_cookies as $c ) :
+										$badge_bg = '#e2e8f0';
+										$badge_tx = '#475569';
+										if ( 'necessary' === $c['category'] ) {
+											$badge_bg = '#eff6ff';
+											$badge_tx = '#1d4ed8';
+										} elseif ( 'analytics' === $c['category'] ) {
+											$badge_bg = '#ecfdf5';
+											$badge_tx = '#047857';
+										} elseif ( 'marketing' === $c['category'] ) {
+											$badge_bg = '#fef2f2';
+											$badge_tx = '#b91c1c';
+										}
+										?>
+										<tr style="border-bottom: 1px solid #f1f5f9;">
+											<td style="padding: 10px 14px; font-weight: 700; color: #1e293b;"><code><?php echo esc_html( $c['name'] ); ?></code></td>
+											<td style="padding: 10px 14px; color: #475569;"><?php echo esc_html( $c['provider'] ); ?></td>
+											<td style="padding: 10px 14px;">
+												<span style="background: <?php echo esc_attr( $badge_bg ); ?>; color: <?php echo esc_attr( $badge_tx ); ?>; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;">
+													<?php echo esc_html( $c['cat_label'] ); ?>
+												</span>
+											</td>
+											<td style="padding: 10px 14px; color: #64748b; font-size: 12.5px;"><?php echo esc_html( $c['purpose'] ); ?></td>
+											<td style="padding: 10px 14px; color: #475569; font-weight: 600; font-size: 12px;"><?php echo esc_html( $c['expiry'] ); ?></td>
+										</tr>
+									<?php endforeach; ?>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+
+				<!-- Shortcode para la Política de Cookies -->
+				<div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+					<div>
+						<div style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; color: #1e40af; margin-bottom: 4px;">
+							<span class="dashicons dashicons-shortcode"></span> Shortcode para la Página de Política de Cookies
+						</div>
+						<div style="font-size: 12.5px; color: #3b82f6;">
+							Inserta este shortcode en tu página legal para mostrar una tabla siempre actualizada con las cookies activas en tu sitio.
+						</div>
+					</div>
+					<div style="display: flex; align-items: center; gap: 8px;">
+						<code style="background: #fff; border: 1px solid #93c5fd; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 700; color: #1e40af;">[wpat_cookie_table]</code>
+						<button type="button" class="button button-secondary" id="wpat_copy_shortcode_btn" style="height: 34px; font-weight: 600;">
+							Copiar Shortcode
+						</button>
+					</div>
+				</div>
+
+				<!-- Guía de Bloqueo Previo de Scripts para Desarrolladores -->
+				<div style="margin-top: 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px;">
+					<h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700; color: #1e293b;">🛠️ Guía: Cómo bloquear scripts de terceros antes de consentimiento</h4>
+					<p style="font-size: 12.5px; color: #64748b; line-height: 1.5; margin: 0 0 10px 0;">
+						Para bloquear la ejecución automática de scripts de terceros (ej: Hotjar, Criteo, scripts de afiliados) hasta que el usuario acepte la categoría correspondiente, añade el atributo <code>data-wpat-cookie-category</code> y cambia el tipo a <code>text/plain</code>:
+					</p>
+					<pre style="background: #0f172a; color: #38bdf8; padding: 12px; border-radius: 6px; font-size: 12px; overflow-x: auto; margin: 0;"><code>&lt;!-- Script analítico que esperará a que se acepten cookies analíticas --&gt;
+&lt;script type="text/plain" data-wpat-cookie-category="analytics"&gt;
+    // Código de seguimiento que sólo se ejecutará tras el consentimiento
+&lt;/script&gt;
+
+&lt;!-- Script publicitario / marketing --&gt;
+&lt;script type="text/plain" data-wpat-cookie-category="marketing"&gt;
+    // Píxel publicitario
+&lt;/script&gt;</code></pre>
+				</div>
+			</div>
+		</div>
+		<?php
 	}
 
 	/**

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.83
+ * Version:     4.3.84
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.83' );
+define( 'WPAT_VERSION', '4.3.84' );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -199,6 +199,10 @@ class WPAT_Main {
 		'role-manager' => array(
 			'file'  => 'includes/modules/class-wpat-role-manager.php',
 			'class' => 'WPAT_Role_Manager',
+		),
+		'cookie-consent' => array(
+			'file'  => 'includes/modules/class-wpat-cookie-consent.php',
+			'class' => 'WPAT_Cookie_Consent',
 		),
 	);
 
@@ -616,6 +620,24 @@ class WPAT_Main {
 
 			// Opciones del Gestor de Roles y Permisos
 			'role-manager'                       => '1',
+
+			// Opciones de Banner de Cookies y RGPD
+			'cookie-consent'                     => '1',
+			'cookie_consent_gcm'                 => '1',
+			'cookie_consent_layout'              => 'layout-bar',
+			'cookie_consent_title'               => 'Gestionar Consentimiento de Cookies',
+			'cookie_consent_text'                => 'Utilizamos cookies propias y de terceros para fines analíticos y para mostrarle publicidad personalizada según su navegación. Puede aceptar todas las cookies, rechazarlas o configurar sus preferencias.',
+			'cookie_consent_btn_accept'          => 'Aceptar Todas',
+			'cookie_consent_btn_reject'          => 'Rechazar Todas',
+			'cookie_consent_btn_settings'        => 'Configurar Preferencias',
+			'cookie_consent_policy_url'          => '',
+			'cookie_consent_revoke_badge'        => '1',
+			'cookie_consent_bg_color'            => '#1e293b',
+			'cookie_consent_text_color'          => '#f8fafc',
+			'cookie_consent_btn_accept_bg'       => '#2563eb',
+			'cookie_consent_btn_accept_text'     => '#ffffff',
+			'cookie_consent_btn_reject_bg'       => '#475569',
+			'cookie_consent_btn_reject_text'     => '#ffffff',
 		);
 
 		$saved = get_option( 'wpat_settings', array() );

@@ -4640,12 +4640,46 @@ jQuery(document).ready(function($) {
 		updateRoleManagerCounters();
 	});
 
-	// 3. Búsqueda y filtrado en tiempo real de permisos
+	// 2.1. Desplegar / Plegar Acordeón de Categoría individual
+	$(document).on('click', '.wpat-cap-cat-header', function(e) {
+		if ($(e.target).closest('.wpat-cat-check-all, .wpat-cat-uncheck-all').length > 0) {
+			return; // Evitar colapsar si se hace clic en los botones de marcar/desmarcar
+		}
+		var $header = $(this);
+		var $card = $header.closest('.wpat-cap-category-card');
+		var $body = $card.find('.wpat-cap-cat-body');
+		var $arrow = $header.find('.wpat-cat-accordion-arrow');
+
+		$body.slideToggle(150, function() {
+			if ($body.is(':visible')) {
+				$arrow.css('transform', 'rotate(0deg)');
+			} else {
+				$arrow.css('transform', 'rotate(-90deg)');
+			}
+		});
+	});
+
+	// 2.2. Desplegar Todo / Plegar Todo
+	$(document).on('click', '#wpat_expand_all_cats_btn', function(e) {
+		e.preventDefault();
+		$('.wpat-cap-cat-body').slideDown(150);
+		$('.wpat-cat-accordion-arrow').css('transform', 'rotate(0deg)');
+	});
+
+	$(document).on('click', '#wpat_collapse_all_cats_btn', function(e) {
+		e.preventDefault();
+		$('.wpat-cap-cat-body').slideUp(150);
+		$('.wpat-cat-accordion-arrow').css('transform', 'rotate(-90deg)');
+	});
+
+	// 3. Búsqueda y filtrado en tiempo real de permisos (con auto-despliegue)
 	$(document).on('input', '#wpat_cap_search_input', function() {
 		var term = ($(this).val() || '').toLowerCase().trim();
 
 		$('.wpat-cap-category-card').each(function() {
 			var $cat = $(this);
+			var $body = $cat.find('.wpat-cap-cat-body');
+			var $arrow = $cat.find('.wpat-cat-accordion-arrow');
 			var visibleInCat = 0;
 
 			$cat.find('.wpat-cap-item').each(function() {
@@ -4664,6 +4698,10 @@ jQuery(document).ready(function($) {
 				$cat.hide();
 			} else {
 				$cat.show();
+				if (term !== '' && visibleInCat > 0) {
+					$body.slideDown(100);
+					$arrow.css('transform', 'rotate(0deg)');
+				}
 			}
 		});
 	});
@@ -4902,6 +4940,138 @@ jQuery(document).ready(function($) {
 			error: function() {
 				$btn.prop('disabled', false);
 				showToast('Error de conexión AJAX al restaurar roles', true);
+			}
+		});
+	});
+
+	// ==========================================
+	// MÓDULO: BANNER DE COOKIES & RGPD (COOKIE-CONSENT)
+	// ==========================================
+
+	// 1. Cambio de sub-pestañas en Cookie Consent
+	$(document).on('click', '.wpat-cookie-tab-btn', function(e) {
+		e.preventDefault();
+		var tab = $(this).data('tab');
+		$('.wpat-cookie-tab-btn').removeClass('active').css({
+			'border-bottom-color': 'transparent',
+			'color': '#64748b'
+		});
+		$(this).addClass('active').css({
+			'border-bottom-color': '#2563eb',
+			'color': '#2563eb'
+		});
+
+		$('.wpat-cookie-tab-panel').hide();
+		$('#wpat_cookie_tab_' + tab).fadeIn(200);
+	});
+
+	// 2. Usar URL de Privacidad de WordPress
+	$(document).on('click', '#wpat_set_wp_privacy_url_btn', function(e) {
+		e.preventDefault();
+		var url = $(this).data('url');
+		if (url) {
+			$('#wpat_cookie_consent_policy_url').val(url);
+			showToast('URL de Política de WordPress asignada', false);
+		}
+	});
+
+	// 3. Copiar Shortcode al Portapapeles
+	$(document).on('click', '#wpat_copy_shortcode_btn', function(e) {
+		e.preventDefault();
+		var shortcode = '[wpat_cookie_table]';
+		if (navigator.clipboard && window.isSecureContext) {
+			navigator.clipboard.writeText(shortcode).then(function() {
+				showToast('Shortcode [wpat_cookie_table] copiado al portapapeles', false);
+			});
+		} else {
+			var $temp = $('<input>');
+			$('body').append($temp);
+			$temp.val(shortcode).select();
+			document.execCommand('copy');
+			$temp.remove();
+			showToast('Shortcode copiado', false);
+		}
+	});
+
+	// 4. Escáner Inteligente de Cookies vía AJAX
+	$(document).on('click', '#wpat_scan_cookies_btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var $status = $('#wpat_scanner_status_area');
+		var $tbody = $('#wpat_scan_tbody');
+
+		$btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin" style="animation: rotation 1.5s infinite linear;"></span> Escaneando...');
+		$status.removeClass('notice-error notice-success').css({
+			'display': 'block',
+			'background': '#eff6ff',
+			'color': '#1e40af',
+			'border': '1px solid #bfdbfe'
+		}).html('🔍 Analizando plugins activos, rastreadores y cookies del sitio en tiempo real...');
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_scan_cookies',
+				security: wpat_object.cookie_consent_nonce
+			},
+			success: function(response) {
+				$btn.prop('disabled', false).html('<span class="dashicons dashicons-search"></span> Escanear Cookies Ahora');
+
+				if (response.success && response.data) {
+					var cookies = response.data.cookies || [];
+					var total = response.data.total || 0;
+
+					$status.css({
+						'background': '#ecfdf5',
+						'color': '#047857',
+						'border': '1px solid #a7f3d0'
+					}).html('✅ Escaneo completado: <strong>' + total + ' cookies y rastreadores</strong> identificados en tu instalación.');
+
+					if (cookies.length > 0) {
+						var html = '';
+						cookies.forEach(function(c) {
+							var badgeBg = '#e2e8f0';
+							var badgeTx = '#475569';
+							if (c.category === 'necessary') {
+								badgeBg = '#eff6ff';
+								badgeTx = '#1d4ed8';
+							} else if (c.category === 'analytics') {
+								badgeBg = '#ecfdf5';
+								badgeTx = '#047857';
+							} else if (c.category === 'marketing') {
+								badgeBg = '#fef2f2';
+								badgeTx = '#b91c1c';
+							}
+
+							html += '<tr style="border-bottom: 1px solid #f1f5f9;">';
+							html += '<td style="padding: 10px 14px; font-weight: 700; color: #1e293b;"><code>' + $('<div>').text(c.name).html() + '</code></td>';
+							html += '<td style="padding: 10px 14px; color: #475569;">' + $('<div>').text(c.provider).html() + '</td>';
+							html += '<td style="padding: 10px 14px;"><span style="background:' + badgeBg + '; color:' + badgeTx + '; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">' + $('<div>').text(c.cat_label).html() + '</span></td>';
+							html += '<td style="padding: 10px 14px; color: #64748b; font-size: 12.5px;">' + $('<div>').text(c.purpose).html() + '</td>';
+							html += '<td style="padding: 10px 14px; color: #475569; font-weight: 600; font-size: 12px;">' + $('<div>').text(c.expiry).html() + '</td>';
+							html += '</tr>';
+						});
+						$tbody.html(html);
+					}
+					showToast('Escaneo de cookies finalizado con éxito (' + total + ' detectadas)', false);
+				} else {
+					$status.css({
+						'background': '#fef2f2',
+						'color': '#b91c1c',
+						'border': '1px solid #fecaca'
+					}).html('⚠️ Error durante el escaneo: ' + (response.data ? response.data.message : 'Respuesta no válida'));
+					showToast('Error en el escáner de cookies', true);
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).html('<span class="dashicons dashicons-search"></span> Escanear Cookies Ahora');
+				$status.css({
+					'background': '#fef2f2',
+					'color': '#b91c1c',
+					'border': '1px solid #fecaca'
+				}).html('⚠️ Error de conexión AJAX al realizar el escaneo de cookies.');
+				showToast('Error de conexión AJAX', true);
 			}
 		});
 	});

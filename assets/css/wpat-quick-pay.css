@@ -1,0 +1,241 @@
+/* ==========================================================================
+   Estilos Frontend: Venta Directa & Pagos Rápidos (Quick Pay) - WPAT
+   ========================================================================== */
+
+/* 1. Modal Overlay & Contenedor */
+.wpat-qp-modal-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(4px);
+	z-index: 9999999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	box-sizing: border-box;
+	animation: wpatQpFadeIn 0.2s ease-out forwards;
+}
+
+@keyframes wpatQpFadeIn {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+.wpat-qp-modal-container {
+	background: #ffffff;
+	border-radius: 16px;
+	width: 100%;
+	max-width: 520px;
+	max-height: 90vh;
+	overflow-y: auto;
+	padding: 26px;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+	position: relative;
+	box-sizing: border-box;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	animation: wpatQpSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes wpatQpSlideUp {
+	from { transform: translateY(20px) scale(0.97); opacity: 0; }
+	to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.wpat-qp-close-modal {
+	position: absolute;
+	top: 16px;
+	right: 18px;
+	background: #f1f5f9;
+	border: none;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	font-size: 20px;
+	line-height: 1;
+	cursor: pointer;
+	color: #64748b;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.15s ease;
+}
+
+.wpat-qp-close-modal:hover {
+	background: #e2e8f0;
+	color: #0f172a;
+}
+
+/* 2. Cabecera del Modal */
+.wpat-qp-modal-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	padding-bottom: 16px;
+	margin-bottom: 18px;
+	border-bottom: 1px solid #e2e8f0;
+	padding-right: 36px;
+}
+
+.wpat-qp-modal-title-wrap h3 {
+	margin: 0 0 6px 0;
+	font-size: 18px;
+	font-weight: 800;
+	color: #0f172a;
+	line-height: 1.3;
+}
+
+.wpat-qp-type-pill {
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	background: #eff6ff;
+	color: #2563eb;
+	padding: 2px 8px;
+	border-radius: 20px;
+	display: inline-block;
+}
+
+.wpat-qp-price-tag {
+	font-size: 22px;
+	font-weight: 900;
+	color: #0f172a;
+	white-space: nowrap;
+}
+
+/* 3. Formulario y Campos */
+.wpat-qp-section-title {
+	font-size: 13px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: #64748b;
+	margin-bottom: 10px;
+}
+
+.wpat-qp-form-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+	margin-bottom: 10px;
+}
+
+@media (max-width: 480px) {
+	.wpat-qp-form-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.wpat-qp-form-field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.wpat-qp-form-field label {
+	font-size: 12px;
+	font-weight: 600;
+	color: #334155;
+}
+
+.wpat-qp-form-field input {
+	width: 100%;
+	height: 38px;
+	border-radius: 8px;
+	border: 1px solid #cbd5e1;
+	padding: 0 12px;
+	font-size: 13.5px;
+	box-sizing: border-box;
+	transition: border-color 0.15s ease;
+	outline: none;
+	background: #ffffff;
+}
+
+.wpat-qp-form-field input:focus {
+	border-color: #2563eb;
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* 4. Selector de Pasarelas */
+.wpat-qp-gateway-option {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 12px 14px;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	background: #ffffff;
+}
+
+.wpat-qp-gateway-option:hover {
+	border-color: #bfdbfe;
+	background: #f8fafc;
+}
+
+.wpat-qp-gateway-option.active {
+	border-color: #2563eb;
+	background: #eff6ff;
+}
+
+.wpat-qp-gateway-option input[type="radio"] {
+	margin-top: 3px;
+	accent-color: #2563eb;
+}
+
+.wpat-qp-gw-info strong {
+	display: block;
+	font-size: 13.5px;
+	color: #0f172a;
+	margin-bottom: 2px;
+}
+
+.wpat-qp-gw-info span {
+	font-size: 11.5px;
+	color: #64748b;
+	line-height: 1.3;
+	display: block;
+}
+
+/* 5. Botón de Submit Principal */
+.wpat-qp-submit-button {
+	width: 100%;
+	height: 48px;
+	background: #2563eb;
+	color: #ffffff;
+	border: none;
+	border-radius: 10px;
+	font-size: 16px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+}
+
+.wpat-qp-submit-button:hover {
+	background: #1d4ed8;
+	transform: translateY(-1px);
+	box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+}
+
+.wpat-qp-submit-button:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+	transform: none;
+}
+
+.wpat-qp-legal-notice {
+	font-size: 11px;
+	color: #94a3b8;
+	text-align: center;
+	margin: 10px 0 0 0;
+	line-height: 1.4;
+}

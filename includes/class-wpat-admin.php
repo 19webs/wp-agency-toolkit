@@ -695,6 +695,7 @@ class WPAT_Admin {
 			'error-log-viewer',
 			'role-manager',
 			'cookie-consent',
+			'quick-pay',
 			'tools',
 		);
 
@@ -1476,6 +1477,62 @@ class WPAT_Admin {
 			}
 		}
 
+		// Sanitizar Venta Directa & Pagos Rápidos (Quick Pay)
+		if ( empty( $saving_module ) || 'quick-pay' === $saving_module ) {
+			if ( isset( $input_settings['qp_currency'] ) ) {
+				$new_settings['qp_currency'] = sanitize_text_field( $input_settings['qp_currency'] );
+			}
+			if ( isset( $input_settings['qp_currency_symbol'] ) ) {
+				$new_settings['qp_currency_symbol'] = sanitize_text_field( $input_settings['qp_currency_symbol'] );
+			}
+			if ( isset( $input_settings['qp_currency_pos'] ) ) {
+				$new_settings['qp_currency_pos'] = sanitize_key( $input_settings['qp_currency_pos'] );
+			}
+			if ( isset( $input_settings['qp_default_tax_rate'] ) ) {
+				$new_settings['qp_default_tax_rate'] = floatval( $input_settings['qp_default_tax_rate'] );
+			}
+			if ( isset( $input_settings['qp_company_name'] ) ) {
+				$new_settings['qp_company_name'] = sanitize_text_field( $input_settings['qp_company_name'] );
+			}
+			if ( isset( $input_settings['qp_company_cif'] ) ) {
+				$new_settings['qp_company_cif'] = sanitize_text_field( $input_settings['qp_company_cif'] );
+			}
+			if ( isset( $input_settings['qp_company_address'] ) ) {
+				$new_settings['qp_company_address'] = sanitize_textarea_field( $input_settings['qp_company_address'] );
+			}
+			if ( isset( $input_settings['qp_invoice_prefix'] ) ) {
+				$new_settings['qp_invoice_prefix'] = sanitize_text_field( $input_settings['qp_invoice_prefix'] );
+			}
+			if ( isset( $input_settings['qp_primary_color'] ) ) {
+				$new_settings['qp_primary_color'] = sanitize_hex_color( $input_settings['qp_primary_color'] );
+			}
+
+			// Pasarelas
+			$new_settings['qp_stripe_enabled']      = isset( $input_settings['qp_stripe_enabled'] ) && '1' === $input_settings['qp_stripe_enabled'] ? '1' : '0';
+			$new_settings['qp_stripe_mode']         = isset( $input_settings['qp_stripe_mode'] ) && 'live' === $input_settings['qp_stripe_mode'] ? 'live' : 'test';
+			$new_settings['qp_stripe_test_pub_key'] = isset( $input_settings['qp_stripe_test_pub_key'] ) ? sanitize_text_field( $input_settings['qp_stripe_test_pub_key'] ) : '';
+			$new_settings['qp_stripe_test_sec_key'] = isset( $input_settings['qp_stripe_test_sec_key'] ) ? sanitize_text_field( $input_settings['qp_stripe_test_sec_key'] ) : '';
+			$new_settings['qp_stripe_live_pub_key'] = isset( $input_settings['qp_stripe_live_pub_key'] ) ? sanitize_text_field( $input_settings['qp_stripe_live_pub_key'] ) : '';
+			$new_settings['qp_stripe_live_sec_key'] = isset( $input_settings['qp_stripe_live_sec_key'] ) ? sanitize_text_field( $input_settings['qp_stripe_live_sec_key'] ) : '';
+
+			$new_settings['qp_redsys_enabled']  = isset( $input_settings['qp_redsys_enabled'] ) && '1' === $input_settings['qp_redsys_enabled'] ? '1' : '0';
+			$new_settings['qp_redsys_mode']     = isset( $input_settings['qp_redsys_mode'] ) && 'live' === $input_settings['qp_redsys_mode'] ? 'live' : 'test';
+			$new_settings['qp_redsys_fuc']      = isset( $input_settings['qp_redsys_fuc'] ) ? sanitize_text_field( $input_settings['qp_redsys_fuc'] ) : '';
+			$new_settings['qp_redsys_terminal'] = isset( $input_settings['qp_redsys_terminal'] ) ? sanitize_text_field( $input_settings['qp_redsys_terminal'] ) : '1';
+			$new_settings['qp_redsys_key']      = isset( $input_settings['qp_redsys_key'] ) ? sanitize_text_field( $input_settings['qp_redsys_key'] ) : '';
+
+			$new_settings['qp_bizum_enabled']   = isset( $input_settings['qp_bizum_enabled'] ) && '1' === $input_settings['qp_bizum_enabled'] ? '1' : '0';
+			$new_settings['qp_bizum_phone']     = isset( $input_settings['qp_bizum_phone'] ) ? sanitize_text_field( $input_settings['qp_bizum_phone'] ) : '';
+
+			$new_settings['qp_paypal_enabled']  = isset( $input_settings['qp_paypal_enabled'] ) && '1' === $input_settings['qp_paypal_enabled'] ? '1' : '0';
+			$new_settings['qp_paypal_mode']     = isset( $input_settings['qp_paypal_mode'] ) && 'live' === $input_settings['qp_paypal_mode'] ? 'live' : 'test';
+			$new_settings['qp_paypal_email']    = isset( $input_settings['qp_paypal_email'] ) ? sanitize_email( $input_settings['qp_paypal_email'] ) : '';
+
+			$new_settings['qp_bank_enabled']    = isset( $input_settings['qp_bank_enabled'] ) && '1' === $input_settings['qp_bank_enabled'] ? '1' : '0';
+			$new_settings['qp_bank_iban']       = isset( $input_settings['qp_bank_iban'] ) ? sanitize_text_field( $input_settings['qp_bank_iban'] ) : '';
+			$new_settings['qp_bank_holder']     = isset( $input_settings['qp_bank_holder'] ) ? sanitize_text_field( $input_settings['qp_bank_holder'] ) : '';
+		}
+
 		update_option( 'wpat_settings', $new_settings );
 
 		// Actualizar reglas del archivo .htaccess para SSL
@@ -1823,6 +1880,7 @@ class WPAT_Admin {
 			'error-log-viewer',
 			'role-manager',
 			'cookie-consent',
+			'quick-pay',
 			'tools',
 		);
 
@@ -2696,6 +2754,7 @@ class WPAT_Admin {
 				'wpat-error-log-viewer'  => 'error-log-viewer',
 				'wpat-role-manager'      => 'role-manager',
 				'wpat-cookie-consent'    => 'cookie-consent',
+				'wpat-quick-pay'         => 'quick-pay',
 				'wpat-tools'             => 'tools',
 			);
 			if ( isset( $map[ $page_slug ] ) ) {
@@ -3064,6 +3123,18 @@ class WPAT_Admin {
 				'icon'        => '🎨',
 				'icon_bg'     => 'woo',
 				'keywords'    => 'swatches variaciones botones color imagen atributos'
+			),
+			array(
+				'id'          => 'quick-pay',
+				'is_new'      => true,
+				'title'       => 'Venta Directa & Pagos Rápidos',
+				'badge'       => 'Subpágina',
+				'badge_class' => 'subpage',
+				'desc'        => 'Vende servicios, cursos, productos digitales, físicos y suscripciones sin WooCommerce con Stripe, Redsys TPV, Bizum, PayPal y facturación PDF.',
+				'cat_class'   => 'cat-woocommerce cat-woo cat-tools cat-performance',
+				'icon'        => '💳',
+				'icon_bg'     => 'woo',
+				'keywords'    => 'venta directa pagos rapidos stripe redsys bizum paypal checkout sin woocommerce infoproductos servicios compras pedidos facturas cupones quick pay'
 			),
 
 			// SEGURIDAD (6)
@@ -10326,6 +10397,9 @@ class WPAT_Admin {
 			case 'cookie-consent':
 				$this->render_cookie_consent_content( $settings );
 				break;
+			case 'quick-pay':
+				$this->render_quick_pay_content( $settings );
+				break;
 			case 'tools':
 				echo '<div id="wpat_health_content_wrapper">';
 				$this->render_health_tab_content();
@@ -11690,4 +11764,638 @@ class WPAT_Admin {
 		}
 	}
 
+	/**
+	 * Renderiza la interfaz y panel de configuración de Venta Directa & Pagos Rápidos (Quick Pay).
+	 *
+	 * @param array $settings Ajustes actuales.
+	 */
+	public function render_quick_pay_content( $settings ) {
+		if ( ! class_exists( 'WPAT_Quick_Pay' ) ) {
+			require_once WPAT_PATH . 'includes/modules/class-wpat-quick-pay.php';
+		}
+
+		$products = WPAT_Quick_Pay::get_products();
+		$coupons  = WPAT_Quick_Pay::get_coupons();
+		$orders   = WPAT_Quick_Pay::get_all_orders( 150 );
+
+		$active_subtab = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : 'products';
+		if ( ! in_array( $active_subtab, array( 'products', 'gateways', 'coupons', 'orders', 'settings' ), true ) ) {
+			$active_subtab = 'products';
+		}
+
+		$total_sales = 0.0;
+		$count_completed = 0;
+		$count_pending = 0;
+		foreach ( $orders as $o ) {
+			if ( 'completed' === $o->status ) {
+				$total_sales += floatval( $o->amount );
+				$count_completed++;
+			} elseif ( 'pending' === $o->status ) {
+				$count_pending++;
+			}
+		}
+
+		$curr_sym = isset( $settings['qp_currency_symbol'] ) ? $settings['qp_currency_symbol'] : '€';
+		$admin_nonce = wp_create_nonce( 'wpat_quick_pay_admin_nonce' );
+		?>
+		<input type="hidden" id="wpat_qp_active_subtab" name="wpat_active_subtab" value="<?php echo esc_attr( $active_subtab ); ?>" />
+		<input type="hidden" id="wpat_qp_admin_nonce_field" value="<?php echo esc_attr( $admin_nonce ); ?>" />
+
+		<div class="wpat-module-card wpat-quick-pay-wrapper">
+			<div class="wpat-module-header">
+				<div class="wpat-module-info">
+					<h3>Venta Directa & Pagos Rápidos <span class="wpat-badge" style="background:#059669; color:#fff;">Sin WooCommerce</span></h3>
+					<p>Vende servicios, productos digitales, físicos y suscripciones en 1 clic con Stripe, Redsys TPV, Bizum, PayPal y facturación PDF automática.</p>
+				</div>
+				<?php $this->render_module_toggle( 'quick-pay', $settings, true ); ?>
+			</div>
+
+			<div class="wpat-module-body" style="display: block; padding: 22px;">
+
+				<!-- SUB-PESTAÑAS DE NAVEGACIÓN -->
+				<div class="wpat-cookie-tabs-nav" style="display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-bottom: 24px; flex-wrap: wrap;">
+					<button type="button" class="wpat-qp-tab-btn <?php echo ( 'products' === $active_subtab ) ? 'active' : ''; ?>" data-tab="products" style="background: none; border: none; border-bottom: 3px solid <?php echo ( 'products' === $active_subtab ) ? '#2563eb' : 'transparent'; ?>; color: <?php echo ( 'products' === $active_subtab ) ? '#2563eb' : '#64748b'; ?>; padding: 10px 16px; font-weight: 700; font-size: 13.5px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+						📦 Productos & Enlaces
+					</button>
+					<button type="button" class="wpat-qp-tab-btn <?php echo ( 'gateways' === $active_subtab ) ? 'active' : ''; ?>" data-tab="gateways" style="background: none; border: none; border-bottom: 3px solid <?php echo ( 'gateways' === $active_subtab ) ? '#2563eb' : 'transparent'; ?>; color: <?php echo ( 'gateways' === $active_subtab ) ? '#2563eb' : '#64748b'; ?>; padding: 10px 16px; font-weight: 700; font-size: 13.5px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+						💳 Pasarelas de Pago
+					</button>
+					<button type="button" class="wpat-qp-tab-btn <?php echo ( 'coupons' === $active_subtab ) ? 'active' : ''; ?>" data-tab="coupons" style="background: none; border: none; border-bottom: 3px solid <?php echo ( 'coupons' === $active_subtab ) ? '#2563eb' : 'transparent'; ?>; color: <?php echo ( 'coupons' === $active_subtab ) ? '#2563eb' : '#64748b'; ?>; padding: 10px 16px; font-weight: 700; font-size: 13.5px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+						🎟️ Cupones de Descuento
+					</button>
+					<button type="button" class="wpat-qp-tab-btn <?php echo ( 'orders' === $active_subtab ) ? 'active' : ''; ?>" data-tab="orders" style="background: none; border: none; border-bottom: 3px solid <?php echo ( 'orders' === $active_subtab ) ? '#2563eb' : 'transparent'; ?>; color: <?php echo ( 'orders' === $active_subtab ) ? '#2563eb' : '#64748b'; ?>; padding: 10px 16px; font-weight: 700; font-size: 13.5px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+						📋 Ventas & Pedidos (<?php echo count( $orders ); ?>)
+					</button>
+					<button type="button" class="wpat-qp-tab-btn <?php echo ( 'settings' === $active_subtab ) ? 'active' : ''; ?>" data-tab="settings" style="background: none; border: none; border-bottom: 3px solid <?php echo ( 'settings' === $active_subtab ) ? '#2563eb' : 'transparent'; ?>; color: <?php echo ( 'settings' === $active_subtab ) ? '#2563eb' : '#64748b'; ?>; padding: 10px 16px; font-weight: 700; font-size: 13.5px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+						🧾 Facturación PDF & Ajustes
+					</button>
+				</div>
+
+				<!-- ========================================== -->
+				<!-- PESTAÑA 1: PRODUCTOS & ENLACES            -->
+				<!-- ========================================== -->
+				<div id="wpat_qp_tab_products" class="wpat-qp-tab-panel" style="<?php echo ( 'products' === $active_subtab ) ? 'display:block;' : 'display:none;'; ?>">
+					<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+						<div>
+							<h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #0f172a;">Catálogo de Productos y Servicios</h4>
+							<p style="margin: 3px 0 0 0; color: #64748b; font-size: 12.5px;">Crea productos para vender con shortcode o botón modal en cualquier página o entrada.</p>
+						</div>
+						<button type="button" class="button button-primary" id="wpat_qp_open_add_product_btn" style="background: #2563eb; border-color: #1d4ed8; font-weight: 700; height: 34px; display: inline-flex; align-items: center; gap: 6px;">
+							<span class="dashicons dashicons-plus-alt2" style="font-size: 14px; width: 14px; height: 14px; line-height: 1;"></span> Añadir Nuevo Producto
+						</button>
+					</div>
+
+					<div class="wpat-qp-products-table-wrap" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+						<table class="wp-list-table widefat fixed striped" style="border: none;">
+							<thead>
+								<tr>
+									<th style="width: 28%; padding: 12px 14px; font-weight: 700;">Producto / Servicio</th>
+									<th style="width: 14%; padding: 12px 14px; font-weight: 700;">Tipo</th>
+									<th style="width: 12%; padding: 12px 14px; font-weight: 700;">Precio</th>
+									<th style="width: 10%; padding: 12px 14px; font-weight: 700;">IVA</th>
+									<th style="width: 22%; padding: 12px 14px; font-weight: 700;">Shortcode de Compra</th>
+									<th style="width: 14%; text-align: right; padding: 12px 14px; font-weight: 700;">Acciones</th>
+								</tr>
+							</thead>
+							<tbody id="wpat_qp_products_tbody">
+								<?php if ( ! empty( $products ) ) : ?>
+									<?php foreach ( $products as $p_id => $p ) : ?>
+										<?php
+										$type_label = ( 'digital' === $p['type'] ) ? '📥 Descarga' : ( ( 'physical' === $p['type'] ) ? '📦 Físico' : '🎓 Servicio' );
+										$type_color = ( 'digital' === $p['type'] ) ? '#059669' : ( ( 'physical' === $p['type'] ) ? '#d97706' : '#2563eb' );
+										$type_bg    = ( 'digital' === $p['type'] ) ? '#ecfdf5' : ( ( 'physical' === $p['type'] ) ? '#fffbeb' : '#eff6ff' );
+										?>
+										<tr id="wpat_qp_row_prod_<?php echo esc_attr( $p_id ); ?>">
+											<td style="padding: 12px 14px;">
+												<strong style="font-size: 13.5px; color: #0f172a; display: block;"><?php echo esc_html( $p['name'] ); ?></strong>
+												<code style="font-size: 11px; color: #64748b;"><?php echo esc_html( $p_id ); ?></code>
+												<?php if ( ! empty( $p['is_recurring'] ) ) : ?>
+													<span style="font-size: 10.5px; font-weight: 700; color: #7c3aed; background: #f5f3ff; padding: 1px 6px; border-radius: 4px; margin-left: 4px;">Suscripción (<?php echo esc_html( $p['billing_interval'] ); ?>)</span>
+												<?php endif; ?>
+											</td>
+											<td style="padding: 12px 14px;">
+												<span style="background: <?php echo esc_attr( $type_bg ); ?>; color: <?php echo esc_attr( $type_color ); ?>; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
+													<?php echo esc_html( $type_label ); ?>
+												</span>
+											</td>
+											<td style="padding: 12px 14px; font-weight: 700; font-size: 14px; color: #0f172a;">
+												<?php echo number_format( $p['price'], 2, ',', '.' ) . ' ' . esc_html( $curr_sym ); ?>
+											</td>
+											<td style="padding: 12px 14px; color: #475569; font-size: 12.5px;">
+												<?php echo esc_html( isset( $p['tax_rate'] ) ? $p['tax_rate'] : '21' ); ?>%
+											</td>
+											<td style="padding: 12px 14px;">
+												<div style="display: flex; align-items: center; gap: 6px;">
+													<code style="background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-size: 11.5px; color: #334155; font-weight: 600;">[wpat_pay id="<?php echo esc_attr( $p_id ); ?>"]</code>
+													<button type="button" class="button button-small wpat-qp-copy-shortcode-btn" data-code="[wpat_pay id=&quot;<?php echo esc_attr( $p_id ); ?>&quot;]" title="Copiar Shortcode" style="height: 24px; padding: 0 6px;">📋</button>
+												</div>
+											</td>
+											<td style="text-align: right; padding: 12px 14px;">
+												<button type="button" class="button button-small wpat-qp-edit-prod-btn" data-prod='<?php echo esc_attr( wp_json_encode( $p ) ); ?>' style="margin-right: 4px;">Editar</button>
+												<button type="button" class="button button-small button-link-delete wpat-qp-delete-prod-btn" data-id="<?php echo esc_attr( $p_id ); ?>">Eliminar</button>
+											</td>
+										</tr>
+									<?php endforeach; ?>
+								<?php else : ?>
+									<tr>
+										<td colspan="6" style="text-align: center; padding: 30px; color: #94a3b8;">
+											No tienes productos creados todavía. Pulsa en "Añadir Nuevo Producto".
+										</td>
+									</tr>
+								<?php endif; ?>
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+				<!-- ========================================== -->
+				<!-- PESTAÑA 2: PASARELAS DE PAGO              -->
+				<!-- ========================================== -->
+				<div id="wpat_qp_tab_gateways" class="wpat-qp-tab-panel" style="<?php echo ( 'gateways' === $active_subtab ) ? 'display:block;' : 'display:none;'; ?>">
+					<div style="display: flex; flex-direction: column; gap: 20px;">
+
+						<!-- 1. STRIPE -->
+						<div class="wpat-qp-gateway-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 22px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+								<div style="display: flex; align-items: center; gap: 10px;">
+									<span style="font-size: 24px;">💳</span>
+									<div>
+										<strong style="font-size: 15px; color: #0f172a;">Stripe (Tarjetas, Apple Pay, Google Pay)</strong>
+										<span style="display: block; font-size: 12px; color: #64748b;">Cobros instantáneos con tarjeta y soporte para suscripciones periódicas.</span>
+									</div>
+								</div>
+								<label class="wpat-switch">
+									<input type="checkbox" name="wpat_settings[qp_stripe_enabled]" value="1" <?php checked( isset( $settings['qp_stripe_enabled'] ) ? $settings['qp_stripe_enabled'] : '1', '1' ); ?> />
+									<span class="wpat-slider round"></span>
+								</label>
+							</div>
+
+							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+								<div class="wpat-field-group">
+									<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Modo de Funcionamiento</label>
+									<select name="wpat_settings[qp_stripe_mode]" style="width: 100%; height: 36px; border-radius: 6px;">
+										<option value="test" <?php selected( isset( $settings['qp_stripe_mode'] ) ? $settings['qp_stripe_mode'] : 'test', 'test' ); ?>>🧪 Modo de Pruebas (Test / Sandbox)</option>
+										<option value="live" <?php selected( isset( $settings['qp_stripe_mode'] ) ? $settings['qp_stripe_mode'] : 'test', 'live' ); ?>>🚀 Modo Producción (Real / Live)</option>
+									</select>
+								</div>
+								<div class="wpat-field-group">
+									<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Clave Pública de Pruebas (Test Publishable Key)</label>
+									<input type="text" name="wpat_settings[qp_stripe_test_pub_key]" value="<?php echo esc_attr( isset( $settings['qp_stripe_test_pub_key'] ) ? $settings['qp_stripe_test_pub_key'] : '' ); ?>" placeholder="pk_test_..." class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+								</div>
+								<div class="wpat-field-group">
+									<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Clave Secreta de Pruebas (Test Secret Key)</label>
+									<input type="password" name="wpat_settings[qp_stripe_test_sec_key]" value="<?php echo esc_attr( isset( $settings['qp_stripe_test_sec_key'] ) ? $settings['qp_stripe_test_sec_key'] : '' ); ?>" placeholder="sk_test_..." class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+								</div>
+								<div class="wpat-field-group">
+									<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Clave Pública Real (Live Publishable Key)</label>
+									<input type="text" name="wpat_settings[qp_stripe_live_pub_key]" value="<?php echo esc_attr( isset( $settings['qp_stripe_live_pub_key'] ) ? $settings['qp_stripe_live_pub_key'] : '' ); ?>" placeholder="pk_live_..." class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+								</div>
+								<div class="wpat-field-group">
+									<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Clave Secreta Real (Live Secret Key)</label>
+									<input type="password" name="wpat_settings[qp_stripe_live_sec_key]" value="<?php echo esc_attr( isset( $settings['qp_stripe_live_sec_key'] ) ? $settings['qp_stripe_live_sec_key'] : '' ); ?>" placeholder="sk_live_..." class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+								</div>
+							</div>
+						</div>
+
+						<!-- 2. REDSYS TPV & BIZUM BANCO -->
+						<div class="wpat-qp-gateway-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 22px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+								<div style="display: flex; align-items: center; gap: 10px;">
+									<span style="font-size: 24px;">🏦</span>
+									<div>
+										<strong style="font-size: 15px; color: #0f172a;">Redsys TPV Virtual & Bizum Bancario</strong>
+										<span style="display: block; font-size: 12px; color: #64748b;">Pasarela directa con firma HMAC SHA-256 sin plugins adicionales.</span>
+									</div>
+								</div>
+								<label class="wpat-switch">
+									<input type="checkbox" name="wpat_settings[qp_redsys_enabled]" value="1" <?php checked( isset( $settings['qp_redsys_enabled'] ) ? $settings['qp_redsys_enabled'] : '0', '1' ); ?> />
+									<span class="wpat-slider round"></span>
+								</label>
+							</div>
+
+							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+								<div class="wpat-field-group">
+									<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Entorno Redsys</label>
+									<select name="wpat_settings[qp_redsys_mode]" style="width: 100%; height: 36px; border-radius: 6px;">
+										<option value="test" <?php selected( isset( $settings['qp_redsys_mode'] ) ? $settings['qp_redsys_mode'] : 'test', 'test' ); ?>>🧪 Pruebas (sis-t.redsys.es)</option>
+										<option value="live" <?php selected( isset( $settings['qp_redsys_mode'] ) ? $settings['qp_redsys_mode'] : 'test', 'live' ); ?>>🚀 Real / Producción (sis.redsys.es)</option>
+									</select>
+								</div>
+								<div class="wpat-field-group">
+									<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Número de Comercio (FUC)</label>
+									<input type="text" name="wpat_settings[qp_redsys_fuc]" value="<?php echo esc_attr( isset( $settings['qp_redsys_fuc'] ) ? $settings['qp_redsys_fuc'] : '' ); ?>" placeholder="Ej: 999008881" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+								</div>
+								<div class="wpat-field-group">
+									<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Número de Terminal</label>
+									<input type="text" name="wpat_settings[qp_redsys_terminal]" value="<?php echo esc_attr( isset( $settings['qp_redsys_terminal'] ) ? $settings['qp_redsys_terminal'] : '1' ); ?>" placeholder="Ej: 1" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+								</div>
+								<div class="wpat-field-group">
+									<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Clave Secreta SHA-256</label>
+									<input type="password" name="wpat_settings[qp_redsys_key]" value="<?php echo esc_attr( isset( $settings['qp_redsys_key'] ) ? $settings['qp_redsys_key'] : '' ); ?>" placeholder="Clave generada en el panel de Redsys" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+								</div>
+							</div>
+						</div>
+
+						<!-- 3. BIZUM DIRECTO MANUAL -->
+						<div class="wpat-qp-gateway-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 22px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+								<div style="display: flex; align-items: center; gap: 10px;">
+									<span style="font-size: 24px;">📱</span>
+									<div>
+										<strong style="font-size: 15px; color: #0f172a;">Bizum Directo (Manual / Freelancers)</strong>
+										<span style="display: block; font-size: 12px; color: #64748b;">Muestra tu número de Bizum en el checkout y registra el pedido pendiente.</span>
+									</div>
+								</div>
+								<label class="wpat-switch">
+									<input type="checkbox" name="wpat_settings[qp_bizum_enabled]" value="1" <?php checked( isset( $settings['qp_bizum_enabled'] ) ? $settings['qp_bizum_enabled'] : '1', '1' ); ?> />
+									<span class="wpat-slider round"></span>
+								</label>
+							</div>
+
+							<div class="wpat-field-group" style="max-width: 320px;">
+								<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Teléfono para recibir Bizum *</label>
+								<input type="text" name="wpat_settings[qp_bizum_phone]" value="<?php echo esc_attr( isset( $settings['qp_bizum_phone'] ) ? $settings['qp_bizum_phone'] : '' ); ?>" placeholder="Ej: 600 000 000" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+							</div>
+						</div>
+
+						<!-- 4. PAYPAL & TRANSFERENCIA -->
+						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+							<div class="wpat-qp-gateway-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 22px;">
+								<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+									<strong style="font-size: 14px; color: #0f172a;">🅿️ PayPal</strong>
+									<label class="wpat-switch">
+										<input type="checkbox" name="wpat_settings[qp_paypal_enabled]" value="1" <?php checked( isset( $settings['qp_paypal_enabled'] ) ? $settings['qp_paypal_enabled'] : '0', '1' ); ?> />
+										<span class="wpat-slider round"></span>
+									</label>
+								</div>
+								<div class="wpat-field-group">
+									<label style="font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 4px; display: block;">Email de tu Cuenta PayPal</label>
+									<input type="email" name="wpat_settings[qp_paypal_email]" value="<?php echo esc_attr( isset( $settings['qp_paypal_email'] ) ? $settings['qp_paypal_email'] : '' ); ?>" placeholder="pagos@tunegocio.com" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+								</div>
+							</div>
+
+							<div class="wpat-qp-gateway-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 22px;">
+								<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+									<strong style="font-size: 14px; color: #0f172a;">🏛️ Transferencia Bancaria</strong>
+									<label class="wpat-switch">
+										<input type="checkbox" name="wpat_settings[qp_bank_enabled]" value="1" <?php checked( isset( $settings['qp_bank_enabled'] ) ? $settings['qp_bank_enabled'] : '0', '1' ); ?> />
+										<span class="wpat-slider round"></span>
+									</label>
+								</div>
+								<div class="wpat-field-group" style="margin-bottom: 8px;">
+									<label style="font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 4px; display: block;">IBAN</label>
+									<input type="text" name="wpat_settings[qp_bank_iban]" value="<?php echo esc_attr( isset( $settings['qp_bank_iban'] ) ? $settings['qp_bank_iban'] : '' ); ?>" placeholder="ES00 0000 0000 0000 0000 0000" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+								</div>
+								<div class="wpat-field-group">
+									<label style="font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 4px; display: block;">Titular de la Cuenta</label>
+									<input type="text" name="wpat_settings[qp_bank_holder]" value="<?php echo esc_attr( isset( $settings['qp_bank_holder'] ) ? $settings['qp_bank_holder'] : '' ); ?>" placeholder="Tu Empresa / Nombre" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- ========================================== -->
+				<!-- PESTAÑA 3: CUPONES DE DESCUENTO           -->
+				<!-- ========================================== -->
+				<div id="wpat_qp_tab_coupons" class="wpat-qp-tab-panel" style="<?php echo ( 'coupons' === $active_subtab ) ? 'display:block;' : 'display:none;'; ?>">
+					<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+						<div>
+							<h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #0f172a;">Cupones de Descuento</h4>
+							<p style="margin: 3px 0 0 0; color: #64748b; font-size: 12.5px;">Crea códigos promocionales para aplicar descuentos en porcentaje o importe fijo en el checkout.</p>
+						</div>
+						<button type="button" class="button button-primary" id="wpat_qp_open_add_coupon_btn" style="background: #2563eb; border-color: #1d4ed8; font-weight: 700; height: 34px; display: inline-flex; align-items: center; gap: 6px;">
+							<span class="dashicons dashicons-plus-alt2" style="font-size: 14px; width: 14px; height: 14px; line-height: 1;"></span> Añadir Cupón
+						</button>
+					</div>
+
+					<div class="wpat-qp-coupons-table-wrap" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+						<table class="wp-list-table widefat fixed striped" style="border: none;">
+							<thead>
+								<tr>
+									<th style="width: 25%; padding: 12px 14px; font-weight: 700;">Código de Cupón</th>
+									<th style="width: 20%; padding: 12px 14px; font-weight: 700;">Descuento</th>
+									<th style="width: 20%; padding: 12px 14px; font-weight: 700;">Caducidad</th>
+									<th style="width: 15%; padding: 12px 14px; font-weight: 700;">Usos</th>
+									<th style="width: 20%; text-align: right; padding: 12px 14px; font-weight: 700;">Acciones</th>
+								</tr>
+							</thead>
+							<tbody id="wpat_qp_coupons_tbody">
+								<?php if ( ! empty( $coupons ) ) : ?>
+									<?php foreach ( $coupons as $code => $c ) : ?>
+										<tr id="wpat_qp_row_coupon_<?php echo esc_attr( $code ); ?>">
+											<td style="padding: 12px 14px;">
+												<strong style="font-size: 13.5px; color: #2563eb; font-family: monospace;"><?php echo esc_html( $code ); ?></strong>
+											</td>
+											<td style="padding: 12px 14px; font-weight: 700; color: #059669;">
+												<?php echo ( 'percent' === $c['type'] ) ? esc_html( $c['amount'] ) . '%' : number_format( $c['amount'], 2, ',', '.' ) . ' ' . esc_html( $curr_sym ); ?>
+											</td>
+											<td style="padding: 12px 14px; color: #64748b; font-size: 12.5px;">
+												<?php echo ! empty( $c['expiry'] ) ? esc_html( $c['expiry'] ) : 'Sin límite'; ?>
+											</td>
+											<td style="padding: 12px 14px; font-size: 12.5px; color: #334155;">
+												<strong><?php echo intval( isset( $c['usage_count'] ) ? $c['usage_count'] : 0 ); ?></strong> / <?php echo ( ! empty( $c['usage_limit'] ) ) ? intval( $c['usage_limit'] ) : '∞'; ?>
+											</td>
+											<td style="text-align: right; padding: 12px 14px;">
+												<button type="button" class="button button-small button-link-delete wpat-qp-delete-coupon-btn" data-code="<?php echo esc_attr( $code ); ?>">Eliminar</button>
+											</td>
+										</tr>
+									<?php endforeach; ?>
+								<?php else : ?>
+									<tr>
+										<td colspan="5" style="text-align: center; padding: 30px; color: #94a3b8;">
+											No tienes cupones creados. Pulsa en "Añadir Cupón".
+										</td>
+									</tr>
+								<?php endif; ?>
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+				<!-- ========================================== -->
+				<!-- PESTAÑA 4: VENTAS & PEDIDOS               -->
+				<!-- ========================================== -->
+				<div id="wpat_qp_tab_orders" class="wpat-qp-tab-panel" style="<?php echo ( 'orders' === $active_subtab ) ? 'display:block;' : 'display:none;'; ?>">
+					<!-- MÉTRICAS DE VENTAS -->
+					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 22px;">
+						<div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; border-left: 4px solid #2563eb;">
+							<span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b;">Total Facturado</span>
+							<div style="font-size: 22px; font-weight: 900; color: #0f172a; margin-top: 4px;"><?php echo number_format( $total_sales, 2, ',', '.' ) . ' ' . esc_html( $curr_sym ); ?></div>
+						</div>
+						<div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; border-left: 4px solid #059669;">
+							<span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b;">Ventas Completadas</span>
+							<div style="font-size: 22px; font-weight: 900; color: #059669; margin-top: 4px;"><?php echo intval( $count_completed ); ?></div>
+						</div>
+						<div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; border-left: 4px solid #d97706;">
+							<span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b;">Pendientes de Pago</span>
+							<div style="font-size: 22px; font-weight: 900; color: #d97706; margin-top: 4px;"><?php echo intval( $count_pending ); ?></div>
+						</div>
+					</div>
+
+					<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+						<h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #0f172a;">Historial de Pedidos Registrados</h4>
+						<a href="<?php echo wp_nonce_url( admin_url( 'admin-ajax.php?action=wpat_qp_admin_export_csv' ), 'wpat_quick_pay_admin_nonce', 'security' ); ?>" class="button button-secondary" style="font-weight: 600; height: 32px; display: inline-flex; align-items: center; gap: 5px;">
+							<span class="dashicons dashicons-download" style="font-size: 14px; width: 14px; height: 14px; line-height: 1;"></span> Exportar Ventas a CSV
+						</a>
+					</div>
+
+					<div class="wpat-qp-orders-table-wrap" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+						<table class="wp-list-table widefat fixed striped" style="border: none;">
+							<thead>
+								<tr>
+									<th style="width: 12%; padding: 12px 14px; font-weight: 700;">Pedido</th>
+									<th style="width: 14%; padding: 12px 14px; font-weight: 700;">Fecha</th>
+									<th style="width: 22%; padding: 12px 14px; font-weight: 700;">Cliente</th>
+									<th style="width: 20%; padding: 12px 14px; font-weight: 700;">Producto</th>
+									<th style="width: 10%; padding: 12px 14px; font-weight: 700;">Total</th>
+									<th style="width: 10%; padding: 12px 14px; font-weight: 700;">Estado</th>
+									<th style="width: 12%; text-align: right; padding: 12px 14px; font-weight: 700;">Acciones</th>
+								</tr>
+							</thead>
+							<tbody id="wpat_qp_orders_tbody">
+								<?php if ( ! empty( $orders ) ) : ?>
+									<?php foreach ( $orders as $o ) : ?>
+										<?php
+										$is_comp = ( 'completed' === $o->status );
+										$st_bg   = $is_comp ? '#ecfdf5' : '#fffbeb';
+										$st_tx   = $is_comp ? '#059669' : '#d97706';
+										$st_lbl  = $is_comp ? 'Completado' : 'Pendiente';
+										?>
+										<tr id="wpat_qp_row_order_<?php echo esc_attr( $o->id ); ?>">
+											<td style="padding: 12px 14px;">
+												<strong style="color: #2563eb;">#WPAT-<?php echo esc_html( $o->id ); ?></strong>
+												<div style="font-size: 11px; color: #64748b;"><?php echo esc_html( $o->invoice_number ); ?></div>
+											</td>
+											<td style="padding: 12px 14px; font-size: 12px; color: #475569;">
+												<?php echo esc_html( date( 'd/m/Y H:i', strtotime( $o->created_at ) ) ); ?>
+											</td>
+											<td style="padding: 12px 14px;">
+												<strong style="font-size: 13px; color: #0f172a;"><?php echo esc_html( $o->customer_name ); ?></strong>
+												<div style="font-size: 11.5px; color: #64748b;"><?php echo esc_html( $o->customer_email ); ?></div>
+												<?php if ( ! empty( $o->customer_dni ) ) : ?>
+													<div style="font-size: 10.5px; color: #94a3b8;">DNI: <?php echo esc_html( $o->customer_dni ); ?></div>
+												<?php endif; ?>
+											</td>
+											<td style="padding: 12px 14px;">
+												<div style="font-size: 13px; font-weight: 600; color: #1e293b;"><?php echo esc_html( $o->product_name ); ?></div>
+												<div style="font-size: 11px; color: #64748b;">Pasarela: <?php echo esc_html( strtoupper( $o->gateway ) ); ?></div>
+											</td>
+											<td style="padding: 12px 14px; font-weight: 800; font-size: 14px; color: #0f172a;">
+												<?php echo number_format( $o->amount, 2, ',', '.' ) . ' ' . esc_html( $o->currency ); ?>
+											</td>
+											<td style="padding: 12px 14px;">
+												<select class="wpat-qp-change-order-status" data-id="<?php echo esc_attr( $o->id ); ?>" style="font-size: 11px; height: 26px; border-radius: 4px; background: <?php echo esc_attr( $st_bg ); ?>; color: <?php echo esc_attr( $st_tx ); ?>; font-weight: 700; border-color: #cbd5e1;">
+													<option value="completed" <?php selected( $o->status, 'completed' ); ?>>✓ Completado</option>
+													<option value="pending" <?php selected( $o->status, 'pending' ); ?>>⏳ Pendiente</option>
+													<option value="cancelled" <?php selected( $o->status, 'cancelled' ); ?>>✕ Cancelado</option>
+												</select>
+											</td>
+											<td style="text-align: right; padding: 12px 14px;">
+												<a href="<?php echo wp_nonce_url( admin_url( 'admin-ajax.php?action=wpat_qp_admin_download_pdf&order_id=' . $o->id ), 'wpat_quick_pay_admin_nonce', 'security' ); ?>" target="_blank" class="button button-small" title="Factura PDF" style="margin-right: 4px;">PDF</a>
+												<button type="button" class="button button-small button-link-delete wpat-qp-delete-order-btn" data-id="<?php echo esc_attr( $o->id ); ?>">🗑️</button>
+											</td>
+										</tr>
+									<?php endforeach; ?>
+								<?php else : ?>
+									<tr>
+										<td colspan="7" style="text-align: center; padding: 35px; color: #94a3b8;">
+											Aún no se han registrado compras. Los pedidos realizados aparecerán aquí automáticamente.
+										</td>
+									</tr>
+								<?php endif; ?>
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+				<!-- ========================================== -->
+				<!-- PESTAÑA 5: FACTURAS PDF, IMPUESTOS & AJUSTES -->
+				<!-- ========================================== -->
+				<div id="wpat_qp_tab_settings" class="wpat-qp-tab-panel" style="<?php echo ( 'settings' === $active_subtab ) ? 'display:block;' : 'display:none;'; ?>">
+					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+
+						<!-- DATOS FISCALES PARA FACTURA -->
+						<div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px;">
+							<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 800; color: #0f172a; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
+								🏢 Datos Fiscales de Facturación
+							</h4>
+
+							<div class="wpat-field-group" style="margin-bottom: 12px;">
+								<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Nombre Comercial / Razón Social *</label>
+								<input type="text" name="wpat_settings[qp_company_name]" value="<?php echo esc_attr( isset( $settings['qp_company_name'] ) ? $settings['qp_company_name'] : get_bloginfo( 'name' ) ); ?>" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+							</div>
+
+							<div class="wpat-field-group" style="margin-bottom: 12px;">
+								<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">NIF / CIF de la Empresa *</label>
+								<input type="text" name="wpat_settings[qp_company_cif]" value="<?php echo esc_attr( isset( $settings['qp_company_cif'] ) ? $settings['qp_company_cif'] : '' ); ?>" placeholder="Ej: B12345678" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+							</div>
+
+							<div class="wpat-field-group" style="margin-bottom: 12px;">
+								<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Dirección Fiscal Completa</label>
+								<textarea name="wpat_settings[qp_company_address]" rows="3" class="large-text" style="width: 100%; border-radius: 6px; font-size: 12.5px;" placeholder="Calle Mayor 10, 1º A&#10;28001 Madrid, España"><?php echo esc_textarea( isset( $settings['qp_company_address'] ) ? $settings['qp_company_address'] : '' ); ?></textarea>
+							</div>
+
+							<div class="wpat-field-group">
+								<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Prefijo de Factura Correlativa</label>
+								<input type="text" name="wpat_settings[qp_invoice_prefix]" value="<?php echo esc_attr( isset( $settings['qp_invoice_prefix'] ) ? $settings['qp_invoice_prefix'] : 'FAC-' . date( 'Y' ) . '-' ); ?>" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+							</div>
+						</div>
+
+						<!-- MONEDA, IVA Y DISEÑO -->
+						<div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px;">
+							<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 800; color: #0f172a; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
+								⚙️ Moneda, Impuestos y Diseño
+							</h4>
+
+							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+								<div class="wpat-field-group">
+									<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Símbolo Moneda</label>
+									<input type="text" name="wpat_settings[qp_currency_symbol]" value="<?php echo esc_attr( isset( $settings['qp_currency_symbol'] ) ? $settings['qp_currency_symbol'] : '€' ); ?>" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+								</div>
+								<div class="wpat-field-group">
+									<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Posición Símbolo</label>
+									<select name="wpat_settings[qp_currency_pos]" style="width: 100%; height: 36px; border-radius: 6px;">
+										<option value="right" <?php selected( isset( $settings['qp_currency_pos'] ) ? $settings['qp_currency_pos'] : 'right', 'right' ); ?>>Derecha (99 €)</option>
+										<option value="left" <?php selected( isset( $settings['qp_currency_pos'] ) ? $settings['qp_currency_pos'] : 'right', 'left' ); ?>>Izquierda (€ 99)</option>
+									</select>
+								</div>
+							</div>
+
+							<div class="wpat-field-group" style="margin-bottom: 14px;">
+								<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Tipo de IVA por Defecto (%)</label>
+								<input type="number" step="0.1" name="wpat_settings[qp_default_tax_rate]" value="<?php echo esc_attr( isset( $settings['qp_default_tax_rate'] ) ? $settings['qp_default_tax_rate'] : '21' ); ?>" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+								<p class="description" style="font-size: 11.5px; margin-top: 3px;">Se usará para desglosar la base imponible y cuota de IVA en la factura PDF.</p>
+							</div>
+
+							<div class="wpat-field-group">
+								<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Color Principal del Botón y Checkout</label>
+								<div style="display: flex; align-items: center; gap: 8px;">
+									<input type="color" name="wpat_settings[qp_primary_color]" value="<?php echo esc_attr( isset( $settings['qp_primary_color'] ) ? $settings['qp_primary_color'] : '#2563eb' ); ?>" style="width: 44px; height: 36px; padding: 2px; border-radius: 6px; border: 1px solid #cbd5e1; cursor: pointer;" />
+									<input type="text" value="<?php echo esc_attr( isset( $settings['qp_primary_color'] ) ? $settings['qp_primary_color'] : '#2563eb' ); ?>" class="regular-text" style="width: 120px; height: 36px; border-radius: 6px; font-family: monospace;" readonly />
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+		<!-- MODAL: AÑADIR / EDITAR PRODUCTO -->
+		<div id="wpat_qp_product_modal" class="wpat-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px); z-index: 999999; align-items: center; justify-content: center;">
+			<div class="wpat-modal-content" style="background: #fff; border-radius: 12px; width: 100%; max-width: 540px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); position: relative; max-height: 90vh; overflow-y: auto;">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+					<h3 id="wpat_qp_modal_prod_title" style="margin: 0; font-size: 17px; font-weight: 800; color: #0f172a;">Añadir Nuevo Producto</h3>
+					<button type="button" class="wpat-qp-close-admin-modal" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #94a3b8;">&times;</button>
+				</div>
+
+				<div id="wpat_qp_product_form_fields">
+					<input type="hidden" id="wpat_qp_prod_id" value="" />
+
+					<div class="wpat-field-group" style="margin-bottom: 12px;">
+						<label style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 4px;">Nombre del Producto o Servicio *</label>
+						<input type="text" id="wpat_qp_prod_name" placeholder="Ej: Consultoría 1h / eBook SEO Avanzado" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" required />
+					</div>
+
+					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+						<div class="wpat-field-group">
+							<label style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 4px;">Precio (€ / $) *</label>
+							<input type="number" step="0.01" id="wpat_qp_prod_price" placeholder="49.00" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" required />
+						</div>
+						<div class="wpat-field-group">
+							<label style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 4px;">Tipo de Producto *</label>
+							<select id="wpat_qp_prod_type" style="width: 100%; height: 38px; border-radius: 6px;">
+								<option value="service">🎓 Servicio / Consultoría / Curso</option>
+								<option value="digital">📥 Descarga Digital (Archivo / PDF)</option>
+								<option value="physical">📦 Producto Físico (Con Envío)</option>
+							</select>
+						</div>
+					</div>
+
+					<div id="wpat_qp_prod_digital_group" style="display: none; margin-bottom: 12px; background: #ecfdf5; padding: 12px; border-radius: 8px; border: 1px solid #a7f3d0;">
+						<label style="display: block; font-weight: 700; font-size: 12.5px; color: #065f46; margin-bottom: 4px;">URL o Archivo para Descarga Digital *</label>
+						<input type="text" id="wpat_qp_prod_download_file" placeholder="https://tusitio.com/archivo.pdf" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+					</div>
+
+					<div id="wpat_qp_prod_physical_group" style="display: none; margin-bottom: 12px; background: #fffbeb; padding: 12px; border-radius: 8px; border: 1px solid #fde68a;">
+						<label style="display: block; font-weight: 700; font-size: 12.5px; color: #92400e; margin-bottom: 4px;">Coste de Envío Fijo (€ / $)</label>
+						<input type="number" step="0.01" id="wpat_qp_prod_shipping_cost" placeholder="4.95" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+					</div>
+
+					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+						<div class="wpat-field-group">
+							<label style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 4px;">Tipo de IVA (%)</label>
+							<input type="number" step="0.1" id="wpat_qp_prod_tax_rate" placeholder="21" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+						</div>
+						<div class="wpat-field-group">
+							<label style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 4px;">Texto del Botón</label>
+							<input type="text" id="wpat_qp_prod_btn_text" placeholder="Ej: Comprar Ahora" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+						</div>
+					</div>
+
+					<div class="wpat-field-group" style="margin-bottom: 12px;">
+						<label style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 4px;">Descripción Corta (Opcional)</label>
+						<textarea id="wpat_qp_prod_desc" rows="2" class="large-text" style="width: 100%; border-radius: 6px; font-size: 12.5px;" placeholder="Breve resumen visible en tarjeta de producto..."></textarea>
+					</div>
+
+					<div class="wpat-field-group" style="margin-bottom: 18px;">
+						<label style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 4px;">Imagen Destacada URL (Opcional)</label>
+						<input type="text" id="wpat_qp_prod_image_url" placeholder="https://..." class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+					</div>
+
+					<div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #e2e8f0; padding-top: 14px;">
+						<button type="button" class="button button-secondary wpat-qp-close-admin-modal" style="height: 36px; font-weight: 600;">Cancelar</button>
+						<button type="button" class="button button-primary" id="wpat_qp_save_prod_btn" style="background: #2563eb; border-color: #1d4ed8; font-weight: 700; height: 36px; padding: 0 18px;">Guardar Producto</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- MODAL: AÑADIR CUPÓN -->
+		<div id="wpat_qp_coupon_modal" class="wpat-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px); z-index: 999999; align-items: center; justify-content: center;">
+			<div class="wpat-modal-content" style="background: #fff; border-radius: 12px; width: 100%; max-width: 440px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); position: relative;">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+					<h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #0f172a;">Añadir Cupón de Descuento</h3>
+					<button type="button" class="wpat-qp-close-admin-modal" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #94a3b8;">&times;</button>
+				</div>
+
+				<div class="wpat-field-group" style="margin-bottom: 12px;">
+					<label style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 4px;">Código del Cupón *</label>
+					<input type="text" id="wpat_qp_c_code" placeholder="Ej: PROMO10 / BLACKFRIDAY" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px; text-transform: uppercase; font-family: monospace;" required />
+				</div>
+
+				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+					<div class="wpat-field-group">
+						<label style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 4px;">Tipo Descuento *</label>
+						<select id="wpat_qp_c_type" style="width: 100%; height: 38px; border-radius: 6px;">
+							<option value="percent">Porcentaje (%)</option>
+							<option value="fixed">Importe Fijo (€ / $)</option>
+						</select>
+					</div>
+					<div class="wpat-field-group">
+						<label style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 4px;">Importe Descuento *</label>
+						<input type="number" step="0.01" id="wpat_qp_c_amount" placeholder="10" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" required />
+					</div>
+				</div>
+
+				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px;">
+					<div class="wpat-field-group">
+						<label style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 4px;">Fecha Caducidad (Opcional)</label>
+						<input type="date" id="wpat_qp_c_expiry" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+					</div>
+					<div class="wpat-field-group">
+						<label style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 4px;">Límite de Usos (0 = ∞)</label>
+						<input type="number" id="wpat_qp_c_limit" placeholder="0" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+					</div>
+				</div>
+
+				<div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #e2e8f0; padding-top: 14px;">
+					<button type="button" class="button button-secondary wpat-qp-close-admin-modal" style="height: 36px; font-weight: 600;">Cancelar</button>
+					<button type="button" class="button button-primary" id="wpat_qp_save_coupon_btn" style="background: #2563eb; border-color: #1d4ed8; font-weight: 700; height: 36px; padding: 0 18px;">Guardar Cupón</button>
+				</div>
+			</div>
+		</div>
+		<?php
+	}
 }

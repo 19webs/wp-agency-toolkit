@@ -5093,6 +5093,8 @@ jQuery(document).ready(function($) {
 				showToast('Error de conexión AJAX', true);
 			}
 		});
+	});
+
 	// 5. Incrementar Versión de Política (Forzar Re-consentimiento)
 	$(document).on('click', '#wpat_bump_consent_version_btn', function(e) {
 		e.preventDefault();
@@ -5101,6 +5103,343 @@ jQuery(document).ready(function($) {
 		var nextVal = (Math.round((currentVal + 0.1) * 10) / 10).toFixed(1);
 		$input.val(nextVal);
 		showToast('Versión actualizada a ' + nextVal + '. Guarda los cambios para forzar el banner.', false);
+	});
+
+	// ==========================================
+	// MÓDULO: VENTA DIRECTA & PAGOS RÁPIDOS (QUICK PAY)
+	// ==========================================
+
+	// 1. Cambio de sub-pestañas en Quick Pay
+	$(document).on('click', '.wpat-qp-tab-btn', function(e) {
+		e.preventDefault();
+		var tab = $(this).data('tab');
+		$('.wpat-qp-tab-btn').removeClass('active').css({
+			'border-bottom-color': 'transparent',
+			'color': '#64748b'
+		});
+		$(this).addClass('active').css({
+			'border-bottom-color': '#2563eb',
+			'color': '#2563eb'
+		});
+
+		$('.wpat-qp-tab-panel').hide();
+		$('#wpat_qp_tab_' + tab).fadeIn(150);
+		$('#wpat_qp_active_subtab').val(tab);
+	});
+
+	// 2. Copiar Shortcode al portapapeles
+	$(document).on('click', '.wpat-qp-copy-shortcode-btn', function(e) {
+		e.preventDefault();
+		var code = $(this).data('code');
+		if (navigator.clipboard && window.isSecureContext) {
+			navigator.clipboard.writeText(code).then(function() {
+				showToast('Shortcode copiado: ' + code, false);
+			});
+		} else {
+			var $temp = $('<input>');
+			$('body').append($temp);
+			$temp.val(code).select();
+			document.execCommand('copy');
+			$temp.remove();
+			showToast('Shortcode copiado: ' + code, false);
+		}
+	});
+
+	// 3. Abrir Modal Añadir Producto
+	$(document).on('click', '#wpat_qp_open_add_product_btn', function(e) {
+		e.preventDefault();
+		$('#wpat_qp_modal_prod_title').text('Añadir Nuevo Producto');
+		$('#wpat_qp_prod_id').val('');
+		$('#wpat_qp_prod_name').val('');
+		$('#wpat_qp_prod_price').val('');
+		$('#wpat_qp_prod_type').val('service').trigger('change');
+		$('#wpat_qp_prod_download_file').val('');
+		$('#wpat_qp_prod_shipping_cost').val('');
+		$('#wpat_qp_prod_tax_rate').val('21');
+		$('#wpat_qp_prod_btn_text').val('Comprar Ahora');
+		$('#wpat_qp_prod_desc').val('');
+		$('#wpat_qp_prod_image_url').val('');
+		$('#wpat_qp_product_modal').css('display', 'flex').hide().fadeIn(150);
+	});
+
+	// 4. Cambiar tipo de producto en el modal (mostrar/ocultar campos específicos)
+	$(document).on('change', '#wpat_qp_prod_type', function() {
+		var type = $(this).val();
+		if (type === 'digital') {
+			$('#wpat_qp_prod_digital_group').slideDown(120);
+			$('#wpat_qp_prod_physical_group').slideUp(120);
+		} else if (type === 'physical') {
+			$('#wpat_qp_prod_digital_group').slideUp(120);
+			$('#wpat_qp_prod_physical_group').slideDown(120);
+		} else {
+			$('#wpat_qp_prod_digital_group').slideUp(120);
+			$('#wpat_qp_prod_physical_group').slideUp(120);
+		}
+	});
+
+	// 5. Abrir Modal Editar Producto
+	$(document).on('click', '.wpat-qp-edit-prod-btn', function(e) {
+		e.preventDefault();
+		var p = $(this).data('prod');
+		if (!p) return;
+
+		$('#wpat_qp_modal_prod_title').text('Editar Producto: ' + p.name);
+		$('#wpat_qp_prod_id').val(p.id);
+		$('#wpat_qp_prod_name').val(p.name);
+		$('#wpat_qp_prod_price').val(p.price);
+		$('#wpat_qp_prod_type').val(p.type || 'service').trigger('change');
+		$('#wpat_qp_prod_download_file').val(p.download_file || '');
+		$('#wpat_qp_prod_shipping_cost').val(p.shipping_cost || '');
+		$('#wpat_qp_prod_tax_rate').val(p.tax_rate || '21');
+		$('#wpat_qp_prod_btn_text').val(p.button_text || '');
+		$('#wpat_qp_prod_desc').val(p.desc || '');
+		$('#wpat_qp_prod_image_url').val(p.image_url || '');
+		$('#wpat_qp_product_modal').css('display', 'flex').hide().fadeIn(150);
+	});
+
+	// 6. Cerrar modales admin de Quick Pay
+	$(document).on('click', '.wpat-qp-close-admin-modal', function(e) {
+		e.preventDefault();
+		$('#wpat_qp_product_modal, #wpat_qp_coupon_modal').fadeOut(150);
+	});
+
+	$(document).on('click', '#wpat_qp_product_modal, #wpat_qp_coupon_modal', function(e) {
+		if ($(e.target).is('#wpat_qp_product_modal, #wpat_qp_coupon_modal')) {
+			$('#wpat_qp_product_modal, #wpat_qp_coupon_modal').fadeOut(150);
+		}
+	});
+
+	// 7. Guardar Producto AJAX
+	$(document).on('click', '#wpat_qp_save_prod_btn', function(e) {
+		e.preventDefault();
+		var name = $('#wpat_qp_prod_name').val().trim();
+		var price = parseFloat($('#wpat_qp_prod_price').val()) || 0;
+
+		if (!name || price <= 0) {
+			showToast('Por favor introduce un nombre y un precio válido.', true);
+			return;
+		}
+
+		var $btn = $(this);
+		var origText = $btn.text();
+		$btn.prop('disabled', true).text('Guardando...');
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_qp_admin_save_product',
+				security: $('#wpat_qp_admin_nonce_field').val(),
+				product_id: $('#wpat_qp_prod_id').val(),
+				name: name,
+				price: price,
+				type: $('#wpat_qp_prod_type').val(),
+				download_file: $('#wpat_qp_prod_download_file').val(),
+				shipping_cost: $('#wpat_qp_prod_shipping_cost').val(),
+				tax_rate: $('#wpat_qp_prod_tax_rate').val(),
+				button_text: $('#wpat_qp_prod_btn_text').val(),
+				desc: $('#wpat_qp_prod_desc').val(),
+				image_url: $('#wpat_qp_prod_image_url').val()
+			},
+			success: function(response) {
+				$btn.prop('disabled', false).text(origText);
+				if (response.success) {
+					$('#wpat_qp_product_modal').fadeOut(150);
+					showToast(response.data.message || 'Producto guardado', false);
+					setTimeout(function() {
+						window.location.reload();
+					}, 700);
+				} else {
+					showToast(response.data.message || 'Error al guardar', true);
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).text(origText);
+				showToast('Error de conexión AJAX', true);
+			}
+		});
+	});
+
+	// 8. Eliminar Producto AJAX
+	$(document).on('click', '.wpat-qp-delete-prod-btn', function(e) {
+		e.preventDefault();
+		var productId = $(this).data('id');
+		if (!confirm('¿Estás seguro de que deseas eliminar este producto?')) return;
+
+		var $row = $('#wpat_qp_row_prod_' + productId);
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_qp_admin_delete_product',
+				security: $('#wpat_qp_admin_nonce_field').val(),
+				product_id: productId
+			},
+			success: function(response) {
+				if (response.success) {
+					$row.fadeOut(200, function() { $(this).remove(); });
+					showToast('Producto eliminado', false);
+				} else {
+					showToast(response.data.message || 'Error al eliminar', true);
+				}
+			},
+			error: function() {
+				showToast('Error de conexión AJAX', true);
+			}
+		});
+	});
+
+	// 9. Abrir Modal Añadir Cupón
+	$(document).on('click', '#wpat_qp_open_add_coupon_btn', function(e) {
+		e.preventDefault();
+		$('#wpat_qp_c_code').val('');
+		$('#wpat_qp_c_type').val('percent');
+		$('#wpat_qp_c_amount').val('');
+		$('#wpat_qp_c_expiry').val('');
+		$('#wpat_qp_c_limit').val('');
+		$('#wpat_qp_coupon_modal').css('display', 'flex').hide().fadeIn(150);
+	});
+
+	// 10. Guardar Cupón AJAX
+	$(document).on('click', '#wpat_qp_save_coupon_btn', function(e) {
+		e.preventDefault();
+		var code = $('#wpat_qp_c_code').val().trim().toUpperCase();
+		var amount = parseFloat($('#wpat_qp_c_amount').val()) || 0;
+
+		if (!code || amount <= 0) {
+			showToast('Introduce un código de cupón y un descuento válido.', true);
+			return;
+		}
+
+		var $btn = $(this);
+		$btn.prop('disabled', true).text('Guardando...');
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_qp_admin_save_coupon',
+				security: $('#wpat_qp_admin_nonce_field').val(),
+				code: code,
+				type: $('#wpat_qp_c_type').val(),
+				amount: amount,
+				expiry: $('#wpat_qp_c_expiry').val(),
+				usage_limit: $('#wpat_qp_c_limit').val()
+			},
+			success: function(response) {
+				$btn.prop('disabled', false).text('Guardar Cupón');
+				if (response.success) {
+					$('#wpat_qp_coupon_modal').fadeOut(150);
+					showToast(response.data.message || 'Cupón guardado', false);
+					setTimeout(function() {
+						window.location.reload();
+					}, 700);
+				} else {
+					showToast(response.data.message || 'Error al guardar cupón', true);
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).text('Guardar Cupón');
+				showToast('Error de conexión AJAX', true);
+			}
+		});
+	});
+
+	// 11. Eliminar Cupón AJAX
+	$(document).on('click', '.wpat-qp-delete-coupon-btn', function(e) {
+		e.preventDefault();
+		var code = $(this).data('code');
+		if (!confirm('¿Eliminar el cupón "' + code + '"?')) return;
+
+		var $row = $('#wpat_qp_row_coupon_' + code);
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_qp_admin_delete_coupon',
+				security: $('#wpat_qp_admin_nonce_field').val(),
+				code: code
+			},
+			success: function(response) {
+				if (response.success) {
+					$row.fadeOut(200, function() { $(this).remove(); });
+					showToast('Cupón eliminado', false);
+				} else {
+					showToast(response.data.message || 'Error al eliminar cupón', true);
+				}
+			},
+			error: function() {
+				showToast('Error de conexión AJAX', true);
+			}
+		});
+	});
+
+	// 12. Cambiar Estado de Pedido en Tiempo Real
+	$(document).on('change', '.wpat-qp-change-order-status', function() {
+		var $select = $(this);
+		var orderId = $select.data('id');
+		var newStatus = $select.val();
+
+		if (newStatus === 'completed') {
+			$select.css({ 'background': '#ecfdf5', 'color': '#059669' });
+		} else if (newStatus === 'pending') {
+			$select.css({ 'background': '#fffbeb', 'color': '#d97706' });
+		} else {
+			$select.css({ 'background': '#fef2f2', 'color': '#dc2626' });
+		}
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_qp_admin_update_order_status',
+				security: $('#wpat_qp_admin_nonce_field').val(),
+				order_id: orderId,
+				status: newStatus
+			},
+			success: function(response) {
+				if (response.success) {
+					showToast('Estado del pedido #WPAT-' + orderId + ' actualizado a ' + newStatus, false);
+				} else {
+					showToast(response.data.message || 'Error al cambiar estado', true);
+				}
+			},
+			error: function() {
+				showToast('Error de conexión al actualizar pedido', true);
+			}
+		});
+	});
+
+	// 13. Eliminar Pedido AJAX
+	$(document).on('click', '.wpat-qp-delete-order-btn', function(e) {
+		e.preventDefault();
+		var orderId = $(this).data('id');
+		if (!confirm('¿Estás seguro de que deseas eliminar el registro de este pedido #WPAT-' + orderId + '?')) return;
+
+		var $row = $('#wpat_qp_row_order_' + orderId);
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_qp_admin_delete_order',
+				security: $('#wpat_qp_admin_nonce_field').val(),
+				order_id: orderId
+			},
+			success: function(response) {
+				if (response.success) {
+					$row.fadeOut(200, function() { $(this).remove(); });
+					showToast('Pedido eliminado', false);
+				} else {
+					showToast(response.data.message || 'Error al eliminar pedido', true);
+				}
+			},
+			error: function() {
+				showToast('Error de conexión AJAX', true);
+			}
+		});
 	});
 
 });

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.85
+ * Version:     4.3.86
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.85' );
+define( 'WPAT_VERSION', '4.3.86' );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -203,6 +203,10 @@ class WPAT_Main {
 		'cookie-consent' => array(
 			'file'  => 'includes/modules/class-wpat-cookie-consent.php',
 			'class' => 'WPAT_Cookie_Consent',
+		),
+		'quick-pay' => array(
+			'file'  => 'includes/modules/class-wpat-quick-pay.php',
+			'class' => 'WPAT_Quick_Pay',
 		),
 	);
 
@@ -643,6 +647,37 @@ class WPAT_Main {
 			'cookie_consent_btn_accept_text'     => '#ffffff',
 			'cookie_consent_btn_reject_bg'       => '#475569',
 			'cookie_consent_btn_reject_text'     => '#ffffff',
+
+			// Opciones de Venta Directa & Pagos Rápidos (Quick Pay)
+			'quick-pay'                          => '1',
+			'qp_currency'                        => 'EUR',
+			'qp_currency_symbol'                 => '€',
+			'qp_currency_pos'                    => 'right',
+			'qp_default_tax_rate'                => '21',
+			'qp_company_name'                    => '',
+			'qp_company_cif'                     => '',
+			'qp_company_address'                 => '',
+			'qp_invoice_prefix'                  => 'FAC-' . date( 'Y' ) . '-',
+			'qp_primary_color'                   => '#2563eb',
+			'qp_stripe_enabled'                  => '1',
+			'qp_stripe_mode'                     => 'test',
+			'qp_stripe_test_pub_key'             => '',
+			'qp_stripe_test_sec_key'             => '',
+			'qp_stripe_live_pub_key'             => '',
+			'qp_stripe_live_sec_key'             => '',
+			'qp_redsys_enabled'                  => '0',
+			'qp_redsys_mode'                     => 'test',
+			'qp_redsys_fuc'                      => '',
+			'qp_redsys_terminal'                 => '1',
+			'qp_redsys_key'                      => '',
+			'qp_bizum_enabled'                   => '1',
+			'qp_bizum_phone'                     => '',
+			'qp_paypal_enabled'                  => '0',
+			'qp_paypal_mode'                     => 'test',
+			'qp_paypal_email'                    => '',
+			'qp_bank_enabled'                    => '0',
+			'qp_bank_iban'                       => '',
+			'qp_bank_holder'                     => '',
 		);
 
 		$saved = get_option( 'wpat_settings', array() );

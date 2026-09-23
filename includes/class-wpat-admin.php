@@ -956,6 +956,16 @@ class WPAT_Admin {
 			$new_settings['sitemap_exclude_urls']       = isset( $input_settings['sitemap_exclude_urls'] ) ? sanitize_textarea_field( $input_settings['sitemap_exclude_urls'] ) : '';
 		}
 
+		// Sanitizar Optimización de Medios & WebP
+		if ( empty( $saving_module ) || 'image-optimizer' === $saving_module ) {
+			$new_settings['image-optimizer']               = isset( $input_settings['image-optimizer'] ) && '1' === $input_settings['image-optimizer'] ? '1' : '0';
+			$new_settings['image_optimizer_quality']       = isset( $input_settings['image_optimizer_quality'] ) ? max( 40, min( 100, intval( $input_settings['image_optimizer_quality'] ) ) ) : 82;
+			$new_settings['image_optimizer_max_width']     = isset( $input_settings['image_optimizer_max_width'] ) ? max( 0, intval( $input_settings['image_optimizer_max_width'] ) ) : 1920;
+			$new_settings['image_optimizer_max_height']    = isset( $input_settings['image_optimizer_max_height'] ) ? max( 0, intval( $input_settings['image_optimizer_max_height'] ) ) : 1920;
+			$new_settings['image_optimizer_auto_convert']   = isset( $input_settings['image_optimizer_auto_convert'] ) && '1' === $input_settings['image_optimizer_auto_convert'] ? '1' : '0';
+			$new_settings['image_optimizer_keep_original']  = isset( $input_settings['image_optimizer_keep_original'] ) && '1' === $input_settings['image_optimizer_keep_original'] ? '1' : '0';
+		}
+
 		// 8. Sanitizar SMTP
 		if ( empty( $saving_module ) || 'smtp' === $saving_module ) {
 			$new_settings['smtp']             = isset( $input_settings['smtp'] ) && '1' === $input_settings['smtp'] ? '1' : '0';
@@ -1970,58 +1980,8 @@ class WPAT_Admin {
 	 * @return bool
 	 */
 	public function is_attachment_in_use( $attachment_id ) {
-		global $wpdb;
-
-		// 1. Imagen destacada (Featured image)
-		$is_featured = $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = '_thumbnail_id' AND meta_value = %s",
-			$attachment_id
-		) );
-		if ( $is_featured > 0 ) {
-			return true;
-		}
-
-		// 2. Galería de WooCommerce
-		$is_in_gallery = $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = '_product_image_gallery' AND (meta_value = %s OR meta_value LIKE %s OR meta_value LIKE %s OR meta_value LIKE %s)",
-			$attachment_id,
-			$attachment_id . ',%',
-			'%,' . $attachment_id,
-			'%,' . $attachment_id . ',%'
-		) );
-		if ( $is_in_gallery > 0 ) {
-			return true;
-		}
-
-		// Obtener nombre del archivo físico
-		$file_path = get_attached_file( $attachment_id );
-		if ( ! empty( $file_path ) ) {
-			$filename = basename( $file_path );
-			
-			// 3. Contenido de posts (post_content)
-			$filename_like = '%' . $wpdb->esc_like( $filename ) . '%';
-			$id_like = '%wp-image-' . $attachment_id . '%';
-			
-			$is_in_content = $wpdb->get_var( $wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status = 'publish' AND (post_content LIKE %s OR post_content LIKE %s)",
-				$filename_like,
-				$id_like
-			) );
-			if ( $is_in_content > 0 ) {
-				return true;
-			}
-
-			// 4. Datos de Elementor (_elementor_data)
-			$is_in_elementor = $wpdb->get_var( $wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = '_elementor_data' AND meta_value LIKE %s",
-				$filename_like
-			) );
-			if ( $is_in_elementor > 0 ) {
-				return true;
-			}
-		}
-
-		return false;
+		require_once WPAT_PATH . 'includes/modules/class-wpat-image-optimizer.php';
+		return WPAT_Image_Optimizer::is_attachment_in_use( $attachment_id );
 	}
 
 	/**
@@ -7585,135 +7545,210 @@ class WPAT_Admin {
 				<?php
 				break;
 			case 'image-optimizer':
+				require_once WPAT_PATH . 'includes/modules/class-wpat-image-optimizer.php';
+				$server_webp_support = function_exists( 'imagick_is_format_supported' ) || function_exists( 'imagick_read_image' ) || ( function_exists( 'imagewebp' ) );
+				if ( function_exists( 'wp_image_editor_supports' ) ) {
+					$server_webp_support = wp_image_editor_supports( array( 'methods' => array( 'rotate' ), 'mime_type' => 'image/webp' ) );
+				}
 				?>
-<div class="wpat-module-card">
-								<div class="wpat-module-header">
-									<div class="wpat-module-info">
-										<h3>Optimizador de Imágenes a WebP</h3>
-										<p>Intercepta las subidas de imágenes, las escala a un ancho/alto máximo de 1920px, las convierte automáticamente al formato óptimo .webp (calidad 82%) y descarta los archivos originales pesados.</p>
-									</div>
-									<?php $this->render_module_toggle( 'image-optimizer', $settings, true ); ?>
+				<div class="wpat-module-card">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Optimización de Medios, Conversión a WebP & Limpiador Seguro</h3>
+							<p>Convierte automáticamente imágenes a formato WebP de última generación, escala dimensiones desproporcionadas en subida para ahorrar espacio, y analiza de forma 100% segura imágenes huérfanas sin romper Elementor ni WooCommerce.</p>
+						</div>
+						<?php $this->render_module_toggle( 'image-optimizer', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block; padding: 20px;">
+
+						<!-- Estado del Servidor -->
+						<div style="background: <?php echo $server_webp_support ? '#f0fdf4' : '#fef2f2'; ?>; border: 1px solid <?php echo $server_webp_support ? '#bbf7d0' : '#fecaca'; ?>; border-radius: 8px; padding: 14px 18px; margin-bottom: 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+							<div style="display: flex; align-items: center; gap: 10px;">
+								<span class="dashicons <?php echo $server_webp_support ? 'dashicons-yes-alt' : 'dashicons-warning'; ?>" style="font-size: 22px; width: 22px; height: 22px; color: <?php echo $server_webp_support ? '#16a34a' : '#dc2626'; ?>;"></span>
+								<div>
+									<strong style="color: <?php echo $server_webp_support ? '#166534' : '#991b1b'; ?>; font-size: 14px;">
+										<?php echo $server_webp_support ? 'Soporte WebP Nativo Activo en el Servidor (GD / Imagick)' : 'Tu servidor no tiene soporte nativo para codificar WebP'; ?>
+									</strong>
+									<p style="margin: 2px 0 0 0; font-size: 12px; color: <?php echo $server_webp_support ? '#15803d' : '#b91c1c'; ?>;">
+										<?php echo $server_webp_support ? 'Todas las imágenes subidas y procesadas se convertirán a formato WebP ligero de alta eficiencia sin pérdidas perceptibles.' : 'El módulo optimizará y comprimirá automáticamente las imágenes en sus formatos originales (JPG/PNG).'; ?>
+									</p>
 								</div>
-								<div class="wpat-module-body" style="display: block;">
-									<div class="wpat-bulk-optimizer-section" style="border-top: 1px dashed var(--wpat-border); padding-top: 20px; margin-top: 10px;">
-										<h4 style="margin: 0 0 5px 0; font-size: 15px; font-weight: 600;">Optimización Retroactiva (Masiva)</h4>
-										<p class="description" style="margin: 0 0 15px 0;">Escanea y convierte las imágenes existentes en la Biblioteca de Medios que aún no han sido convertidas a WebP.</p>
-										
-										<!-- Filtros del Optimizador Masivo -->
-										<div class="wpat-bulk-filters" style="display: flex; flex-wrap: wrap; gap: 15px; background: #f8fafc; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid var(--wpat-border);">
-											<div style="flex: 1; min-width: 180px;">
-												<label for="wpat_bulk_filter_min_size" style="display:block; font-weight:600; margin-bottom:5px; font-size:12px;">Peso Mínimo de Imagen (en KB)</label>
-												<input type="number" id="wpat_bulk_filter_min_size" placeholder="Ej: 500" min="0" style="width: 100%;" />
-												<p class="description" style="font-size:11px; margin-top:2px;">Solo optimizar imágenes con un peso de archivo mayor o igual a este valor.</p>
-											</div>
-											<div style="flex: 1; min-width: 180px;">
-												<label for="wpat_bulk_filter_date_start" style="display:block; font-weight:600; margin-bottom:5px; font-size:12px;">Fecha Desde</label>
-												<input type="date" id="wpat_bulk_filter_date_start" style="width: 100%;" />
-												<p class="description" style="font-size:11px; margin-top:2px;">Solo imágenes subidas a partir de esta fecha.</p>
-											</div>
-											<div style="flex: 1; min-width: 180px;">
-												<label for="wpat_bulk_filter_date_end" style="display:block; font-weight:600; margin-bottom:5px; font-size:12px;">Fecha Hasta</label>
-												<input type="date" id="wpat_bulk_filter_date_end" style="width: 100%;" />
-												<p class="description" style="font-size:11px; margin-top:2px;">Solo imágenes subidas hasta esta fecha.</p>
-											</div>
-											<div style="flex: 1 1 100%; border-top: 1px dashed var(--wpat-border); padding-top: 12px; margin-top: 5px;">
-												<label style="display:block; font-weight:600; margin-bottom:8px; font-size:12px;">Formatos de imagen a escanear y convertir:</label>
-												<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
-													<label style="display:inline-flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; font-weight:500;">
-														<input type="checkbox" class="wpat-bulk-format-cb" value="image/jpeg" checked />
-														<span>JPG / JPEG (<code>.jpg</code>, <code>.jpeg</code>)</span>
-													</label>
-													<label style="display:inline-flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; font-weight:500;">
-														<input type="checkbox" class="wpat-bulk-format-cb" value="image/png" checked />
-														<span>PNG (<code>.png</code>)</span>
-													</label>
-													<label style="display:inline-flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; font-weight:500;">
-														<input type="checkbox" class="wpat-bulk-format-cb" value="image/gif" />
-														<span>GIF (<code>.gif</code>)</span>
-														<span style="font-size:11px; color:#64748b; font-weight:normal;">(Desmarcado por defecto para no perder animación en GIFs animados)</span>
-													</label>
-												</div>
-												<p class="description" style="font-size:11px; margin-top:6px;">Las imágenes que ya estén en formato WebP (<code>.webp</code>) se detectan y omiten automáticamente sin volver a convertirlas.</p>
-											</div>
-										</div>
+							</div>
+							<span style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 9999px; background: <?php echo $server_webp_support ? '#dcfce7' : '#fee2e2'; ?>; color: <?php echo $server_webp_support ? '#15803d' : '#b91c1c'; ?>;">
+								<?php echo $server_webp_support ? 'WebP Listo' : 'Modo Compresión JPG/PNG'; ?>
+							</span>
+						</div>
 
-										<div class="wpat-bulk-actions" style="display: flex; gap: 10px; align-items: center;">
-											<button type="button" class="button" id="wpat_scan_images_btn">Escanear Biblioteca</button>
-											<button type="button" class="button button-primary" id="wpat_start_bulk_btn" style="display:none;">Iniciar Optimización</button>
-										</div>
+						<!-- 1. Ajustes de Optimización en Caliente (Subidas nuevas) -->
+						<h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+							<span class="dashicons dashicons-admin-settings" style="color: var(--wpat-primary, #2563eb);"></span>
+							Ajustes de Conversión y Redimensionamiento Automático
+						</h4>
 
-										<div id="wpat_bulk_status" class="wpat-bulk-status-container" style="display:none; margin-top: 20px;">
-											<div class="wpat-progress-bar-wrapper" style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
-												<div class="wpat-progress-bar" style="flex: 1; height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; border: 1px solid var(--wpat-border);">
-													<div class="wpat-progress-bar-fill" id="wpat_bulk_progress_fill" style="width: 0%; height: 100%; background: var(--wpat-success); transition: width 0.3s ease;"></div>
-												</div>
-												<span class="wpat-progress-percent" id="wpat_bulk_progress_percent" style="font-weight: 700; font-size: 14px; min-width: 40px; text-align: right;">0%</span>
-											</div>
-											<div class="wpat-bulk-stats" style="margin-bottom: 15px; font-size: 13px; color: var(--wpat-text-light);">
-												<span>Pendientes de optimizar: <strong id="wpat_stat_pending" style="color: var(--wpat-text);">0</strong></span> | 
-												<span>Procesadas con éxito: <strong id="wpat_stat_processed" style="color: var(--wpat-success);">0</strong></span> | 
-												<span>Errores/Omitidas: <strong id="wpat_stat_failed" style="color: #ea580c;">0</strong></span>
-												<span id="wpat_stat_weight_container" style="display: none; margin-left: 10px; padding-left: 10px; border-left: 1px solid var(--wpat-border);">
-													| Peso total: <strong id="wpat_stat_total_weight" style="color: var(--wpat-text);">0 B</strong> 
-													| Peso estimado optimizado (WebP): <strong id="wpat_stat_opt_weight" style="color: var(--wpat-success);">0 B</strong>
-												</span>
-											</div>
-											<div id="wpat_bulk_log" class="wpat-bulk-log-box" style="max-height: 120px; overflow-y: auto; background: #1e293b; color: #f8fafc; padding: 12px; font-family: monospace; font-size: 11px; border-radius: 6px; line-height: 1.4; border: 1px solid #334155;">
-												[Consola de estado lista...]
-											</div>
-										</div>
+						<div class="wpat-field-group" style="margin-bottom: 18px;">
+							<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+								<input type="checkbox" name="wpat_settings[image_optimizer_auto_convert]" value="1" <?php checked( ! isset( $settings['image_optimizer_auto_convert'] ) || '1' === $settings['image_optimizer_auto_convert'] ); ?>>
+								<span><strong>Convertir automáticamente a WebP al subir nuevas imágenes a la biblioteca</strong></span>
+							</label>
+						</div>
+
+						<div style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 18px;">
+							<div class="wpat-field-group" style="flex: 1; min-width: 180px;">
+								<label for="wpat_image_optimizer_quality" style="font-weight: 600;">Calidad de Compresión WebP (60 - 100%)</label>
+								<input type="number" name="wpat_settings[image_optimizer_quality]" id="wpat_image_optimizer_quality" value="<?php echo esc_attr( isset( $settings['image_optimizer_quality'] ) ? $settings['image_optimizer_quality'] : '82' ); ?>" min="40" max="100" class="regular-text" style="width: 100%;" />
+								<p class="description">Recomendado: 82%. Equilibrio ideal entre peso ultraligero y fidelidad visual.</p>
+							</div>
+
+							<div class="wpat-field-group" style="flex: 1; min-width: 180px;">
+								<label for="wpat_image_optimizer_max_width" style="font-weight: 600;">Ancho Máximo (px)</label>
+								<input type="number" name="wpat_settings[image_optimizer_max_width]" id="wpat_image_optimizer_max_width" value="<?php echo esc_attr( isset( $settings['image_optimizer_max_width'] ) ? $settings['image_optimizer_max_width'] : '1920' ); ?>" min="0" step="10" class="regular-text" style="width: 100%;" />
+								<p class="description">Escala si supera este ancho (Pon 0 para no limitar).</p>
+							</div>
+
+							<div class="wpat-field-group" style="flex: 1; min-width: 180px;">
+								<label for="wpat_image_optimizer_max_height" style="font-weight: 600;">Alto Máximo (px)</label>
+								<input type="number" name="wpat_settings[image_optimizer_max_height]" id="wpat_image_optimizer_max_height" value="<?php echo esc_attr( isset( $settings['image_optimizer_max_height'] ) ? $settings['image_optimizer_max_height'] : '1920' ); ?>" min="0" step="10" class="regular-text" style="width: 100%;" />
+								<p class="description">Escala si supera este alto (Pon 0 para no limitar).</p>
+							</div>
+						</div>
+
+						<div class="wpat-field-group" style="margin-bottom: 22px;">
+							<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+								<input type="checkbox" name="wpat_settings[image_optimizer_keep_original]" value="1" <?php checked( isset( $settings['image_optimizer_keep_original'] ) ? $settings['image_optimizer_keep_original'] : '0', '1' ); ?>>
+								<span><strong>Conservar copia del archivo original (JPG/PNG) en el servidor</strong> (Desactivado por defecto para ahorrar hasta un 70% de espacio en disco).</span>
+							</label>
+						</div>
+
+						<hr style="border:none; border-top: 1px solid #e2e8f0; margin: 25px 0;" />
+
+						<!-- 2. Optimización Retroactiva Masiva -->
+						<div class="wpat-bulk-optimizer-section">
+							<h4 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+								<span class="dashicons dashicons-images-alt2" style="color: #0284c7;"></span>
+								Optimización Retroactiva Masiva (Biblioteca Existente)
+							</h4>
+							<p class="description" style="margin: 0 0 16px 0;">Escanea y convierte por lotes las imágenes que ya tienes en WordPress sin riesgo de saturar la memoria del servidor.</p>
+							
+							<!-- Filtros del Optimizador Masivo -->
+							<div class="wpat-bulk-filters" style="display: flex; flex-wrap: wrap; gap: 15px; background: #f8fafc; padding: 16px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #e2e8f0;">
+								<div style="flex: 1; min-width: 160px;">
+									<label for="wpat_bulk_filter_min_size" style="display:block; font-weight:600; margin-bottom:5px; font-size:12px;">Peso Mínimo (en KB)</label>
+									<input type="number" id="wpat_bulk_filter_min_size" placeholder="Ej: 300" min="0" style="width: 100%;" />
+									<p class="description" style="font-size:11px; margin-top:2px;">Opcional: solo optimizar imágenes que pesen más de este valor.</p>
+								</div>
+								<div style="flex: 1; min-width: 160px;">
+									<label for="wpat_bulk_filter_date_start" style="display:block; font-weight:600; margin-bottom:5px; font-size:12px;">Fecha Desde</label>
+									<input type="date" id="wpat_bulk_filter_date_start" style="width: 100%;" />
+								</div>
+								<div style="flex: 1; min-width: 160px;">
+									<label for="wpat_bulk_filter_date_end" style="display:block; font-weight:600; margin-bottom:5px; font-size:12px;">Fecha Hasta</label>
+									<input type="date" id="wpat_bulk_filter_date_end" style="width: 100%;" />
+								</div>
+								<div style="flex: 1 1 100%; border-top: 1px dashed #cbd5e1; padding-top: 12px; margin-top: 4px;">
+									<label style="display:block; font-weight:600; margin-bottom:8px; font-size:12px;">Formatos de imagen a escanear:</label>
+									<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
+										<label style="display:inline-flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; font-weight:500;">
+											<input type="checkbox" class="wpat-bulk-format-cb" value="image/jpeg" checked />
+											<span>JPG / JPEG (<code>.jpg</code>, <code>.jpeg</code>)</span>
+										</label>
+										<label style="display:inline-flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; font-weight:500;">
+											<input type="checkbox" class="wpat-bulk-format-cb" value="image/png" checked />
+											<span>PNG (<code>.png</code>)</span>
+										</label>
+										<label style="display:inline-flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; font-weight:500;">
+											<input type="checkbox" class="wpat-bulk-format-cb" value="image/gif" />
+											<span>GIF (<code>.gif</code>)</span>
+											<span style="font-size:11px; color:#64748b; font-weight:normal;">(Desmarcado por defecto para no perder animación en GIFs animados)</span>
+										</label>
 									</div>
 								</div>
 							</div>
 
-							<!-- Módulo: Limpiador de Imágenes Huérfanas -->
-							<div class="wpat-module-card">
-								<div class="wpat-module-header">
-									<div class="wpat-module-info">
-										<h3>Limpiador de Imágenes Huérfanas (No Usadas)</h3>
-										<p>Escanea tu Biblioteca de Medios y detecta imágenes que no están referenciadas en ninguna entrada, página, producto de WooCommerce, imagen destacada o diseño de Elementor. Te permite eliminarlas de forma segura para liberar espacio en el disco.</p>
+							<div class="wpat-bulk-actions" style="display: flex; gap: 10px; align-items: center;">
+								<button type="button" class="button" id="wpat_scan_images_btn">Escanear Biblioteca</button>
+								<button type="button" class="button button-primary" id="wpat_start_bulk_btn" style="display:none;">Iniciar Optimización</button>
+							</div>
+
+							<div id="wpat_bulk_status" class="wpat-bulk-status-container" style="display:none; margin-top: 20px;">
+								<div class="wpat-progress-bar-wrapper" style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+									<div class="wpat-progress-bar" style="flex: 1; height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; border: 1px solid var(--wpat-border);">
+										<div class="wpat-progress-bar-fill" id="wpat_bulk_progress_fill" style="width: 0%; height: 100%; background: var(--wpat-success); transition: width 0.3s ease;"></div>
 									</div>
+									<span class="wpat-progress-percent" id="wpat_bulk_progress_percent" style="font-weight: 700; font-size: 14px; min-width: 40px; text-align: right;">0%</span>
 								</div>
-								<div class="wpat-module-body">
-									<div class="wpat-bulk-actions" style="display: flex; gap: 10px; align-items: center;">
-										<button type="button" class="button button-secondary" id="wpat_scan_orphans_btn">Buscar Imágenes Huérfanas</button>
-										<button type="button" class="button button-link-delete" id="wpat_delete_selected_orphans_btn" style="display:none;">Eliminar Seleccionadas</button>
-									</div>
-
-									<div id="wpat_orphans_status" class="wpat-bulk-status-container" style="display:none; margin-top: 20px;">
-										<div class="wpat-progress-bar-wrapper" style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
-											<div class="wpat-progress-bar" style="flex: 1; height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; border: 1px solid var(--wpat-border);">
-												<div class="wpat-progress-bar-fill" id="wpat_orphans_progress_fill" style="width: 0%; height: 100%; background: #0284c7; transition: width 0.3s ease;"></div>
-											</div>
-											<span class="wpat-progress-percent" id="wpat_orphans_progress_percent" style="font-weight: 700; font-size: 14px; min-width: 40px; text-align: right;">0%</span>
-										</div>
-										<div class="wpat-bulk-stats" style="margin-bottom: 15px; font-size: 13px; color: var(--wpat-text-light);">
-											<span>Analizadas: <strong id="wpat_orphans_stat_scanned" style="color: var(--wpat-text);">0</strong></span> | 
-											<span>Huérfanas encontradas: <strong id="wpat_orphans_stat_found" style="color: #ea580c;">0</strong></span>
-										</div>
-									</div>
-
-									<div id="wpat_orphans_results_wrapper" style="display:none; margin-top: 20px; border-top: 1px solid var(--wpat-border); padding-top: 15px;">
-										<h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600;">Listado de Imágenes Huérfanas Detectadas</h4>
-										<div style="max-height: 300px; overflow-y: auto; border: 1px solid #dcdcde; border-radius: 6px;">
-											<table class="wp-list-table widefat fixed striped" style="box-shadow:none; border:none;">
-												<thead>
-													<tr>
-														<th style="width: 40px; padding: 10px; text-align: center;"><input type="checkbox" id="wpat_select_all_orphans" /></th>
-														<th style="width: 60px; padding: 10px; text-align: center;">Miniatura</th>
-														<th style="padding: 10px;">Nombre del Archivo / Ruta</th>
-														<th style="width: 100px; padding: 10px;">Tamaño</th>
-														<th style="width: 100px; padding: 10px;">Fecha</th>
-													</tr>
-												</thead>
-												<tbody id="wpat_orphans_table_body">
-													<!-- Fila dinámica -->
-												</tbody>
-											</table>
-										</div>
-									</div>
+								<div class="wpat-bulk-stats" style="margin-bottom: 15px; font-size: 13px; color: var(--wpat-text-light);">
+									<span>Pendientes: <strong id="wpat_stat_pending" style="color: var(--wpat-text);">0</strong></span> | 
+									<span>Procesadas: <strong id="wpat_stat_processed" style="color: var(--wpat-success);">0</strong></span> | 
+									<span>Omitidas/Errores: <strong id="wpat_stat_failed" style="color: #ea580c;">0</strong></span>
+									<span id="wpat_stat_weight_container" style="display: none; margin-left: 10px; padding-left: 10px; border-left: 1px solid var(--wpat-border);">
+										| Peso original: <strong id="wpat_stat_total_weight" style="color: var(--wpat-text);">0 B</strong> 
+										| Ahorro estimado (WebP): <strong id="wpat_stat_opt_weight" style="color: var(--wpat-success);">0 B</strong>
+									</span>
+								</div>
+								<div id="wpat_bulk_log" class="wpat-bulk-log-box" style="max-height: 140px; overflow-y: auto; background: #0f172a; color: #f8fafc; padding: 14px; font-family: monospace; font-size: 11px; border-radius: 6px; line-height: 1.5; border: 1px solid #1e293b;">
+									[Consola de estado lista...]
 								</div>
 							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- 3. Módulo: Limpiador de Imágenes Huérfanas (Sin Falsos Positivos) -->
+				<div class="wpat-module-card" style="margin-top: 24px;">
+					<div class="wpat-module-header" style="border-bottom: 1px solid var(--wpat-border);">
+						<div class="wpat-module-info">
+							<h3 style="color:#0f172a; display: flex; align-items: center; gap: 8px;">
+								<span class="dashicons dashicons-trash" style="color: #e11d48;"></span>
+								Limpiador Seguro de Imágenes Huérfanas (No Usadas)
+							</h3>
+							<p>Escanea tu base de datos y detecta imágenes que no están referenciadas en ninguna entrada, página, borrador, producto o galería WooCommerce, logo, categoría o diseño de Elementor.</p>
+						</div>
+					</div>
+					<div class="wpat-module-body" style="padding: 20px;">
+						<div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; font-size: 13px; color: #9f1239;">
+							<span class="dashicons dashicons-shield" style="color: #e11d48; vertical-align: middle; margin-right: 4px;"></span>
+							<strong>Protección multi-capa activa:</strong> El motor verifica 7 fuentes distintas (miniaturas destacadas, galerías Woo, taxonomías, logos, Elementor JSON/URL, bloques Gutenberg y campos ACF/JetEngine) para garantizar cero falsos positivos antes de marcar un archivo como huérfano.
+						</div>
+
+						<div class="wpat-bulk-actions" style="display: flex; gap: 10px; align-items: center;">
+							<button type="button" class="button button-secondary" id="wpat_scan_orphans_btn">Buscar Imágenes Huérfanas</button>
+							<button type="button" class="button button-link-delete" id="wpat_delete_selected_orphans_btn" style="display:none; color: #b91c1c; font-weight: 600;">Eliminar Seleccionadas</button>
+						</div>
+
+						<div id="wpat_orphans_status" class="wpat-bulk-status-container" style="display:none; margin-top: 20px;">
+							<div class="wpat-progress-bar-wrapper" style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+								<div class="wpat-progress-bar" style="flex: 1; height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; border: 1px solid var(--wpat-border);">
+									<div class="wpat-progress-bar-fill" id="wpat_orphans_progress_fill" style="width: 0%; height: 100%; background: #0284c7; transition: width 0.3s ease;"></div>
+								</div>
+								<span class="wpat-progress-percent" id="wpat_orphans_progress_percent" style="font-weight: 700; font-size: 14px; min-width: 40px; text-align: right;">0%</span>
+							</div>
+							<div class="wpat-bulk-stats" style="margin-bottom: 15px; font-size: 13px; color: var(--wpat-text-light);">
+								<span>Analizadas: <strong id="wpat_orphans_stat_scanned" style="color: var(--wpat-text);">0</strong></span> | 
+								<span>Huérfanas encontradas: <strong id="wpat_orphans_stat_found" style="color: #ea580c;">0</strong></span>
+							</div>
+						</div>
+
+						<div id="wpat_orphans_results_wrapper" style="display:none; margin-top: 20px; border-top: 1px solid var(--wpat-border); padding-top: 15px;">
+							<h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600;">Listado de Imágenes Huérfanas Detectadas</h4>
+							<div style="max-height: 340px; overflow-y: auto; border: 1px solid #dcdcde; border-radius: 6px;">
+								<table class="wp-list-table widefat fixed striped" style="box-shadow:none; border:none;">
+									<thead>
+										<tr>
+											<th style="width: 40px; padding: 10px; text-align: center;"><input type="checkbox" id="wpat_select_all_orphans" /></th>
+											<th style="width: 60px; padding: 10px; text-align: center;">Miniatura</th>
+											<th style="padding: 10px;">Nombre del Archivo / ID</th>
+											<th style="width: 100px; padding: 10px;">Tamaño</th>
+											<th style="width: 110px; padding: 10px;">Fecha Subida</th>
+										</tr>
+									</thead>
+									<tbody id="wpat_orphans_table_body">
+										<!-- Fila dinámica -->
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
 				<?php
 				break;
 			case 'smtp':

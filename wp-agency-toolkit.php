@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.75
+ * Version:     4.3.76
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.75' );
+define( 'WPAT_VERSION', '4.3.76' );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
 
@@ -307,7 +307,12 @@ class WPAT_Main {
 			'svg_admin_only'            => '1',
 			'svg_sanitize_strict'       => '1',
 			'svg_generate_dimensions'   => '1',
-			'image-optimizer'           => '0',
+			'image-optimizer'               => '0',
+			'image_optimizer_quality'       => '82',
+			'image_optimizer_max_width'     => '1920',
+			'image_optimizer_max_height'    => '1920',
+			'image_optimizer_auto_convert'   => '1',
+			'image_optimizer_keep_original'  => '0',
 			'seo'                       => '0',
 			'sitemap-xml'                => '0',
 			'sitemap_include_posts'      => '1',

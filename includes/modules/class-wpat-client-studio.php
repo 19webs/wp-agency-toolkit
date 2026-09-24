@@ -6,6 +6,7 @@
  * de creación y edición (post-new.php / post.php) de WordPress en una experiencia
  * limpia, moderna y visual estilo SaaS (Notion/Ghost/Stripe).
  *
+ * Utiliza plantillas modulares personalizadas en templates/client-studio/
  * Cuando está activo, se aplica directamente al hacer clic en el menú estándar de WP.
  * Cuando está desactivado, todo vuelve al 100% a la interfaz nativa estándar.
  *
@@ -39,8 +40,8 @@ class WPAT_Client_Studio {
 	 * Constructor.
 	 */
 	private function __construct() {
-		// 1. Integración en Listados de WordPress (edit.php)
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_list_table_assets' ) );
+		// 1. Assets y Clases de Body (edit.php, post.php, post-new.php)
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_studio_assets' ) );
 		add_action( 'admin_init', array( $this, 'register_thumbnail_columns' ) );
 		add_filter( 'admin_body_class', array( $this, 'add_admin_body_classes' ) );
 
@@ -64,6 +65,19 @@ class WPAT_Client_Studio {
 			unset( $types['attachment'] );
 		}
 		return $types;
+	}
+
+	/**
+	 * Renderiza una plantilla personalizada desde templates/client-studio/
+	 *
+	 * @param string $template_name Nombre del archivo sin .php
+	 * @param array  $args          Argumentos pasados a la vista
+	 */
+	public static function render_template( $template_name, $args = array() ) {
+		$file = WPAT_DIR . 'templates/client-studio/' . sanitize_file_name( $template_name ) . '.php';
+		if ( file_exists( $file ) ) {
+			include $file;
+		}
 	}
 
 	/**
@@ -121,19 +135,14 @@ class WPAT_Client_Studio {
 	}
 
 	/**
-	 * =========================================================================
-	 * 1. INTEGRACIÓN NATIVA EN LISTADOS (edit.php)
-	 * =========================================================================
-	 */
-
-	/**
-	 * Inyecta clases en el body de edit.php para activar el diseño SaaS.
+	 * Inyecta clases en el body para activar el diseño SaaS en tablas y editor.
 	 *
 	 * @param string $classes
 	 * @return string
 	 */
 	public function add_admin_body_classes( $classes ) {
 		global $pagenow;
+
 		if ( 'edit.php' === $pagenow && $this->is_active_for_context() ) {
 			$settings = WPAT_Main::get_instance()->get_settings();
 			$density  = isset( $settings['studio_density'] ) ? $settings['studio_density'] : 'comfortable';
@@ -147,46 +156,81 @@ class WPAT_Client_Studio {
 				$classes .= ' wpat-tables-sticky-header';
 			}
 		}
+
+		if ( ( 'post.php' === $pagenow || 'post-new.php' === $pagenow ) && $this->is_active_for_context() ) {
+			$classes .= ' wpat-studio-active';
+		}
+
 		return $classes;
 	}
 
 	/**
-	 * Encola estilos y scripts en edit.php cuando el módulo está activo.
+	 * Encola estilos y scripts de Client Studio según la pantalla.
 	 *
 	 * @param string $hook
 	 */
-	public function enqueue_list_table_assets( $hook ) {
-		if ( 'edit.php' !== $hook || ! $this->is_active_for_context() ) {
+	public function enqueue_studio_assets( $hook ) {
+		$settings = WPAT_Main::get_instance()->get_settings();
+		if ( ! isset( $settings['client-studio'] ) || '1' !== (string) $settings['client-studio'] ) {
 			return;
 		}
 
-		$settings = WPAT_Main::get_instance()->get_settings();
+		// 1. Pantalla de Listados (edit.php)
+		if ( 'edit.php' === $hook && $this->is_active_for_context() ) {
+			wp_enqueue_style(
+				'wpat-admin-tables-ui-css',
+				WPAT_URL . 'assets/css/wpat-admin-tables-ui.css',
+				array(),
+				time()
+			);
 
-		wp_enqueue_style(
-			'wpat-admin-tables-ui-css',
-			WPAT_URL . 'assets/css/wpat-admin-tables-ui.css',
-			array(),
-			time()
-		);
+			wp_enqueue_script(
+				'wpat-admin-tables-ui-js',
+				WPAT_URL . 'assets/js/wpat-admin-tables-ui.js',
+				array( 'jquery' ),
+				time(),
+				true
+			);
 
-		wp_enqueue_script(
-			'wpat-admin-tables-ui-js',
-			WPAT_URL . 'assets/js/wpat-admin-tables-ui.js',
-			array( 'jquery' ),
-			time(),
-			true
-		);
+			wp_localize_script(
+				'wpat-admin-tables-ui-js',
+				'wpatTablesConfig',
+				array(
+					'enablePills'       => ! isset( $settings['studio_pills'] ) || '1' === (string) $settings['studio_pills'],
+					'enableRowActions'  => true,
+					'enableSticky'      => isset( $settings['studio_sticky_header'] ) && '1' === (string) $settings['studio_sticky_header'],
+					'enableThumbZoom'   => ! isset( $settings['studio_thumb_zoom'] ) || '1' === (string) $settings['studio_thumb_zoom'],
+				)
+			);
+		}
 
-		wp_localize_script(
-			'wpat-admin-tables-ui-js',
-			'wpatTablesConfig',
-			array(
-				'enablePills'       => ! isset( $settings['studio_pills'] ) || '1' === (string) $settings['studio_pills'],
-				'enableRowActions'  => true,
-				'enableSticky'      => isset( $settings['studio_sticky_header'] ) && '1' === (string) $settings['studio_sticky_header'],
-				'enableThumbZoom'   => ! isset( $settings['studio_thumb_zoom'] ) || '1' === (string) $settings['studio_thumb_zoom'],
-			)
-		);
+		// 2. Pantalla de Edición / Creación (post.php, post-new.php)
+		if ( ( 'post.php' === $hook || 'post-new.php' === $hook ) && $this->is_active_for_context() ) {
+			wp_enqueue_media();
+
+			wp_enqueue_style(
+				'wpat-client-studio-css',
+				WPAT_URL . 'assets/css/wpat-client-studio.css',
+				array(),
+				time()
+			);
+
+			wp_enqueue_script(
+				'wpat-client-studio-js',
+				WPAT_URL . 'assets/js/wpat-client-studio.js',
+				array( 'jquery' ),
+				time(),
+				true
+			);
+
+			wp_localize_script(
+				'wpat-client-studio-js',
+				'wpatStudioConfig',
+				array(
+					'nonce' => wp_create_nonce( 'wpat_studio_nonce' ),
+				)
+			);
+		}
 	}
 
 	/**
@@ -249,12 +293,6 @@ class WPAT_Client_Studio {
 	}
 
 	/**
-	 * =========================================================================
-	 * 2. INTEGRACIÓN NATIVA EN EDICIÓN Y CREACIÓN (post.php & post-new.php)
-	 * =========================================================================
-	 */
-
-	/**
 	 * Intercepta la pantalla nativa de edición para renderizar el Studio SaaS.
 	 */
 	public function intercept_native_editor_screen() {
@@ -272,13 +310,13 @@ class WPAT_Client_Studio {
 			return;
 		}
 
-		// Deshabilitar el editor de bloques Gutenberg / pantalla estándar y cargar nuestra vista limpia
+		// Deshabilitar el editor de bloques Gutenberg y cargar la plantilla SaaS
 		add_filter( 'use_block_editor_for_post_type', '__return_false', 999 );
 		add_action( 'edit_form_top', array( $this, 'render_studio_editor_override' ), 1 );
 	}
 
 	/**
-	 * Renderiza el espacio de trabajo de Client Studio directamente dentro de post.php / post-new.php.
+	 * Renderiza el espacio de trabajo de Client Studio invocando la plantilla personalizada.
 	 *
 	 * @param WP_Post|null $post
 	 */
@@ -298,7 +336,7 @@ class WPAT_Client_Studio {
 		$status    = $post ? $post->post_status : 'draft';
 		$thumb_id  = $post ? get_post_thumbnail_id( $post->ID ) : 0;
 		$thumb_url = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'medium' ) : '';
-		$post_cats = $post ? wp_get_post_categories( $post->ID ) : array();
+		$post_name = $post ? $post->post_name : '';
 
 		// Metadatos SEO
 		$seo_title   = $post ? get_post_meta( $post->ID, '_wpat_seo_title', true ) : '';
@@ -311,231 +349,36 @@ class WPAT_Client_Studio {
 		}
 		$seo_keyword = $post ? get_post_meta( $post->ID, '_wpat_seo_keyword', true ) : '';
 		$permalink   = $post ? get_permalink( $post->ID ) : '';
+		$back_url    = admin_url( 'edit.php' . ( 'post' !== $post_type ? '?post_type=' . $post_type : '' ) );
 
-		$back_url = admin_url( 'edit.php' . ( 'post' !== $post_type ? '?post_type=' . $post_type : '' ) );
-		?>
-		<!-- Ocultar metaboxes desordenadas nativas de WordPress vía CSS -->
-		<style>
-			#poststuff #post-body.columns-2 { margin-right: 0 !important; }
-			#poststuff #postbox-container-1, #poststuff #postbox-container-2, #post-body-content, #titlediv, #postdivrich, #postexcerpt, #authordiv, #commentstatusdiv { display: none !important; }
-			#wpbody-content .wrap > h1, #wpbody-content .wrap > .page-title-action { display: none !important; }
-		</style>
-
-		<input type="hidden" id="wpat_studio_post_id" value="<?php echo esc_attr( $post_id ); ?>" />
-		<input type="hidden" id="wpat_studio_post_type" value="<?php echo esc_attr( $post_type ); ?>" />
-		<input type="hidden" id="wpat_studio_thumbnail_id" value="<?php echo esc_attr( $thumb_id ); ?>" />
-		<input type="hidden" id="wpat_studio_remove_thumb_flag" value="0" />
-
-		<div class="wpat-studio-wrap" style="margin-top: 10px; margin-bottom: 40px;">
-
-			<!-- BARRA SUPERIOR DE ACCIONES STICKY -->
-			<div class="wpat-studio-card" style="padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 24px; position: sticky; top: 32px; z-index: 100;">
-				<div style="display: flex; align-items: center; gap: 12px;">
-					<a href="<?php echo esc_url( $back_url ); ?>" class="button button-secondary" style="height: 36px; line-height: 34px; font-weight: 700; border-radius: 6px;">
-						← Volver al Listado
-					</a>
-					<span id="wpat_studio_autosave_status" style="font-size: 12px; color: #10b981; font-weight: 600;">
-						<?php echo $post_id ? '🟢 Editando ' . esc_html( $pt_label ) : '✨ Nueva ' . esc_html( $pt_label ); ?>
-					</span>
-				</div>
-
-				<div style="display: flex; align-items: center; gap: 10px;">
-					<?php if ( $permalink ) : ?>
-						<a href="<?php echo esc_url( $permalink ); ?>" target="_blank" id="wpat_studio_preview_link" class="button button-secondary" style="height: 36px; line-height: 34px; font-weight: 600; border-radius: 6px;">
-							👁️ Ver en la Web
-						</a>
-					<?php endif; ?>
-					<button type="button" class="button button-secondary wpat-studio-save-action" data-status="draft" style="height: 36px; line-height: 34px; font-weight: 700; border-radius: 6px;">
-						💾 Guardar Borrador
-					</button>
-					<button type="button" class="button button-primary wpat-studio-save-action" data-status="publish" style="background: #2563eb; border-color: #1d4ed8; font-weight: 700; height: 36px; line-height: 34px; padding: 0 20px; border-radius: 6px; box-shadow: 0 2px 4px rgba(37,99,235,0.2);">
-						🚀 Publicar en la Web
-					</button>
-				</div>
-			</div>
-
-			<!-- WORKSPACE DE 2 COLUMNAS (CONTENIDO + BARRA LATERAL) -->
-			<div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start;">
-				
-				<!-- COLUMNA IZQUIERDA: TÍTULO, WYSIWYG & CAMPOS -->
-				<div style="display: flex; flex-direction: column; gap: 24px;">
-
-					<!-- TARJETA PRINCIPAL: TÍTULO Y EDITOR WYSIWYG -->
-					<div class="wpat-studio-card" style="padding: 24px;">
-						<div style="margin-bottom: 20px;">
-							<label style="display: block; font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-								Título de <?php echo esc_html( $pt_label ); ?>
-							</label>
-							<input type="text" id="wpat_studio_post_title" value="<?php echo esc_attr( $title ); ?>" placeholder="Escribe un título claro y atractivo..." style="width: 100%; font-size: 24px; font-weight: 800; color: inherit; background: transparent; border: none; border-bottom: 2px solid #e2e8f0; padding: 6px 0; outline: none;" />
-						</div>
-
-						<!-- Editor WYSIWYG Nativo Simplificado -->
-						<div style="margin-bottom: 16px;">
-							<label style="display: block; font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-								Contenido Principal (WYSIWYG)
-							</label>
-							<?php
-							wp_editor(
-								$content,
-								'wpat_studio_content_editor',
-								array(
-									'textarea_rows' => 16,
-									'media_buttons' => true,
-									'teeny'         => false,
-									'tinymce'       => array(
-										'toolbar1' => 'formatselect,bold,italic,underline,blockquote,bullist,numlist,alignleft,aligncenter,alignright,link,unlink,wp_more,fullscreen',
-										'toolbar2' => '',
-									),
-									'quicktags'     => true,
-								)
-							);
-							?>
-						</div>
-
-						<!-- Métricas en Vivo -->
-						<div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 14px; font-size: 12px; color: #64748b;">
-							<div style="display: flex; gap: 16px;">
-								<span>📊 Palabras: <strong id="wpat_studio_word_count">0</strong></span>
-								<span>⏱️ Lectura: <strong id="wpat_studio_read_time">1 min</strong></span>
-							</div>
-							<span class="wpat-studio-badge wpat-studio-badge-publish">🟢 Vista Limpia</span>
-						</div>
-					</div>
-
-					<!-- TARJETA: CAMPOS PERSONALIZADOS CPT / ACF DINÁMICOS -->
-					<?php if ( 'post' !== $post_type && 'page' !== $post_type ) : ?>
-						<div class="wpat-studio-card" style="padding: 24px;">
-							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
-								<h4 style="margin: 0; font-size: 14px; font-weight: 800;">
-									⚡ Campos Personalizados de <?php echo esc_html( $pt_label ); ?> (ACF / CPT)
-								</h4>
-								<span style="font-size: 11px; background: #eff6ff; color: #2563eb; font-weight: 700; padding: 2px 8px; border-radius: 12px;">Metadatos</span>
-							</div>
-
-							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-								<div>
-									<label style="display: block; font-weight: 700; font-size: 12px; margin-bottom: 4px;">Cliente / Empresa Asociada</label>
-									<input type="text" class="wpat-studio-input wpat-studio-cpt-field" data-meta-key="client_company" value="<?php echo esc_attr( $post_id ? get_post_meta( $post_id, 'client_company', true ) : '' ); ?>" placeholder="Ej: Empresa SL" />
-								</div>
-								<div>
-									<label style="display: block; font-weight: 700; font-size: 12px; margin-bottom: 4px;">URL / Enlace del Proyecto</label>
-									<input type="url" class="wpat-studio-input wpat-studio-cpt-field" data-meta-key="project_url" value="<?php echo esc_attr( $post_id ? get_post_meta( $post_id, 'project_url', true ) : '' ); ?>" placeholder="https://..." />
-								</div>
-							</div>
-						</div>
-					<?php endif; ?>
-
-					<!-- TARJETA: GOOGLE SERP & OPTIMIZACIÓN SEO -->
-					<div class="wpat-studio-card" style="padding: 24px;">
-						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
-							<h4 style="margin: 0; font-size: 14px; font-weight: 800;">
-								🔍 Vista Previa en Google & SEO <span style="font-size: 11px; background: #ecfdf5; color: #047857; font-weight: 700; padding: 2px 8px; border-radius: 12px; margin-left: 6px;">Yoast / WPAT SEO</span>
-							</h4>
-						</div>
-
-						<!-- Snippet Google en Vivo -->
-						<div class="wpat-studio-serp-box" style="margin-bottom: 18px;">
-							<span class="wpat-studio-serp-url"><?php echo esc_html( home_url( '/' . ( $post ? $post->post_name : 'tu-articulo' ) ) ); ?></span>
-							<span class="wpat-studio-serp-title" id="wpat_studio_google_title_preview"><?php echo esc_html( ! empty( $seo_title ) ? $seo_title : ( $title ? $title : 'Título de la publicación' ) ); ?></span>
-							<p class="wpat-studio-serp-desc" id="wpat_studio_google_desc_preview"><?php echo esc_html( ! empty( $seo_desc ) ? $seo_desc : ( $excerpt ? $excerpt : 'Descripción previa que verán los usuarios en los resultados de Google...' ) ); ?></p>
-						</div>
-
-						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-							<div>
-								<label style="display: block; font-weight: 700; font-size: 12px; margin-bottom: 4px;">Palabra Clave Objetivo</label>
-								<input type="text" id="wpat_studio_seo_keyword" value="<?php echo esc_attr( $seo_keyword ); ?>" class="wpat-studio-input" placeholder="Ej: diseño web valencia" />
-							</div>
-							<div>
-								<label style="display: block; font-weight: 700; font-size: 12px; margin-bottom: 4px;">Título SEO Personalizado</label>
-								<input type="text" id="wpat_studio_seo_title" value="<?php echo esc_attr( $seo_title ); ?>" class="wpat-studio-input" placeholder="Dejar vacío para usar el título principal" />
-							</div>
-						</div>
-						<div style="margin-top: 12px;">
-							<label style="display: block; font-weight: 700; font-size: 12px; margin-bottom: 4px;">Meta Descripción para Google</label>
-							<textarea id="wpat_studio_seo_desc" rows="2" class="wpat-studio-textarea" placeholder="Resumen atractivo para Google..."><?php echo esc_textarea( $seo_desc ); ?></textarea>
-						</div>
-					</div>
-
-				</div>
-
-				<!-- COLUMNA DERECHA: BARRA LATERAL DEL CLIENTE -->
-				<div style="display: flex; flex-direction: column; gap: 20px;">
-					
-					<!-- TARJETA: IMAGEN DESTACADA -->
-					<div class="wpat-studio-card" style="padding: 18px;">
-						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-							<h4 style="margin: 0; font-size: 13.5px; font-weight: 800;">🖼️ Imagen Destacada</h4>
-							<button type="button" id="wpat_studio_remove_thumb_btn" class="button-link-delete" style="font-size: 11px; cursor: pointer; <?php echo empty( $thumb_url ) ? 'display:none;' : ''; ?>">Quitar</button>
-						</div>
-
-						<div class="wpat-studio-featured-img-holder">
-							<div id="wpat_studio_thumb_preview" style="<?php echo empty( $thumb_url ) ? 'display:none;' : ''; ?> width:100%; height:100%;">
-								<?php if ( ! empty( $thumb_url ) ) : ?>
-									<img src="<?php echo esc_url( $thumb_url ); ?>" alt="" />
-								<?php endif; ?>
-							</div>
-							<div id="wpat_studio_thumb_placeholder" style="<?php echo ! empty( $thumb_url ) ? 'display:none;' : ''; ?> text-align:center; padding:15px; color:#94a3b8;">
-								<div style="font-size: 26px; margin-bottom: 4px;">📷</div>
-								<span style="font-size: 12px; font-weight: 600; color: #64748b;">Clic para elegir imagen</span>
-							</div>
-						</div>
-					</div>
-
-					<!-- TARJETA: CATEGORÍAS -->
-					<?php if ( is_object_in_taxonomy( $post_type, 'category' ) ) : ?>
-						<?php $all_categories = get_categories( array( 'hide_empty' => false ) ); ?>
-						<div class="wpat-studio-card" style="padding: 18px;">
-							<h4 style="margin: 0 0 12px 0; font-size: 13.5px; font-weight: 800;">🏷️ Categoría</h4>
-							<div style="max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
-								<?php foreach ( $all_categories as $cat ) : ?>
-									<label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; cursor: pointer;">
-										<input type="checkbox" name="wpat_studio_categories[]" value="<?php echo esc_attr( $cat->term_id ); ?>" <?php checked( in_array( $cat->term_id, $post_cats, true ) ); ?> />
-										<span><?php echo esc_html( $cat->name ); ?></span>
-									</label>
-								<?php endforeach; ?>
-							</div>
-						</div>
-					<?php endif; ?>
-
-					<!-- TARJETA: EXTRACTO / RESUMEN CORTO -->
-					<div class="wpat-studio-card" style="padding: 18px;">
-						<h4 style="margin: 0 0 8px 0; font-size: 13.5px; font-weight: 800;">📝 Resumen Corto (Extracto)</h4>
-						<textarea id="wpat_studio_post_excerpt" rows="3" class="wpat-studio-textarea" placeholder="Breve introducción para tarjetas del blog..."><?php echo esc_textarea( $excerpt ); ?></textarea>
-					</div>
-
-					<!-- TARJETA: ESTADO & PUBLICACIÓN -->
-					<div class="wpat-studio-card" style="padding: 18px;">
-						<h4 style="margin: 0 0 12px 0; font-size: 13.5px; font-weight: 800;">⚙️ Estado & Publicación</h4>
-						<div style="display: flex; flex-direction: column; gap: 8px; font-size: 12px;">
-							<div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px;">
-								<span style="color: #64748b;">Estado:</span>
-								<strong><?php echo 'publish' === $status ? '🟢 Publicado' : '🟡 Borrador'; ?></strong>
-							</div>
-							<div style="display: flex; justify-content: space-between;">
-								<span style="color: #64748b;">Tipo:</span>
-								<strong><?php echo esc_html( $pt_label ); ?></strong>
-							</div>
-						</div>
-					</div>
-
-				</div>
-
-			</div>
-		</div>
-		<?php
+		self::render_template(
+			'editor',
+			array(
+				'post'        => $post,
+				'post_id'     => $post_id,
+				'post_type'   => $post_type,
+				'pt_label'    => $pt_label,
+				'title'       => $title,
+				'content'     => $content,
+				'excerpt'     => $excerpt,
+				'status'      => $status,
+				'thumb_id'    => $thumb_id,
+				'thumb_url'   => $thumb_url,
+				'post_name'   => $post_name,
+				'permalink'   => $permalink,
+				'back_url'    => $back_url,
+				'seo_title'   => $seo_title,
+				'seo_desc'    => $seo_desc,
+				'seo_keyword' => $seo_keyword,
+			)
+		);
 	}
-
-	/**
-	 * =========================================================================
-	 * 3. AJUSTES Y CONFIGURACIÓN AJAX
-	 * =========================================================================
-	 */
 
 	/**
 	 * Guarda o actualiza una publicación vía AJAX desde el Studio.
 	 */
 	public function ajax_save_post() {
-		check_ajax_referer( 'wpat_client_studio_nonce', 'security' );
+		check_ajax_referer( 'wpat_studio_nonce', 'security' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			wp_send_json_error( array( 'message' => 'No tienes permisos para editar publicaciones.' ) );
@@ -546,7 +389,7 @@ class WPAT_Client_Studio {
 		$title       = isset( $_POST['title'] ) ? sanitize_text_field( $_POST['title'] ) : '';
 		$content     = isset( $_POST['content'] ) ? wp_kses_post( wp_unslash( $_POST['content'] ) ) : '';
 		$excerpt     = isset( $_POST['excerpt'] ) ? sanitize_textarea_field( $_POST['excerpt'] ) : '';
-		$status      = isset( $_POST['post_status'] ) && in_array( $_POST['post_status'], array( 'publish', 'draft', 'pending' ), true ) ? $_POST['post_status'] : 'draft';
+		$status      = isset( $_POST['post_status'] ) && in_array( $_POST['post_status'], array( 'publish', 'draft', 'pending', 'private' ), true ) ? $_POST['post_status'] : 'draft';
 		$thumb_id    = isset( $_POST['thumbnail_id'] ) ? absint( $_POST['thumbnail_id'] ) : 0;
 		$categories  = isset( $_POST['categories'] ) && is_array( $_POST['categories'] ) ? array_map( 'absint', $_POST['categories'] ) : array();
 
@@ -593,7 +436,7 @@ class WPAT_Client_Studio {
 			wp_set_post_categories( $saved_id, $categories );
 		}
 
-		// Guardar Metadatos SEO (compatibilidad con WPAT SEO y Yoast)
+		// Guardar Metadatos SEO (compatibilidad con WPAT SEO, Yoast y Rank Math)
 		if ( ! empty( $seo_title ) ) {
 			update_post_meta( $saved_id, '_wpat_seo_title', $seo_title );
 			update_post_meta( $saved_id, '_yoast_wpseo_title', $seo_title );
@@ -628,7 +471,7 @@ class WPAT_Client_Studio {
 	 * Mueve una publicación a la papelera vía AJAX.
 	 */
 	public function ajax_trash_post() {
-		check_ajax_referer( 'wpat_client_studio_nonce', 'security' );
+		check_ajax_referer( 'wpat_studio_nonce', 'security' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			wp_send_json_error( array( 'message' => 'No tienes permisos.' ) );

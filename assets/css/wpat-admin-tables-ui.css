@@ -1,28 +1,51 @@
 /**
  * WP Agency Toolkit - Diseño Moderno SaaS para Listados (edit.php)
- * Estilos optimizados para Entradas, Páginas, Productos WooCommerce y CPTs.
+ * Transforma las tablas de Entradas, Páginas, Productos y CPTs en un Data Table SaaS.
  */
 
 /* ==========================================================================
-   1. CONTENEDOR PRINCIPAL SAAS
+   1. CONTENEDOR Y CABECERA SAAS
    ========================================================================== */
+body.wpat-saas-tables-active #wpbody-content {
+	padding-right: 20px;
+	padding-bottom: 40px;
+}
+
+body.wpat-saas-tables-active #screen-meta-links,
+body.wpat-saas-tables-active #screen-meta {
+	display: none !important;
+}
+
 body.wpat-saas-tables-active #wpbody-content .wrap {
-	margin-top: 15px;
+	margin: 16px 0;
 	max-width: 100%;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Título de la página y Botón "Añadir nueva" */
+body.wpat-saas-tables-active .wrap > h1.wp-heading-inline {
+	font-size: 22px !important;
+	font-weight: 800 !important;
+	color: #0f172a !important;
+	letter-spacing: -0.5px;
+	display: inline-flex !important;
+	align-items: center !important;
+	margin-right: 12px !important;
 }
 
 body.wpat-saas-tables-active .page-title-action {
 	background: #2563eb !important;
 	border: 1px solid #1d4ed8 !important;
 	color: #ffffff !important;
-	border-radius: 6px !important;
+	border-radius: 8px !important;
 	padding: 6px 14px !important;
 	font-weight: 600 !important;
 	font-size: 13px !important;
 	box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2) !important;
-	transition: all 0.2s ease !important;
+	transition: all 0.15s ease !important;
+	position: relative !important;
 	top: -2px !important;
-	position: relative;
+	text-decoration: none !important;
 }
 
 body.wpat-saas-tables-active .page-title-action:hover {
@@ -37,16 +60,16 @@ body.wpat-saas-tables-active .page-title-action:hover {
    2. PESTAÑAS DE FILTRO DE ESTADO (.subsubsub)
    ========================================================================== */
 body.wpat-saas-tables-active ul.subsubsub {
-	display: flex;
+	display: inline-flex;
 	align-items: center;
-	gap: 6px;
-	flex-wrap: wrap;
+	gap: 4px;
 	background: #f1f5f9;
-	padding: 4px 6px;
-	border-radius: 8px;
+	padding: 4px;
+	border-radius: 10px;
 	border: 1px solid #e2e8f0;
-	margin: 14px 0 12px 0;
-	font-size: 12.5px;
+	margin: 16px 0 16px 0;
+	font-size: 13px;
+	float: none;
 }
 
 body.wpat-saas-tables-active ul.subsubsub li {
@@ -57,9 +80,9 @@ body.wpat-saas-tables-active ul.subsubsub li {
 }
 
 body.wpat-saas-tables-active ul.subsubsub li a {
-	color: #475569;
+	color: #64748b;
 	text-decoration: none;
-	padding: 4px 10px;
+	padding: 5px 12px;
 	border-radius: 6px;
 	font-weight: 600;
 	transition: all 0.15s ease;
@@ -71,7 +94,7 @@ body.wpat-saas-tables-active ul.subsubsub li a {
 
 body.wpat-saas-tables-active ul.subsubsub li a:hover {
 	color: #0f172a;
-	background: rgba(255, 255, 255, 0.7);
+	background: rgba(255, 255, 255, 0.8);
 }
 
 body.wpat-saas-tables-active ul.subsubsub li a.current {
@@ -86,7 +109,7 @@ body.wpat-saas-tables-active ul.subsubsub li .count {
 	font-size: 11px;
 	background: rgba(0, 0, 0, 0.06);
 	color: inherit;
-	padding: 1px 6px;
+	padding: 1px 7px;
 	border-radius: 10px;
 	font-weight: 700;
 }
@@ -97,58 +120,102 @@ body.wpat-saas-tables-active ul.subsubsub li a.current .count {
 }
 
 /* ==========================================================================
-   3. BARRA DE HERRAMIENTAS, FILTROS & BUSCADOR (.tablenav & .search-box)
+   3. BUSCADOR Y BARRA DE HERRAMIENTAS (.search-box & .tablenav)
    ========================================================================== */
+body.wpat-saas-tables-active .search-box {
+	float: right;
+	margin: 16px 0 16px 0;
+	display: flex;
+	align-items: center;
+}
+
+body.wpat-saas-tables-active .search-box input[type="search"] {
+	height: 38px;
+	border-radius: 8px 0 0 8px;
+	border: 1px solid #cbd5e1;
+	border-right: none;
+	padding: 0 14px;
+	font-size: 13px;
+	min-width: 240px;
+	background: #ffffff;
+	box-shadow: none;
+}
+
+body.wpat-saas-tables-active .search-box input[type="search"]:focus {
+	border-color: #2563eb;
+	box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+body.wpat-saas-tables-active .search-box input[type="submit"] {
+	height: 38px;
+	line-height: 36px;
+	border-radius: 0 8px 8px 0;
+	background: #2563eb;
+	border: 1px solid #1d4ed8;
+	color: #ffffff;
+	font-weight: 600;
+	padding: 0 16px;
+	font-size: 13px;
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+body.wpat-saas-tables-active .search-box input[type="submit"]:hover {
+	background: #1d4ed8;
+}
+
+/* Barra de Filtros Superior */
 body.wpat-saas-tables-active .tablenav.top {
 	background: #ffffff;
 	border: 1px solid #e2e8f0;
-	border-radius: 10px 10px 0 0;
+	border-radius: 12px 12px 0 0;
 	border-bottom: none;
-	padding: 10px 14px;
+	padding: 12px 16px;
 	margin: 0;
 	height: auto;
-	min-height: 48px;
+	min-height: 52px;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	flex-wrap: wrap;
-	gap: 10px;
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+	gap: 12px;
 }
 
+/* Barra de Filtros Inferior */
 body.wpat-saas-tables-active .tablenav.bottom {
 	background: #ffffff;
 	border: 1px solid #e2e8f0;
-	border-radius: 0 0 10px 10px;
+	border-radius: 0 0 12px 12px;
 	border-top: none;
-	padding: 10px 14px;
-	margin: 0 0 20px 0;
+	padding: 12px 16px;
+	margin: 0 0 24px 0;
 	height: auto;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	flex-wrap: wrap;
-	gap: 10px;
+	gap: 12px;
 }
 
 body.wpat-saas-tables-active .tablenav .actions select {
-	height: 34px;
+	height: 36px;
 	border-radius: 6px;
 	border-color: #cbd5e1;
 	color: #334155;
-	font-size: 12.5px;
-	padding: 0 24px 0 8px;
+	font-size: 13px;
+	padding: 0 28px 0 10px;
 	max-width: 220px;
+	background-color: #ffffff;
 }
 
 body.wpat-saas-tables-active .tablenav .actions .button {
-	height: 34px;
-	line-height: 32px;
+	height: 36px;
+	line-height: 34px;
 	border-radius: 6px;
-	border-color: #cbd5e1;
+	border: 1px solid #cbd5e1;
 	font-weight: 600;
-	font-size: 12.5px;
-	padding: 0 12px;
+	font-size: 13px;
+	padding: 0 14px;
 	background: #f8fafc;
 	color: #334155;
 	transition: all 0.15s ease;
@@ -160,81 +227,23 @@ body.wpat-saas-tables-active .tablenav .actions .button:hover {
 	color: #0f172a;
 }
 
-/* Buscador SaaS */
-body.wpat-saas-tables-active .search-box {
-	margin-bottom: 12px;
-}
-
-body.wpat-saas-tables-active .search-box input[type="search"] {
-	height: 36px;
-	border-radius: 6px 0 0 6px;
-	border: 1px solid #cbd5e1;
-	padding: 0 12px;
-	font-size: 13px;
-	min-width: 200px;
-	box-shadow: none;
-}
-
-body.wpat-saas-tables-active .search-box input[type="search"]:focus {
-	border-color: #2563eb;
-	box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
-}
-
-body.wpat-saas-tables-active .search-box input[type="submit"] {
-	height: 36px;
-	line-height: 34px;
-	border-radius: 0 6px 6px 0;
-	background: #2563eb;
-	border-color: #1d4ed8;
-	color: #fff;
-	font-weight: 600;
-	padding: 0 14px;
-	margin-left: -1px;
-}
-
-/* Paginación SaaS */
-body.wpat-saas-tables-active .tablenav-pages .pagination-links a,
-body.wpat-saas-tables-active .tablenav-pages .pagination-links span.tablenav-pages-navspan {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-width: 30px;
-	height: 30px;
-	padding: 0 6px;
-	border-radius: 6px;
-	border: 1px solid #e2e8f0;
-	background: #ffffff;
-	font-size: 12px;
-	font-weight: 600;
-	color: #475569;
-	text-decoration: none;
-	margin: 0 2px;
-}
-
-body.wpat-saas-tables-active .tablenav-pages .pagination-links a:hover {
-	background: #f1f5f9;
-	border-color: #cbd5e1;
-	color: #0f172a;
-}
-
 /* ==========================================================================
    4. TABLA PRINCIPAL SAAS (.wp-list-table)
    ========================================================================== */
 body.wpat-saas-tables-active .wp-list-table {
 	background: #ffffff;
 	border: 1px solid #e2e8f0;
-	border-radius: 0;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-	border-collapse: separate;
-	border-spacing: 0;
+	border-collapse: collapse;
+	width: 100%;
 }
 
-/* Cabecera y Pie de Tabla */
+/* Cabecera */
 body.wpat-saas-tables-active .wp-list-table thead th,
 body.wpat-saas-tables-active .wp-list-table tfoot th {
 	background: #f8fafc;
 	color: #64748b;
-	font-size: 11.5px;
+	font-size: 12px;
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.5px;
@@ -244,59 +253,29 @@ body.wpat-saas-tables-active .wp-list-table tfoot th {
 	vertical-align: middle;
 }
 
-body.wpat-saas-tables-active .wp-list-table thead th a,
-body.wpat-saas-tables-active .wp-list-table tfoot th a {
-	color: #475569;
+body.wpat-saas-tables-active .wp-list-table thead th a {
+	color: #64748b;
 	font-weight: 700;
-	font-size: 11.5px;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
 }
 
-body.wpat-saas-tables-active .wp-list-table thead th a:hover {
-	color: #0f172a;
-}
-
-/* Filas del cuerpo */
+/* Filas */
 body.wpat-saas-tables-active .wp-list-table tbody tr {
-	transition: background-color 0.15s ease, box-shadow 0.15s ease;
+	border-bottom: 1px solid #f1f5f9;
+	transition: background-color 0.15s ease;
+}
+
+body.wpat-saas-tables-active .wp-list-table tbody tr:hover {
+	background-color: #f8fafc;
 }
 
 body.wpat-saas-tables-active .wp-list-table tbody td {
-	border-top: 1px solid #f1f5f9;
-	border-bottom: none;
+	padding: 12px 14px;
 	vertical-align: middle;
 	color: #334155;
-	font-size: 13px;
+	font-size: 13.5px;
 }
 
-/* Variantes de Densidad */
-body.wpat-saas-tables-active.wpat-tables-density-comfortable .wp-list-table tbody td {
-	padding: 14px 14px;
-}
-
-body.wpat-saas-tables-active.wpat-tables-density-compact .wp-list-table tbody td {
-	padding: 9px 12px;
-}
-
-/* Variantes de Efecto Hover */
-body.wpat-saas-tables-active.wpat-tables-hover-subtle .wp-list-table tbody tr:hover {
-	background-color: #f8fafc;
-}
-
-body.wpat-saas-tables-active.wpat-tables-hover-bordered .wp-list-table tbody tr:hover {
-	background-color: #f8fafc;
-	box-shadow: inset 3px 0 0 #2563eb;
-}
-
-body.wpat-saas-tables-active.wpat-tables-hover-shadow .wp-list-table tbody tr:hover {
-	background-color: #ffffff;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-	position: relative;
-	z-index: 2;
-}
-
-/* Checkbox de selección múltiple */
+/* Checkbox Column */
 body.wpat-saas-tables-active .wp-list-table th.check-column,
 body.wpat-saas-tables-active .wp-list-table td.check-column {
 	width: 38px;
@@ -317,10 +296,43 @@ body.wpat-saas-tables-active .wp-list-table input[type="checkbox"]:checked {
 }
 
 /* ==========================================================================
-   5. COLUMNA DE TÍTULO Y BADGES DE ESTADO
+   5. MINIATURAS & TÍTULOS
    ========================================================================== */
+.wpat-table-thumb-wrap {
+	width: 44px;
+	height: 44px;
+	border-radius: 8px;
+	overflow: hidden;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.wpat-table-thumb-img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.wpat-table-thumb-placeholder {
+	width: 44px;
+	height: 44px;
+	border-radius: 8px;
+	background: #f1f5f9;
+	border: 1px dashed #cbd5e1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: #94a3b8;
+}
+
+/* Título del Post */
 body.wpat-saas-tables-active .wp-list-table .column-title strong a.row-title {
-	font-size: 13.5px;
+	font-size: 14px;
 	font-weight: 700;
 	color: #0f172a;
 	text-decoration: none;
@@ -332,86 +344,42 @@ body.wpat-saas-tables-active .wp-list-table .column-title strong a.row-title:hov
 	color: #2563eb;
 }
 
-/* Badges de Estado tipo Pill */
-body.wpat-saas-tables-active .wpat-status-pill {
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-	padding: 2px 8px;
-	border-radius: 12px;
+/* Badges de Estado / Tipo de página */
+body.wpat-saas-tables-active .post-state,
+body.wpat-saas-tables-active .post-state-draft {
+	display: inline-block;
 	font-size: 11px;
 	font-weight: 700;
-	line-height: 1.2;
+	background: #eff6ff;
+	color: #2563eb;
+	padding: 2px 8px;
+	border-radius: 12px;
 	margin-left: 6px;
-	vertical-align: middle;
-	text-transform: capitalize;
+	border: 1px solid #dbeafe;
 }
 
-body.wpat-saas-tables-active .wpat-status-pill.wpat-status-published {
-	background: #ecfdf5;
-	color: #047857;
-	border: 1px solid #a7f3d0;
-}
-
-body.wpat-saas-tables-active .wpat-status-pill.wpat-status-draft {
-	background: #fffbeb;
-	color: #b45309;
-	border: 1px solid #fde68a;
-}
-
-body.wpat-saas-tables-active .wpat-status-pill.wpat-status-pending {
-	background: #fef3c7;
-	color: #92400e;
-	border: 1px solid #fcd34d;
-}
-
-body.wpat-saas-tables-active .wpat-status-pill.wpat-status-private {
-	background: #eef2ff;
-	color: #4338ca;
-	border: 1px solid #c7d2fe;
-}
-
-body.wpat-saas-tables-active .wpat-status-pill.wpat-status-future {
-	background: #f0f9ff;
-	color: #0369a1;
-	border: 1px solid #bae6fd;
-}
-
-body.wpat-saas-tables-active .wpat-status-pill.wpat-status-trash {
-	background: #fef2f2;
-	color: #b91c1c;
-	border: 1px solid #fecaca;
-}
-
-/* ==========================================================================
-   6. BOTONES DE ACCIÓN DE FILA MODERNIZADOS (.row-actions)
-   ========================================================================== */
+/* Botones de Acción de Fila Modernos */
 body.wpat-saas-tables-active .wp-list-table .row-actions {
-	padding-top: 6px;
-	font-size: 11.5px;
-	opacity: 0.9;
-	transition: opacity 0.15s ease;
-}
-
-body.wpat-saas-tables-active .wp-list-table tbody tr:hover .row-actions {
-	opacity: 1;
+	margin-top: 6px;
+	font-size: 12px;
 }
 
 body.wpat-saas-tables-active .wp-list-table .row-actions span a {
 	color: #64748b;
 	text-decoration: none;
 	font-weight: 600;
-	padding: 2px 4px;
+	padding: 2px 6px;
 	border-radius: 4px;
 	transition: all 0.15s ease;
 }
 
 body.wpat-saas-tables-active .wp-list-table .row-actions span.edit a {
 	color: #2563eb;
+	background: #eff6ff;
 }
 
 body.wpat-saas-tables-active .wp-list-table .row-actions span.inline a,
-body.wpat-saas-tables-active .wp-list-table .row-actions span.editinline {
+body.wpat-saas-tables-active .wp-list-table .row-actions span.editinline a {
 	color: #0284c7;
 }
 
@@ -425,188 +393,30 @@ body.wpat-saas-tables-active .wp-list-table .row-actions span.view a {
 }
 
 body.wpat-saas-tables-active .wp-list-table .row-actions span a:hover {
-	background: rgba(0, 0, 0, 0.04);
+	opacity: 0.8;
 }
 
-/* ==========================================================================
-   7. MINIATURAS E IMÁGENES DESTACADAS (.column-wpat_thumb / .column-thumb)
-   ========================================================================== */
-body.wpat-saas-tables-active .wp-list-table .column-wpat_thumb,
-body.wpat-saas-tables-active .wp-list-table .column-thumb {
-	width: 52px;
-	text-align: center;
-	padding-left: 8px;
-	padding-right: 8px;
-}
-
-.wpat-table-thumb-wrap {
-	width: 40px;
-	height: 40px;
-	border-radius: 8px;
-	overflow: hidden;
-	background: #f8fafc;
+/* Paginación */
+body.wpat-saas-tables-active .tablenav-pages .pagination-links a,
+body.wpat-saas-tables-active .tablenav-pages .pagination-links span.tablenav-pages-navspan {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 32px;
+	height: 32px;
+	padding: 0 6px;
+	border-radius: 6px;
 	border: 1px solid #e2e8f0;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-	position: relative;
-	cursor: pointer;
-}
-
-.wpat-table-thumb-wrap img.wpat-table-thumb-img,
-body.wpat-saas-tables-active .wp-list-table .column-thumb img {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	display: block;
-	border-radius: 7px;
-}
-
-.wpat-table-thumb-placeholder {
-	width: 40px;
-	height: 40px;
-	border-radius: 8px;
-	background: #f1f5f9;
-	border: 1px dashed #cbd5e1;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	color: #94a3b8;
-}
-
-.wpat-table-thumb-placeholder .dashicons {
-	font-size: 18px;
-	width: 18px;
-	height: 18px;
-}
-
-/* Popover de Zoom en miniatura al pasar el ratón */
-#wpat_thumb_hover_preview {
-	position: fixed;
-	z-index: 999999;
-	pointer-events: none;
 	background: #ffffff;
-	border-radius: 10px;
-	padding: 4px;
-	box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.08);
-	display: none;
-	max-width: 220px;
-	max-height: 220px;
+	font-size: 12.5px;
+	font-weight: 600;
+	color: #475569;
+	text-decoration: none;
+	margin: 0 2px;
 }
 
-#wpat_thumb_hover_preview img {
-	max-width: 212px;
-	max-height: 212px;
-	border-radius: 7px;
-	display: block;
-	object-fit: contain;
-}
-
-/* ==========================================================================
-   8. COMPATIBILIDAD CON WOOCOMMERCE & TERCEROS
-   ========================================================================== */
-/* Badges de Stock WooCommerce */
-body.wpat-saas-tables-active .wp-list-table .is-in-stock,
-body.wpat-saas-tables-active .wp-list-table mark.instock {
-	background: #ecfdf5 !important;
-	color: #047857 !important;
-	border: 1px solid #a7f3d0 !important;
-	border-radius: 6px !important;
-	padding: 2px 8px !important;
-	font-weight: 700 !important;
-	font-size: 11px !important;
-	display: inline-block !important;
-}
-
-body.wpat-saas-tables-active .wp-list-table .is-out-of-stock,
-body.wpat-saas-tables-active .wp-list-table mark.outofstock {
-	background: #fef2f2 !important;
-	color: #b91c1c !important;
-	border: 1px solid #fecaca !important;
-	border-radius: 6px !important;
-	padding: 2px 8px !important;
-	font-weight: 700 !important;
-	font-size: 11px !important;
-	display: inline-block !important;
-}
-
-/* Precios de WooCommerce destacados */
-body.wpat-saas-tables-active .wp-list-table .column-price .woocommerce-Price-amount {
-	font-weight: 700;
+body.wpat-saas-tables-active .tablenav-pages .pagination-links a:hover {
+	background: #f1f5f9;
+	border-color: #cbd5e1;
 	color: #0f172a;
-	font-size: 13.5px;
-}
-
-/* ==========================================================================
-   9. CABECERA FIJA (STICKY HEADER)
-   ========================================================================== */
-body.wpat-saas-tables-active.wpat-tables-sticky-header .wp-list-table thead th {
-	position: sticky;
-	top: 32px;
-	z-index: 99;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-/* ==========================================================================
-   10. MODO OSCURO (DARK MODE)
-   ========================================================================== */
-html.wpat-dark-mode body.wpat-saas-tables-active ul.subsubsub {
-	background: #1e293b;
-	border-color: #334155;
-}
-
-html.wpat-dark-mode body.wpat-saas-tables-active ul.subsubsub li a {
-	color: #94a3b8;
-}
-
-html.wpat-dark-mode body.wpat-saas-tables-active ul.subsubsub li a:hover {
-	color: #f8fafc;
-	background: rgba(255, 255, 255, 0.05);
-}
-
-html.wpat-dark-mode body.wpat-saas-tables-active ul.subsubsub li a.current {
-	background: #0f172a;
-	color: #60a5fa;
-	border-color: #334155;
-}
-
-html.wpat-dark-mode body.wpat-saas-tables-active .tablenav.top,
-html.wpat-dark-mode body.wpat-saas-tables-active .tablenav.bottom,
-html.wpat-dark-mode body.wpat-saas-tables-active .wp-list-table {
-	background: #1e293b;
-	border-color: #334155;
-}
-
-html.wpat-dark-mode body.wpat-saas-tables-active .wp-list-table thead th,
-html.wpat-dark-mode body.wpat-saas-tables-active .wp-list-table tfoot th {
-	background: #0f172a;
-	border-color: #334155;
-	color: #94a3b8;
-}
-
-html.wpat-dark-mode body.wpat-saas-tables-active .wp-list-table tbody td {
-	border-color: #334155;
-	color: #cbd5e1;
-}
-
-html.wpat-dark-mode body.wpat-saas-tables-active .wp-list-table .column-title strong a.row-title {
-	color: #f8fafc;
-}
-
-html.wpat-dark-mode body.wpat-saas-tables-active .wp-list-table .column-title strong a.row-title:hover {
-	color: #60a5fa;
-}
-
-html.wpat-dark-mode body.wpat-saas-tables-active .tablenav .actions select,
-html.wpat-dark-mode body.wpat-saas-tables-active .tablenav .actions .button,
-html.wpat-dark-mode body.wpat-saas-tables-active .search-box input[type="search"] {
-	background: #0f172a;
-	border-color: #334155;
-	color: #f8fafc;
-}
-
-html.wpat-dark-mode body.wpat-saas-tables-active.wpat-tables-hover-subtle .wp-list-table tbody tr:hover,
-html.wpat-dark-mode body.wpat-saas-tables-active.wpat-tables-hover-bordered .wp-list-table tbody tr:hover {
-	background-color: #0f172a;
 }

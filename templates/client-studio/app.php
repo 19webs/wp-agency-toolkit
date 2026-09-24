@@ -15,16 +15,25 @@ $current_post_id   = isset( $_GET['post_id'] ) ? absint( $_GET['post_id'] ) : 0;
 
 // Obtener datos del post si estamos editando
 $editing_post = $current_post_id ? get_post( $current_post_id ) : null;
-if ( $editing_post ) {
+if ( $editing_post instanceof WP_Post ) {
 	$current_post_type = $editing_post->post_type;
+} else {
+	$editing_post = null;
+	$current_post_id = 0;
 }
 
-$pt_obj   = get_post_type_object( $current_post_type );
-$pt_label = $pt_obj ? $pt_obj->labels->singular_name : 'Entrada';
-$pt_plural = $pt_obj ? $pt_obj->labels->name : 'Entradas';
+$pt_obj    = get_post_type_object( $current_post_type );
+$pt_label  = ( $pt_obj && isset( $pt_obj->labels->singular_name ) ) ? $pt_obj->labels->singular_name : ucfirst( $current_post_type );
+$pt_plural = ( $pt_obj && isset( $pt_obj->labels->name ) ) ? $pt_obj->labels->name : ucfirst( $current_post_type ) . 's';
 
 // Lista de tipos de contenido públicos soportados
 $supported_types = WPAT_Client_Studio::get_supported_post_types();
+
+// Conteo seguro de publicaciones
+$counts_obj      = wp_count_posts( $current_post_type );
+$published_count = ( $counts_obj && isset( $counts_obj->publish ) ) ? (int) $counts_obj->publish : 0;
+$drafts_count    = ( $counts_obj && isset( $counts_obj->draft ) ) ? (int) $counts_obj->draft : 0;
+$total_count     = $published_count + $drafts_count;
 
 // Obtener posts para el listado
 $posts_query = new WP_Query( array(
@@ -33,11 +42,8 @@ $posts_query = new WP_Query( array(
 	'posts_per_page' => 50,
 	'orderby'        => 'date',
 	'order'          => 'DESC',
+	'no_found_rows'  => false,
 ) );
-
-$total_count     = $posts_query->found_posts;
-$published_count = count( get_posts( array( 'post_type' => $current_post_type, 'post_status' => 'publish', 'posts_per_page' => -1, 'fields' => 'ids' ) ) );
-$drafts_count    = count( get_posts( array( 'post_type' => $current_post_type, 'post_status' => 'draft', 'posts_per_page' => -1, 'fields' => 'ids' ) ) );
 
 // Datos del post para el editor
 $post_title   = $editing_post ? $editing_post->post_title : '';
@@ -50,7 +56,7 @@ $permalink    = $editing_post ? get_permalink( $editing_post->ID ) : '';
 $thumb_id  = $editing_post ? get_post_thumbnail_id( $editing_post->ID ) : 0;
 $thumb_url = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'medium' ) : '';
 
-// SEO Meta
+// SEO Meta seguro
 $seo_title   = $editing_post ? get_post_meta( $editing_post->ID, '_wpat_seo_title', true ) : '';
 if ( empty( $seo_title ) && $editing_post ) {
 	$seo_title = get_post_meta( $editing_post->ID, '_yoast_wpseo_title', true );
@@ -61,13 +67,14 @@ if ( empty( $seo_desc ) && $editing_post ) {
 }
 $seo_keyword = $editing_post ? get_post_meta( $editing_post->ID, '_wpat_seo_keyword', true ) : '';
 
-// CPT Meta
+// CPT Meta seguro
 $cpt_client  = $editing_post ? get_post_meta( $editing_post->ID, 'client_company', true ) : '';
 $cpt_budget  = $editing_post ? get_post_meta( $editing_post->ID, 'project_budget', true ) : '';
 $cpt_date    = $editing_post ? get_post_meta( $editing_post->ID, 'delivery_date', true ) : '';
 $cpt_url     = $editing_post ? get_post_meta( $editing_post->ID, 'project_url', true ) : '';
 
 $current_user = wp_get_current_user();
+$author_name  = $current_user ? $current_user->display_name : 'Administrador';
 ?>
 
 <div id="wpat-studio-app" class="wpat-saas-root" data-current-post-type="<?php echo esc_attr( $current_post_type ); ?>" data-current-view="<?php echo esc_attr( $current_view ); ?>">
@@ -99,21 +106,26 @@ $current_user = wp_get_current_user();
 
 			<!-- Selector de Tipo de Contenido -->
 			<select id="wpat-post-type-selector" class="wpat-post-type-select">
-				<?php foreach ( $supported_types as $pt_slug => $pt_data ) : ?>
-					<option value="<?php echo esc_attr( $pt_slug ); ?>" <?php selected( $current_post_type, $pt_slug ); ?>>
-						<?php
-						if ( 'post' === $pt_slug ) {
-							echo '📝 Entradas del Blog';
-						} elseif ( 'page' === $pt_slug ) {
-							echo '📄 Páginas';
-						} elseif ( 'product' === $pt_slug ) {
-							echo '🛍️ Productos WooCommerce';
-						} else {
-							echo '🧩 ' . esc_html( $pt_data->labels->name );
-						}
-						?>
-					</option>
-				<?php endforeach; ?>
+				<?php if ( is_array( $supported_types ) && ! empty( $supported_types ) ) : ?>
+					<?php foreach ( $supported_types as $pt_slug => $pt_data ) : ?>
+						<option value="<?php echo esc_attr( $pt_slug ); ?>" <?php selected( $current_post_type, $pt_slug ); ?>>
+							<?php
+							if ( 'post' === $pt_slug ) {
+								echo '📝 Entradas del Blog';
+							} elseif ( 'page' === $pt_slug ) {
+								echo '📄 Páginas';
+							} elseif ( 'product' === $pt_slug ) {
+								echo '🛍️ Productos WooCommerce';
+							} else {
+								$label = ( is_object( $pt_data ) && isset( $pt_data->labels->name ) ) ? $pt_data->labels->name : ucfirst( $pt_slug );
+								echo '🧩 ' . esc_html( $label );
+							}
+							?>
+						</option>
+					<?php endforeach; ?>
+				<?php else : ?>
+					<option value="post" selected>📝 Entradas del Blog</option>
+				<?php endif; ?>
 			</select>
 
 			<!-- Botón Modo Oscuro / Claro -->
@@ -183,9 +195,14 @@ $current_user = wp_get_current_user();
 						$p_thumb_id = get_post_thumbnail_id( $p_id );
 						$p_thumb    = $p_thumb_id ? wp_get_attachment_image_url( $p_thumb_id, 'thumbnail' ) : '';
 
-						// Categoría principal
-						$cats = get_the_category( $p_id );
-						$cat_name = ! empty( $cats ) ? $cats[0]->name : $pt_label;
+						// Categoría principal segura
+						$cat_name = $pt_label;
+						if ( 'post' === $current_post_type ) {
+							$cats = get_the_category( $p_id );
+							if ( ! empty( $cats ) && is_array( $cats ) && isset( $cats[0]->name ) ) {
+								$cat_name = $cats[0]->name;
+							}
+						}
 						?>
 						<div class="wpat-item-row" data-post-id="<?php echo esc_attr( $p_id ); ?>" data-status="<?php echo esc_attr( $p_status ); ?>" data-title="<?php echo esc_attr( strtolower( $p_title ) ); ?>">
 							<div class="wpat-item-left">
@@ -324,7 +341,7 @@ $current_user = wp_get_current_user();
 					</div>
 
 					<!-- CUERPO WYSIWYG EDITABLE EN VIVO -->
-					<div id="wpat-wysiwyg-editor-area" contenteditable="true" class="wpat-wysiwyg-content" placeholder="Haz clic y escribe aquí el contenido...">
+					<div id="wpat-wysiwyg-editor-area" contenteditable="true" class="wpat-wysiwyg-content">
 						<?php echo ! empty( $post_content ) ? wp_kses_post( $post_content ) : '<p>Escribe tu contenido aquí de forma cómoda y limpia...</p>'; ?>
 					</div>
 
@@ -432,18 +449,28 @@ $current_user = wp_get_current_user();
 				<!-- TARJETA: CATEGORÍAS & TAXONOMÍAS -->
 				<?php
 				$taxonomies = get_object_taxonomies( $current_post_type, 'objects' );
-				if ( ! empty( $taxonomies ) ) :
+				if ( ! empty( $taxonomies ) && is_array( $taxonomies ) ) :
 					foreach ( $taxonomies as $tax_name => $tax_obj ) :
-						if ( ! $tax_obj->show_ui || in_array( $tax_name, array( 'post_format' ), true ) ) {
+						if ( ! is_object( $tax_obj ) || empty( $tax_obj->show_ui ) || in_array( $tax_name, array( 'post_format' ), true ) ) {
 							continue;
 						}
 						$terms = get_terms( array( 'taxonomy' => $tax_name, 'hide_empty' => false ) );
-						$selected_terms = $editing_post ? wp_get_object_terms( $editing_post->ID, $tax_name, array( 'fields' => 'ids' ) ) : array();
+						if ( is_wp_error( $terms ) || ! is_array( $terms ) ) {
+							$terms = array();
+						}
+
+						$selected_terms = array();
+						if ( $editing_post ) {
+							$raw_selected = wp_get_object_terms( $editing_post->ID, $tax_name, array( 'fields' => 'ids' ) );
+							if ( ! is_wp_error( $raw_selected ) && is_array( $raw_selected ) ) {
+								$selected_terms = $raw_selected;
+							}
+						}
 						?>
 						<div class="wpat-editor-card" id="sidebar-cat-card">
-							<h4 class="wpat-card-header-title">🏷️ <?php echo esc_html( $tax_obj->labels->name ); ?></h4>
+							<h4 class="wpat-card-header-title">🏷️ <?php echo esc_html( isset( $tax_obj->labels->name ) ? $tax_obj->labels->name : $tax_name ); ?></h4>
 							<div class="wpat-tax-checklist">
-								<?php if ( ! empty( $terms ) && ! is_wp_error( $terms ) ) : ?>
+								<?php if ( ! empty( $terms ) ) : ?>
 									<?php foreach ( $terms as $term ) : ?>
 										<label class="wpat-tax-item">
 											<input 
@@ -451,7 +478,7 @@ $current_user = wp_get_current_user();
 												class="wpat-tax-checkbox" 
 												data-taxonomy="<?php echo esc_attr( $tax_name ); ?>" 
 												value="<?php echo esc_attr( $term->term_id ); ?>" 
-												<?php checked( in_array( $term->term_id, $selected_terms, true ) ); ?> 
+												<?php checked( in_array( (int) $term->term_id, $selected_terms, true ) ); ?> 
 											/>
 											<span class="wpat-tax-name"><?php echo esc_html( $term->name ); ?></span>
 										</label>
@@ -496,7 +523,7 @@ $current_user = wp_get_current_user();
 						</div>
 						<div class="wpat-meta-item">
 							<span class="wpat-meta-label">Autor:</span>
-							<span class="wpat-meta-val"><?php echo esc_html( $current_user->display_name ); ?></span>
+							<span class="wpat-meta-val"><?php echo esc_html( $author_name ); ?></span>
 						</div>
 					</div>
 

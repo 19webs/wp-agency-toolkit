@@ -150,6 +150,15 @@ class WPAT_Client_Studio {
 			return;
 		}
 
+		// Solo solicitudes GET seguras (no interceptar envíos POST o acciones nativas de WP)
+		if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'GET' !== $_SERVER['REQUEST_METHOD'] ) {
+			return;
+		}
+
+		if ( isset( $_GET['action'] ) && in_array( $_GET['action'], array( 'trash', 'untrash', 'delete', 'duplicate_post_as_draft' ), true ) ) {
+			return;
+		}
+
 		// Solo intervenir en pantallas de listado o edición
 		if ( ! in_array( $pagenow, array( 'edit.php', 'post.php', 'post-new.php' ), true ) ) {
 			return;

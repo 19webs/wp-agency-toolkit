@@ -59,12 +59,15 @@ class WPAT_Client_Studio {
 	}
 
 	/**
-	 * Obtiene la lista de todos los post types públicos disponibles.
+	 * Obtiene la lista de todos los post types públicos disponibles de forma segura.
 	 *
 	 * @return array
 	 */
 	public static function get_supported_post_types() {
 		$types = get_post_types( array( 'public' => true ), 'objects' );
+		if ( ! is_array( $types ) ) {
+			$types = array();
+		}
 		if ( isset( $types['attachment'] ) ) {
 			unset( $types['attachment'] );
 		}
@@ -84,8 +87,15 @@ class WPAT_Client_Studio {
 		}
 
 		if ( empty( $post_type ) ) {
-			global $typenow;
-			$post_type = ! empty( $typenow ) ? $typenow : ( isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : 'post' );
+			if ( isset( $_GET['post_type'] ) && ! empty( $_GET['post_type'] ) ) {
+				$post_type = sanitize_key( $_GET['post_type'] );
+			} elseif ( isset( $_GET['post'] ) && ! empty( $_GET['post'] ) ) {
+				$p = get_post( absint( $_GET['post'] ) );
+				$post_type = ( $p instanceof WP_Post ) ? $p->post_type : 'post';
+			} else {
+				global $typenow;
+				$post_type = ! empty( $typenow ) ? $typenow : 'post';
+			}
 		}
 
 		// Comprobar si el post type está habilitado
@@ -104,6 +114,9 @@ class WPAT_Client_Studio {
 
 		if ( ! in_array( 'all', $target_roles, true ) ) {
 			$user = wp_get_current_user();
+			if ( ! $user || ! $user->exists() ) {
+				return false;
+			}
 			$user_roles = (array) $user->roles;
 			$has_role = false;
 			foreach ( $user_roles as $r ) {
@@ -118,7 +131,7 @@ class WPAT_Client_Studio {
 		}
 
 		// Si el usuario añadió parámetro explícito ?wpat_classic=1, permitir acceso clásico
-		if ( isset( $_GET['wpat_classic'] ) && '1' === $_GET['wpat_classic'] ) {
+		if ( isset( $_GET['wpat_classic'] ) && '1' === (string) $_GET['wpat_classic'] ) {
 			return false;
 		}
 
@@ -126,11 +139,11 @@ class WPAT_Client_Studio {
 	}
 
 	/**
-	 * Registra la página oculta del Client Studio.
+	 * Registra la página del Client Studio en el administrador de WordPress.
 	 */
 	public function register_admin_page() {
 		add_submenu_page(
-			null, // Oculto del menú raíz para integrarse en las secciones nativas
+			'admin.php',
 			'Client Studio',
 			'Client Studio',
 			'edit_posts',
@@ -145,16 +158,17 @@ class WPAT_Client_Studio {
 	public function intercept_native_wp_screens() {
 		global $pagenow;
 
-		// Si estamos en una petición AJAX o REST, no redirigir
+		// Si estamos en una petición AJAX, REST o Cron, no redirigir
 		if ( wp_doing_ajax() || wp_doing_cron() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
 			return;
 		}
 
-		// Solo solicitudes GET seguras (no interceptar envíos POST o acciones nativas de WP)
+		// Solo intervenir en solicitudes GET del usuario
 		if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'GET' !== $_SERVER['REQUEST_METHOD'] ) {
 			return;
 		}
 
+		// No interceptar acciones nativas especiales de WP (papelera, restaurar, borrar)
 		if ( isset( $_GET['action'] ) && in_array( $_GET['action'], array( 'trash', 'untrash', 'delete', 'duplicate_post_as_draft' ), true ) ) {
 			return;
 		}
@@ -172,8 +186,8 @@ class WPAT_Client_Studio {
 			$post_type = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : 'post';
 		} elseif ( 'post.php' === $pagenow && isset( $_GET['post'] ) ) {
 			$post_id = absint( $_GET['post'] );
-			$post = get_post( $post_id );
-			if ( $post ) {
+			$post    = get_post( $post_id );
+			if ( $post instanceof WP_Post ) {
 				$post_type = $post->post_type;
 			}
 		}
@@ -246,7 +260,7 @@ class WPAT_Client_Studio {
 	 * @param string $hook
 	 */
 	public function enqueue_app_assets( $hook ) {
-		if ( 'admin_page_wpat-client-studio' !== $hook ) {
+		if ( false === strpos( (string) $hook, 'wpat-client-studio' ) && 'admin_page_wpat-client-studio' !== $hook ) {
 			return;
 		}
 
@@ -256,14 +270,14 @@ class WPAT_Client_Studio {
 			'wpat-client-studio-app-css',
 			WPAT_URL . 'assets/css/wpat-client-studio-app.css',
 			array(),
-			time()
+			WPAT_VERSION
 		);
 
 		wp_enqueue_script(
 			'wpat-client-studio-app-js',
 			WPAT_URL . 'assets/js/wpat-client-studio-app.js',
 			array( 'jquery' ),
-			time(),
+			WPAT_VERSION,
 			true
 		);
 
@@ -280,7 +294,7 @@ class WPAT_Client_Studio {
 	 * Renderiza la aplicación completa de Client Studio.
 	 */
 	public function render_client_studio_page() {
-		$template_path = WPAT_DIR . 'templates/client-studio/app.php';
+		$template_path = WPAT_PATH . 'templates/client-studio/app.php';
 		if ( file_exists( $template_path ) ) {
 			include $template_path;
 		} else {
@@ -341,7 +355,7 @@ class WPAT_Client_Studio {
 		// Asignar Imagen Destacada
 		if ( $thumb_id > 0 ) {
 			set_post_thumbnail( $saved_id, $thumb_id );
-		} elseif ( isset( $_POST['remove_thumbnail'] ) && '1' === $_POST['remove_thumbnail'] ) {
+		} elseif ( isset( $_POST['remove_thumbnail'] ) && '1' === (string) $_POST['remove_thumbnail'] ) {
 			delete_post_thumbnail( $saved_id );
 		}
 

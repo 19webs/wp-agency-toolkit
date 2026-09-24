@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.91
+ * Version:     4.3.92
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.91' );
+define( 'WPAT_VERSION', '4.3.92' );
 define( 'WPAT_FILE', __FILE__ );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
@@ -219,10 +219,6 @@ class WPAT_Main {
 			'file'  => 'includes/modules/class-wpat-qr-generator.php',
 			'class' => 'WPAT_QR_Generator',
 		),
-		'admin-tables-ui' => array(
-			'file'  => 'includes/modules/class-wpat-admin-tables-ui.php',
-			'class' => 'WPAT_Admin_Tables_UI',
-		),
 		'client-studio' => array(
 			'file'  => 'includes/modules/class-wpat-client-studio.php',
 			'class' => 'WPAT_Client_Studio',
@@ -349,18 +345,17 @@ class WPAT_Main {
 				'cookie-consent'            => '0',
 				'quick-pay'                 => '0',
 				'qr-generator'              => '0',
-				'admin-tables-ui'           => '0',
 				'client-studio'             => '0',
 
-				// Sub-opciones internas de configuración (se usan cuando el usuario activa el módulo)
-				'tables_ui_density'         => 'comfortable',
-				'tables_ui_hover'           => 'subtle',
-				'tables_ui_pills'           => '1',
-				'tables_ui_show_thumbs'     => '1',
-				'tables_ui_sticky_header'   => '0',
-				'tables_ui_thumb_zoom'      => '1',
-				'tables_ui_actions_style'   => 'modern',
-				'tables_ui_post_types'      => array( 'post', 'page', 'product' ),
+				// Sub-opciones internas de Client Studio (SaaS para Listados y Edición)
+				'studio_density'            => 'comfortable',
+				'studio_hover'              => 'subtle',
+				'studio_pills'              => '1',
+				'studio_show_thumbs'        => '1',
+				'studio_sticky_header'      => '0',
+				'studio_thumb_zoom'         => '1',
+				'studio_post_types'         => array( 'post', 'page', 'product' ),
+				'studio_roles'              => array( 'all' ),
 				'woo_address_autofill_city' => '1',
 				'woo_catalog_hide_price'    => '0',
 				'woo_catalog_price_text'    => '',

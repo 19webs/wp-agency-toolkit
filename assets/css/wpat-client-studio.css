@@ -1,0 +1,167 @@
+/**
+ * WP Agency Toolkit - Client Studio SaaS
+ * Estilos modernos para el entorno de redacción y CPTs para clientes.
+ */
+
+.wpat-studio-wrap {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	color: #1e293b;
+}
+
+.wpat-studio-wrap * {
+	box-sizing: border-box;
+}
+
+/* Modo Oscuro para Client Studio */
+html.wpat-dark-mode .wpat-studio-wrap {
+	color: #f8fafc;
+}
+
+html.wpat-dark-mode .wpat-studio-card {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	color: #f8fafc !important;
+}
+
+html.wpat-dark-mode .wpat-studio-input,
+html.wpat-dark-mode .wpat-studio-textarea,
+html.wpat-dark-mode .wpat-studio-select {
+	background: #0f172a !important;
+	border-color: #334155 !important;
+	color: #f8fafc !important;
+}
+
+html.wpat-dark-mode .wpat-studio-muted-box {
+	background: #0f172a !important;
+	border-color: #334155 !important;
+}
+
+/* Transiciones suaves */
+.wpat-studio-card {
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 14px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+	transition: all 0.2s ease;
+}
+
+/* Inputs & Controles del Studio */
+.wpat-studio-input,
+.wpat-studio-textarea,
+.wpat-studio-select {
+	width: 100%;
+	background: #f8fafc;
+	border: 1px solid #cbd5e1;
+	border-radius: 8px;
+	padding: 8px 12px;
+	font-size: 13px;
+	color: #1e293b;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wpat-studio-input:focus,
+.wpat-studio-textarea:focus,
+.wpat-studio-select:focus {
+	outline: none;
+	border-color: #2563eb;
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+	background: #ffffff;
+}
+
+/* Badges de Estado */
+.wpat-studio-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 9px;
+	border-radius: 20px;
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1.2;
+}
+
+.wpat-studio-badge-publish {
+	background: #ecfdf5;
+	color: #047857;
+	border: 1px solid #a7f3d0;
+}
+
+.wpat-studio-badge-draft {
+	background: #fffbeb;
+	color: #b45309;
+	border: 1px solid #fde68a;
+}
+
+.wpat-studio-badge-pending {
+	background: #fef3c7;
+	color: #92400e;
+	border: 1px solid #fcd34d;
+}
+
+/* Contenedor de Imagen Destacada */
+.wpat-studio-featured-img-holder {
+	width: 100%;
+	height: 160px;
+	border-radius: 10px;
+	background: #f8fafc;
+	border: 2px dashed #cbd5e1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	position: relative;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.wpat-studio-featured-img-holder:hover {
+	border-color: #2563eb;
+	background: #eff6ff;
+}
+
+.wpat-studio-featured-img-holder img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+/* Vista Previa Google SERP */
+.wpat-studio-serp-box {
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	padding: 14px;
+	font-family: Arial, sans-serif;
+}
+
+.wpat-studio-serp-url {
+	font-size: 12px;
+	color: #4b5563;
+	margin-bottom: 2px;
+	display: block;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.wpat-studio-serp-title {
+	font-size: 16px;
+	font-weight: 600;
+	color: #1a0dab;
+	line-height: 1.3;
+	margin-bottom: 4px;
+	display: block;
+	cursor: pointer;
+}
+
+.wpat-studio-serp-title:hover {
+	text-decoration: underline;
+}
+
+.wpat-studio-serp-desc {
+	font-size: 13px;
+	color: #4b5563;
+	line-height: 1.4;
+	margin: 0;
+}

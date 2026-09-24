@@ -6,7 +6,7 @@
  * de creación y edición (post-new.php / post.php) de WordPress en una experiencia
  * limpia, moderna y visual estilo SaaS (Notion/Ghost/Stripe).
  *
- * Utiliza plantillas modulares personalizadas en templates/client-studio/
+ * Utiliza la arquitectura de la plantilla maestra interactiva en templates/client-studio/app.php
  * Cuando está activo, se aplica directamente al hacer clic en el menú estándar de WP.
  * Cuando está desactivado, todo vuelve al 100% a la interfaz nativa estándar.
  *
@@ -40,16 +40,20 @@ class WPAT_Client_Studio {
 	 * Constructor.
 	 */
 	private function __construct() {
-		// 1. Assets y Clases de Body (edit.php, post.php, post-new.php)
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_studio_assets' ) );
-		add_action( 'admin_init', array( $this, 'register_thumbnail_columns' ) );
-		add_filter( 'admin_body_class', array( $this, 'add_admin_body_classes' ) );
+		// 1. Registro de la página de administración de Client Studio
+		add_action( 'admin_menu', array( $this, 'register_admin_page' ) );
 
-		// 2. Integración en Pantallas de Edición y Creación (post.php & post-new.php)
-		add_action( 'load-post.php', array( $this, 'intercept_native_editor_screen' ) );
-		add_action( 'load-post-new.php', array( $this, 'intercept_native_editor_screen' ) );
+		// 2. Interceptación y enrutado transparente desde el menú de WordPress
+		add_action( 'admin_init', array( $this, 'intercept_native_wp_screens' ) );
 
-		// 3. Endpoints AJAX para guardado y papelera desde el Studio
+		// 3. Destacar el elemento de menú correspondiente en la barra lateral de WP
+		add_filter( 'parent_file', array( $this, 'fix_parent_menu_active' ) );
+		add_filter( 'submenu_file', array( $this, 'fix_submenu_menu_active' ) );
+
+		// 4. Encolar assets de la aplicación
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_app_assets' ) );
+
+		// 5. Endpoints AJAX para guardado y papelera desde el Studio
 		add_action( 'wp_ajax_wpat_studio_save_post', array( $this, 'ajax_save_post' ) );
 		add_action( 'wp_ajax_wpat_studio_trash_post', array( $this, 'ajax_trash_post' ) );
 	}
@@ -68,19 +72,6 @@ class WPAT_Client_Studio {
 	}
 
 	/**
-	 * Renderiza una plantilla personalizada desde templates/client-studio/
-	 *
-	 * @param string $template_name Nombre del archivo sin .php
-	 * @param array  $args          Argumentos pasados a la vista
-	 */
-	public static function render_template( $template_name, $args = array() ) {
-		$file = WPAT_DIR . 'templates/client-studio/' . sanitize_file_name( $template_name ) . '.php';
-		if ( file_exists( $file ) ) {
-			include $file;
-		}
-	}
-
-	/**
 	 * Comprueba si el módulo está habilitado para el usuario y post type actual.
 	 *
 	 * @param string $post_type Post type a evaluar.
@@ -94,7 +85,7 @@ class WPAT_Client_Studio {
 
 		if ( empty( $post_type ) ) {
 			global $typenow;
-			$post_type = ! empty( $typenow ) ? $typenow : 'post';
+			$post_type = ! empty( $typenow ) ? $typenow : ( isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : 'post' );
 		}
 
 		// Comprobar si el post type está habilitado
@@ -135,172 +126,44 @@ class WPAT_Client_Studio {
 	}
 
 	/**
-	 * Inyecta clases en el body para activar el diseño SaaS en tablas y editor.
-	 *
-	 * @param string $classes
-	 * @return string
+	 * Registra la página oculta del Client Studio.
 	 */
-	public function add_admin_body_classes( $classes ) {
+	public function register_admin_page() {
+		add_submenu_page(
+			null, // Oculto del menú raíz para integrarse en las secciones nativas
+			'Client Studio',
+			'Client Studio',
+			'edit_posts',
+			'wpat-client-studio',
+			array( $this, 'render_client_studio_page' )
+		);
+	}
+
+	/**
+	 * Intercepta las visitas a edit.php, post.php y post-new.php y las redirige limpiamente al Client Studio.
+	 */
+	public function intercept_native_wp_screens() {
 		global $pagenow;
 
-		if ( 'edit.php' === $pagenow && $this->is_active_for_context() ) {
-			$settings = WPAT_Main::get_instance()->get_settings();
-			$density  = isset( $settings['studio_density'] ) ? $settings['studio_density'] : 'comfortable';
-			$hover    = isset( $settings['studio_hover'] ) ? $settings['studio_hover'] : 'subtle';
-
-			$classes .= ' wpat-saas-tables-active';
-			$classes .= ' wpat-tables-density-' . sanitize_html_class( $density );
-			$classes .= ' wpat-tables-hover-' . sanitize_html_class( $hover );
-
-			if ( isset( $settings['studio_sticky_header'] ) && '1' === (string) $settings['studio_sticky_header'] ) {
-				$classes .= ' wpat-tables-sticky-header';
-			}
-		}
-
-		if ( ( 'post.php' === $pagenow || 'post-new.php' === $pagenow ) && $this->is_active_for_context() ) {
-			$classes .= ' wpat-studio-active';
-		}
-
-		return $classes;
-	}
-
-	/**
-	 * Encola estilos y scripts de Client Studio según la pantalla.
-	 *
-	 * @param string $hook
-	 */
-	public function enqueue_studio_assets( $hook ) {
-		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( ! isset( $settings['client-studio'] ) || '1' !== (string) $settings['client-studio'] ) {
+		// Si estamos en una petición AJAX o REST, no redirigir
+		if ( wp_doing_ajax() || wp_doing_cron() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
 			return;
 		}
 
-		// 1. Pantalla de Listados (edit.php)
-		if ( 'edit.php' === $hook && $this->is_active_for_context() ) {
-			wp_enqueue_style(
-				'wpat-admin-tables-ui-css',
-				WPAT_URL . 'assets/css/wpat-admin-tables-ui.css',
-				array(),
-				time()
-			);
-
-			wp_enqueue_script(
-				'wpat-admin-tables-ui-js',
-				WPAT_URL . 'assets/js/wpat-admin-tables-ui.js',
-				array( 'jquery' ),
-				time(),
-				true
-			);
-
-			wp_localize_script(
-				'wpat-admin-tables-ui-js',
-				'wpatTablesConfig',
-				array(
-					'enablePills'       => ! isset( $settings['studio_pills'] ) || '1' === (string) $settings['studio_pills'],
-					'enableRowActions'  => true,
-					'enableSticky'      => isset( $settings['studio_sticky_header'] ) && '1' === (string) $settings['studio_sticky_header'],
-					'enableThumbZoom'   => ! isset( $settings['studio_thumb_zoom'] ) || '1' === (string) $settings['studio_thumb_zoom'],
-				)
-			);
-		}
-
-		// 2. Pantalla de Edición / Creación (post.php, post-new.php)
-		if ( ( 'post.php' === $hook || 'post-new.php' === $hook ) && $this->is_active_for_context() ) {
-			wp_enqueue_media();
-
-			wp_enqueue_style(
-				'wpat-client-studio-css',
-				WPAT_URL . 'assets/css/wpat-client-studio.css',
-				array(),
-				time()
-			);
-
-			wp_enqueue_script(
-				'wpat-client-studio-js',
-				WPAT_URL . 'assets/js/wpat-client-studio.js',
-				array( 'jquery' ),
-				time(),
-				true
-			);
-
-			wp_localize_script(
-				'wpat-client-studio-js',
-				'wpatStudioConfig',
-				array(
-					'nonce' => wp_create_nonce( 'wpat_studio_nonce' ),
-				)
-			);
-		}
-	}
-
-	/**
-	 * Registra columna de miniatura en edit.php para post types que no la tengan.
-	 */
-	public function register_thumbnail_columns() {
-		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( ! isset( $settings['client-studio'] ) || '1' !== (string) $settings['client-studio'] ) {
+		// Solo intervenir en pantallas de listado o edición
+		if ( ! in_array( $pagenow, array( 'edit.php', 'post.php', 'post-new.php' ), true ) ) {
 			return;
 		}
 
-		if ( ! isset( $settings['studio_show_thumbs'] ) || '1' === (string) $settings['studio_show_thumbs'] ) {
-			$post_types = self::get_supported_post_types();
-			foreach ( $post_types as $pt => $obj ) {
-				if ( 'product' === $pt ) {
-					continue;
-				}
-				add_filter( "manage_{$pt}_posts_columns", array( $this, 'inject_thumb_column_header' ), 5 );
-				add_action( "manage_{$pt}_posts_custom_column", array( $this, 'render_thumb_column_content' ), 10, 2 );
-			}
-		}
-	}
+		// Determinar post type actual
+		$post_type = 'post';
+		$post_id   = 0;
 
-	public function inject_thumb_column_header( $columns ) {
-		$new_columns = array();
-		foreach ( $columns as $key => $title ) {
-			if ( 'title' === $key ) {
-				$new_columns['wpat_thumb'] = '<span class="dashicons dashicons-format-image" title="' . esc_attr__( 'Imagen Destacada', 'wp-agency-toolkit' ) . '" style="font-size:16px; color:#64748b;"></span>';
-			}
-			$new_columns[ $key ] = $title;
-		}
-		if ( ! isset( $new_columns['wpat_thumb'] ) ) {
-			$new_columns = array( 'wpat_thumb' => 'Imagen' ) + $columns;
-		}
-		return $new_columns;
-	}
-
-	public function render_thumb_column_content( $column_name, $post_id ) {
-		if ( 'wpat_thumb' === $column_name ) {
-			if ( has_post_thumbnail( $post_id ) ) {
-				$thumb_id  = get_post_thumbnail_id( $post_id );
-				$small_url = wp_get_attachment_image_url( $thumb_id, 'thumbnail' );
-				$large_url = wp_get_attachment_image_url( $thumb_id, 'medium' );
-				$edit_link = get_edit_post_link( $post_id );
-				?>
-				<div class="wpat-table-thumb-wrap" data-large-img="<?php echo esc_url( $large_url ); ?>">
-					<a href="<?php echo esc_url( $edit_link ); ?>">
-						<img src="<?php echo esc_url( $small_url ); ?>" alt="" class="wpat-table-thumb-img" />
-					</a>
-				</div>
-				<?php
-			} else {
-				?>
-				<div class="wpat-table-thumb-placeholder">
-					<span class="dashicons dashicons-format-image"></span>
-				</div>
-				<?php
-			}
-		}
-	}
-
-	/**
-	 * Intercepta la pantalla nativa de edición para renderizar el Studio SaaS.
-	 */
-	public function intercept_native_editor_screen() {
-		global $typenow;
-		$post_type = ! empty( $typenow ) ? $typenow : ( isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : 'post' );
-
-		if ( isset( $_GET['post'] ) ) {
-			$post = get_post( absint( $_GET['post'] ) );
+		if ( 'edit.php' === $pagenow || 'post-new.php' === $pagenow ) {
+			$post_type = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : 'post';
+		} elseif ( 'post.php' === $pagenow && isset( $_GET['post'] ) ) {
+			$post_id = absint( $_GET['post'] );
+			$post = get_post( $post_id );
 			if ( $post ) {
 				$post_type = $post->post_type;
 			}
@@ -310,68 +173,110 @@ class WPAT_Client_Studio {
 			return;
 		}
 
-		// Deshabilitar el editor de bloques Gutenberg y cargar la plantilla SaaS
-		add_filter( 'use_block_editor_for_post_type', '__return_false', 999 );
-		add_action( 'edit_form_top', array( $this, 'render_studio_editor_override' ), 1 );
+		// Redirigir al Client Studio según la pantalla
+		if ( 'edit.php' === $pagenow ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wpat-client-studio&post_type=' . $post_type . '&view=list' ) );
+			exit;
+		}
+
+		if ( 'post-new.php' === $pagenow ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wpat-client-studio&post_type=' . $post_type . '&view=editor&post_id=0' ) );
+			exit;
+		}
+
+		if ( 'post.php' === $pagenow && $post_id > 0 ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wpat-client-studio&post_type=' . $post_type . '&view=editor&post_id=' . $post_id ) );
+			exit;
+		}
 	}
 
 	/**
-	 * Renderiza el espacio de trabajo de Client Studio invocando la plantilla personalizada.
+	 * Mantiene iluminado el menú padre correcto en el panel lateral de WP.
 	 *
-	 * @param WP_Post|null $post
+	 * @param string $parent_file
+	 * @return string
 	 */
-	public function render_studio_editor_override( $post = null ) {
-		if ( ! $post ) {
-			global $post;
+	public function fix_parent_menu_active( $parent_file ) {
+		global $pagenow;
+		if ( 'admin.php' === $pagenow && isset( $_GET['page'] ) && 'wpat-client-studio' === $_GET['page'] ) {
+			$post_type = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : 'post';
+			if ( 'post' === $post_type ) {
+				return 'edit.php';
+			} elseif ( 'page' === $post_type ) {
+				return 'edit.php?post_type=page';
+			} else {
+				return 'edit.php?post_type=' . $post_type;
+			}
+		}
+		return $parent_file;
+	}
+
+	/**
+	 * Mantiene iluminado el submenú correcto en el panel lateral de WP.
+	 *
+	 * @param string $submenu_file
+	 * @return string
+	 */
+	public function fix_submenu_menu_active( $submenu_file ) {
+		global $pagenow;
+		if ( 'admin.php' === $pagenow && isset( $_GET['page'] ) && 'wpat-client-studio' === $_GET['page'] ) {
+			$post_type = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : 'post';
+			$view      = isset( $_GET['view'] ) ? sanitize_key( $_GET['view'] ) : 'list';
+
+			if ( 'editor' === $view && empty( $_GET['post_id'] ) ) {
+				return ( 'post' === $post_type ) ? 'post-new.php' : 'post-new.php?post_type=' . $post_type;
+			}
+			return ( 'post' === $post_type ) ? 'edit.php' : 'edit.php?post_type=' . $post_type;
+		}
+		return $submenu_file;
+	}
+
+	/**
+	 * Encola los estilos y scripts de Client Studio en la página del Studio.
+	 *
+	 * @param string $hook
+	 */
+	public function enqueue_app_assets( $hook ) {
+		if ( 'admin_page_wpat-client-studio' !== $hook ) {
+			return;
 		}
 
-		$post_id   = $post ? $post->ID : 0;
-		$post_type = $post ? $post->post_type : ( isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : 'post' );
-		$pt_obj    = get_post_type_object( $post_type );
-		$pt_label  = $pt_obj ? $pt_obj->labels->singular_name : 'Entrada';
+		wp_enqueue_media();
 
-		$title     = $post ? $post->post_title : '';
-		$content   = $post ? $post->post_content : '';
-		$excerpt   = $post ? $post->post_excerpt : '';
-		$status    = $post ? $post->post_status : 'draft';
-		$thumb_id  = $post ? get_post_thumbnail_id( $post->ID ) : 0;
-		$thumb_url = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'medium' ) : '';
-		$post_name = $post ? $post->post_name : '';
+		wp_enqueue_style(
+			'wpat-client-studio-app-css',
+			WPAT_URL . 'assets/css/wpat-client-studio-app.css',
+			array(),
+			time()
+		);
 
-		// Metadatos SEO
-		$seo_title   = $post ? get_post_meta( $post->ID, '_wpat_seo_title', true ) : '';
-		if ( empty( $seo_title ) && $post ) {
-			$seo_title = get_post_meta( $post->ID, '_yoast_wpseo_title', true );
-		}
-		$seo_desc    = $post ? get_post_meta( $post->ID, '_wpat_seo_desc', true ) : '';
-		if ( empty( $seo_desc ) && $post ) {
-			$seo_desc = get_post_meta( $post->ID, '_yoast_wpseo_metadesc', true );
-		}
-		$seo_keyword = $post ? get_post_meta( $post->ID, '_wpat_seo_keyword', true ) : '';
-		$permalink   = $post ? get_permalink( $post->ID ) : '';
-		$back_url    = admin_url( 'edit.php' . ( 'post' !== $post_type ? '?post_type=' . $post_type : '' ) );
+		wp_enqueue_script(
+			'wpat-client-studio-app-js',
+			WPAT_URL . 'assets/js/wpat-client-studio-app.js',
+			array( 'jquery' ),
+			time(),
+			true
+		);
 
-		self::render_template(
-			'editor',
+		wp_localize_script(
+			'wpat-client-studio-app-js',
+			'wpatStudioConfig',
 			array(
-				'post'        => $post,
-				'post_id'     => $post_id,
-				'post_type'   => $post_type,
-				'pt_label'    => $pt_label,
-				'title'       => $title,
-				'content'     => $content,
-				'excerpt'     => $excerpt,
-				'status'      => $status,
-				'thumb_id'    => $thumb_id,
-				'thumb_url'   => $thumb_url,
-				'post_name'   => $post_name,
-				'permalink'   => $permalink,
-				'back_url'    => $back_url,
-				'seo_title'   => $seo_title,
-				'seo_desc'    => $seo_desc,
-				'seo_keyword' => $seo_keyword,
+				'nonce' => wp_create_nonce( 'wpat_studio_nonce' ),
 			)
 		);
+	}
+
+	/**
+	 * Renderiza la aplicación completa de Client Studio.
+	 */
+	public function render_client_studio_page() {
+		$template_path = WPAT_DIR . 'templates/client-studio/app.php';
+		if ( file_exists( $template_path ) ) {
+			include $template_path;
+		} else {
+			echo '<div class="notice notice-error"><p>No se encontró la plantilla de Client Studio.</p></div>';
+		}
 	}
 
 	/**

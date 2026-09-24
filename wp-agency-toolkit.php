@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.89
+ * Version:     4.3.90
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.89' );
+define( 'WPAT_VERSION', '4.3.90' );
 define( 'WPAT_FILE', __FILE__ );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_URL', plugin_dir_url( __FILE__ ) );
@@ -215,6 +215,14 @@ class WPAT_Main {
 			'file'  => 'includes/modules/class-wpat-quick-pay.php',
 			'class' => 'WPAT_Quick_Pay',
 		),
+		'qr-generator' => array(
+			'file'  => 'includes/modules/class-wpat-qr-generator.php',
+			'class' => 'WPAT_QR_Generator',
+		),
+		'admin-tables-ui' => array(
+			'file'  => 'includes/modules/class-wpat-admin-tables-ui.php',
+			'class' => 'WPAT_Admin_Tables_UI',
+		),
 	);
 
 	/**
@@ -336,8 +344,18 @@ class WPAT_Main {
 				'role-manager'              => '0',
 				'cookie-consent'            => '0',
 				'quick-pay'                 => '0',
+				'qr-generator'              => '0',
+				'admin-tables-ui'           => '0',
 
 				// Sub-opciones internas de configuración (se usan cuando el usuario activa el módulo)
+				'tables_ui_density'         => 'comfortable',
+				'tables_ui_hover'           => 'subtle',
+				'tables_ui_pills'           => '1',
+				'tables_ui_show_thumbs'     => '1',
+				'tables_ui_sticky_header'   => '0',
+				'tables_ui_thumb_zoom'      => '1',
+				'tables_ui_actions_style'   => 'modern',
+				'tables_ui_post_types'      => array( 'post', 'page', 'product' ),
 				'woo_address_autofill_city' => '1',
 				'woo_catalog_hide_price'    => '0',
 				'woo_catalog_price_text'    => '',
@@ -427,6 +445,20 @@ class WPAT_Main {
 				'dashboard_cleaner'         => '0',
 				'dashboard_welcome_title'   => 'Soporte y Gestión',
 				'dashboard_welcome_text'    => 'Bienvenido al panel de administración de tu sitio web.',
+				'dashboard_support_email'   => '',
+				'db_card_seo'               => '1',
+				'db_card_pages'             => '1',
+				'db_card_posts'             => '1',
+				'db_card_plugins'           => '1',
+				'db_card_themes'            => '1',
+				'db_card_users'             => '1',
+				'db_card_db'                => '1',
+				'db_card_tools'             => '1',
+				'db_card_smtp'              => '1',
+				'db_card_jet'               => '1',
+				'db_card_woo'               => '1',
+				'db_card_media'             => '1',
+				'db_card_support'           => '1',
 
 				// Opciones del Bloqueador de Bots
 				'bot_blocker_limit'         => '15',

@@ -5461,6 +5461,635 @@ jQuery(document).ready(function($) {
 		});
 	});
 
+	/* ==========================================================================
+	   MÓDULO: GENERADOR DE CÓDIGOS QR & ENLACES DIRECTOS
+	   ========================================================================== */
+	var qrTimer = null;
+	var qrInstance = null;
+
+	// Inicializar Color Pickers para el Generador QR
+	if ($('.wpat-qr-color-input').length && typeof $.fn.wpColorPicker === 'function') {
+		$('.wpat-qr-color-input').wpColorPicker({
+			change: function() {
+				debouncedQRPreview();
+			},
+			clear: function() {
+				debouncedQRPreview();
+			}
+		});
+	}
+
+	// Cambiar tipo de QR (Pestañas visuales)
+	$(document).on('click', '.wpat-qr-type-btn', function(e) {
+		e.preventDefault();
+		var type = $(this).data('type');
+
+		$('.wpat-qr-type-btn').removeClass('active').css({
+			'background': '#fff',
+			'color': '#475569',
+			'border-color': '#cbd5e1'
+		});
+
+		$(this).addClass('active').css({
+			'background': '#2563eb',
+			'color': '#fff',
+			'border-color': '#2563eb'
+		});
+
+		$('#wpat_qr_selected_type').val(type);
+
+		// Mostrar sección correspondiente y ocultar las demás
+		$('.wpat-qr-type-section').hide();
+		$('#wpat_qr_sec_' + type).fadeIn(150);
+
+		// Si se selecciona WhatsApp, sugerir icono WhatsApp si no hay otro puesto
+		if (type === 'whatsapp') {
+			if ($('#wpat_qr_logo_type').val() === 'none') {
+				$('#wpat_qr_logo_type').val('whatsapp');
+			}
+		}
+
+		debouncedQRPreview();
+	});
+
+	// Cambiar selector de modo de teléfono (Llamada vs SMS)
+	$(document).on('change', '#wpat_qr_ph_mode', function() {
+		if ($(this).val() === 'sms') {
+			$('#wpat_qr_ph_sms_group').slideDown(150);
+		} else {
+			$('#wpat_qr_ph_sms_group').slideUp(150);
+		}
+		debouncedQRPreview();
+	});
+
+	// Selector de logotipo central
+	$(document).on('change', '#wpat_qr_logo_type', function() {
+		var val = $(this).val();
+		if (val === 'custom') {
+			$('#wpat_qr_custom_logo_box').fadeIn(150);
+		} else {
+			$('#wpat_qr_custom_logo_box').hide();
+		}
+
+		// Si tiene logo, se recomienda corrección H
+		if (val !== 'none') {
+			$('#wpat_qr_ec_level').val('H');
+		}
+
+		debouncedQRPreview();
+	});
+
+	// Subida de logo personalizado con WP Media
+	$(document).on('click', '#wpat_qr_upload_logo_btn', function(e) {
+		e.preventDefault();
+		var frame = wp.media({
+			title: 'Seleccionar Logotipo para el Código QR',
+			button: { text: 'Usar este Logo' },
+			multiple: false
+		});
+
+		frame.on('select', function() {
+			var attachment = frame.state().get('selection').first().toJSON();
+			$('#wpat_qr_custom_logo_url').val(attachment.url);
+			debouncedQRPreview();
+		});
+
+		frame.open();
+	});
+
+	// Reactividad en inputs del generador
+	$(document).on('input keyup change', '.wpat-qr-builder-form input, .wpat-qr-builder-form textarea, .wpat-qr-builder-form select', function() {
+		debouncedQRPreview();
+	});
+
+	function debouncedQRPreview() {
+		clearTimeout(qrTimer);
+		qrTimer = setTimeout(function() {
+			renderLiveQRPreview();
+		}, 100);
+	}
+
+	// Construir el string de contenido final según el tipo seleccionado
+	function buildCurrentQRContent() {
+		var type = $('#wpat_qr_selected_type').val() || 'whatsapp';
+		var content = '';
+
+		switch (type) {
+			case 'whatsapp':
+				var phone = ($('#wpat_qr_wa_phone').val() || '').replace(/[^0-9]/g, '');
+				var msg = $('#wpat_qr_wa_msg').val() || '';
+				if (!phone) {
+					phone = '34600000000';
+				}
+				content = 'https://wa.me/' + phone + (msg ? '?text=' + encodeURIComponent(msg) : '');
+				break;
+
+			case 'url':
+				var rawUrl = ($('#wpat_qr_url_field').val() || '').trim();
+				if (!rawUrl) {
+					rawUrl = window.location.origin;
+				} else if (!/^https?:\/\//i.test(rawUrl)) {
+					rawUrl = 'https://' + rawUrl;
+				}
+				content = rawUrl;
+				break;
+
+			case 'wifi':
+				var ssid = $('#wpat_qr_wifi_ssid').val() || 'MiWifi';
+				var typeWifi = $('#wpat_qr_wifi_type').val() || 'WPA';
+				var pass = $('#wpat_qr_wifi_pass').val() || '';
+				var hidden = $('#wpat_qr_wifi_hidden').is(':checked') ? 'true' : 'false';
+				content = 'WIFI:T:' + typeWifi + ';S:' + ssid + ';P:' + pass + ';H:' + hidden + ';;';
+				break;
+
+			case 'vcard':
+				var vcName = $('#wpat_qr_vc_name').val() || 'Contacto';
+				var vcOrg = $('#wpat_qr_vc_org').val() || '';
+				var vcTitle = $('#wpat_qr_vc_title').val() || '';
+				var vcPhone = $('#wpat_qr_vc_phone').val() || '';
+				var vcEmail = $('#wpat_qr_vc_email').val() || '';
+				var vcUrl = $('#wpat_qr_vc_url').val() || '';
+
+				content = 'BEGIN:VCARD\nVERSION:3.0\nN:' + vcName + '\nFN:' + vcName;
+				if (vcOrg) content += '\nORG:' + vcOrg;
+				if (vcTitle) content += '\nTITLE:' + vcTitle;
+				if (vcPhone) content += '\nTEL:' + vcPhone;
+				if (vcEmail) content += '\nEMAIL:' + vcEmail;
+				if (vcUrl) content += '\nURL:' + vcUrl;
+				content += '\nEND:VCARD';
+				break;
+
+			case 'email':
+				var emTo = $('#wpat_qr_em_to').val() || 'info@ejemplo.com';
+				var emSub = $('#wpat_qr_em_sub').val() || '';
+				var emBody = $('#wpat_qr_em_body').val() || '';
+				var params = [];
+				if (emSub) params.push('subject=' + encodeURIComponent(emSub));
+				if (emBody) params.push('body=' + encodeURIComponent(emBody));
+				content = 'mailto:' + emTo + (params.length ? '?' + params.join('&') : '');
+				break;
+
+			case 'phone':
+				var phMode = $('#wpat_qr_ph_mode').val() || 'tel';
+				var phNum = ($('#wpat_qr_ph_num').val() || '').replace(/[^0-9+]/g, '');
+				if (!phNum) phNum = '+34600000000';
+				if (phMode === 'sms') {
+					var smsMsg = $('#wpat_qr_ph_sms_msg').val() || '';
+					content = 'SMSTO:' + phNum + ':' + smsMsg;
+				} else {
+					content = 'tel:' + phNum;
+				}
+				break;
+
+			case 'bizum':
+				var bzPhone = ($('#wpat_qr_bz_phone').val() || '').replace(/[^0-9]/g, '');
+				var bzConcept = $('#wpat_qr_bz_concept').val() || '';
+				var bzRaw = $('#wpat_qr_bz_raw').val() || '';
+				if (bzRaw) {
+					content = bzRaw;
+				} else {
+					content = 'Bizum ' + bzPhone + (bzConcept ? ' (' + bzConcept + ')' : '');
+				}
+				break;
+
+			default:
+				content = window.location.origin;
+		}
+
+		return content;
+	}
+
+	// Renderizar la vista previa en vivo del QR
+	function renderLiveQRPreview() {
+		var $holder = $('#wpat_qr_canvas_holder');
+		if (!$holder.length || typeof QRCode === 'undefined') return;
+
+		var content = buildCurrentQRContent();
+		var fgColor = $('#wpat_qr_fg_color').val() || '#000000';
+		var bgColor = $('#wpat_qr_bg_color').val() || '#ffffff';
+		var ecLevelStr = $('#wpat_qr_ec_level').val() || 'M';
+		var logoType = $('#wpat_qr_logo_type').val() || 'none';
+		var customLogoUrl = $('#wpat_qr_custom_logo_url').val() || '';
+
+		$('#wpat_qr_preview_text_label').text(content);
+		$holder.empty();
+
+		var correctLevel = QRCode.CorrectLevel.M;
+		if (ecLevelStr === 'L') correctLevel = QRCode.CorrectLevel.L;
+		else if (ecLevelStr === 'Q') correctLevel = QRCode.CorrectLevel.Q;
+		else if (ecLevelStr === 'H' || logoType !== 'none') correctLevel = QRCode.CorrectLevel.H;
+
+		// Instanciar QRCode
+		qrInstance = new QRCode($holder[0], {
+			text: content,
+			width: 200,
+			height: 200,
+			colorDark: fgColor,
+			colorLight: bgColor,
+			correctLevel: correctLevel
+		});
+
+		// Si hay logo, incrustarlo sobre el canvas
+		if (logoType !== 'none') {
+			setTimeout(function() {
+				overlayLogoOnCanvas($holder.find('canvas')[0], logoType, customLogoUrl, 200);
+			}, 30);
+		}
+	}
+
+	// Incrustar logotipo central en el Canvas
+	function overlayLogoOnCanvas(canvas, logoType, customLogoUrl, canvasSize) {
+		if (!canvas) return;
+		var ctx = canvas.getContext('2d');
+		var logoSize = Math.round(canvasSize * 0.22);
+		var center = canvasSize / 2;
+		var halfLogo = logoSize / 2;
+		var radius = Math.round(logoSize * 0.2);
+
+		function drawWhiteBadge() {
+			var badgeSize = logoSize + Math.round(canvasSize * 0.04);
+			var halfBadge = badgeSize / 2;
+			var badgeRadius = Math.round(badgeSize * 0.22);
+			ctx.save();
+			ctx.beginPath();
+			ctx.moveTo(center - halfBadge + badgeRadius, center - halfBadge);
+			ctx.lineTo(center + halfBadge - badgeRadius, center - halfBadge);
+			ctx.quadraticCurveTo(center + halfBadge, center - halfBadge, center + halfBadge, center - halfBadge + badgeRadius);
+			ctx.lineTo(center + halfBadge, center + halfBadge - badgeRadius);
+			ctx.quadraticCurveTo(center + halfBadge, center + halfBadge, center + halfBadge - badgeRadius, center + halfBadge);
+			ctx.lineTo(center - halfBadge + badgeRadius, center + halfBadge);
+			ctx.quadraticCurveTo(center - halfBadge, center + halfBadge, center - halfBadge, center + halfBadge - badgeRadius);
+			ctx.lineTo(center - halfBadge, center - halfBadge + badgeRadius);
+			ctx.quadraticCurveTo(center - halfBadge, center - halfBadge, center - halfBadge + badgeRadius, center - halfBadge);
+			ctx.closePath();
+			ctx.fillStyle = '#ffffff';
+			ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+			ctx.shadowBlur = Math.round(canvasSize * 0.02);
+			ctx.fill();
+			ctx.restore();
+		}
+
+		if (logoType === 'whatsapp') {
+			drawWhiteBadge();
+			// Dibujar círculo verde WhatsApp y teléfono blanco
+			ctx.save();
+			ctx.beginPath();
+			ctx.arc(center, center, halfLogo, 0, Math.PI * 2);
+			ctx.fillStyle = '#25D366';
+			ctx.fill();
+
+			// Teléfono blanco estilizado
+			ctx.fillStyle = '#ffffff';
+			ctx.font = 'bold ' + Math.round(logoSize * 0.6) + 'px sans-serif';
+			ctx.textAlign = 'center';
+			ctx.textBaseline = 'middle';
+			ctx.fillText('✆', center, center);
+			ctx.restore();
+		} else if (logoType === 'site_logo' || logoType === 'custom') {
+			var imgUrl = (logoType === 'custom') ? customLogoUrl : ($('#wpat_qr_logo_type option[value="site_logo"]').length ? 'site' : '');
+			if (!imgUrl || imgUrl === 'site') {
+				// Tomar favicon del sitio o icono
+				var favicon = document.querySelector("link[rel*='icon']");
+				imgUrl = favicon ? favicon.href : '';
+			}
+			if (imgUrl) {
+				var img = new Image();
+				img.crossOrigin = 'Anonymous';
+				img.onload = function() {
+					drawWhiteBadge();
+					ctx.save();
+					ctx.drawImage(img, center - halfLogo, center - halfLogo, logoSize, logoSize);
+					ctx.restore();
+				};
+				img.src = imgUrl;
+			}
+		}
+	}
+
+	// Inicializar vista previa de la tabla de QRs guardados
+	function initSavedQRsThumbnails() {
+		$('.wpat-table-qr-thumb').each(function() {
+			var $box = $(this);
+			if ($box.children().length > 0) return;
+
+			var content = $box.data('content');
+			var fg = $box.data('fg') || '#000000';
+			var bg = $box.data('bg') || '#ffffff';
+			var logo = $box.data('logo') || 'none';
+			var logoUrl = $box.data('logo-url') || '';
+
+			if (content && typeof QRCode !== 'undefined') {
+				new QRCode($box[0], {
+					text: content,
+					width: 38,
+					height: 38,
+					colorDark: fg,
+					colorLight: bg,
+					correctLevel: QRCode.CorrectLevel.M
+				});
+			}
+		});
+	}
+
+	// DESCARGAR PNG DE ALTA RESOLUCIÓN
+	$(document).on('click', '#wpat_qr_download_png_btn', function(e) {
+		e.preventDefault();
+		var downloadSize = parseInt($('#wpat_qr_size').val(), 10) || 512;
+		var content = buildCurrentQRContent();
+		var fgColor = $('#wpat_qr_fg_color').val() || '#000000';
+		var bgColor = $('#wpat_qr_bg_color').val() || '#ffffff';
+		var ecLevelStr = $('#wpat_qr_ec_level').val() || 'M';
+		var logoType = $('#wpat_qr_logo_type').val() || 'none';
+		var customLogoUrl = $('#wpat_qr_custom_logo_url').val() || '';
+		var qrName = $('#wpat_qr_name').val() || 'codigo-qr';
+
+		var correctLevel = QRCode.CorrectLevel.M;
+		if (ecLevelStr === 'L') correctLevel = QRCode.CorrectLevel.L;
+		else if (ecLevelStr === 'Q') correctLevel = QRCode.CorrectLevel.Q;
+		else if (ecLevelStr === 'H' || logoType !== 'none') correctLevel = QRCode.CorrectLevel.H;
+
+		var $tempDiv = $('<div>').css({ position: 'absolute', left: '-9999px', top: '-9999px' }).appendTo('body');
+
+		new QRCode($tempDiv[0], {
+			text: content,
+			width: downloadSize,
+			height: downloadSize,
+			colorDark: fgColor,
+			colorLight: bgColor,
+			correctLevel: correctLevel
+		});
+
+		setTimeout(function() {
+			var canvas = $tempDiv.find('canvas')[0];
+			if (canvas) {
+				if (logoType !== 'none') {
+					overlayLogoOnCanvas(canvas, logoType, customLogoUrl, downloadSize);
+				}
+
+				setTimeout(function() {
+					var dataUrl = canvas.toDataURL('image/png');
+					var a = document.createElement('a');
+					a.href = dataUrl;
+					a.download = 'wpat-qr-' + qrName.toLowerCase().replace(/[^a-z0-9_-]/g, '-') + '-' + downloadSize + 'px.png';
+					document.body.appendChild(a);
+					a.click();
+					document.body.removeChild(a);
+					$tempDiv.remove();
+					showToast('Código QR descargado en alta resolución (' + downloadSize + 'px)', false);
+				}, 60);
+			} else {
+				$tempDiv.remove();
+			}
+		}, 60);
+	});
+
+	// DESCARGAR SVG VECTORIAL
+	$(document).on('click', '#wpat_qr_download_svg_btn', function(e) {
+		e.preventDefault();
+		var content = buildCurrentQRContent();
+		var fgColor = $('#wpat_qr_fg_color').val() || '#000000';
+		var bgColor = $('#wpat_qr_bg_color').val() || '#ffffff';
+		var ecLevelStr = $('#wpat_qr_ec_level').val() || 'M';
+		var qrName = $('#wpat_qr_name').val() || 'codigo-qr';
+
+		// Usar el canvas actual para extraer la cuadrícula de módulos
+		var $holder = $('#wpat_qr_canvas_holder');
+		var canvas = $holder.find('canvas')[0];
+		if (!canvas) {
+			showToast('Error generando SVG', true);
+			return;
+		}
+
+		var ctx = canvas.getContext('2d');
+		var width = canvas.width;
+		var height = canvas.height;
+		var imgData = ctx.getImageData(0, 0, width, height).data;
+
+		// Convertir el canvas a un SVG con rectángulos perfectos
+		var svgPaths = [];
+		for (var y = 0; y < height; y++) {
+			for (var x = 0; x < width; x++) {
+				var idx = (y * width + x) * 4;
+				var r = imgData[idx];
+				var g = imgData[idx + 1];
+				var b = imgData[idx + 2];
+				var a = imgData[idx + 3];
+				// Si no es blanco
+				if (a > 128 && (r < 200 || g < 200 || b < 200)) {
+					svgPaths.push('<rect x="' + x + '" y="' + y + '" width="1" height="1" fill="' + fgColor + '" />');
+				}
+			}
+		}
+
+		var svgString = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + width + ' ' + height + '" width="1024" height="1024">' +
+			'<rect width="100%" height="100%" fill="' + bgColor + '" />' +
+			svgPaths.join('') +
+			'</svg>';
+
+		var blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+		var url = URL.createObjectURL(blob);
+		var a = document.createElement('a');
+		a.href = url;
+		a.download = 'wpat-qr-' + qrName.toLowerCase().replace(/[^a-z0-9_-]/g, '-') + '.svg';
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+		showToast('Código QR vectorial (SVG) descargado con éxito', false);
+	});
+
+	// GUARDAR QR EN BIBLIOTECA VÍA AJAX
+	$(document).on('click', '#wpat_qr_save_to_library_btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var qrName = $('#wpat_qr_name').val().trim() || 'Código QR';
+		var qrId = $('#wpat_qr_editing_id').val();
+		var qrType = $('#wpat_qr_selected_type').val() || 'whatsapp';
+		var qrContent = buildCurrentQRContent();
+		var fgColor = $('#wpat_qr_fg_color').val() || '#000000';
+		var bgColor = $('#wpat_qr_bg_color').val() || '#ffffff';
+		var size = $('#wpat_qr_size').val() || '256';
+		var logoType = $('#wpat_qr_logo_type').val() || 'none';
+		var customLogoUrl = $('#wpat_qr_custom_logo_url').val() || '';
+		var ecLevel = $('#wpat_qr_ec_level').val() || 'M';
+
+		$btn.prop('disabled', true).text('Guardando...');
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_save_qr_code',
+				security: wpat_object.qr_nonce,
+				qr_id: qrId,
+				qr_name: qrName,
+				qr_type: qrType,
+				qr_content: qrContent,
+				qr_fg_color: fgColor,
+				qr_bg_color: bgColor,
+				qr_size: size,
+				qr_logo_type: logoType,
+				qr_logo_url: customLogoUrl,
+				qr_ec_level: ecLevel
+			},
+			success: function(response) {
+				$btn.prop('disabled', false).html('💾 Guardar en Biblioteca de QRs');
+				if (response.success) {
+					$('#wpat_saved_qrs_tbody').html(response.data.html);
+					$('#wpat_qr_editing_id').val(response.data.qr_id);
+					initSavedQRsThumbnails();
+					showToast(response.data.message || 'Código QR guardado correctamente', false);
+				} else {
+					showToast(response.data.message || 'Error al guardar el QR', true);
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).html('💾 Guardar en Biblioteca de QRs');
+				showToast('Error de conexión AJAX al guardar QR', true);
+			}
+		});
+	});
+
+	// EDITAR QR GUARDADO
+	$(document).on('click', '.wpat-edit-saved-qr', function(e) {
+		e.preventDefault();
+		var qrId = $(this).data('id');
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_get_qr_code',
+				security: wpat_object.qr_nonce,
+				qr_id: qrId
+			},
+			success: function(response) {
+				if (response.success) {
+					var qr = response.data;
+					$('#wpat_qr_editing_id').val(qr.id);
+					$('#wpat_qr_name').val(qr.name);
+
+					// Seleccionar tipo
+					$('.wpat-qr-type-btn[data-type="' + qr.type + '"]').trigger('click');
+
+					// Colores
+					if ($('#wpat_qr_fg_color').hasClass('wp-color-picker')) {
+						$('#wpat_qr_fg_color').wpColorPicker('color', qr.fg_color || '#000000');
+						$('#wpat_qr_bg_color').wpColorPicker('color', qr.bg_color || '#ffffff');
+					} else {
+						$('#wpat_qr_fg_color').val(qr.fg_color || '#000000');
+						$('#wpat_qr_bg_color').val(qr.bg_color || '#ffffff');
+					}
+
+					$('#wpat_qr_ec_level').val(qr.ec_level || 'M');
+					$('#wpat_qr_size').val(qr.size || '512');
+					$('#wpat_qr_logo_type').val(qr.logo_type || 'none').trigger('change');
+					if (qr.logo_url) {
+						$('#wpat_qr_custom_logo_url').val(qr.logo_url);
+					}
+
+					// Rellenar campos según tipo
+					if (qr.type === 'url') {
+						$('#wpat_qr_url_field').val(qr.content);
+					} else if (qr.type === 'whatsapp') {
+						var matchPhone = qr.content.match(/wa\.me\/([0-9]+)/);
+						if (matchPhone && matchPhone[1]) {
+							$('#wpat_qr_wa_phone').val(matchPhone[1]);
+						}
+						var matchText = qr.content.match(/text=([^&]+)/);
+						if (matchText && matchText[1]) {
+							$('#wpat_qr_wa_msg').val(decodeURIComponent(matchText[1]));
+						}
+					}
+
+					debouncedQRPreview();
+					$('html, body').animate({ scrollTop: $('.wpat-qr-builder-form').offset().top - 80 }, 300);
+					showToast('QR cargado en el editor', false);
+				} else {
+					showToast('Error cargando QR', true);
+				}
+			}
+		});
+	});
+
+	// ELIMINAR QR GUARDADO
+	$(document).on('click', '.wpat-delete-saved-qr', function(e) {
+		e.preventDefault();
+		var qrId = $(this).data('id');
+		if (!confirm('¿Estás seguro de que deseas eliminar este código QR?')) return;
+
+		$.ajax({
+			url: wpat_object.ajax_url,
+			type: 'POST',
+			data: {
+				action: 'wpat_delete_qr_code',
+				security: wpat_object.qr_nonce,
+				qr_id: qrId
+			},
+			success: function(response) {
+				if (response.success) {
+					$('#wpat_saved_qrs_tbody').html(response.data.html);
+					initSavedQRsThumbnails();
+					showToast('Código QR eliminado de la biblioteca', false);
+				} else {
+					showToast('Error al eliminar', true);
+				}
+			}
+		});
+	});
+
+	// DESCARGAR DIRECTO DESDE LA TABLA
+	$(document).on('click', '.wpat-download-qr-btn', function(e) {
+		e.preventDefault();
+		var qrId = $(this).data('id');
+		$('.wpat-edit-saved-qr[data-id="' + qrId + '"]').first().trigger('click');
+		setTimeout(function() {
+			$('#wpat_qr_download_png_btn').trigger('click');
+		}, 400);
+	});
+
+	// COPIAR SHORTCODE
+	$(document).on('click', '.wpat-copy-shortcode-btn', function(e) {
+		e.preventDefault();
+		var code = $(this).data('code') || $(this).text();
+		if (navigator.clipboard) {
+			navigator.clipboard.writeText(code);
+			showToast('¡Shortcode copiado al portapapeles! ' + code, false);
+		} else {
+			var $temp = $('<input>').val(code).appendTo('body').select();
+			document.execCommand('copy');
+			$temp.remove();
+			showToast('¡Shortcode copiado! ' + code, false);
+		}
+	});
+
+	// LIMPIAR FORMULARIO / NUEVO QR
+	$(document).on('click', '#wpat_qr_reset_builder_btn', function(e) {
+		e.preventDefault();
+		$('#wpat_qr_editing_id').val('');
+		$('#wpat_qr_name').val('');
+		$('.wpat-qr-builder-form input[type="text"], .wpat-qr-builder-form input[type="url"], .wpat-qr-builder-form input[type="email"], .wpat-qr-builder-form textarea').val('');
+		$('.wpat-qr-type-btn[data-type="whatsapp"]').trigger('click');
+		if ($('#wpat_qr_fg_color').hasClass('wp-color-picker')) {
+			$('#wpat_qr_fg_color').wpColorPicker('color', '#000000');
+			$('#wpat_qr_bg_color').wpColorPicker('color', '#ffffff');
+		} else {
+			$('#wpat_qr_fg_color').val('#000000');
+			$('#wpat_qr_bg_color').val('#ffffff');
+		}
+		$('#wpat_qr_logo_type').val('none').trigger('change');
+		debouncedQRPreview();
+		showToast('Formulario restablecido para un nuevo QR', false);
+	});
+
+	// Ejecutar render inicial al cargar
+	if ($('#wpat_qr_canvas_holder').length) {
+		setTimeout(function() {
+			renderLiveQRPreview();
+			initSavedQRsThumbnails();
+		}, 200);
+	}
+
 });
 
 

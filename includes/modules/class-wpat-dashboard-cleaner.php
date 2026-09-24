@@ -988,7 +988,7 @@ class WPAT_Dashboard_Cleaner {
 			</div>
 
 			<!-- 5. SOPORTE DE LA AGENCIA (Formulario de Contacto & Info del Sistema) -->
-			<?php if ( ! isset( $settings['db_card_support'] ) || '1' === $settings['db_card_support'] ) : ?>
+			<?php if ( ! isset( $settings['db_card_support'] ) || '1' === (string) $settings['db_card_support'] || true === $settings['db_card_support'] ) : ?>
 			<div class="wpat-db-support-card">
 				<h3>
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">

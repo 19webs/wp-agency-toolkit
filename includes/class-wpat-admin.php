@@ -147,7 +147,8 @@ class WPAT_Admin {
 
 		// Estilos y scripts propios (usamos time() temporalmente para evitar cualquier caché del navegador o del servidor)
 		wp_enqueue_style( 'wpat-admin-css', WPAT_URL . 'assets/css/wpat-admin.css', array(), time() );
-		wp_enqueue_script( 'wpat-admin-js', WPAT_URL . 'assets/js/wpat-admin.js', array( 'jquery', 'wp-color-picker' ), time(), true );
+		wp_enqueue_script( 'wpat-qrcode-js', WPAT_URL . 'assets/js/qrcode.min.js', array(), WPAT_VERSION, true );
+		wp_enqueue_script( 'wpat-admin-js', WPAT_URL . 'assets/js/wpat-admin.js', array( 'jquery', 'wp-color-picker', 'wpat-qrcode-js' ), time(), true );
 
 		wp_localize_script( 'wpat-admin-js', 'wpat_object', array(
 			'ajax_url'             => admin_url( 'admin-ajax.php' ),
@@ -157,6 +158,7 @@ class WPAT_Admin {
 			'role_manager_nonce'   => wp_create_nonce( 'wpat_role_manager_nonce_action' ),
 			'cookie_consent_nonce' => wp_create_nonce( 'wpat_cookie_consent_nonce_action' ),
 			'snippet_nonce'        => wp_create_nonce( 'wpat_snippet_nonce_action' ),
+			'qr_nonce'             => wp_create_nonce( 'wpat_qr_nonce_action' ),
 		) );
 
 		// Localizar kits instalados para el JS de administración
@@ -1903,6 +1905,8 @@ class WPAT_Admin {
 			'role-manager',
 			'cookie-consent',
 			'quick-pay',
+			'qr-generator',
+			'admin-tables-ui',
 			'tools',
 		);
 
@@ -2777,6 +2781,8 @@ class WPAT_Admin {
 				'wpat-role-manager'      => 'role-manager',
 				'wpat-cookie-consent'    => 'cookie-consent',
 				'wpat-quick-pay'         => 'quick-pay',
+				'wpat-qr-generator'      => 'qr-generator',
+				'wpat-admin-tables-ui'   => 'admin-tables-ui',
 				'wpat-tools'             => 'tools',
 			);
 			if ( isset( $map[ $page_slug ] ) ) {
@@ -3408,6 +3414,18 @@ class WPAT_Admin {
 				'icon_bg'     => 'woo',
 				'keywords'    => 'whatsapp boton flotante contacto chat'
 			),
+			array(
+				'id'          => 'qr-generator',
+				'is_new'      => true,
+				'title'       => 'Generador de Códigos QR',
+				'badge'       => 'Subpágina',
+				'badge_class' => 'subpage',
+				'desc'        => 'Genera códigos QR dinámicos para WhatsApp, enlaces directos, Wi-Fi, vCard, emails y pagos con previsualización en vivo y descarga PNG/SVG.',
+				'cat_class'   => 'cat-tools',
+				'icon'        => '📱',
+				'icon_bg'     => 'perf',
+				'keywords'    => 'qr codigos qr generador whatsapp enlace wifi vcard bizum pago svg png'
+			),
 
 			// SISTEMA & ADMIN (8)
 			array(
@@ -3519,6 +3537,18 @@ class WPAT_Admin {
 				'icon'        => '👥',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'roles permisos capabilities usuarios roles perfil editor administrador permisos capacidades clonar reset'
+			),
+			array(
+				'id'          => 'admin-tables-ui',
+				'is_new'      => true,
+				'title'       => 'Diseño SaaS para Listados & CPTs',
+				'badge'       => 'Subpágina',
+				'badge_class' => 'subpage',
+				'desc'        => 'Moderniza las pantallas de entradas, páginas, productos y CPTs con un diseño SaaS ergonómico, badges de estado, miniaturas y compatibilidad 100%.',
+				'cat_class'   => 'cat-system cat-admin cat-tools',
+				'icon'        => '✨',
+				'icon_bg'     => 'admin',
+				'keywords'    => 'saas tablas listados entradas paginas productos cpts modernizar look feel admin ui'
 			),
 			array(
 				'id'          => 'tools',
@@ -10434,6 +10464,12 @@ class WPAT_Admin {
 			case 'quick-pay':
 				$this->render_quick_pay_content( $settings );
 				break;
+			case 'qr-generator':
+				$this->render_qr_generator_content( $settings );
+				break;
+			case 'admin-tables-ui':
+				$this->render_admin_tables_ui_content( $settings );
+				break;
 			case 'tools':
 				echo '<div id="wpat_health_content_wrapper">';
 				$this->render_health_tab_content();
@@ -12432,4 +12468,553 @@ class WPAT_Admin {
 		</div>
 		<?php
 	}
+
+	/**
+	 * Renderiza la interfaz del Generador de Códigos QR & Enlaces Directos.
+	 *
+	 * @param array $settings Ajustes del plugin.
+	 */
+	public function render_qr_generator_content( $settings ) {
+		if ( ! class_exists( 'WPAT_QR_Generator' ) ) {
+			require_once WPAT_PATH . 'includes/modules/class-wpat-qr-generator.php';
+		}
+
+		$qr_module = WPAT_QR_Generator::get_instance();
+		$saved_qrs = $qr_module->get_saved_qrs();
+		$site_icon = get_site_icon_url( 128 );
+		?>
+		<div class="wpat-module-card wpat-qr-generator-wrapper">
+			<div class="wpat-module-header">
+				<div class="wpat-module-info">
+					<h3>Generador de Códigos QR & Enlaces Directos <span class="wpat-badge" style="background:#2563eb; color:#fff;">Vectorial & PNG</span></h3>
+					<p>Genera al instante códigos QR dinámicos para WhatsApp con mensaje, enlaces de venta, redes Wi-Fi, tarjetas vCard, emails y Bizum con previsualización en vivo.</p>
+				</div>
+				<?php $this->render_module_toggle( 'qr-generator', $settings, true ); ?>
+			</div>
+
+			<div class="wpat-module-body" style="display: block; padding: 22px;">
+
+				<!-- GENERADOR EN 2 COLUMNAS (FORMULARIO + PREVIEW) -->
+				<div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; margin-bottom: 30px;">
+					
+					<!-- COLUMNA IZQUIERDA: FORMULARIO Y OPCIONES -->
+					<div class="wpat-qr-builder-form" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
+						<input type="hidden" id="wpat_qr_editing_id" value="" />
+
+						<!-- Nombre identificativo -->
+						<div class="wpat-field-group" style="margin-bottom: 16px;">
+							<label for="wpat_qr_name" style="display: block; font-weight: 700; font-size: 13.5px; color: #1e293b; margin-bottom: 6px;">
+								🏷️ Nombre del Código QR (Para tu biblioteca)
+							</label>
+							<input type="text" id="wpat_qr_name" placeholder="Ej: WhatsApp Pedidos / Carta Menú / Wi-Fi Oficina" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+						</div>
+
+						<!-- Selector de Tipo de QR (Pestañas visuales) -->
+						<div class="wpat-field-group" style="margin-bottom: 18px;">
+							<label style="display: block; font-weight: 700; font-size: 13.5px; color: #1e293b; margin-bottom: 8px;">
+								🎯 Tipo de Contenido / Acción del QR
+							</label>
+							<div class="wpat-qr-type-selector" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px;">
+								<button type="button" class="wpat-qr-type-btn active" data-type="whatsapp" style="background: #2563eb; color: #fff; border: 1px solid #2563eb; padding: 8px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.15s ease;">
+									<span style="font-size: 16px;">💬</span> WhatsApp
+								</button>
+								<button type="button" class="wpat-qr-type-btn" data-type="url" style="background: #fff; color: #475569; border: 1px solid #cbd5e1; padding: 8px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.15s ease;">
+									<span style="font-size: 16px;">🔗</span> Enlace / Web
+								</button>
+								<button type="button" class="wpat-qr-type-btn" data-type="wifi" style="background: #fff; color: #475569; border: 1px solid #cbd5e1; padding: 8px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.15s ease;">
+									<span style="font-size: 16px;">📶</span> Red Wi-Fi
+								</button>
+								<button type="button" class="wpat-qr-type-btn" data-type="vcard" style="background: #fff; color: #475569; border: 1px solid #cbd5e1; padding: 8px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.15s ease;">
+									<span style="font-size: 16px;">📇</span> vCard
+								</button>
+								<button type="button" class="wpat-qr-type-btn" data-type="email" style="background: #fff; color: #475569; border: 1px solid #cbd5e1; padding: 8px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.15s ease;">
+									<span style="font-size: 16px;">✉️</span> Email
+								</button>
+								<button type="button" class="wpat-qr-type-btn" data-type="phone" style="background: #fff; color: #475569; border: 1px solid #cbd5e1; padding: 8px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.15s ease;">
+									<span style="font-size: 16px;">📞</span> Teléfono
+								</button>
+								<button type="button" class="wpat-qr-type-btn" data-type="bizum" style="background: #fff; color: #475569; border: 1px solid #cbd5e1; padding: 8px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.15s ease;">
+									<span style="font-size: 16px;">💳</span> Bizum / Texto
+								</button>
+							</div>
+							<input type="hidden" id="wpat_qr_selected_type" value="whatsapp" />
+						</div>
+
+						<!-- BLOQUES ESPECÍFICOS SEGÚN TIPO -->
+						<div class="wpat-qr-fields-container" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+							
+							<!-- 1. WHATSAPP -->
+							<div class="wpat-qr-type-section" id="wpat_qr_sec_whatsapp">
+								<div class="wpat-field-group" style="margin-bottom: 12px;">
+									<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Número de Teléfono WhatsApp (Con prefijo internacional sin '+')</label>
+									<input type="text" id="wpat_qr_wa_phone" placeholder="Ej: 34600123456" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+									<p class="description" style="margin-top: 4px;">Introduce el prefijo del país seguido del teléfono (ej: 34 para España, 52 para México, 54 para Argentina).</p>
+								</div>
+								<div class="wpat-field-group">
+									<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Mensaje Predefinido (Opcional)</label>
+									<textarea id="wpat_qr_wa_msg" rows="3" placeholder="Hola, he escaneado el código QR y me gustaría recibir más información." style="width: 100%; border-radius: 6px;"></textarea>
+								</div>
+							</div>
+
+							<!-- 2. URL / WEB -->
+							<div class="wpat-qr-type-section" id="wpat_qr_sec_url" style="display: none;">
+								<div class="wpat-field-group">
+									<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">URL / Enlace Destino *</label>
+									<input type="url" id="wpat_qr_url_field" placeholder="https://tusitio.com/oferta-o-carta" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+									<p class="description" style="margin-top: 4px;">Puedes usar cualquier enlace web, ficha de producto WooCommerce, enlace de pago directo o menú digital.</p>
+								</div>
+							</div>
+
+							<!-- 3. WI-FI -->
+							<div class="wpat-qr-type-section" id="wpat_qr_sec_wifi" style="display: none;">
+								<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+									<div class="wpat-field-group">
+										<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Nombre de la Red (SSID) *</label>
+										<input type="text" id="wpat_qr_wifi_ssid" placeholder="MiWifiClientes" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+									</div>
+									<div class="wpat-field-group">
+										<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Tipo de Seguridad</label>
+										<select id="wpat_qr_wifi_type" style="width: 100%; height: 38px; border-radius: 6px;">
+											<option value="WPA">WPA / WPA2 / WPA3 (Estándar)</option>
+											<option value="WEP">WEP</option>
+											<option value="nopass">Sin Contraseña (Abierta)</option>
+										</select>
+									</div>
+								</div>
+								<div class="wpat-field-group" style="margin-bottom: 8px;">
+									<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Contraseña Wi-Fi</label>
+									<input type="text" id="wpat_qr_wifi_pass" placeholder="Clave de acceso" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+								</div>
+								<label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #475569; margin-top: 6px; cursor: pointer;">
+									<input type="checkbox" id="wpat_qr_wifi_hidden" value="1" /> Red Wi-Fi Oculta (Hidden SSID)
+								</label>
+							</div>
+
+							<!-- 4. VCARD / CONTACTO -->
+							<div class="wpat-qr-type-section" id="wpat_qr_sec_vcard" style="display: none;">
+								<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+									<div class="wpat-field-group">
+										<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Nombre y Apellidos *</label>
+										<input type="text" id="wpat_qr_vc_name" placeholder="Juan Pérez" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+									</div>
+									<div class="wpat-field-group">
+										<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Empresa / Organización</label>
+										<input type="text" id="wpat_qr_vc_org" placeholder="Agencia Creativa SL" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+									</div>
+								</div>
+								<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+									<div class="wpat-field-group">
+										<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Cargo / Puesto</label>
+										<input type="text" id="wpat_qr_vc_title" placeholder="Director Comercial" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+									</div>
+									<div class="wpat-field-group">
+										<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Teléfono Directo</label>
+										<input type="text" id="wpat_qr_vc_phone" placeholder="+34 600 000 000" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+									</div>
+								</div>
+								<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+									<div class="wpat-field-group">
+										<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Correo Electrónico</label>
+										<input type="email" id="wpat_qr_vc_email" placeholder="contacto@agencia.com" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+									</div>
+									<div class="wpat-field-group">
+										<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Sitio Web</label>
+										<input type="url" id="wpat_qr_vc_url" placeholder="https://agencia.com" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+									</div>
+								</div>
+							</div>
+
+							<!-- 5. EMAIL -->
+							<div class="wpat-qr-type-section" id="wpat_qr_sec_email" style="display: none;">
+								<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+									<div class="wpat-field-group">
+										<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Correo Destinatario *</label>
+										<input type="email" id="wpat_qr_em_to" placeholder="info@tusitio.com" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+									</div>
+									<div class="wpat-field-group">
+										<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Asunto del Mensaje</label>
+										<input type="text" id="wpat_qr_em_sub" placeholder="Consulta desde Código QR" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+									</div>
+								</div>
+								<div class="wpat-field-group">
+									<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Cuerpo del Mensaje</label>
+									<textarea id="wpat_qr_em_body" rows="3" placeholder="Hola, me pongo en contacto para..." style="width: 100%; border-radius: 6px;"></textarea>
+								</div>
+							</div>
+
+							<!-- 6. TELÉFONO / SMS -->
+							<div class="wpat-qr-type-section" id="wpat_qr_sec_phone" style="display: none;">
+								<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+									<div class="wpat-field-group">
+										<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Modo de Acción</label>
+										<select id="wpat_qr_ph_mode" style="width: 100%; height: 38px; border-radius: 6px;">
+											<option value="tel">Llamada Telefónica Directa</option>
+											<option value="sms">Enviar Mensaje SMS</option>
+										</select>
+									</div>
+									<div class="wpat-field-group">
+										<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Número de Teléfono *</label>
+										<input type="text" id="wpat_qr_ph_num" placeholder="+34 600 000 000" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+									</div>
+								</div>
+								<div class="wpat-field-group" id="wpat_qr_ph_sms_group" style="display: none;">
+									<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Texto del SMS</label>
+									<textarea id="wpat_qr_ph_sms_msg" rows="2" placeholder="Mensaje para enviar por SMS..." style="width: 100%; border-radius: 6px;"></textarea>
+								</div>
+							</div>
+
+							<!-- 7. BIZUM / TEXTO -->
+							<div class="wpat-qr-type-section" id="wpat_qr_sec_bizum" style="display: none;">
+								<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+									<div class="wpat-field-group">
+										<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Número para Bizum / Contacto</label>
+										<input type="text" id="wpat_qr_bz_phone" placeholder="600000000" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+									</div>
+									<div class="wpat-field-group">
+										<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Concepto / Importe</label>
+										<input type="text" id="wpat_qr_bz_concept" placeholder="Reserva mesa / Pedido #102" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px;" />
+									</div>
+								</div>
+								<div class="wpat-field-group">
+									<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">O Texto Libre Personalizado</label>
+									<textarea id="wpat_qr_bz_raw" rows="2" placeholder="Introduce cualquier texto o código plano..." style="width: 100%; border-radius: 6px;"></textarea>
+								</div>
+							</div>
+
+						</div>
+
+						<!-- PERSONALIZACIÓN VISUAL & LOGOTIPO -->
+						<h4 style="margin: 0 0 12px 0; font-size: 13.5px; font-weight: 800; color: #0f172a; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+							🎨 Personalización Visual, Colores & Logotipo
+						</h4>
+
+						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 16px;">
+							<!-- Color del QR -->
+							<div class="wpat-field-group">
+								<label style="display: block; font-weight: 700; font-size: 12px; color: #1e293b; margin-bottom: 4px;">Color de los Puntos (QR)</label>
+								<input type="text" id="wpat_qr_fg_color" value="#000000" class="wpat-qr-color-input" />
+							</div>
+
+							<!-- Color de Fondo -->
+							<div class="wpat-field-group">
+								<label style="display: block; font-weight: 700; font-size: 12px; color: #1e293b; margin-bottom: 4px;">Color de Fondo</label>
+								<input type="text" id="wpat_qr_bg_color" value="#ffffff" class="wpat-qr-color-input" />
+							</div>
+
+							<!-- Nivel de Corrección -->
+							<div class="wpat-field-group">
+								<label style="display: block; font-weight: 700; font-size: 12px; color: #1e293b; margin-bottom: 4px;">Corrección de Errores</label>
+								<select id="wpat_qr_ec_level" style="width: 100%; height: 34px; border-radius: 6px; font-size: 12.5px;">
+									<option value="L">L (7% - Puntos más grandes)</option>
+									<option value="M" selected>M (15% - Equilibrado / Recomendado)</option>
+									<option value="Q">Q (25% - Alta fiabilidad)</option>
+									<option value="H">H (30% - Máxima protección / Ideal con Logo)</option>
+								</select>
+							</div>
+
+							<!-- Tamaño de Descarga -->
+							<div class="wpat-field-group">
+								<label style="display: block; font-weight: 700; font-size: 12px; color: #1e293b; margin-bottom: 4px;">Tamaño Descarga (px)</label>
+								<select id="wpat_qr_size" style="width: 100%; height: 34px; border-radius: 6px; font-size: 12.5px;">
+									<option value="256">256 x 256 px (Web & Móvil)</option>
+									<option value="512" selected>512 x 512 px (Alta Resolución)</option>
+									<option value="1024">1024 x 1024 px (Ultra HD / Imprenta)</option>
+									<option value="2048">2048 x 2048 px (Gran Formato Cartelería)</option>
+								</select>
+							</div>
+						</div>
+
+						<!-- Logotipo Central -->
+						<div style="background: #f1f5f9; border-radius: 8px; padding: 14px; margin-top: 10px;">
+							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: center;">
+								<div class="wpat-field-group">
+									<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Logotipo Central del QR</label>
+									<select id="wpat_qr_logo_type" style="width: 100%; height: 36px; border-radius: 6px;">
+										<option value="none">Sin Logotipo Central</option>
+										<option value="whatsapp">💬 Icono Oficial de WhatsApp</option>
+										<?php if ( ! empty( $site_icon ) ) : ?>
+											<option value="site_logo">🌐 Logotipo / Favicon del Sitio</option>
+										<?php endif; ?>
+										<option value="custom">🖼️ Imagen Personalizada (Medios)</option>
+									</select>
+								</div>
+								<div class="wpat-field-group" id="wpat_qr_custom_logo_box" style="display: none;">
+									<label style="display: block; font-weight: 700; font-size: 12.5px; color: #1e293b; margin-bottom: 4px;">Imagen de Medios</label>
+									<div style="display: flex; gap: 6px;">
+										<input type="text" id="wpat_qr_custom_logo_url" placeholder="https://..." class="regular-text" style="height: 36px; border-radius: 6px; flex: 1;" />
+										<button type="button" class="button" id="wpat_qr_upload_logo_btn" style="height: 36px;">Seleccionar</button>
+									</div>
+								</div>
+							</div>
+							<p class="description" style="margin-top: 6px; font-size: 11.5px; color: #64748b;">
+								💡 Al insertar un logotipo central, el generador eleva automáticamente la corrección de errores al nivel <strong>H (30%)</strong> para garantizar una lectura 100% fiable con cualquier escáner o smartphone.
+							</p>
+						</div>
+
+					</div>
+
+					<!-- COLUMNA DERECHA: PREVISUALIZACIÓN EN VIVO & DESCARGAS -->
+					<div class="wpat-qr-preview-sidebar" style="position: sticky; top: 40px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.04); text-align: center;">
+						<h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px;">
+							👁️ Vista Previa en Vivo
+						</h4>
+
+						<!-- Caja de renderizado del QR -->
+						<div id="wpat_qr_live_box_container" style="background: #ffffff; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 16px; margin: 0 auto 16px auto; display: inline-flex; align-items: center; justify-content: center; min-width: 220px; min-height: 220px; box-sizing: border-box; position: relative;">
+							<div id="wpat_qr_canvas_holder" style="width: 200px; height: 200px; position: relative; display: flex; align-items: center; justify-content: center;">
+								<!-- Canvas generado por QRCode.js -->
+							</div>
+						</div>
+
+						<!-- Detalle del contenido escaneable -->
+						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px; margin-bottom: 16px; font-size: 11.5px; color: #475569; text-align: left; word-break: break-all; max-height: 50px; overflow-y: auto;">
+							<strong style="color: #0f172a;">Destino:</strong> <span id="wpat_qr_preview_text_label">-</span>
+						</div>
+
+						<!-- Botones de Descarga -->
+						<div style="display: flex; gap: 8px; margin-bottom: 12px;">
+							<button type="button" class="button button-primary" id="wpat_qr_download_png_btn" style="background: #059669; border-color: #047857; font-weight: 700; height: 38px; flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+								📥 Descargar PNG
+							</button>
+							<button type="button" class="button button-secondary" id="wpat_qr_download_svg_btn" style="font-weight: 700; height: 38px; flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+								📐 Descargar SVG
+							</button>
+						</div>
+
+						<!-- Botón Guardar en Biblioteca -->
+						<button type="button" class="button button-primary" id="wpat_qr_save_to_library_btn" style="background: #2563eb; border-color: #1d4ed8; font-weight: 700; height: 40px; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 13.5px; margin-bottom: 8px;">
+							💾 Guardar en Biblioteca de QRs
+						</button>
+
+						<button type="button" class="button button-link" id="wpat_qr_reset_builder_btn" style="color: #64748b; font-size: 12px; text-decoration: none;">
+							✨ Limpiar formulario / Nuevo QR
+						</button>
+					</div>
+
+				</div>
+
+				<!-- TABLA DE CÓDIGOS QR GUARDADOS (BIBLIOTECA) -->
+				<div class="wpat-saved-qrs-section" style="margin-top: 30px; border-top: 2px solid #e2e8f0; padding-top: 24px;">
+					<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+						<div>
+							<h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a;">
+								🗃️ Biblioteca de Códigos QR Guardados
+							</h3>
+							<p style="margin: 2px 0 0 0; font-size: 12.5px; color: #64748b;">
+								Gestiona tus códigos QR, cópialos en tu web mediante Shortcode <code>[wpat_qr id="..."]</code> o descárgalos cuando los necesites.
+							</p>
+						</div>
+					</div>
+
+					<div style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+						<table class="wp-list-table widefat fixed striped" style="border: none; margin: 0;">
+							<thead>
+								<tr>
+									<th style="width: 50px; text-align: center; font-weight: 700;">QR</th>
+									<th style="font-weight: 700;">Nombre & Contenido</th>
+									<th style="width: 140px; font-weight: 700;">Tipo</th>
+									<th style="width: 220px; font-weight: 700;">Shortcode Embebible</th>
+									<th style="width: 130px; font-weight: 700;">Actualizado</th>
+									<th style="width: 140px; text-align: right; font-weight: 700;">Acciones</th>
+								</tr>
+							</thead>
+							<tbody id="wpat_saved_qrs_tbody">
+								<?php $qr_module->render_saved_qrs_table( $saved_qrs ); ?>
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Renderiza la interfaz de configuración del Diseño Moderno SaaS para Listados & CPTs.
+	 *
+	 * @param array $settings Ajustes del plugin.
+	 */
+	public function render_admin_tables_ui_content( $settings ) {
+		if ( ! class_exists( 'WPAT_Admin_Tables_UI' ) ) {
+			require_once WPAT_PATH . 'includes/modules/class-wpat-admin-tables-ui.php';
+		}
+
+		$all_post_types = WPAT_Admin_Tables_UI::get_supported_post_types();
+		$enabled_pts    = isset( $settings['tables_ui_post_types'] ) && is_array( $settings['tables_ui_post_types'] )
+			? $settings['tables_ui_post_types']
+			: array( 'post', 'page', 'product' );
+
+		$density        = isset( $settings['tables_ui_density'] ) ? $settings['tables_ui_density'] : 'comfortable';
+		$hover_effect   = isset( $settings['tables_ui_hover'] ) ? $settings['tables_ui_hover'] : 'subtle';
+		$actions_style  = isset( $settings['tables_ui_actions_style'] ) ? $settings['tables_ui_actions_style'] : 'modern';
+		$pills_enabled  = ! isset( $settings['tables_ui_pills'] ) || '1' === (string) $settings['tables_ui_pills'];
+		$thumbs_enabled = isset( $settings['tables_ui_show_thumbs'] ) && '1' === (string) $settings['tables_ui_show_thumbs'];
+		$zoom_enabled   = ! isset( $settings['tables_ui_thumb_zoom'] ) || '1' === (string) $settings['tables_ui_thumb_zoom'];
+		$sticky_enabled = isset( $settings['tables_ui_sticky_header'] ) && '1' === (string) $settings['tables_ui_sticky_header'];
+		?>
+		<div class="wpat-module-card wpat-tables-ui-wrapper">
+			<div class="wpat-module-header">
+				<div class="wpat-module-info">
+					<h3>Diseño Moderno SaaS para Listados & CPTs <span class="wpat-badge" style="background:#2563eb; color:#fff;">UX / UI SaaS</span></h3>
+					<p>Transforma los toscos listados clásicos de WordPress (edit.php) en una interfaz moderna, limpia y ergonómica estilo Stripe/Linear, con total compatibilidad con plugins de terceros.</p>
+				</div>
+				<?php $this->render_module_toggle( 'admin-tables-ui', $settings, true ); ?>
+			</div>
+
+			<div class="wpat-module-body" style="display: block; padding: 22px;">
+
+				<form method="post" action="">
+					<?php wp_nonce_field( 'wpat_save_settings_action', 'wpat_settings_nonce' ); ?>
+					<input type="hidden" name="wpat_save_settings_btn" value="1" />
+					<input type="hidden" name="wpat_saving_module" value="admin-tables-ui" />
+
+					<!-- SECCIÓN 1: SELECCIÓN DE TIPOS DE CONTENIDO -->
+					<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 24px;">
+						<h4 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+							🎯 Tipos de Contenido (Post Types) con Diseño SaaS
+						</h4>
+						<p style="margin: 0 0 16px 0; font-size: 12.5px; color: #64748b;">
+							Selecciona en qué pantallas de administración deseas aplicar la interfaz SaaS moderna. Compatible al 100% con columnas de WooCommerce, Yoast, RankMath, ACF y JetEngine.
+						</p>
+
+						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+							<?php
+							foreach ( $all_post_types as $pt_name => $pt_obj ) :
+								$is_checked = in_array( $pt_name, $enabled_pts, true );
+								$icon = '📝';
+								if ( 'page' === $pt_name ) {
+									$icon = '📄';
+								} elseif ( 'product' === $pt_name ) {
+									$icon = '🛍️';
+								} elseif ( strpos( $pt_name, 'jet-' ) !== false ) {
+									$icon = '⚡';
+								} elseif ( strpos( $pt_name, 'elementor' ) !== false ) {
+									$icon = '🎨';
+								}
+								?>
+								<label style="display: flex; align-items: center; gap: 8px; background: #ffffff; border: 1px solid <?php echo $is_checked ? '#2563eb' : '#cbd5e1'; ?>; padding: 10px 14px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease;">
+									<input type="checkbox" name="wpat_settings[tables_ui_post_types][]" value="<?php echo esc_attr( $pt_name ); ?>" <?php checked( $is_checked ); ?> />
+									<span style="font-weight: 700; font-size: 13px; color: #1e293b;">
+										<?php echo esc_html( $icon . ' ' . $pt_obj->labels->name ); ?>
+									</span>
+									<span style="font-size: 11px; color: #94a3b8; margin-left: auto;">
+										(<?php echo esc_html( $pt_name ); ?>)
+									</span>
+								</label>
+							<?php endforeach; ?>
+						</div>
+					</div>
+
+					<!-- SECCIÓN 2: OPCIONES VISUALES Y ERGONOMÍA -->
+					<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 24px;">
+						<h4 style="margin: 0 0 16px 0; font-size: 14px; font-weight: 800; color: #0f172a;">
+							🎨 Personalización Visual & Ergonomía de las Tablas
+						</h4>
+
+						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+							
+							<!-- Densidad de Fila -->
+							<div class="wpat-field-group">
+								<label for="tables_ui_density" style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 6px;">
+									📏 Densidad y Espaciado de Filas
+								</label>
+								<select name="wpat_settings[tables_ui_density]" id="tables_ui_density" style="width: 100%; height: 38px; border-radius: 6px;">
+									<option value="comfortable" <?php selected( $density, 'comfortable' ); ?>>Holgado / Cómodo (Recomendado SaaS - 14px padding)</option>
+									<option value="compact" <?php selected( $density, 'compact' ); ?>>Compacto (Mayor densidad de elementos en pantalla)</option>
+								</select>
+								<p class="description" style="margin-top: 4px;">El modo holgado ofrece una lectura mucho más limpia y descansada para la vista.</p>
+							</div>
+
+							<!-- Efecto Hover -->
+							<div class="wpat-field-group">
+								<label for="tables_ui_hover" style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 6px;">
+									✨ Efecto al Pasar el Ratón (Hover)
+								</label>
+								<select name="wpat_settings[tables_ui_hover]" id="tables_ui_hover" style="width: 100%; height: 38px; border-radius: 6px;">
+									<option value="subtle" <?php selected( $hover_effect, 'subtle' ); ?>>Sutil (Cambio suave de color de fondo)</option>
+									<option value="bordered" <?php selected( $hover_effect, 'bordered' ); ?>>Borde de Acento (Línea lateral azul activa)</option>
+									<option value="shadow" <?php selected( $hover_effect, 'shadow' ); ?>>Elevación con Sombra (Efecto tarjeta flotante)</option>
+								</select>
+								<p class="description" style="margin-top: 4px;">Resalta visualmente la fila sobre la que estás trabajando.</p>
+							</div>
+
+							<!-- Estilo de Acciones de Fila -->
+							<div class="wpat-field-group">
+								<label for="tables_ui_actions_style" style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 6px;">
+									🔘 Acciones de Fila (Editar / Ver / Papelera)
+								</label>
+								<select name="wpat_settings[tables_ui_actions_style]" id="tables_ui_actions_style" style="width: 100%; height: 38px; border-radius: 6px;">
+									<option value="modern" <?php selected( $actions_style, 'modern' ); ?>>Botones Modernos con Colores Semánticos</option>
+									<option value="native" <?php selected( $actions_style, 'native' ); ?>>Enlaces Nativos Estilizados</option>
+								</select>
+								<p class="description" style="margin-top: 4px;">Elimina las barras separadoras anticuadas "|" y aplica botones ergonómicos.</p>
+							</div>
+
+						</div>
+
+						<div style="border-top: 1px solid #f1f5f9; margin-top: 20px; padding-top: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+							
+							<!-- Badges de Estado -->
+							<label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+								<input type="checkbox" name="wpat_settings[tables_ui_pills]" value="1" <?php checked( $pills_enabled ); ?> style="margin-top: 3px;" />
+								<div>
+									<strong style="display: block; font-size: 13px; color: #1e293b;">Badges de Estado Modernos (Pills)</strong>
+									<span style="font-size: 12px; color: #64748b;">
+										Transforma "— Borrador", "— Privada" y "— Programada" en elegantes etiquetas redondeadas de color semántico (Verde, Ámbar, Azul, Violeta).
+									</span>
+								</div>
+							</label>
+
+							<!-- Columna de Miniaturas -->
+							<label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+								<input type="checkbox" name="wpat_settings[tables_ui_show_thumbs]" value="1" <?php checked( $thumbs_enabled ); ?> style="margin-top: 3px;" />
+								<div>
+									<strong style="display: block; font-size: 13px; color: #1e293b;">Columna de Imagen Destacada</strong>
+									<span style="font-size: 12px; color: #64748b;">
+										Añade automáticamente una columna visual con la miniatura de la entrada o página en los post types que no dispongan de ella.
+									</span>
+								</div>
+							</label>
+
+							<!-- Zoom de Miniaturas -->
+							<label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+								<input type="checkbox" name="wpat_settings[tables_ui_thumb_zoom]" value="1" <?php checked( $zoom_enabled ); ?> style="margin-top: 3px;" />
+								<div>
+									<strong style="display: block; font-size: 13px; color: #1e293b;">Previsualización Ampliada de Imágenes (Hover Zoom)</strong>
+									<span style="font-size: 12px; color: #64748b;">
+										Muestra una ventana emergente en alta resolución de la imagen al pasar el cursor sobre la miniatura en la tabla.
+									</span>
+								</div>
+							</label>
+
+							<!-- Cabecera Fija -->
+							<label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+								<input type="checkbox" name="wpat_settings[tables_ui_sticky_header]" value="1" <?php checked( $sticky_enabled ); ?> style="margin-top: 3px;" />
+								<div>
+									<strong style="display: block; font-size: 13px; color: #1e293b;">Cabecera Fija al Hacer Scroll (Sticky Header)</strong>
+									<span style="font-size: 12px; color: #64748b;">
+										Mantiene visible la fila de títulos de columna en la parte superior cuando te desplazas por listados largos de entradas o productos.
+									</span>
+								</div>
+							</label>
+
+						</div>
+					</div>
+
+					<!-- BOTÓN GUARDAR AJUSTES -->
+					<div style="display: flex; justify-content: flex-end; gap: 10px;">
+						<button type="submit" class="button button-primary" style="background: #2563eb; border-color: #1d4ed8; font-weight: 700; height: 38px; padding: 0 20px; font-size: 13.5px;">
+							Guardar Configuración de Listados SaaS
+						</button>
+					</div>
+
+				</form>
+
+			</div>
+		</div>
+		<?php
+	}
 }
+
+

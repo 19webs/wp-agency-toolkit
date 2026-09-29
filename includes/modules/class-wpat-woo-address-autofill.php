@@ -43,26 +43,32 @@ class WPAT_Woo_Address_Autofill {
 			return false;
 		}
 
-		if ( function_exists( 'is_checkout' ) && is_checkout() && ! is_order_received_page() && ! is_wc_endpoint_url( 'order-pay' ) ) {
+		if ( function_exists( 'is_wc_endpoint_url' ) ) {
+			if ( is_wc_endpoint_url( 'order-pay' ) || is_wc_endpoint_url( 'order-received' ) ) {
+				return false;
+			}
+		}
+
+		if ( function_exists( 'is_order_received_page' ) && is_order_received_page() ) {
+			return false;
+		}
+
+		if ( function_exists( 'is_checkout' ) && is_checkout() ) {
 			return true;
 		}
 
 		if ( function_exists( 'wc_get_page_id' ) ) {
 			$checkout_id = wc_get_page_id( 'checkout' );
-			if ( $checkout_id && is_page( $checkout_id ) && ! is_order_received_page() ) {
+			if ( $checkout_id && is_page( $checkout_id ) ) {
 				return true;
 			}
 		}
 
 		global $post;
-		if ( is_a( $post, 'WP_Post' ) ) {
-			if ( has_shortcode( $post->post_content, 'woocommerce_checkout' ) || has_block( 'woocommerce/checkout', $post ) ) {
+		if ( is_a( $post, 'WP_Post' ) && ! empty( $post->post_content ) ) {
+			if ( has_shortcode( $post->post_content, 'woocommerce_checkout' ) || ( function_exists( 'has_block' ) && has_block( 'woocommerce/checkout', $post ) ) ) {
 				return true;
 			}
-		}
-
-		if ( isset( $_SERVER['REQUEST_URI'] ) && strpos( sanitize_text_field( $_SERVER['REQUEST_URI'] ), 'checkout' ) !== false && ! is_order_received_page() ) {
-			return true;
 		}
 
 		return false;

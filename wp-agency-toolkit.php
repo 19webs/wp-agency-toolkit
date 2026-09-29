@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.99
+ * Version:     4.3.100
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.99' );
+define( 'WPAT_VERSION', '4.3.100' );
 define( 'WPAT_FILE', __FILE__ );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_DIR', WPAT_PATH );
@@ -219,6 +219,10 @@ class WPAT_Main {
 		'qr-generator' => array(
 			'file'  => 'includes/modules/class-wpat-qr-generator.php',
 			'class' => 'WPAT_QR_Generator',
+		),
+		'woo-direct-checkout' => array(
+			'file'  => 'includes/modules/class-wpat-woo-direct-checkout.php',
+			'class' => 'WPAT_Woo_Direct_Checkout',
 		),
 	);
 
@@ -710,6 +714,23 @@ class WPAT_Main {
 				'qp_require_billing_address'         => '1',
 				'qp_require_phone'                   => '1',
 				'qp_require_dni'                     => '1',
+
+				// Opciones de Compra Directa & Saltar Carrito (Direct Checkout)
+				'woo-direct-checkout'                => '0',
+				'woo_dc_mode'                        => 'replace',
+				'woo_dc_button_text'                 => 'Comprar Ahora',
+				'woo_dc_archive_button_text'         => 'Comprar Ya',
+				'woo_dc_dual_button_text'            => '⚡ Comprar Ahora',
+				'woo_dc_btn_bg'                      => '#059669',
+				'woo_dc_btn_color'                   => '#ffffff',
+				'woo_dc_empty_cart'                  => '0',
+				'woo_dc_redirect_cart_page'          => '0',
+				'woo_dc_archives'                    => '1',
+				'woo_dc_applies_to'                  => 'all',
+				'woo_dc_included_products'           => array(),
+				'woo_dc_excluded_products'           => array(),
+				'woo_dc_included_categories'         => array(),
+				'woo_dc_excluded_categories'         => array(),
 			)
 		);
 

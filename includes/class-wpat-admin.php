@@ -657,6 +657,30 @@ class WPAT_Admin {
 
 		// Detectar si la petición proviene de la vista independiente de un módulo específico
 		$saving_module = isset( $_POST['wpat_saving_module'] ) ? sanitize_key( $_POST['wpat_saving_module'] ) : ( isset( $_GET['mod'] ) ? sanitize_key( $_GET['mod'] ) : '' );
+		if ( empty( $saving_module ) && isset( $_GET['page'] ) ) {
+			$page_map = array(
+				'wpat-woo-extra-options'     => 'woo-extra-options',
+				'wpat-woo-checkout-designer' => 'woo-checkout-designer',
+				'wpat-woo-sale-badges'       => 'woo-sale-badges',
+				'wpat-woo-address-autofill'  => 'woo-address-autofill',
+				'wpat-snippets'              => 'snippets',
+				'wpat-woo-pdf-invoices'      => 'woo-pdf-invoices',
+				'wpat-login-customizer'      => 'login-customizer',
+				'wpat-seo'                   => 'seo',
+				'wpat-sitemap-xml'           => 'sitemap-xml',
+				'wpat-error-log-viewer'      => 'error-log-viewer',
+				'wpat-role-manager'          => 'role-manager',
+				'wpat-cookie-consent'        => 'cookie-consent',
+				'wpat-quick-pay'             => 'quick-pay',
+				'wpat-woo-direct-checkout'   => 'woo-direct-checkout',
+				'wpat-qr-generator'          => 'qr-generator',
+				'wpat-client-studio'         => 'client-studio',
+				'wpat-tools'                 => 'tools',
+			);
+			if ( isset( $page_map[ $_GET['page'] ] ) ) {
+				$saving_module = $page_map[ $_GET['page'] ];
+			}
+		}
 
 		// Preservar todos los ajustes existentes para evitar borrar datos de otros módulos
 		$new_settings = $current_settings;
@@ -707,6 +731,7 @@ class WPAT_Admin {
 			'role-manager',
 			'cookie-consent',
 			'quick-pay',
+			'woo-direct-checkout',
 			'tools',
 		);
 
@@ -1489,7 +1514,7 @@ class WPAT_Admin {
 		}
 
 		// Sanitizar Venta Directa & Pagos Rápidos (Quick Pay)
-		if ( empty( $saving_module ) || 'quick-pay' === $saving_module ) {
+		if ( 'quick-pay' === $saving_module || ( empty( $saving_module ) && ( isset( $input_settings['qp_currency_symbol'] ) || isset( $input_settings['qp_stripe_mode'] ) ) ) ) {
 			if ( isset( $input_settings['qp_currency'] ) ) {
 				$new_settings['qp_currency'] = sanitize_text_field( $input_settings['qp_currency'] );
 			}
@@ -1553,6 +1578,24 @@ class WPAT_Admin {
 			$new_settings['qp_require_billing_address'] = isset( $input_settings['qp_require_billing_address'] ) && '1' === $input_settings['qp_require_billing_address'] ? '1' : '0';
 			$new_settings['qp_require_phone']           = isset( $input_settings['qp_require_phone'] ) && '1' === $input_settings['qp_require_phone'] ? '1' : '0';
 			$new_settings['qp_require_dni']             = isset( $input_settings['qp_require_dni'] ) && '1' === $input_settings['qp_require_dni'] ? '1' : '0';
+		}
+
+		// Sanitizar Compra Directa & Saltar Carrito (Direct Checkout)
+		if ( 'woo-direct-checkout' === $saving_module || ( empty( $saving_module ) && isset( $input_settings['woo_dc_mode'] ) ) ) {
+			$new_settings['woo_dc_mode']                = isset( $input_settings['woo_dc_mode'] ) && in_array( $input_settings['woo_dc_mode'], array( 'replace', 'dual_button', 'redirect_only' ), true ) ? $input_settings['woo_dc_mode'] : 'replace';
+			$new_settings['woo_dc_button_text']         = isset( $input_settings['woo_dc_button_text'] ) ? sanitize_text_field( $input_settings['woo_dc_button_text'] ) : 'Comprar Ahora';
+			$new_settings['woo_dc_archive_button_text'] = isset( $input_settings['woo_dc_archive_button_text'] ) ? sanitize_text_field( $input_settings['woo_dc_archive_button_text'] ) : 'Comprar Ya';
+			$new_settings['woo_dc_dual_button_text']    = isset( $input_settings['woo_dc_dual_button_text'] ) ? sanitize_text_field( $input_settings['woo_dc_dual_button_text'] ) : '⚡ Comprar Ahora';
+			$new_settings['woo_dc_btn_bg']              = isset( $input_settings['woo_dc_btn_bg'] ) ? sanitize_hex_color( $input_settings['woo_dc_btn_bg'] ) : '#059669';
+			$new_settings['woo_dc_btn_color']           = isset( $input_settings['woo_dc_btn_color'] ) ? sanitize_hex_color( $input_settings['woo_dc_btn_color'] ) : '#ffffff';
+			$new_settings['woo_dc_empty_cart']          = isset( $input_settings['woo_dc_empty_cart'] ) && '1' === $input_settings['woo_dc_empty_cart'] ? '1' : '0';
+			$new_settings['woo_dc_redirect_cart_page']  = isset( $input_settings['woo_dc_redirect_cart_page'] ) && '1' === $input_settings['woo_dc_redirect_cart_page'] ? '1' : '0';
+			$new_settings['woo_dc_archives']            = isset( $input_settings['woo_dc_archives'] ) && '1' === $input_settings['woo_dc_archives'] ? '1' : '0';
+			$new_settings['woo_dc_applies_to']          = isset( $input_settings['woo_dc_applies_to'] ) && in_array( $input_settings['woo_dc_applies_to'], array( 'all', 'include_products', 'exclude_products', 'include_categories', 'exclude_categories' ), true ) ? $input_settings['woo_dc_applies_to'] : 'all';
+			$new_settings['woo_dc_included_products']   = isset( $input_settings['woo_dc_included_products'] ) && is_array( $input_settings['woo_dc_included_products'] ) ? array_map( 'intval', $input_settings['woo_dc_included_products'] ) : array();
+			$new_settings['woo_dc_excluded_products']   = isset( $input_settings['woo_dc_excluded_products'] ) && is_array( $input_settings['woo_dc_excluded_products'] ) ? array_map( 'intval', $input_settings['woo_dc_excluded_products'] ) : array();
+			$new_settings['woo_dc_included_categories'] = isset( $input_settings['woo_dc_included_categories'] ) && is_array( $input_settings['woo_dc_included_categories'] ) ? array_map( 'intval', $input_settings['woo_dc_included_categories'] ) : array();
+			$new_settings['woo_dc_excluded_categories'] = isset( $input_settings['woo_dc_excluded_categories'] ) && is_array( $input_settings['woo_dc_excluded_categories'] ) ? array_map( 'intval', $input_settings['woo_dc_excluded_categories'] ) : array();
 		}
 
 		// Preservar colecciones gestionadas independientemente
@@ -2800,6 +2843,7 @@ class WPAT_Admin {
 				'wpat-role-manager'      => 'role-manager',
 				'wpat-cookie-consent'    => 'cookie-consent',
 				'wpat-quick-pay'         => 'quick-pay',
+				'wpat-woo-direct-checkout' => 'woo-direct-checkout',
 				'wpat-qr-generator'      => 'qr-generator',
 				'wpat-client-studio'     => 'client-studio',
 				'wpat-tools'             => 'tools',
@@ -3121,6 +3165,18 @@ class WPAT_Admin {
 				'icon'        => '🛒',
 				'icon_bg'     => 'woo',
 				'keywords'    => 'checkout carrito cart diseñador plantillas woocommerce plantilla classic express minimalista acordeon deslizable drawer'
+			),
+			array(
+				'id'          => 'woo-direct-checkout',
+				'is_new'      => true,
+				'title'       => 'Compra Directa & Saltar Carrito',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Redirige automáticamente al checkout al añadir productos, con botón dual "Comprar Ahora", vaciado opcional y filtros.',
+				'cat_class'   => 'cat-woocommerce cat-woo',
+				'icon'        => '⚡',
+				'icon_bg'     => 'woo',
+				'keywords'    => 'compra directa direct checkout saltar carrito comprar ahora 1 clic pago rapido express checkout'
 			),
 
 			array(
@@ -5207,6 +5263,177 @@ class WPAT_Admin {
 
 									
 								</div>
+				<?php
+				break;
+			case 'woo-direct-checkout':
+				$dc_mode          = isset( $settings['woo_dc_mode'] ) ? $settings['woo_dc_mode'] : 'replace';
+				$dc_btn_text      = isset( $settings['woo_dc_button_text'] ) ? $settings['woo_dc_button_text'] : 'Comprar Ahora';
+				$dc_arch_btn_text = isset( $settings['woo_dc_archive_button_text'] ) ? $settings['woo_dc_archive_button_text'] : 'Comprar Ya';
+				$dc_dual_btn_text = isset( $settings['woo_dc_dual_button_text'] ) ? $settings['woo_dc_dual_button_text'] : '⚡ Comprar Ahora';
+				$dc_btn_bg        = isset( $settings['woo_dc_btn_bg'] ) ? $settings['woo_dc_btn_bg'] : '#059669';
+				$dc_btn_color     = isset( $settings['woo_dc_btn_color'] ) ? $settings['woo_dc_btn_color'] : '#ffffff';
+				$dc_empty_cart    = isset( $settings['woo_dc_empty_cart'] ) && '1' === $settings['woo_dc_empty_cart'];
+				$dc_redirect_cart = isset( $settings['woo_dc_redirect_cart_page'] ) && '1' === $settings['woo_dc_redirect_cart_page'];
+				$dc_archives      = ! isset( $settings['woo_dc_archives'] ) || '1' === $settings['woo_dc_archives'];
+				$dc_applies_to    = isset( $settings['woo_dc_applies_to'] ) ? $settings['woo_dc_applies_to'] : 'all';
+				$dc_inc_cats      = isset( $settings['woo_dc_included_categories'] ) && is_array( $settings['woo_dc_included_categories'] ) ? array_map( 'intval', $settings['woo_dc_included_categories'] ) : array();
+				$dc_exc_cats      = isset( $settings['woo_dc_excluded_categories'] ) && is_array( $settings['woo_dc_excluded_categories'] ) ? array_map( 'intval', $settings['woo_dc_excluded_categories'] ) : array();
+
+				// Obtener categorías de producto
+				$product_cats = array();
+				if ( taxonomy_exists( 'product_cat' ) ) {
+					$product_cats = get_terms( array(
+						'taxonomy'   => 'product_cat',
+						'hide_empty' => false,
+					) );
+					if ( is_wp_error( $product_cats ) ) {
+						$product_cats = array();
+					}
+				}
+				?>
+				<div class="wpat-module-card">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Compra Directa & Saltar Carrito (Direct Checkout)</h3>
+							<p>Acelera las ventas enviando al comprador directamente a la pantalla de finalizar compra (/checkout) sin pasar por el carrito.</p>
+						</div>
+						<?php $this->render_module_toggle( 'woo-direct-checkout', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block; padding: 22px;">
+
+						<!-- 1. MODO DE FUNCIONAMIENTO -->
+						<div class="wpat-field-group" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+							<label style="font-size: 14px; font-weight: 800; color: #0f172a; display: block; margin-bottom: 10px;">
+								🎯 Modo de Compra Directa
+							</label>
+							<div style="display: flex; flex-direction: column; gap: 12px;">
+								<label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+									<input type="radio" name="wpat_settings[woo_dc_mode]" value="replace" <?php checked( $dc_mode, 'replace' ); ?> style="margin-top: 3px;" />
+									<div>
+										<strong style="color: #1e293b; font-size: 13.5px;">Reemplazar botón "Añadir al carrito" (Recomendado)</strong>
+										<span style="display: block; font-size: 12px; color: #64748b;">Cambia el botón principal por "Comprar Ahora" y redirige al checkout inmediatamente al pulsarlo.</span>
+									</div>
+								</label>
+
+								<label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+									<input type="radio" name="wpat_settings[woo_dc_mode]" value="dual_button" <?php checked( $dc_mode, 'dual_button' ); ?> style="margin-top: 3px;" />
+									<div>
+										<strong style="color: #1e293b; font-size: 13.5px;">Botón Dual ("Comprar Ahora" adicional)</strong>
+										<span style="display: block; font-size: 12px; color: #64748b;">Mantiene el botón nativo de añadir al carrito y añade un segundo botón destacado "Comprar Ahora" al lado.</span>
+									</div>
+								</label>
+
+								<label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+									<input type="radio" name="wpat_settings[woo_dc_mode]" value="redirect_only" <?php checked( $dc_mode, 'redirect_only' ); ?> style="margin-top: 3px;" />
+									<div>
+										<strong style="color: #1e293b; font-size: 13.5px;">Solo Redirección Silenciosa</strong>
+										<span style="display: block; font-size: 12px; color: #64748b;">Mantiene los textos originales del botón pero redirige a /checkout automáticamente tras añadir.</span>
+									</div>
+								</label>
+							</div>
+						</div>
+
+						<!-- 2. TEXTOS Y COLORES -->
+						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px;">
+							<div class="wpat-field-group">
+								<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Texto del Botón en Ficha de Producto</label>
+								<input type="text" name="wpat_settings[woo_dc_button_text]" value="<?php echo esc_attr( $dc_btn_text ); ?>" placeholder="Comprar Ahora" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+								<p class="description" style="font-size: 11.5px; margin-top: 3px;">Se usa cuando el modo es "Reemplazar botón".</p>
+							</div>
+
+							<div class="wpat-field-group">
+								<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Texto del Botón en Catálogo / Tienda</label>
+								<input type="text" name="wpat_settings[woo_dc_archive_button_text]" value="<?php echo esc_attr( $dc_arch_btn_text ); ?>" placeholder="Comprar Ya" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+								<p class="description" style="font-size: 11.5px; margin-top: 3px;">Para los botones en bucles de tienda para productos simples.</p>
+							</div>
+
+							<div class="wpat-field-group">
+								<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Texto del Botón Dual (Segundo Botón)</label>
+								<input type="text" name="wpat_settings[woo_dc_dual_button_text]" value="<?php echo esc_attr( $dc_dual_btn_text ); ?>" placeholder="⚡ Comprar Ahora" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+								<p class="description" style="font-size: 11.5px; margin-top: 3px;">Se usa en el modo "Botón Dual".</p>
+							</div>
+
+							<div class="wpat-field-group">
+								<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Colores del Botón Dual</label>
+								<div style="display: flex; gap: 12px; align-items: center; margin-top: 4px;">
+									<div style="display: flex; align-items: center; gap: 6px;">
+										<input type="color" name="wpat_settings[woo_dc_btn_bg]" value="<?php echo esc_attr( $dc_btn_bg ); ?>" style="width: 36px; height: 34px; padding: 1px; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer;" />
+										<span style="font-size: 11.5px; color: #64748b;">Fondo</span>
+									</div>
+									<div style="display: flex; align-items: center; gap: 6px;">
+										<input type="color" name="wpat_settings[woo_dc_btn_color]" value="<?php echo esc_attr( $dc_btn_color ); ?>" style="width: 36px; height: 34px; padding: 1px; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer;" />
+										<span style="font-size: 11.5px; color: #64748b;">Texto</span>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- 3. COMPORTAMIENTO DEL CARRITO -->
+						<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+							<label style="font-size: 14px; font-weight: 800; color: #0f172a; display: block; margin-bottom: 12px;">
+								🛒 Comportamiento del Carrito y Redirección
+							</label>
+							<div style="display: flex; flex-direction: column; gap: 10px;">
+								<label style="font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[woo_dc_empty_cart]" value="1" <?php checked( $dc_empty_cart ); ?> />
+									<span><strong>Vaciar el carrito antes de comprar:</strong> Elimina otros artículos previos y deja solo el nuevo producto al ir al checkout (ideal para suscripciones, servicios o venta 1 a 1).</span>
+								</label>
+
+								<label style="font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[woo_dc_redirect_cart_page]" value="1" <?php checked( $dc_redirect_cart ); ?> />
+									<span><strong>Saltar página de carrito (/cart):</strong> Redirige automáticamente cualquier acceso directo a /cart hacia /checkout si el carrito tiene productos.</span>
+								</label>
+
+								<label style="font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[woo_dc_archives]" value="1" <?php checked( $dc_archives ); ?> />
+									<span><strong>Aplicar en tienda y catálogo:</strong> Redirige al checkout también cuando el usuario pulsa en añadir al carrito en cuadrículas de productos.</span>
+								</label>
+							</div>
+						</div>
+
+						<!-- 4. SEGMENTACIÓN Y ALCANCE -->
+						<div class="wpat-field-group" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px;">
+							<label style="font-size: 14px; font-weight: 800; color: #0f172a; display: block; margin-bottom: 8px;">
+								🏷️ Alcance de Productos
+							</label>
+							<select name="wpat_settings[woo_dc_applies_to]" id="wpat_woo_dc_applies_to" style="width: 100%; max-width: 380px; height: 36px; border-radius: 6px; margin-bottom: 14px;">
+								<option value="all" <?php selected( $dc_applies_to, 'all' ); ?>>🌐 Todos los productos de la tienda</option>
+								<option value="include_categories" <?php selected( $dc_applies_to, 'include_categories' ); ?>>📁 Solo en categorías seleccionadas</option>
+								<option value="exclude_categories" <?php selected( $dc_applies_to, 'exclude_categories' ); ?>>🚫 Excluir categorías seleccionadas</option>
+							</select>
+
+							<?php if ( ! empty( $product_cats ) ) : ?>
+								<div id="wpat_woo_dc_cats_wrapper" style="display: <?php echo ( 'all' !== $dc_applies_to ) ? 'block' : 'none'; ?>; max-height: 180px; overflow-y: auto; background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 14px;">
+									<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px;">
+										<?php foreach ( $product_cats as $cat ) : ?>
+											<?php
+											$checked_cat = ( 'include_categories' === $dc_applies_to && in_array( (int) $cat->term_id, $dc_inc_cats, true ) ) || ( 'exclude_categories' === $dc_applies_to && in_array( (int) $cat->term_id, $dc_exc_cats, true ) );
+											$cat_field_name = ( 'exclude_categories' === $dc_applies_to ) ? 'wpat_settings[woo_dc_excluded_categories][]' : 'wpat_settings[woo_dc_included_categories][]';
+											?>
+											<label style="font-size: 12.5px; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+												<input type="checkbox" name="<?php echo esc_attr( $cat_field_name ); ?>" value="<?php echo esc_attr( $cat->term_id ); ?>" <?php checked( $checked_cat ); ?> />
+												<span><?php echo esc_html( $cat->name ); ?> (<?php echo intval( $cat->count ); ?>)</span>
+											</label>
+										<?php endforeach; ?>
+									</div>
+								</div>
+								<script>
+								jQuery(document).ready(function($) {
+									$('#wpat_woo_dc_applies_to').on('change', function() {
+										var val = $(this).val();
+										if (val === 'all') {
+											$('#wpat_woo_dc_cats_wrapper').slideUp(120);
+										} else {
+											$('#wpat_woo_dc_cats_wrapper').slideDown(120);
+										}
+									});
+								});
+								</script>
+							<?php endif; ?>
+						</div>
+
+					</div>
+				</div>
 				<?php
 				break;
 			case 'woo-zoom':
@@ -11902,6 +12129,7 @@ class WPAT_Admin {
 		$curr_sym = isset( $settings['qp_currency_symbol'] ) ? $settings['qp_currency_symbol'] : '€';
 		$admin_nonce = wp_create_nonce( 'wpat_quick_pay_admin_nonce' );
 		?>
+		<input type="hidden" name="wpat_saving_module" value="quick-pay" />
 		<input type="hidden" id="wpat_qp_active_subtab" name="wpat_active_subtab" value="<?php echo esc_attr( $active_subtab ); ?>" />
 		<input type="hidden" id="wpat_qp_admin_nonce_field" value="<?php echo esc_attr( $admin_nonce ); ?>" />
 

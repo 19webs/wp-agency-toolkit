@@ -3,6 +3,13 @@
  */
 jQuery(document).ready(function($) {
 
+	function safeEscape(val) {
+		if (window.CSS && typeof window.CSS.escape === 'function') {
+			return window.CSS.escape(val);
+		}
+		return val.replace(/([ #;?%&,.+*~\':"!^$[\]()=>|\/@])/g, '\\$1');
+	}
+
 	// Manejo de clic en botón de Swatch
 	$(document).on('click', '.wpat-vswatch-btn', function(e) {
 		e.preventDefault();
@@ -71,7 +78,7 @@ jQuery(document).ready(function($) {
 				}
 
 				// Comprobar si la opción está habilitada en el select nativo
-				if ($select.find('option[value="' + CSS.escape(btnVal) + '"]').length === 0 && btnVal !== '') {
+				if (btnVal !== '' && $select.find('option[value="' + safeEscape(btnVal) + '"]').length === 0) {
 					$btn.addClass('disabled').attr('aria-disabled', 'true');
 				} else {
 					$btn.removeClass('disabled').removeAttr('aria-disabled');

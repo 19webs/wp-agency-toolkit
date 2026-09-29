@@ -1,6 +1,8 @@
 <?php
 /**
  * Módulo: Swatches de Variación de Producto (WooCommerce) - WP Agency Toolkit
+ *
+ * @package WP_Agency_Toolkit
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -91,6 +93,16 @@ class WPAT_Woo_Variation_Swatches {
 	}
 
 	/**
+	 * Comprueba si el módulo está activo.
+	 *
+	 * @return bool
+	 */
+	public function is_active() {
+		$settings = WPAT_Main::get_instance()->get_settings();
+		return ( ( isset( $settings['woo-variation-swatches'] ) && '1' === (string) $settings['woo-variation-swatches'] ) || ( isset( $settings['variation_swatches_enabled'] ) && '1' === (string) $settings['variation_swatches_enabled'] ) );
+	}
+
+	/**
 	 * Constructor.
 	 */
 	private function __construct() {
@@ -99,18 +111,18 @@ class WPAT_Woo_Variation_Swatches {
 
 		// Inyectar estilos CSS y scripts JS en la página de producto
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
+		add_action( 'wp_head', array( $this, 'output_frontend_styles' ), 100 );
 	}
 
 	/**
-	 * Inyecta los activos de frontend para swatches.
+	 * Inyecta los activos JS para swatches.
 	 */
 	public function enqueue_frontend_assets() {
-		if ( ! is_product() ) {
+		if ( ! $this->is_active() ) {
 			return;
 		}
 
-		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['woo-variation-swatches'] ) && empty( $settings['variation_swatches_enabled'] ) ) {
+		if ( ! function_exists( 'is_product' ) || ! is_product() ) {
 			return;
 		}
 
@@ -122,20 +134,34 @@ class WPAT_Woo_Variation_Swatches {
 			WPAT_VERSION,
 			true
 		);
+	}
 
-		// CSS inline para swatches de variación
+	/**
+	 * Inyecta estilos CSS en el head de forma segura.
+	 */
+	public function output_frontend_styles() {
+		if ( ! $this->is_active() ) {
+			return;
+		}
+
+		if ( ! function_exists( 'is_product' ) || ! is_product() ) {
+			return;
+		}
+
+		$settings     = WPAT_Main::get_instance()->get_settings();
 		$shape_radius = ( isset( $settings['variation_swatches_shape'] ) && 'square' === $settings['variation_swatches_shape'] ) ? '6px' : '50%';
-
-		$custom_css = "
+		?>
+		<style id="wpat-woo-variation-swatches-css">
 			.wpat-variation-swatches-wrap { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; margin-bottom: 12px; }
-			.wpat-vswatch-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; padding: 0 10px; border-radius: {$shape_radius}; border: 1.5px solid #cbd5e1; background: #ffffff; color: #1e293b; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; outline: none; user-select: none; }
+			.wpat-vswatch-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; padding: 0 10px; border-radius: <?php echo esc_attr( $shape_radius ); ?>; border: 1.5px solid #cbd5e1; background: #ffffff; color: #1e293b; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; outline: none; user-select: none; }
 			.wpat-vswatch-btn:hover { border-color: #94a3b8; transform: translateY(-1px); }
 			.wpat-vswatch-btn.selected { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3); font-weight: 700; background-color: #f0f6ff; }
-			.wpat-vswatch-btn.wpat-vswatch-color { padding: 0; min-width: 32px; width: 32px; height: 32px; border-radius: {$shape_radius}; border: 2px solid #ffffff; box-shadow: 0 0 0 1px #cbd5e1; }
+			.wpat-vswatch-btn.wpat-vswatch-color { padding: 0; min-width: 32px; width: 32px; height: 32px; border-radius: <?php echo esc_attr( $shape_radius ); ?>; border: 2px solid #ffffff; box-shadow: 0 0 0 1px #cbd5e1; }
 			.wpat-vswatch-btn.wpat-vswatch-color.selected { box-shadow: 0 0 0 2.5px #2563eb; transform: scale(1.1); }
 			.wpat-vswatch-btn.disabled { opacity: 0.4; cursor: not-allowed; text-decoration: line-through; pointer-events: none; }
-		";
-		wp_add_inline_style( 'woocommerce-inline', $custom_css );
+			.wpat-vswatch-hidden-select { display: none !important; }
+		</style>
+		<?php
 	}
 
 	/**
@@ -146,109 +172,120 @@ class WPAT_Woo_Variation_Swatches {
 	 * @return string
 	 */
 	public function render_variation_swatches( $html, $args ) {
+		if ( ! $this->is_active() ) {
+			return $html;
+		}
+
+		if ( ! is_array( $args ) ) {
+			return $html;
+		}
+
+		$options   = isset( $args['options'] ) && is_array( $args['options'] ) ? $args['options'] : array();
+		$product   = isset( $args['product'] ) ? $args['product'] : null;
+		$attribute = isset( $args['attribute'] ) ? (string) $args['attribute'] : '';
+		$name      = ! empty( $args['name'] ) ? (string) $args['name'] : 'attribute_' . sanitize_title( $attribute );
+		$id        = ! empty( $args['id'] ) ? (string) $args['id'] : sanitize_title( $attribute );
+		$selected  = isset( $args['selected'] ) ? (string) $args['selected'] : '';
+
+		if ( empty( $options ) || ! ( $product instanceof WC_Product ) || empty( $attribute ) ) {
+			return $html;
+		}
+
 		$settings = WPAT_Main::get_instance()->get_settings();
-		if ( empty( $settings['woo-variation-swatches'] ) && empty( $settings['variation_swatches_enabled'] ) ) {
-			return $html;
-		}
-
-		$options   = $args['options'];
-		$product   = $args['product'];
-		$attribute = $args['attribute'];
-		$name      = $args['name'] ? $args['name'] : 'attribute_' . sanitize_title( $attribute );
-		$id        = $args['id'] ? $args['id'] : sanitize_title( $attribute );
-		$selected  = $args['selected'];
-
-		if ( empty( $options ) || ! $product ) {
-			return $html;
-		}
 
 		// Detectar si es un atributo de tipo Color
-		$attr_name_lower = strtolower( remove_accents( wc_attribute_label( $attribute, $product ) ) );
+		$attr_label      = function_exists( 'wc_attribute_label' ) ? wc_attribute_label( $attribute, $product ) : $attribute;
+		$attr_name_lower = strtolower( remove_accents( (string) $attr_label ) );
 		$is_color_attr   = ( strpos( $attr_name_lower, 'color' ) !== false || strpos( $attr_name_lower, 'colour' ) !== false || strpos( $attr_name_lower, 'acabado' ) !== false );
 
 		// Obtener mapa personalizado de colores configurado en admin
 		$user_color_map = array();
 		if ( ! empty( $settings['variation_swatches_colors'] ) ) {
-			$lines = preg_split( '/\r\n|\r|\n/', $settings['variation_swatches_colors'] );
-			foreach ( $lines as $l ) {
-				$parts = explode( '|', trim( $l ) );
-				if ( count( $parts ) >= 2 ) {
-					$user_color_map[ strtolower( remove_accents( trim( $parts[0] ) ) ) ] = trim( $parts[1] );
+			$lines = preg_split( '/\r\n|\r|\n/', (string) $settings['variation_swatches_colors'] );
+			if ( is_array( $lines ) ) {
+				foreach ( $lines as $l ) {
+					$parts = explode( '|', trim( $l ) );
+					if ( count( $parts ) >= 2 ) {
+						$user_color_map[ strtolower( remove_accents( trim( $parts[0] ) ) ) ] = trim( $parts[1] );
+					}
 				}
 			}
 		}
 
-		$swatches_html = '<div class="wpat-variation-swatches-wrap" data-select-id="' . esc_attr( $id ) . '" role="radiogroup" aria-label="' . esc_attr( wc_attribute_label( $attribute, $product ) ) . '">';
+		$swatches_html = '<div class="wpat-variation-swatches-wrap" data-select-id="' . esc_attr( $id ) . '" role="radiogroup" aria-label="' . esc_attr( $attr_label ) . '">';
 
-		if ( taxonomy_exists( $attribute ) ) {
+		if ( taxonomy_exists( $attribute ) && function_exists( 'wc_get_product_terms' ) ) {
 			$terms = wc_get_product_terms( $product->get_id(), $attribute, array( 'fields' => 'all' ) );
-			foreach ( $terms as $term ) {
-				if ( ! in_array( $term->slug, $options, true ) ) {
-					continue;
-				}
-
-				$term_name = $term->name;
-				$term_slug = $term->slug;
-				$is_selected = ( $selected === $term_slug );
-
-				if ( $is_color_attr ) {
-					$key_lower = strtolower( remove_accents( $term_name ) );
-					$slug_lower = strtolower( remove_accents( $term_slug ) );
-
-					$color_hex = '#cbd5e1';
-					if ( isset( $user_color_map[ $key_lower ] ) ) {
-						$color_hex = $user_color_map[ $key_lower ];
-					} elseif ( isset( $user_color_map[ $slug_lower ] ) ) {
-						$color_hex = $user_color_map[ $slug_lower ];
-					} elseif ( isset( $this->default_color_map[ $key_lower ] ) ) {
-						$color_hex = $this->default_color_map[ $key_lower ];
-					} elseif ( isset( $this->default_color_map[ $slug_lower ] ) ) {
-						$color_hex = $this->default_color_map[ $slug_lower ];
+			if ( is_array( $terms ) && ! is_wp_error( $terms ) ) {
+				foreach ( $terms as $term ) {
+					if ( ! is_object( $term ) || ! isset( $term->slug ) || ! in_array( $term->slug, $options, true ) ) {
+						continue;
 					}
 
-					$sel_class = $is_selected ? ' selected' : '';
-					$border_style = ( '#ffffff' === strtolower( $color_hex ) || '#fff' === strtolower( $color_hex ) ) ? 'box-shadow: 0 0 0 1px #94a3b8;' : '';
+					$term_name   = isset( $term->name ) ? (string) $term->name : (string) $term->slug;
+					$term_slug   = (string) $term->slug;
+					$is_selected = ( $selected === $term_slug );
 
-					$swatches_html .= sprintf(
-						'<button type="button" class="wpat-vswatch-btn wpat-vswatch-color%s" data-value="%s" title="%s" aria-label="%s" role="radio" aria-checked="%s" style="background-color: %s; %s"></button>',
-						esc_attr( $sel_class ),
-						esc_attr( $term_slug ),
-						esc_attr( $term_name ),
-						esc_attr( $term_name ),
-						$is_selected ? 'true' : 'false',
-						esc_attr( $color_hex ),
-						$border_style
-					);
-				} else {
-					// Swatch de Botón / Pill (Talla, etc.)
-					$sel_class = $is_selected ? ' selected' : '';
-					$swatches_html .= sprintf(
-						'<button type="button" class="wpat-vswatch-btn wpat-vswatch-label%s" data-value="%s" aria-label="%s" role="radio" aria-checked="%s">%s</button>',
-						esc_attr( $sel_class ),
-						esc_attr( $term_slug ),
-						esc_attr( $term_name ),
-						$is_selected ? 'true' : 'false',
-						esc_html( $term_name )
-					);
+					if ( $is_color_attr ) {
+						$key_lower  = strtolower( remove_accents( $term_name ) );
+						$slug_lower = strtolower( remove_accents( $term_slug ) );
+
+						$color_hex = '#cbd5e1';
+						if ( isset( $user_color_map[ $key_lower ] ) ) {
+							$color_hex = $user_color_map[ $key_lower ];
+						} elseif ( isset( $user_color_map[ $slug_lower ] ) ) {
+							$color_hex = $user_color_map[ $slug_lower ];
+						} elseif ( isset( $this->default_color_map[ $key_lower ] ) ) {
+							$color_hex = $this->default_color_map[ $key_lower ];
+						} elseif ( isset( $this->default_color_map[ $slug_lower ] ) ) {
+							$color_hex = $this->default_color_map[ $slug_lower ];
+						}
+
+						$sel_class    = $is_selected ? ' selected' : '';
+						$border_style = ( '#ffffff' === strtolower( $color_hex ) || '#fff' === strtolower( $color_hex ) ) ? 'box-shadow: 0 0 0 1px #94a3b8;' : '';
+
+						$swatches_html .= sprintf(
+							'<button type="button" class="wpat-vswatch-btn wpat-vswatch-color%s" data-value="%s" title="%s" aria-label="%s" role="radio" aria-checked="%s" style="background-color: %s; %s"></button>',
+							esc_attr( $sel_class ),
+							esc_attr( $term_slug ),
+							esc_attr( $term_name ),
+							esc_attr( $term_name ),
+							$is_selected ? 'true' : 'false',
+							esc_attr( $color_hex ),
+							$border_style
+						);
+					} else {
+						// Swatch de Botón / Pill (Talla, etc.)
+						$sel_class = $is_selected ? ' selected' : '';
+						$swatches_html .= sprintf(
+							'<button type="button" class="wpat-vswatch-btn wpat-vswatch-label%s" data-value="%s" aria-label="%s" role="radio" aria-checked="%s">%s</button>',
+							esc_attr( $sel_class ),
+							esc_attr( $term_slug ),
+							esc_attr( $term_name ),
+							$is_selected ? 'true' : 'false',
+							esc_html( $term_name )
+						);
+					}
 				}
 			}
 		} else {
 			// Atributo personalizado no taxonómico
 			foreach ( $options as $option ) {
-				$is_selected = ( $selected === $option );
+				$option_str  = (string) $option;
+				$is_selected = ( $selected === $option_str );
 				$sel_class   = $is_selected ? ' selected' : '';
 
 				if ( $is_color_attr ) {
-					$key_lower = strtolower( remove_accents( trim( $option ) ) );
+					$key_lower = strtolower( remove_accents( trim( $option_str ) ) );
 					$color_hex = isset( $user_color_map[ $key_lower ] ) ? $user_color_map[ $key_lower ] : ( isset( $this->default_color_map[ $key_lower ] ) ? $this->default_color_map[ $key_lower ] : '#cbd5e1' );
 					$border_style = ( '#ffffff' === strtolower( $color_hex ) || '#fff' === strtolower( $color_hex ) ) ? 'box-shadow: 0 0 0 1px #94a3b8;' : '';
 
 					$swatches_html .= sprintf(
 						'<button type="button" class="wpat-vswatch-btn wpat-vswatch-color%s" data-value="%s" title="%s" aria-label="%s" role="radio" aria-checked="%s" style="background-color: %s; %s"></button>',
 						esc_attr( $sel_class ),
-						esc_attr( $option ),
-						esc_attr( $option ),
-						esc_attr( $option ),
+						esc_attr( $option_str ),
+						esc_attr( $option_str ),
+						esc_attr( $option_str ),
 						$is_selected ? 'true' : 'false',
 						esc_attr( $color_hex ),
 						$border_style
@@ -257,10 +294,10 @@ class WPAT_Woo_Variation_Swatches {
 					$swatches_html .= sprintf(
 						'<button type="button" class="wpat-vswatch-btn wpat-vswatch-label%s" data-value="%s" aria-label="%s" role="radio" aria-checked="%s">%s</button>',
 						esc_attr( $sel_class ),
-						esc_attr( $option ),
-						esc_attr( $option ),
+						esc_attr( $option_str ),
+						esc_attr( $option_str ),
 						$is_selected ? 'true' : 'false',
-						esc_html( $option )
+						esc_html( $option_str )
 					);
 				}
 			}
@@ -268,8 +305,12 @@ class WPAT_Woo_Variation_Swatches {
 
 		$swatches_html .= '</div>';
 
-		// Ocultar select original mediante estilo inline pero manteniéndolo en el DOM para compatibilidad con WooCommerce JS
-		$hidden_select_html = str_replace( '<select ', '<select style="display:none !important;" ', $html );
+		// Ocultar select original añadiendo la clase wpat-vswatch-hidden-select
+		if ( false !== strpos( $html, '<select' ) ) {
+			$hidden_select_html = preg_replace( '/<select\b/i', '<select class="wpat-vswatch-hidden-select" style="display:none !important;"', $html, 1 );
+		} else {
+			$hidden_select_html = $html;
+		}
 
 		return $hidden_select_html . $swatches_html;
 	}

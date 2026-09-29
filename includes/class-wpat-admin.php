@@ -3548,15 +3548,16 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'client-studio',
-				'is_new'      => true,
+				'is_soon'     => true,
 				'title'       => 'Diseño SaaS para Entradas, Productos & CPTs',
-				'badge'       => 'Subpágina',
-				'badge_class' => 'subpage',
-				'desc'        => 'Transforma los listados y la pantalla de edición de WordPress en una experiencia SaaS limpia y amigable para clientes, con WYSIWYG, CPTs y SEO.',
+				'badge'       => 'Próximamente',
+				'badge_class' => 'warning',
+				'desc'        => 'Workspace editorial SaaS completo con editor WYSIWYG moderno, gestión simplificada de CPTs y optimización SEO en tiempo real.',
 				'cat_class'   => 'cat-system cat-admin cat-tools',
 				'icon'        => '✨',
 				'icon_bg'     => 'admin',
-				'keywords'    => 'client studio diseno saas tablas listados redaccion entradas productos cpts notion ghost wysiwyg editores'
+				'keywords'    => 'client studio diseno saas tablas listados redaccion entradas productos cpts notion ghost wysiwyg editores',
+				'has_settings'=> false
 			),
 			array(
 				'id'          => 'tools',
@@ -3579,6 +3580,7 @@ class WPAT_Admin {
 			$is_active = ( isset( $settings[ $mod['id'] ] ) && '1' === $settings[ $mod['id'] ] );
 			$has_settings = ! isset( $mod['has_settings'] ) || true === $mod['has_settings'];
 			$is_always_active = isset( $mod['always_active'] ) && true === $mod['always_active'];
+			$is_soon    = ! empty( $mod['is_soon'] );
 			$is_new     = ! empty( $mod['is_new'] );
 			$is_updated = ! empty( $mod['is_updated'] );
 			$search_text = $mod['title'] . ' ' . $mod['desc'] . ' ' . ( isset( $mod['keywords'] ) ? $mod['keywords'] : '' ) . ' ' . $mod['id'] . ' ' . ( isset( $mod['badge'] ) ? $mod['badge'] : '' );
@@ -3587,14 +3589,18 @@ class WPAT_Admin {
 			$card_style = $is_visible ? '' : 'style="display:none;"';
 			?>
 			<div class="wpat-module-grid-card <?php echo esc_attr( $mod['cat_class'] ); ?>" <?php echo $card_style; ?> data-name="<?php echo esc_attr( isset( $mod['keywords'] ) ? $mod['keywords'] : '' ); ?>" data-search="<?php echo esc_attr( mb_strtolower( $search_text, 'UTF-8' ) ); ?>">
-				<?php if ( $is_new ) : ?>
+				<?php if ( $is_soon ) : ?>
+					<div class="wpat-card-badge-new" style="background: #f59e0b; color: #ffffff;">PRÓXIMAMENTE</div>
+				<?php elseif ( $is_new ) : ?>
 					<div class="wpat-card-badge-new">NUEVO</div>
 				<?php elseif ( $is_updated ) : ?>
 					<div class="wpat-card-badge-updated">ACTUALIZADO</div>
 				<?php endif; ?>
 				<div class="wpat-card-top">
 					<div class="wpat-card-icon-box <?php echo esc_attr( $mod['icon_bg'] ); ?>"><?php echo $mod['icon']; ?></div>
-					<?php if ( $is_always_active ) : ?>
+					<?php if ( $is_soon ) : ?>
+						<span class="wpat-badge" style="background: #fef3c7; color: #b45309; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px; border: 1px solid #fde68a;">Próximamente</span>
+					<?php elseif ( $is_always_active ) : ?>
 						<span class="wpat-badge" style="background: #e2e8f0; color: #475569; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 12px;">Siempre Activo</span>
 					<?php else : ?>
 						<label class="wpat-toggle-switch">
@@ -3608,13 +3614,22 @@ class WPAT_Admin {
 					<p><?php echo esc_html( $mod['desc'] ); ?></p>
 				</div>
 				<div class="wpat-card-bottom">
-					<span class="wpat-module-status-indicator <?php echo ( $is_always_active || $is_active ) ? 'active' : ''; ?>">
-						<span class="dot"></span> <span class="text"><?php echo ( $is_always_active || $is_active ) ? 'Activo' : 'Inactivo'; ?></span>
-					</span>
-					<?php if ( $has_settings ) : ?>
-						<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'wp-agency-toolkit', 'mod' => $mod['id'], 'cat' => isset( $_GET['cat'] ) ? sanitize_key( $_GET['cat'] ) : '' ), admin_url( 'admin.php' ) ) ); ?>" class="wpat-card-action-btn primary wpat-remember-scroll-btn <?php echo ( $is_always_active || $is_active ) ? '' : 'disabled'; ?>">
-							<?php echo ( $mod['id'] === 'tools' ) ? 'Herramientas ⚙️' : 'Ajustes ⚙️'; ?>
-						</a>
+					<?php if ( $is_soon ) : ?>
+						<span class="wpat-module-status-indicator">
+							<span class="dot" style="background: #f59e0b;"></span> <span class="text" style="color: #b45309;">En Desarrollo</span>
+						</span>
+						<span class="wpat-card-action-btn primary disabled" style="opacity: 0.6; cursor: not-allowed;">
+							Próximamente ⏳
+						</span>
+					<?php else : ?>
+						<span class="wpat-module-status-indicator <?php echo ( $is_always_active || $is_active ) ? 'active' : ''; ?>">
+							<span class="dot"></span> <span class="text"><?php echo ( $is_always_active || $is_active ) ? 'Activo' : 'Inactivo'; ?></span>
+						</span>
+						<?php if ( $has_settings ) : ?>
+							<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'wp-agency-toolkit', 'mod' => $mod['id'], 'cat' => isset( $_GET['cat'] ) ? sanitize_key( $_GET['cat'] ) : '' ), admin_url( 'admin.php' ) ) ); ?>" class="wpat-card-action-btn primary wpat-remember-scroll-btn <?php echo ( $is_always_active || $is_active ) ? '' : 'disabled'; ?>">
+								<?php echo ( $mod['id'] === 'tools' ) ? 'Herramientas ⚙️' : 'Ajustes ⚙️'; ?>
+							</a>
+						<?php endif; ?>
 					<?php endif; ?>
 				</div>
 			</div>
@@ -5196,19 +5211,19 @@ class WPAT_Admin {
 								<div class="wpat-module-body" style="display: block;">
 									<div class="wpat-field-group">
 										<label>
-											<input type="checkbox" name="wpat_settings[woo_zoom_disable_zoom]" value="1" <?php checked( $settings['woo_zoom_disable_zoom'], '1' ); ?>>
+											<input type="checkbox" name="wpat_settings[woo_zoom_disable_zoom]" value="1" <?php checked( isset( $settings['woo_zoom_disable_zoom'] ) && '1' === $settings['woo_zoom_disable_zoom'] ); ?>>
 											Desactivar Efecto Zoom de Galería
 										</label>
 									</div>
 									<div class="wpat-field-group">
 										<label>
-											<input type="checkbox" name="wpat_settings[woo_zoom_disable_lightbox]" value="1" <?php checked( $settings['woo_zoom_disable_lightbox'], '1' ); ?>>
+											<input type="checkbox" name="wpat_settings[woo_zoom_disable_lightbox]" value="1" <?php checked( isset( $settings['woo_zoom_disable_lightbox'] ) && '1' === $settings['woo_zoom_disable_lightbox'] ); ?>>
 											Desactivar Ventana Emergente (Lightbox)
 										</label>
 									</div>
 									<div class="wpat-field-group">
 										<label>
-											<input type="checkbox" name="wpat_settings[woo_zoom_disable_slider]" value="1" <?php checked( $settings['woo_zoom_disable_slider'], '1' ); ?>>
+											<input type="checkbox" name="wpat_settings[woo_zoom_disable_slider]" value="1" <?php checked( isset( $settings['woo_zoom_disable_slider'] ) && '1' === $settings['woo_zoom_disable_slider'] ); ?>>
 											Desactivar Deslizador de Galería (Slider)
 										</label>
 									</div>

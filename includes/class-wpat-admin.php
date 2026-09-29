@@ -1967,6 +1967,7 @@ class WPAT_Admin {
 			'role-manager',
 			'cookie-consent',
 			'quick-pay',
+			'woo-direct-checkout',
 			'qr-generator',
 			'client-studio',
 			'tools',
@@ -5430,6 +5431,33 @@ class WPAT_Admin {
 								});
 								</script>
 							<?php endif; ?>
+						</div>
+
+						<!-- 5. SHORTCODES Y ENLACES DIRECTOS PARA LANDING PAGES -->
+						<div class="wpat-field-group" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 18px; margin-top: 20px;">
+							<h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 800; color: #1e40af;">
+								⚡ Botones Directos en Páginas de Venta & Landings
+							</h4>
+							<p style="margin: 0 0 12px 0; font-size: 12.5px; color: #1e3a8a; line-height: 1.5;">
+								Puedes insertar un botón de compra directa para cualquier producto específico en cualquier página, landing, popup o constructor (Elementor, Gutenberg, Divi):
+							</p>
+
+							<div style="display: flex; flex-direction: column; gap: 10px;">
+								<div style="background: #fff; border: 1px solid #dbeafe; border-radius: 6px; padding: 10px 14px;">
+									<strong style="font-size: 12px; color: #1e40af; display: block; margin-bottom: 3px;">1. Shortcode Básico (Reemplaza 123 por el ID del producto):</strong>
+									<code style="font-size: 12px; color: #0f172a; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">[wpat_buy_now id="123"]</code>
+								</div>
+
+								<div style="background: #fff; border: 1px solid #dbeafe; border-radius: 6px; padding: 10px 14px;">
+									<strong style="font-size: 12px; color: #1e40af; display: block; margin-bottom: 3px;">2. Shortcode Avanzado con texto personalizado y vaciado previo de carrito:</strong>
+									<code style="font-size: 12px; color: #0f172a; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">[wpat_buy_now id="123" text="Comprar Curso Ahora" bg="#059669" color="#ffffff" empty_cart="yes"]</code>
+								</div>
+
+								<div style="background: #fff; border: 1px solid #dbeafe; border-radius: 6px; padding: 10px 14px;">
+									<strong style="font-size: 12px; color: #1e40af; display: block; margin-bottom: 3px;">3. Enlace URL directo (para botones de Elementor, Gutenberg o enlaces normales):</strong>
+									<code style="font-size: 12px; color: #0f172a; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">https://tusitio.com/checkout/?add-to-cart=123</code>
+								</div>
+							</div>
 						</div>
 
 					</div>

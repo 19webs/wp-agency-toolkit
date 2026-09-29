@@ -81,6 +81,10 @@ class WPAT_Woo_Direct_Checkout {
 
 		// 5. Soporte para archivos/tienda con redirección por JS (AJAX add to cart)
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
+
+		// 6. Shortcode para botones de compra directa en cualquier página o landing
+		add_shortcode( 'wpat_buy_now', array( $this, 'render_buy_now_shortcode' ) );
+		add_shortcode( 'wpat_direct_checkout', array( $this, 'render_buy_now_shortcode' ) );
 	}
 
 	/**
@@ -167,11 +171,9 @@ class WPAT_Woo_Direct_Checkout {
 	public function filter_add_to_cart_redirect( $url, $product = null ) {
 		$mode = isset( $this->settings['woo_dc_mode'] ) ? $this->settings['woo_dc_mode'] : 'replace';
 
-		// Si se pulsó el botón específico "Comprar Ahora" del modo dual
+		// Si se solicitó compra directa explícita por parámetro (Shortcode o botón dual)
 		if ( isset( $_REQUEST['wpat_buy_now'] ) && '1' === (string) $_REQUEST['wpat_buy_now'] ) {
-			if ( $this->is_product_eligible( $product ) ) {
-				return wc_get_checkout_url();
-			}
+			return wc_get_checkout_url();
 		}
 
 		// Si el modo es 'replace' o 'redirect_only'
@@ -203,7 +205,9 @@ class WPAT_Woo_Direct_Checkout {
 		$mode = isset( $this->settings['woo_dc_mode'] ) ? $this->settings['woo_dc_mode'] : 'replace';
 
 		$should_empty = false;
-		if ( 'replace' === $mode || 'redirect_only' === $mode ) {
+		if ( isset( $_REQUEST['wpat_empty_cart'] ) && '1' === (string) $_REQUEST['wpat_empty_cart'] ) {
+			$should_empty = true;
+		} elseif ( 'replace' === $mode || 'redirect_only' === $mode ) {
 			$should_empty = $this->is_product_eligible( $product_id );
 		} elseif ( 'dual_button' === $mode && isset( $_REQUEST['wpat_buy_now'] ) && '1' === (string) $_REQUEST['wpat_buy_now'] ) {
 			$should_empty = $this->is_product_eligible( $product_id );
@@ -304,5 +308,86 @@ class WPAT_Woo_Direct_Checkout {
 			";
 			wp_add_inline_script( 'woocommerce', $inline_js );
 		}
+	}
+
+	/**
+	 * Shortcode para insertar un botón de "Comprar Ahora" hacia cualquier producto en cualquier página o landing.
+	 *
+	 * Uso básico:
+	 * [wpat_buy_now id="123"]
+	 *
+	 * Uso avanzado con opciones:
+	 * [wpat_buy_now id="123" text="Comprar Ahora" qty="1" bg="#059669" color="#ffffff" empty_cart="yes"]
+	 *
+	 * @param array $atts Atributos del shortcode.
+	 * @return string HTML del botón de compra directa.
+	 */
+	public function render_buy_now_shortcode( $atts ) {
+		$atts = shortcode_atts(
+			array(
+				'id'           => 0,
+				'product_id'   => 0,
+				'text'         => '',
+				'qty'          => 1,
+				'quantity'     => 1,
+				'variation_id' => 0,
+				'empty_cart'   => '',
+				'bg'           => '',
+				'color'        => '',
+				'class'        => '',
+				'style'        => '',
+			),
+			$atts,
+			'wpat_buy_now'
+		);
+
+		$product_id = ! empty( $atts['id'] ) ? intval( $atts['id'] ) : intval( $atts['product_id'] );
+		if ( ! $product_id ) {
+			return '<!-- [wpat_buy_now]: Debes especificar el id del producto. Ej: [wpat_buy_now id="123"] -->';
+		}
+
+		if ( function_exists( 'wc_get_product' ) ) {
+			$product = wc_get_product( $product_id );
+			if ( ! $product || ! $product->is_purchasable() || ! $product->is_in_stock() ) {
+				return '';
+			}
+		}
+
+		$qty          = ! empty( $atts['qty'] ) ? max( 1, intval( $atts['qty'] ) ) : max( 1, intval( $atts['quantity'] ) );
+		$text         = ! empty( $atts['text'] ) ? $atts['text'] : ( ! empty( $this->settings['woo_dc_button_text'] ) ? $this->settings['woo_dc_button_text'] : __( 'Comprar Ahora', 'wp-agency-toolkit' ) );
+		$bg           = ! empty( $atts['bg'] ) ? sanitize_hex_color( $atts['bg'] ) : ( ! empty( $this->settings['woo_dc_btn_bg'] ) ? $this->settings['woo_dc_btn_bg'] : '#059669' );
+		$color        = ! empty( $atts['color'] ) ? sanitize_hex_color( $atts['color'] ) : ( ! empty( $this->settings['woo_dc_btn_color'] ) ? $this->settings['woo_dc_btn_color'] : '#ffffff' );
+		$custom_class = ! empty( $atts['class'] ) ? sanitize_html_class( $atts['class'] ) : '';
+
+		// Construir URL directa de compra
+		$query_args = array(
+			'add-to-cart'  => $product_id,
+			'quantity'     => $qty,
+			'wpat_buy_now' => '1',
+		);
+		if ( ! empty( $atts['variation_id'] ) ) {
+			$query_args['variation_id'] = intval( $atts['variation_id'] );
+		}
+		if ( 'yes' === strtolower( (string) $atts['empty_cart'] ) || '1' === (string) $atts['empty_cart'] ) {
+			$query_args['wpat_empty_cart'] = '1';
+		}
+
+		$checkout_url = function_exists( 'wc_get_checkout_url' ) ? add_query_arg( $query_args, wc_get_checkout_url() ) : home_url( '/checkout/?' . http_build_query( $query_args ) );
+
+		$style_attr = sprintf(
+			'background-color: %s !important; color: %s !important; border: 1px solid %s !important; text-decoration: none !important; display: inline-flex; align-items: center; justify-content: center; padding: 12px 24px; border-radius: 6px; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.06); %s',
+			esc_attr( $bg ),
+			esc_attr( $color ),
+			esc_attr( $bg ),
+			esc_attr( $atts['style'] )
+		);
+
+		return sprintf(
+			'<a href="%s" class="button alt wpat-direct-buy-now-btn %s" style="%s" rel="nofollow">%s</a>',
+			esc_url( $checkout_url ),
+			esc_attr( $custom_class ),
+			$style_attr,
+			esc_html( $text )
+		);
 	}
 }

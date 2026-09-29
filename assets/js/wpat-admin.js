@@ -6077,6 +6077,19 @@ jQuery(document).ready(function($) {
 			$('#wpat_qr_fg_color').val('#000000');
 			$('#wpat_qr_bg_color').val('#ffffff');
 		}
+		$('#wpat_qr_logo_type').val('none').trigger('change');
+		debouncedQRPreview();
+		showToast('Formulario restablecido para un nuevo QR', false);
+	});
+
+	// Ejecutar render inicial al cargar
+	if ($('#wpat_qr_canvas_holder').length) {
+		setTimeout(function() {
+			renderLiveQRPreview();
+			initSavedQRsThumbnails();
+		}, 200);
+	}
+
 	// =========================================================================
 	// VENTA DIRECTA SIN WOOCOMMERCE (QUICK PAY) - ADMIN JS
 	// =========================================================================

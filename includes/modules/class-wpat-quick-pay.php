@@ -96,7 +96,7 @@ class WPAT_Quick_Pay {
 	}
 
 	/**
-	 * Crea la tabla de pedidos si no existe en la base de datos.
+	 * Crea la tabla de pedidos si no existe en la base de datos o añade nuevas columnas.
 	 */
 	public function maybe_create_tables() {
 		global $wpdb;
@@ -105,7 +105,7 @@ class WPAT_Quick_Pay {
 		$charset_collate = $wpdb->get_charset_collate();
 
 		$current_db_version = get_option( 'wpat_quick_pay_db_ver', '0' );
-		$target_version = '1.0.0';
+		$target_version = '1.1.0';
 
 		if ( $current_db_version !== $target_version || $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
 			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -123,11 +123,17 @@ class WPAT_Quick_Pay {
 				customer_email varchar(255) NOT NULL DEFAULT '',
 				customer_phone varchar(50) NOT NULL DEFAULT '',
 				customer_dni varchar(50) NOT NULL DEFAULT '',
+				billing_company varchar(255) DEFAULT '',
+				billing_address text DEFAULT NULL,
+				billing_city varchar(100) DEFAULT NULL,
+				billing_postcode varchar(20) DEFAULT NULL,
+				billing_state varchar(100) DEFAULT NULL,
+				billing_country varchar(100) DEFAULT 'ES',
 				shipping_address text DEFAULT NULL,
 				shipping_city varchar(100) DEFAULT NULL,
 				shipping_postcode varchar(20) DEFAULT NULL,
 				shipping_state varchar(100) DEFAULT NULL,
-				shipping_country varchar(100) DEFAULT NULL,
+				shipping_country varchar(100) DEFAULT 'ES',
 				shipping_cost decimal(10,2) NOT NULL DEFAULT 0.00,
 				tax_rate decimal(5,2) NOT NULL DEFAULT 0.00,
 				tax_amount decimal(10,2) NOT NULL DEFAULT 0.00,
@@ -149,6 +155,29 @@ class WPAT_Quick_Pay {
 			) $charset_collate;";
 
 			dbDelta( $sql );
+
+			// Verificación de columnas de facturación por si la tabla ya existía
+			$existing_columns = $wpdb->get_col( "DESCRIBE $table_name", 0 );
+			if ( is_array( $existing_columns ) ) {
+				$new_columns = array(
+					'billing_company'  => "VARCHAR(255) DEFAULT '' AFTER customer_dni",
+					'billing_address'  => "TEXT DEFAULT NULL AFTER billing_company",
+					'billing_city'     => "VARCHAR(100) DEFAULT NULL AFTER billing_address",
+					'billing_postcode' => "VARCHAR(20) DEFAULT NULL AFTER billing_city",
+					'billing_state'    => "VARCHAR(100) DEFAULT NULL AFTER billing_postcode",
+					'billing_country'  => "VARCHAR(100) DEFAULT 'ES' AFTER billing_state",
+					'shipping_state'   => "VARCHAR(100) DEFAULT NULL AFTER shipping_postcode",
+					'shipping_country' => "VARCHAR(100) DEFAULT 'ES' AFTER shipping_state",
+				);
+
+				foreach ( $new_columns as $col => $col_def ) {
+					if ( ! in_array( $col, $existing_columns, true ) ) {
+						// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange
+						$wpdb->query( "ALTER TABLE $table_name ADD $col $col_def" );
+					}
+				}
+			}
+
 			update_option( 'wpat_quick_pay_db_ver', $target_version );
 		}
 	}
@@ -185,13 +214,17 @@ class WPAT_Quick_Pay {
 			'wpat-quick-pay-js',
 			'wpatQuickPay',
 			array(
-				'ajax_url'       => admin_url( 'admin-ajax.php' ),
-				'nonce'          => wp_create_nonce( 'wpat_quick_pay_nonce' ),
-				'stripe_pub_key' => esc_js( $stripe_pub_key ),
-				'currency_symbol'=> esc_js( isset( $settings['qp_currency_symbol'] ) ? $settings['qp_currency_symbol'] : '€' ),
-				'currency_pos'   => esc_js( isset( $settings['qp_currency_pos'] ) ? $settings['qp_currency_pos'] : 'right' ),
-				'primary_color'  => esc_js( isset( $settings['qp_primary_color'] ) ? $settings['qp_primary_color'] : '#2563eb' ),
-				'i18n'           => array(
+				'ajax_url'                => admin_url( 'admin-ajax.php' ),
+				'nonce'                   => wp_create_nonce( 'wpat_quick_pay_nonce' ),
+				'stripe_pub_key'          => esc_js( $stripe_pub_key ),
+				'currency_symbol'         => esc_js( isset( $settings['qp_currency_symbol'] ) ? $settings['qp_currency_symbol'] : '€' ),
+				'currency_pos'            => esc_js( isset( $settings['qp_currency_pos'] ) ? $settings['qp_currency_pos'] : 'right' ),
+				'primary_color'           => esc_js( isset( $settings['qp_primary_color'] ) ? $settings['qp_primary_color'] : '#2563eb' ),
+				'bizum_type'              => esc_js( isset( $settings['qp_bizum_type'] ) ? $settings['qp_bizum_type'] : 'redsys' ),
+				'require_billing_address' => ! empty( $settings['qp_require_billing_address'] ) ? 1 : 0,
+				'require_phone'           => ! empty( $settings['qp_require_phone'] ) ? 1 : 0,
+				'require_dni'             => ! empty( $settings['qp_require_dni'] ) ? 1 : 0,
+				'i18n'                    => array(
 					'loading'        => 'Procesando...',
 					'apply'          => 'Aplicar',
 					'coupon_applied' => '¡Cupón aplicado con éxito!',
@@ -518,12 +551,31 @@ class WPAT_Quick_Pay {
 		$stripe_enabled = ! empty( $settings['qp_stripe_enabled'] ) && '1' === $settings['qp_stripe_enabled'];
 		$redsys_enabled = ! empty( $settings['qp_redsys_enabled'] ) && '1' === $settings['qp_redsys_enabled'];
 		$bizum_enabled  = ! empty( $settings['qp_bizum_enabled'] ) && '1' === $settings['qp_bizum_enabled'];
+		$bizum_type     = isset( $settings['qp_bizum_type'] ) ? $settings['qp_bizum_type'] : 'redsys';
 		$paypal_enabled = ! empty( $settings['qp_paypal_enabled'] ) && '1' === $settings['qp_paypal_enabled'];
 		$bank_enabled   = ! empty( $settings['qp_bank_enabled'] ) && '1' === $settings['qp_bank_enabled'];
 
 		$bizum_phone    = isset( $settings['qp_bizum_phone'] ) ? $settings['qp_bizum_phone'] : '';
 		$bank_iban      = isset( $settings['qp_bank_iban'] ) ? $settings['qp_bank_iban'] : '';
 		$bank_holder    = isset( $settings['qp_bank_holder'] ) ? $settings['qp_bank_holder'] : '';
+
+		$req_billing    = ! empty( $settings['qp_require_billing_address'] );
+		$req_phone      = ! empty( $settings['qp_require_phone'] );
+		$req_dni        = ! empty( $settings['qp_require_dni'] );
+
+		// Método por defecto seleccionado
+		$default_gw = 'stripe';
+		if ( $stripe_enabled ) {
+			$default_gw = 'stripe';
+		} elseif ( $bizum_enabled ) {
+			$default_gw = 'bizum';
+		} elseif ( $redsys_enabled ) {
+			$default_gw = 'redsys';
+		} elseif ( $paypal_enabled ) {
+			$default_gw = 'paypal';
+		} elseif ( $bank_enabled ) {
+			$default_gw = 'transfer';
+		}
 		?>
 		<div id="wpat_qp_checkout_modal" class="wpat-qp-modal-overlay" style="display: none;">
 			<div class="wpat-qp-modal-container">
@@ -543,13 +595,13 @@ class WPAT_Quick_Pay {
 					<input type="hidden" id="wpat_qp_f_product_id" name="product_id" value="" />
 					<input type="hidden" id="wpat_qp_f_product_payload" name="product_payload" value="" />
 					<input type="hidden" id="wpat_qp_f_applied_coupon" name="coupon_code" value="" />
-					<input type="hidden" id="wpat_qp_f_gateway" name="gateway" value="<?php echo $stripe_enabled ? 'stripe' : ( $redsys_enabled ? 'redsys' : ( $bizum_enabled ? 'bizum' : ( $paypal_enabled ? 'paypal' : 'transfer' ) ) ); ?>" />
+					<input type="hidden" id="wpat_qp_f_gateway" name="gateway" value="<?php echo esc_attr( $default_gw ); ?>" />
 
 					<!-- DATOS DEL COMPRADOR -->
 					<div class="wpat-qp-section-title">1. Tus Datos de Contacto y Facturación</div>
 					<div class="wpat-qp-form-grid">
 						<div class="wpat-qp-form-field">
-							<label for="wpat_qp_f_name">Nombre Completo *</label>
+							<label for="wpat_qp_f_name">Nombre y Apellidos *</label>
 							<input type="text" id="wpat_qp_f_name" name="customer_name" required placeholder="Ej: Laura García" />
 						</div>
 						<div class="wpat-qp-form-field">
@@ -560,30 +612,82 @@ class WPAT_Quick_Pay {
 
 					<div class="wpat-qp-form-grid" id="wpat_qp_extra_buyer_fields">
 						<div class="wpat-qp-form-field" id="wpat_qp_field_phone_wrap">
-							<label for="wpat_qp_f_phone">Teléfono / WhatsApp</label>
-							<input type="tel" id="wpat_qp_f_phone" name="customer_phone" placeholder="Ej: 600 000 000" />
+							<label for="wpat_qp_f_phone">Teléfono / WhatsApp <?php echo $req_phone ? '*' : ''; ?></label>
+							<input type="tel" id="wpat_qp_f_phone" name="customer_phone" <?php echo $req_phone ? 'required' : ''; ?> placeholder="Ej: 600 000 000" />
 						</div>
 						<div class="wpat-qp-form-field" id="wpat_qp_field_dni_wrap">
-							<label for="wpat_qp_f_dni">DNI / NIF / CIF (Para tu Factura)</label>
-							<input type="text" id="wpat_qp_f_dni" name="customer_dni" placeholder="Ej: 12345678Z" />
+							<label for="wpat_qp_f_dni">DNI / NIF / CIF <?php echo $req_dni ? '*' : '(Para Factura)'; ?></label>
+							<input type="text" id="wpat_qp_f_dni" name="customer_dni" <?php echo $req_dni ? 'required' : ''; ?> placeholder="Ej: 12345678Z / B12345678" />
+						</div>
+					</div>
+
+					<!-- CAMPOS DE FACTURACIÓN FISCAL COMPLETA -->
+					<div class="wpat-qp-billing-fields-box" id="wpat_qp_billing_fields_wrapper" style="<?php echo $req_billing ? '' : 'display:none;'; ?>">
+						<div class="wpat-qp-form-field" style="margin-bottom: 8px;">
+							<label for="wpat_qp_f_billing_company">Empresa / Razón Social (Opcional)</label>
+							<input type="text" id="wpat_qp_f_billing_company" name="billing_company" placeholder="Ej: Mi Empresa S.L." />
+						</div>
+						<div class="wpat-qp-form-field" style="margin-bottom: 8px;">
+							<label for="wpat_qp_f_billing_address">Dirección Fiscal / Facturación <?php echo $req_billing ? '*' : ''; ?></label>
+							<input type="text" id="wpat_qp_f_billing_address" name="billing_address" <?php echo $req_billing ? 'required' : ''; ?> placeholder="Ej: Calle Alcalá 45, 2º A" />
+						</div>
+						<div class="wpat-qp-form-grid">
+							<div class="wpat-qp-form-field">
+								<label for="wpat_qp_f_billing_postcode">Código Postal <?php echo $req_billing ? '*' : ''; ?></label>
+								<input type="text" id="wpat_qp_f_billing_postcode" name="billing_postcode" <?php echo $req_billing ? 'required' : ''; ?> placeholder="28014" />
+							</div>
+							<div class="wpat-qp-form-field">
+								<label for="wpat_qp_f_billing_city">Población / Localidad <?php echo $req_billing ? '*' : ''; ?></label>
+								<input type="text" id="wpat_qp_f_billing_city" name="billing_city" <?php echo $req_billing ? 'required' : ''; ?> placeholder="Madrid" />
+							</div>
+						</div>
+						<div class="wpat-qp-form-grid">
+							<div class="wpat-qp-form-field">
+								<label for="wpat_qp_f_billing_state">Provincia / Región</label>
+								<input type="text" id="wpat_qp_f_billing_state" name="billing_state" placeholder="Madrid" />
+							</div>
+							<div class="wpat-qp-form-field">
+								<label for="wpat_qp_f_billing_country">País</label>
+								<select id="wpat_qp_f_billing_country" name="billing_country" style="height: 38px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 0 10px; font-size: 13.5px; background:#fff;">
+									<option value="ES" selected>España</option>
+									<option value="PT">Portugal</option>
+									<option value="FR">Francia</option>
+									<option value="IT">Italia</option>
+									<option value="DE">Alemania</option>
+									<option value="MX">México</option>
+									<option value="CO">Colombia</option>
+									<option value="AR">Argentina</option>
+									<option value="CL">Chile</option>
+									<option value="US">Estados Unidos</option>
+									<option value="OTHER">Otro país</option>
+								</select>
+							</div>
 						</div>
 					</div>
 
 					<!-- CAMPOS DE ENVÍO FÍSICO (SI ES PRODUCTO FÍSICO) -->
 					<div id="wpat_qp_shipping_fields_wrapper" style="display: none;">
 						<div class="wpat-qp-section-title" style="margin-top: 15px;">Dirección de Envío</div>
-						<div class="wpat-qp-form-field" style="margin-bottom: 8px;">
-							<label for="wpat_qp_f_address">Dirección Completa (Calle, Número, Piso) *</label>
-							<input type="text" id="wpat_qp_f_address" name="shipping_address" placeholder="Ej: Calle Gran Vía 28, 4º B" />
+						<div style="margin-bottom: 10px; font-size: 12.5px;">
+							<label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
+								<input type="checkbox" id="wpat_qp_same_as_billing" checked style="accent-color: #2563eb;" />
+								<span>Usar la misma dirección de facturación</span>
+							</label>
 						</div>
-						<div class="wpat-qp-form-grid">
-							<div class="wpat-qp-form-field">
-								<label for="wpat_qp_f_city">Población / Ciudad *</label>
-								<input type="text" id="wpat_qp_f_city" name="shipping_city" placeholder="Madrid" />
+						<div id="wpat_qp_shipping_subfields" style="display: none;">
+							<div class="wpat-qp-form-field" style="margin-bottom: 8px;">
+								<label for="wpat_qp_f_address">Dirección de Entrega *</label>
+								<input type="text" id="wpat_qp_f_address" name="shipping_address" placeholder="Ej: Calle Gran Vía 28, 4º B" />
 							</div>
-							<div class="wpat-qp-form-field">
-								<label for="wpat_qp_f_postcode">Código Postal *</label>
-								<input type="text" id="wpat_qp_f_postcode" name="shipping_postcode" placeholder="28013" />
+							<div class="wpat-qp-form-grid">
+								<div class="wpat-qp-form-field">
+									<label for="wpat_qp_f_city">Población / Ciudad *</label>
+									<input type="text" id="wpat_qp_f_city" name="shipping_city" placeholder="Madrid" />
+								</div>
+								<div class="wpat-qp-form-field">
+									<label for="wpat_qp_f_postcode">Código Postal *</label>
+									<input type="text" id="wpat_qp_f_postcode" name="shipping_postcode" placeholder="28013" />
+								</div>
 							</div>
 						</div>
 					</div>
@@ -627,9 +731,24 @@ class WPAT_Quick_Pay {
 					<!-- SELECCIÓN DE MÉTODO DE PAGO -->
 					<div class="wpat-qp-section-title">2. Elige tu Método de Pago</div>
 					<div class="wpat-qp-gateway-selector" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+						<?php if ( $bizum_enabled ) : ?>
+							<label class="wpat-qp-gateway-option <?php echo ( 'bizum' === $default_gw ) ? 'active' : ''; ?>" data-gw="bizum">
+								<input type="radio" name="wpat_gw_radio" value="bizum" <?php checked( 'bizum' === $default_gw ); ?> />
+								<div class="wpat-qp-gw-info">
+									<?php if ( 'redsys' === $bizum_type ) : ?>
+										<strong>📱 Bizum (Instantáneo por Pasarela Bancaria)</strong>
+										<span>Paga de forma rápida y segura desde tu móvil con la pasarela bancaria oficial de Bizum.</span>
+									<?php else : ?>
+										<strong>📱 Bizum Directo (Manual)</strong>
+										<span>Envía el importe por Bizum al <strong><?php echo esc_html( $bizum_phone ? $bizum_phone : 'tu número configurado' ); ?></strong> y procesaremos tu pedido al instante.</span>
+									<?php endif; ?>
+								</div>
+							</label>
+						<?php endif; ?>
+
 						<?php if ( $stripe_enabled ) : ?>
-							<label class="wpat-qp-gateway-option active" data-gw="stripe">
-								<input type="radio" name="wpat_gw_radio" value="stripe" checked />
+							<label class="wpat-qp-gateway-option <?php echo ( 'stripe' === $default_gw ) ? 'active' : ''; ?>" data-gw="stripe">
+								<input type="radio" name="wpat_gw_radio" value="stripe" <?php checked( 'stripe' === $default_gw ); ?> />
 								<div class="wpat-qp-gw-info">
 									<strong>💳 Tarjeta de Crédito / Débito (Stripe)</strong>
 									<span>Paga de forma instantánea y segura con Tarjeta, Apple Pay o Google Pay.</span>
@@ -638,41 +757,31 @@ class WPAT_Quick_Pay {
 						<?php endif; ?>
 
 						<?php if ( $redsys_enabled ) : ?>
-							<label class="wpat-qp-gateway-option <?php echo ( ! $stripe_enabled ) ? 'active' : ''; ?>" data-gw="redsys">
-								<input type="radio" name="wpat_gw_radio" value="redsys" <?php checked( ! $stripe_enabled ); ?> />
+							<label class="wpat-qp-gateway-option <?php echo ( 'redsys' === $default_gw ) ? 'active' : ''; ?>" data-gw="redsys">
+								<input type="radio" name="wpat_gw_radio" value="redsys" <?php checked( 'redsys' === $default_gw ); ?> />
 								<div class="wpat-qp-gw-info">
-									<strong>🏦 TPV Virtual Redsys / Bizum Banco</strong>
-									<span>Pasarela bancaria oficial de Redsys con Bizum y tarjetas españolas/europeas.</span>
-								</div>
-							</label>
-						<?php endif; ?>
-
-						<?php if ( $bizum_enabled ) : ?>
-							<label class="wpat-qp-gateway-option <?php echo ( ! $stripe_enabled && ! $redsys_enabled ) ? 'active' : ''; ?>" data-gw="bizum">
-								<input type="radio" name="wpat_gw_radio" value="bizum" <?php checked( ! $stripe_enabled && ! $redsys_enabled ); ?> />
-								<div class="wpat-qp-gw-info">
-									<strong>📱 Bizum Directo (Manual)</strong>
-									<span>Envía el importe por Bizum al <strong><?php echo esc_html( $bizum_phone ); ?></strong> y procesaremos tu pedido al instante.</span>
+									<strong>🏦 Tarjeta Bancaria (TPV Virtual Redsys)</strong>
+									<span>Pago seguro mediante la pasarela bancaria oficial Redsys (Servired / 4B / Euro6000).</span>
 								</div>
 							</label>
 						<?php endif; ?>
 
 						<?php if ( $paypal_enabled ) : ?>
-							<label class="wpat-qp-gateway-option" data-gw="paypal">
-								<input type="radio" name="wpat_gw_radio" value="paypal" />
+							<label class="wpat-qp-gateway-option <?php echo ( 'paypal' === $default_gw ) ? 'active' : ''; ?>" data-gw="paypal">
+								<input type="radio" name="wpat_gw_radio" value="paypal" <?php checked( 'paypal' === $default_gw ); ?> />
 								<div class="wpat-qp-gw-info">
 									<strong>🅿️ PayPal</strong>
-									<span>Paga con tu saldo de PayPal o tarjeta asociada.</span>
+									<span>Paga con tu cuenta o saldo de PayPal o tarjeta asociada.</span>
 								</div>
 							</label>
 						<?php endif; ?>
 
 						<?php if ( $bank_enabled ) : ?>
-							<label class="wpat-qp-gateway-option" data-gw="transfer">
-								<input type="radio" name="wpat_gw_radio" value="transfer" />
+							<label class="wpat-qp-gateway-option <?php echo ( 'transfer' === $default_gw ) ? 'active' : ''; ?>" data-gw="transfer">
+								<input type="radio" name="wpat_gw_radio" value="transfer" <?php checked( 'transfer' === $default_gw ); ?> />
 								<div class="wpat-qp-gw-info">
 									<strong>🏛️ Transferencia Bancaria</strong>
-									<span>Recibirás los datos bancarios y el número de referencia para realizar el ingreso.</span>
+									<span>Recibirás los datos bancarios (IBAN) para emitir la transferencia.</span>
 								</div>
 							</label>
 						<?php endif; ?>
@@ -831,9 +940,18 @@ class WPAT_Quick_Pay {
 		$customer_dni    = isset( $_POST['customer_dni'] ) ? sanitize_text_field( $_POST['customer_dni'] ) : '';
 		$coupon_code     = isset( $_POST['coupon_code'] ) ? strtoupper( sanitize_text_field( $_POST['coupon_code'] ) ) : '';
 
-		$shipping_addr   = isset( $_POST['shipping_address'] ) ? sanitize_text_field( $_POST['shipping_address'] ) : '';
-		$shipping_city   = isset( $_POST['shipping_city'] ) ? sanitize_text_field( $_POST['shipping_city'] ) : '';
-		$shipping_post   = isset( $_POST['shipping_postcode'] ) ? sanitize_text_field( $_POST['shipping_postcode'] ) : '';
+		$billing_company  = isset( $_POST['billing_company'] ) ? sanitize_text_field( $_POST['billing_company'] ) : '';
+		$billing_address  = isset( $_POST['billing_address'] ) ? sanitize_text_field( $_POST['billing_address'] ) : '';
+		$billing_city     = isset( $_POST['billing_city'] ) ? sanitize_text_field( $_POST['billing_city'] ) : '';
+		$billing_postcode = isset( $_POST['billing_postcode'] ) ? sanitize_text_field( $_POST['billing_postcode'] ) : '';
+		$billing_state    = isset( $_POST['billing_state'] ) ? sanitize_text_field( $_POST['billing_state'] ) : '';
+		$billing_country  = isset( $_POST['billing_country'] ) ? sanitize_text_field( $_POST['billing_country'] ) : 'ES';
+
+		$shipping_addr    = isset( $_POST['shipping_address'] ) ? sanitize_text_field( $_POST['shipping_address'] ) : $billing_address;
+		$shipping_city    = isset( $_POST['shipping_city'] ) ? sanitize_text_field( $_POST['shipping_city'] ) : $billing_city;
+		$shipping_post    = isset( $_POST['shipping_postcode'] ) ? sanitize_text_field( $_POST['shipping_postcode'] ) : $billing_postcode;
+		$shipping_state   = isset( $_POST['shipping_state'] ) ? sanitize_text_field( $_POST['shipping_state'] ) : $billing_state;
+		$shipping_country = isset( $_POST['shipping_country'] ) ? sanitize_text_field( $_POST['shipping_country'] ) : $billing_country;
 
 		$product = self::resolve_product( $product_id, $product_payload );
 		if ( ! $product ) {
@@ -868,9 +986,17 @@ class WPAT_Quick_Pay {
 				'customer_email'    => $customer_email,
 				'customer_phone'    => $customer_phone,
 				'customer_dni'      => $customer_dni,
+				'billing_company'   => $billing_company,
+				'billing_address'   => $billing_address,
+				'billing_city'      => $billing_city,
+				'billing_postcode'  => $billing_postcode,
+				'billing_state'     => $billing_state,
+				'billing_country'   => $billing_country,
 				'shipping_address'  => $shipping_addr,
 				'shipping_city'     => $shipping_city,
 				'shipping_postcode' => $shipping_post,
+				'shipping_state'    => $shipping_state,
+				'shipping_country'  => $shipping_country,
 				'shipping_cost'     => $shipping_cost,
 				'coupon_code'       => $coupon_code,
 				'discount_amount'   => $discount,
@@ -944,7 +1070,7 @@ class WPAT_Quick_Pay {
 	}
 
 	/**
-	 * Endpoint AJAX para procesar pedidos manuales (Bizum o Transferencia).
+	 * Endpoint AJAX para procesar pedidos manuales (Bizum Manual o Transferencia).
 	 */
 	public function ajax_process_manual_order() {
 		check_ajax_referer( 'wpat_quick_pay_nonce', 'security' );
@@ -958,11 +1084,24 @@ class WPAT_Quick_Pay {
 			wp_send_json_error( array( 'message' => 'Producto no encontrado.' ) );
 		}
 
-		$customer_name  = isset( $_POST['customer_name'] ) ? sanitize_text_field( $_POST['customer_name'] ) : '';
-		$customer_email = isset( $_POST['customer_email'] ) ? sanitize_email( $_POST['customer_email'] ) : '';
-		$customer_phone = isset( $_POST['customer_phone'] ) ? sanitize_text_field( $_POST['customer_phone'] ) : '';
-		$customer_dni   = isset( $_POST['customer_dni'] ) ? sanitize_text_field( $_POST['customer_dni'] ) : '';
-		$coupon_code    = isset( $_POST['coupon_code'] ) ? strtoupper( sanitize_text_field( $_POST['coupon_code'] ) ) : '';
+		$customer_name   = isset( $_POST['customer_name'] ) ? sanitize_text_field( $_POST['customer_name'] ) : '';
+		$customer_email  = isset( $_POST['customer_email'] ) ? sanitize_email( $_POST['customer_email'] ) : '';
+		$customer_phone  = isset( $_POST['customer_phone'] ) ? sanitize_text_field( $_POST['customer_phone'] ) : '';
+		$customer_dni    = isset( $_POST['customer_dni'] ) ? sanitize_text_field( $_POST['customer_dni'] ) : '';
+		$coupon_code     = isset( $_POST['coupon_code'] ) ? strtoupper( sanitize_text_field( $_POST['coupon_code'] ) ) : '';
+
+		$billing_company  = isset( $_POST['billing_company'] ) ? sanitize_text_field( $_POST['billing_company'] ) : '';
+		$billing_address  = isset( $_POST['billing_address'] ) ? sanitize_text_field( $_POST['billing_address'] ) : '';
+		$billing_city     = isset( $_POST['billing_city'] ) ? sanitize_text_field( $_POST['billing_city'] ) : '';
+		$billing_postcode = isset( $_POST['billing_postcode'] ) ? sanitize_text_field( $_POST['billing_postcode'] ) : '';
+		$billing_state    = isset( $_POST['billing_state'] ) ? sanitize_text_field( $_POST['billing_state'] ) : '';
+		$billing_country  = isset( $_POST['billing_country'] ) ? sanitize_text_field( $_POST['billing_country'] ) : 'ES';
+
+		$shipping_addr    = isset( $_POST['shipping_address'] ) ? sanitize_text_field( $_POST['shipping_address'] ) : $billing_address;
+		$shipping_city    = isset( $_POST['shipping_city'] ) ? sanitize_text_field( $_POST['shipping_city'] ) : $billing_city;
+		$shipping_post    = isset( $_POST['shipping_postcode'] ) ? sanitize_text_field( $_POST['shipping_postcode'] ) : $billing_postcode;
+		$shipping_state   = isset( $_POST['shipping_state'] ) ? sanitize_text_field( $_POST['shipping_state'] ) : $billing_state;
+		$shipping_country = isset( $_POST['shipping_country'] ) ? sanitize_text_field( $_POST['shipping_country'] ) : $billing_country;
 
 		$base_price = floatval( $product['price'] );
 		$discount   = 0.0;
@@ -989,9 +1128,17 @@ class WPAT_Quick_Pay {
 				'customer_email'    => $customer_email,
 				'customer_phone'    => $customer_phone,
 				'customer_dni'      => $customer_dni,
-				'shipping_address'  => isset( $_POST['shipping_address'] ) ? sanitize_text_field( $_POST['shipping_address'] ) : '',
-				'shipping_city'     => isset( $_POST['shipping_city'] ) ? sanitize_text_field( $_POST['shipping_city'] ) : '',
-				'shipping_postcode' => isset( $_POST['shipping_postcode'] ) ? sanitize_text_field( $_POST['shipping_postcode'] ) : '',
+				'billing_company'   => $billing_company,
+				'billing_address'   => $billing_address,
+				'billing_city'      => $billing_city,
+				'billing_postcode'  => $billing_postcode,
+				'billing_state'     => $billing_state,
+				'billing_country'   => $billing_country,
+				'shipping_address'  => $shipping_addr,
+				'shipping_city'     => $shipping_city,
+				'shipping_postcode' => $shipping_post,
+				'shipping_state'    => $shipping_state,
+				'shipping_country'  => $shipping_country,
 				'shipping_cost'     => $shipping_cost,
 				'coupon_code'       => $coupon_code,
 				'discount_amount'   => $discount,
@@ -1005,19 +1152,39 @@ class WPAT_Quick_Pay {
 		$instructions = '';
 
 		if ( 'bizum' === $gateway ) {
-			$phone = isset( $settings['qp_bizum_phone'] ) ? $settings['qp_bizum_phone'] : '600 000 000';
-			$instructions = '<strong>Instrucciones para completar tu pago por Bizum:</strong><br>'
-				. '1. Abre la app de tu banco y realiza un Bizum de <strong>' . number_format( $final_amount, 2, ',', '.' ) . ' €</strong> al número: <strong style="font-size:15px; color:#2563eb;">' . esc_html( $phone ) . '</strong><br>'
-				. '2. En el concepto pon tu número de pedido: <strong style="color:#0f172a;">#WPAT-' . $order_id . '</strong><br>'
-				. '3. Una vez recibido el aviso, activaremos tu compra y te enviaremos la confirmación oficial a tu email.';
+			$phone = isset( $settings['qp_bizum_phone'] ) && ! empty( $settings['qp_bizum_phone'] ) ? $settings['qp_bizum_phone'] : '600 000 000';
+			$custom_inst = isset( $settings['qp_bizum_instructions'] ) ? trim( $settings['qp_bizum_instructions'] ) : '';
+
+			if ( ! empty( $custom_inst ) ) {
+				$instructions = str_replace(
+					array( '{order_id}', '{amount}', '{phone}' ),
+					array( '#WPAT-' . $order_id, number_format( $final_amount, 2, ',', '.' ) . ' €', esc_html( $phone ) ),
+					nl2br( esc_html( $custom_inst ) )
+				);
+			} else {
+				$instructions = '<strong>Instrucciones para completar tu pago por Bizum:</strong><br>'
+					. '1. Abre la app de tu banco y realiza un Bizum de <strong>' . number_format( $final_amount, 2, ',', '.' ) . ' €</strong> al número: <strong style="font-size:15px; color:#2563eb;">' . esc_html( $phone ) . '</strong><br>'
+					. '2. En el concepto pon tu número de pedido: <strong style="color:#0f172a;">#WPAT-' . $order_id . '</strong><br>'
+					. '3. Una vez recibido el aviso, activaremos tu compra y te enviaremos la confirmación oficial a tu email.';
+			}
 		} else {
-			$iban   = isset( $settings['qp_bank_iban'] ) ? $settings['qp_bank_iban'] : 'ES00 0000 0000 0000 0000 0000';
-			$holder = isset( $settings['qp_bank_holder'] ) ? $settings['qp_bank_holder'] : get_bloginfo( 'name' );
-			$instructions = '<strong>Instrucciones para la Transferencia Bancaria:</strong><br>'
-				. 'IBAN: <strong style="font-family:monospace; color:#2563eb;">' . esc_html( $iban ) . '</strong><br>'
-				. 'Titular: <strong>' . esc_html( $holder ) . '</strong><br>'
-				. 'Importe exacto: <strong>' . number_format( $final_amount, 2, ',', '.' ) . ' €</strong><br>'
-				. 'Concepto obligatorio: <strong>#WPAT-' . $order_id . '</strong>';
+			$iban        = isset( $settings['qp_bank_iban'] ) && ! empty( $settings['qp_bank_iban'] ) ? $settings['qp_bank_iban'] : 'ES00 0000 0000 0000 0000 0000';
+			$holder      = isset( $settings['qp_bank_holder'] ) && ! empty( $settings['qp_bank_holder'] ) ? $settings['qp_bank_holder'] : get_bloginfo( 'name' );
+			$custom_inst = isset( $settings['qp_bank_instructions'] ) ? trim( $settings['qp_bank_instructions'] ) : '';
+
+			if ( ! empty( $custom_inst ) ) {
+				$instructions = str_replace(
+					array( '{order_id}', '{amount}', '{iban}', '{holder}' ),
+					array( '#WPAT-' . $order_id, number_format( $final_amount, 2, ',', '.' ) . ' €', esc_html( $iban ), esc_html( $holder ) ),
+					nl2br( esc_html( $custom_inst ) )
+				);
+			} else {
+				$instructions = '<strong>Instrucciones para la Transferencia Bancaria:</strong><br>'
+					. 'IBAN: <strong style="font-family:monospace; color:#2563eb;">' . esc_html( $iban ) . '</strong><br>'
+					. 'Titular: <strong>' . esc_html( $holder ) . '</strong><br>'
+					. 'Importe exacto: <strong>' . number_format( $final_amount, 2, ',', '.' ) . ' €</strong><br>'
+					. 'Concepto obligatorio: <strong>#WPAT-' . $order_id . '</strong>';
+			}
 		}
 
 		// Notificar al admin y cliente del pedido pendiente
@@ -1032,7 +1199,7 @@ class WPAT_Quick_Pay {
 	}
 
 	/**
-	 * Endpoint AJAX para preparar el formulario de Redsys TPV.
+	 * Endpoint AJAX para preparar el formulario de Redsys TPV (Tarjeta o Bizum SIS).
 	 */
 	public function ajax_process_redsys_order() {
 		check_ajax_referer( 'wpat_quick_pay_nonce', 'security' );
@@ -1046,13 +1213,25 @@ class WPAT_Quick_Pay {
 		}
 
 		$settings = WPAT_Main::get_instance()->get_settings();
-		$fuc      = isset( $settings['qp_redsys_fuc'] ) ? trim( $settings['qp_redsys_fuc'] ) : '';
-		$terminal = isset( $settings['qp_redsys_terminal'] ) ? trim( $settings['qp_redsys_terminal'] ) : '1';
-		$key      = isset( $settings['qp_redsys_key'] ) ? trim( $settings['qp_redsys_key'] ) : '';
-		$mode     = isset( $settings['qp_redsys_mode'] ) ? $settings['qp_redsys_mode'] : 'test';
+		$gateway  = isset( $_POST['gateway'] ) ? sanitize_key( $_POST['gateway'] ) : 'redsys';
+		$is_bizum = ( 'bizum' === $gateway || ( isset( $_POST['pay_method'] ) && 'z' === $_POST['pay_method'] ) );
+
+		// Determinar credenciales (Redsys estándar vs Bizum dedicado)
+		if ( $is_bizum && ! empty( $settings['qp_bizum_redsys_custom'] ) && '1' === $settings['qp_bizum_redsys_custom'] ) {
+			$fuc      = isset( $settings['qp_bizum_redsys_fuc'] ) && ! empty( $settings['qp_bizum_redsys_fuc'] ) ? trim( $settings['qp_bizum_redsys_fuc'] ) : trim( $settings['qp_redsys_fuc'] ?? '' );
+			$terminal = isset( $settings['qp_bizum_redsys_terminal'] ) && ! empty( $settings['qp_bizum_redsys_terminal'] ) ? trim( $settings['qp_bizum_redsys_terminal'] ) : ( trim( $settings['qp_redsys_terminal'] ?? '1' ) );
+			$key      = isset( $settings['qp_bizum_redsys_key'] ) && ! empty( $settings['qp_bizum_redsys_key'] ) ? trim( $settings['qp_bizum_redsys_key'] ) : trim( $settings['qp_redsys_key'] ?? '' );
+		} else {
+			$fuc      = isset( $settings['qp_redsys_fuc'] ) ? trim( $settings['qp_redsys_fuc'] ) : '';
+			$terminal = isset( $settings['qp_redsys_terminal'] ) ? trim( $settings['qp_redsys_terminal'] ) : '1';
+			$key      = isset( $settings['qp_redsys_key'] ) ? trim( $settings['qp_redsys_key'] ) : '';
+		}
+
+		$mode = isset( $settings['qp_redsys_mode'] ) ? $settings['qp_redsys_mode'] : 'test';
 
 		if ( empty( $fuc ) || empty( $key ) ) {
-			wp_send_json_error( array( 'message' => 'Configuración de Redsys incompleta en el panel.' ) );
+			$error_msg = $is_bizum ? 'Configuración de Bizum / Redsys incompleta en el panel.' : 'Configuración de Redsys incompleta en el panel.';
+			wp_send_json_error( array( 'message' => $error_msg ) );
 		}
 
 		$base_price = floatval( $product['price'] );
@@ -1071,6 +1250,19 @@ class WPAT_Quick_Pay {
 		$final_amount  = max( 0.10, ( $base_price - $discount ) + $shipping_cost );
 		$amount_cents  = intval( round( $final_amount * 100 ) );
 
+		$billing_company  = isset( $_POST['billing_company'] ) ? sanitize_text_field( $_POST['billing_company'] ) : '';
+		$billing_address  = isset( $_POST['billing_address'] ) ? sanitize_text_field( $_POST['billing_address'] ) : '';
+		$billing_city     = isset( $_POST['billing_city'] ) ? sanitize_text_field( $_POST['billing_city'] ) : '';
+		$billing_postcode = isset( $_POST['billing_postcode'] ) ? sanitize_text_field( $_POST['billing_postcode'] ) : '';
+		$billing_state    = isset( $_POST['billing_state'] ) ? sanitize_text_field( $_POST['billing_state'] ) : '';
+		$billing_country  = isset( $_POST['billing_country'] ) ? sanitize_text_field( $_POST['billing_country'] ) : 'ES';
+
+		$shipping_addr    = isset( $_POST['shipping_address'] ) ? sanitize_text_field( $_POST['shipping_address'] ) : $billing_address;
+		$shipping_city    = isset( $_POST['shipping_city'] ) ? sanitize_text_field( $_POST['shipping_city'] ) : $billing_city;
+		$shipping_post    = isset( $_POST['shipping_postcode'] ) ? sanitize_text_field( $_POST['shipping_postcode'] ) : $billing_postcode;
+		$shipping_state   = isset( $_POST['shipping_state'] ) ? sanitize_text_field( $_POST['shipping_state'] ) : $billing_state;
+		$shipping_country = isset( $_POST['shipping_country'] ) ? sanitize_text_field( $_POST['shipping_country'] ) : $billing_country;
+
 		$order_id = $this->create_order_record(
 			array(
 				'product_id'        => $product['id'],
@@ -1082,13 +1274,21 @@ class WPAT_Quick_Pay {
 				'customer_email'    => isset( $_POST['customer_email'] ) ? sanitize_email( $_POST['customer_email'] ) : '',
 				'customer_phone'    => isset( $_POST['customer_phone'] ) ? sanitize_text_field( $_POST['customer_phone'] ) : '',
 				'customer_dni'      => isset( $_POST['customer_dni'] ) ? sanitize_text_field( $_POST['customer_dni'] ) : '',
-				'shipping_address'  => isset( $_POST['shipping_address'] ) ? sanitize_text_field( $_POST['shipping_address'] ) : '',
-				'shipping_city'     => isset( $_POST['shipping_city'] ) ? sanitize_text_field( $_POST['shipping_city'] ) : '',
-				'shipping_postcode' => isset( $_POST['shipping_postcode'] ) ? sanitize_text_field( $_POST['shipping_postcode'] ) : '',
+				'billing_company'   => $billing_company,
+				'billing_address'   => $billing_address,
+				'billing_city'      => $billing_city,
+				'billing_postcode'  => $billing_postcode,
+				'billing_state'     => $billing_state,
+				'billing_country'   => $billing_country,
+				'shipping_address'  => $shipping_addr,
+				'shipping_city'     => $shipping_city,
+				'shipping_postcode' => $shipping_post,
+				'shipping_state'    => $shipping_state,
+				'shipping_country'  => $shipping_country,
 				'shipping_cost'     => $shipping_cost,
 				'coupon_code'       => $coupon_code,
 				'discount_amount'   => $discount,
-				'gateway'           => 'redsys',
+				'gateway'           => $is_bizum ? 'bizum_redsys' : 'redsys',
 				'status'            => 'pending',
 				'is_recurring'      => 0,
 			)
@@ -1096,8 +1296,8 @@ class WPAT_Quick_Pay {
 
 		$order_key = $this->get_order_key_by_id( $order_id );
 
-		// Redsys Order ID (Máx 12 caracteres alfanuméricos)
-		$redsys_order_num = date( 'ymd' ) . str_pad( $order_id, 6, '0', STR_PAD_LEFT );
+		// Redsys Order ID (Máx 12 caracteres alfanuméricos, primeros 4 dígitos numéricos)
+		$redsys_order_num = date( 'ymd' ) . str_pad( (string) ( $order_id % 1000000 ), 6, '0', STR_PAD_LEFT );
 
 		$url_ok = add_query_arg(
 			array(
@@ -1115,6 +1315,8 @@ class WPAT_Quick_Pay {
 			home_url( '/' )
 		);
 
+		$webhook_url = add_query_arg( 'wpat_qp_webhook', $is_bizum ? 'bizum_redsys' : 'redsys', home_url( '/' ) );
+
 		$merchant_params = array(
 			'DS_MERCHANT_AMOUNT'             => (string) $amount_cents,
 			'DS_MERCHANT_ORDER'              => $redsys_order_num,
@@ -1122,11 +1324,17 @@ class WPAT_Quick_Pay {
 			'DS_MERCHANT_CURRENCY'           => '978', // EUR
 			'DS_MERCHANT_TRANSACTIONTYPE'    => '0',
 			'DS_MERCHANT_TERMINAL'           => $terminal,
-			'DS_MERCHANT_MERCHANTURL'        => add_query_arg( 'wpat_qp_webhook', 'redsys', home_url( '/' ) ),
+			'DS_MERCHANT_MERCHANTURL'        => $webhook_url,
 			'DS_MERCHANT_URLOK'              => $url_ok,
 			'DS_MERCHANT_URLKO'              => $url_ko,
 			'DS_MERCHANT_PRODUCTDESCRIPTION' => substr( $product['name'], 0, 125 ),
+			'DS_MERCHANT_MERCHANTDATA'       => $order_key,
 		);
+
+		// Si es Bizum oficial de Redsys, forzar el método de pago 'z'
+		if ( $is_bizum ) {
+			$merchant_params['DS_MERCHANT_PAYMETHODS'] = 'z';
+		}
 
 		$params_base64 = base64_encode( wp_json_encode( $merchant_params ) );
 		$signature     = $this->generate_redsys_signature( $params_base64, $redsys_order_num, $key );
@@ -1180,6 +1388,19 @@ class WPAT_Quick_Pay {
 		$shipping_cost = ( 'physical' === $product['type'] && ! empty( $product['shipping_cost'] ) ) ? floatval( $product['shipping_cost'] ) : 0.0;
 		$final_amount  = max( 0.50, ( $base_price - $discount ) + $shipping_cost );
 
+		$billing_company  = isset( $_POST['billing_company'] ) ? sanitize_text_field( $_POST['billing_company'] ) : '';
+		$billing_address  = isset( $_POST['billing_address'] ) ? sanitize_text_field( $_POST['billing_address'] ) : '';
+		$billing_city     = isset( $_POST['billing_city'] ) ? sanitize_text_field( $_POST['billing_city'] ) : '';
+		$billing_postcode = isset( $_POST['billing_postcode'] ) ? sanitize_text_field( $_POST['billing_postcode'] ) : '';
+		$billing_state    = isset( $_POST['billing_state'] ) ? sanitize_text_field( $_POST['billing_state'] ) : '';
+		$billing_country  = isset( $_POST['billing_country'] ) ? sanitize_text_field( $_POST['billing_country'] ) : 'ES';
+
+		$shipping_addr    = isset( $_POST['shipping_address'] ) ? sanitize_text_field( $_POST['shipping_address'] ) : $billing_address;
+		$shipping_city    = isset( $_POST['shipping_city'] ) ? sanitize_text_field( $_POST['shipping_city'] ) : $billing_city;
+		$shipping_post    = isset( $_POST['shipping_postcode'] ) ? sanitize_text_field( $_POST['shipping_postcode'] ) : $billing_postcode;
+		$shipping_state   = isset( $_POST['shipping_state'] ) ? sanitize_text_field( $_POST['shipping_state'] ) : $billing_state;
+		$shipping_country = isset( $_POST['shipping_country'] ) ? sanitize_text_field( $_POST['shipping_country'] ) : $billing_country;
+
 		$order_id = $this->create_order_record(
 			array(
 				'product_id'        => $product['id'],
@@ -1191,9 +1412,17 @@ class WPAT_Quick_Pay {
 				'customer_email'    => isset( $_POST['customer_email'] ) ? sanitize_email( $_POST['customer_email'] ) : '',
 				'customer_phone'    => isset( $_POST['customer_phone'] ) ? sanitize_text_field( $_POST['customer_phone'] ) : '',
 				'customer_dni'      => isset( $_POST['customer_dni'] ) ? sanitize_text_field( $_POST['customer_dni'] ) : '',
-				'shipping_address'  => isset( $_POST['shipping_address'] ) ? sanitize_text_field( $_POST['shipping_address'] ) : '',
-				'shipping_city'     => isset( $_POST['shipping_city'] ) ? sanitize_text_field( $_POST['shipping_city'] ) : '',
-				'shipping_postcode' => isset( $_POST['shipping_postcode'] ) ? sanitize_text_field( $_POST['shipping_postcode'] ) : '',
+				'billing_company'   => $billing_company,
+				'billing_address'   => $billing_address,
+				'billing_city'      => $billing_city,
+				'billing_postcode'  => $billing_postcode,
+				'billing_state'     => $billing_state,
+				'billing_country'   => $billing_country,
+				'shipping_address'  => $shipping_addr,
+				'shipping_city'     => $shipping_city,
+				'shipping_postcode' => $shipping_post,
+				'shipping_state'    => $shipping_state,
+				'shipping_country'  => $shipping_country,
 				'shipping_cost'     => $shipping_cost,
 				'coupon_code'       => $coupon_code,
 				'discount_amount'   => $discount,
@@ -1241,18 +1470,18 @@ class WPAT_Quick_Pay {
 	}
 
 	/**
-	 * Genera la firma SHA-256 HMAC para Redsys.
+	 * Genera la firma SHA-256 HMAC para Redsys con clave diversificada en 3DES.
 	 *
 	 * @param string $merchant_params_b64 Parámetros en Base64.
 	 * @param string $order_num           Número de pedido de Redsys.
-	 * @param string $secret_key          Clave secreta SHA-256.
+	 * @param string $secret_key          Clave secreta SHA-256 de Redsys.
 	 * @return string
 	 */
 	private function generate_redsys_signature( $merchant_params_b64, $order_num, $secret_key ) {
 		$key = base64_decode( $secret_key );
-		// Cifrado 3DES de la clave con el número de pedido
+		// Cifrado 3DES (DES-EDE3-CBC) de la clave con el número de pedido (relleno de ceros a múltiplos de 8)
 		$padding = 8 - ( strlen( $order_num ) % 8 );
-		$order_padded = $order_num . str_repeat( chr( $padding ), $padding );
+		$order_padded = $order_num . str_repeat( "\0", $padding );
 		$diversified_key = openssl_encrypt( $order_padded, 'DES-EDE3-CBC', $key, OPENSSL_RAW_DATA | OPENSSL_NO_PADDING, "\0\0\0\0\0\0\0\0" );
 		// Hash HMAC SHA-256
 		$res = hash_hmac( 'sha256', $merchant_params_b64, $diversified_key, true );
@@ -1260,9 +1489,76 @@ class WPAT_Quick_Pay {
 	}
 
 	/**
-	 * Maneja las redirecciones de retorno de pasarelas y webhooks.
+	 * Maneja las redirecciones de retorno de pasarelas y webhooks IPN de Redsys / Stripe / PayPal.
 	 */
 	public function handle_payment_return_and_webhooks() {
+		// 1. Webhook IPN oficial de Redsys / Bizum SIS (Server-to-Server)
+		if ( isset( $_GET['wpat_qp_webhook'] ) && in_array( $_GET['wpat_qp_webhook'], array( 'redsys', 'bizum_redsys' ), true ) ) {
+			$params_b64 = isset( $_POST['Ds_MerchantParameters'] ) ? $_POST['Ds_MerchantParameters'] : ( isset( $_GET['Ds_MerchantParameters'] ) ? $_GET['Ds_MerchantParameters'] : '' );
+			$signature  = isset( $_POST['Ds_Signature'] ) ? $_POST['Ds_Signature'] : ( isset( $_GET['Ds_Signature'] ) ? $_GET['Ds_Signature'] : '' );
+
+			if ( ! empty( $params_b64 ) && ! empty( $signature ) ) {
+				$decoded_json = base64_decode( strtr( $params_b64, '-_', '+/' ) );
+				$params = json_decode( $decoded_json, true );
+
+				if ( is_array( $params ) && isset( $params['Ds_Order'] ) && isset( $params['Ds_Response'] ) ) {
+					$order_num = $params['Ds_Order'];
+					$response_code = intval( $params['Ds_Response'] );
+					$auth_code = isset( $params['Ds_AuthorisationCode'] ) ? sanitize_text_field( $params['Ds_AuthorisationCode'] ) : '';
+					$merchant_data = isset( $params['Ds_MerchantData'] ) ? sanitize_key( urldecode( $params['Ds_MerchantData'] ) ) : '';
+
+					$settings = WPAT_Main::get_instance()->get_settings();
+					$keys_to_test = array();
+
+					if ( 'bizum_redsys' === $_GET['wpat_qp_webhook'] && ! empty( $settings['qp_bizum_redsys_key'] ) ) {
+						$keys_to_test[] = trim( $settings['qp_bizum_redsys_key'] );
+					}
+					if ( ! empty( $settings['qp_redsys_key'] ) ) {
+						$keys_to_test[] = trim( $settings['qp_redsys_key'] );
+					}
+
+					$sig_valid = false;
+					foreach ( $keys_to_test as $test_key ) {
+						$calculated_sig = $this->generate_redsys_signature( $params_b64, $order_num, $test_key );
+						$calc_url_safe  = strtr( $calculated_sig, '+/', '-_' );
+						$recv_url_safe  = strtr( $signature, '+/', '-_' );
+
+						if ( hash_equals( $calculated_sig, $signature ) || hash_equals( $calc_url_safe, $recv_url_safe ) ) {
+							$sig_valid = true;
+							break;
+						}
+					}
+
+					// Si la firma es correcta y la respuesta está entre 0000 y 0099 (Transacción aprobada)
+					if ( $sig_valid && $response_code >= 0 && $response_code <= 99 ) {
+						$order = null;
+						if ( ! empty( $merchant_data ) ) {
+							$order = $this->get_order_by_key( $merchant_data );
+						}
+
+						if ( ! $order ) {
+							// Extraer ID del pedido del número Redsys (últimos 6 dígitos)
+							$order_id = intval( substr( $order_num, 6 ) );
+							$order = $this->get_order_by_id( $order_id );
+						}
+
+						if ( $order && 'completed' !== $order->status ) {
+							$this->complete_order( $order->id, $auth_code ? $auth_code : 'REDSYS-' . $order_num );
+						}
+
+						status_header( 200 );
+						echo 'OK';
+						exit;
+					}
+				}
+			}
+
+			status_header( 400 );
+			echo 'BAD REQUEST';
+			exit;
+		}
+
+		// 2. Retorno en frontend del cliente
 		if ( isset( $_GET['wpat_qp_action'] ) ) {
 			$action    = sanitize_key( $_GET['wpat_qp_action'] );
 			$order_key = isset( $_GET['order_key'] ) ? sanitize_key( $_GET['order_key'] ) : '';
@@ -1271,8 +1567,10 @@ class WPAT_Quick_Pay {
 				$order = $this->get_order_by_key( $order_key );
 				if ( $order ) {
 					if ( 'stripe_return' === $action || 'redsys_return' === $action || 'paypal_return' === $action ) {
-						// Marcar como completado
-						$this->complete_order( $order->id, sanitize_text_field( isset( $_GET['session_id'] ) ? $_GET['session_id'] : 'PAY-' . time() ) );
+						$tx_id = sanitize_text_field( isset( $_GET['session_id'] ) ? $_GET['session_id'] : ( 'RET-' . time() ) );
+						if ( 'completed' !== $order->status ) {
+							$this->complete_order( $order->id, $tx_id );
+						}
 					}
 				}
 			}
@@ -1318,7 +1616,11 @@ class WPAT_Quick_Pay {
 		$token     = wp_generate_password( 32, false );
 
 		$settings = WPAT_Main::get_instance()->get_settings();
-		$prefix   = isset( $settings['qp_invoice_prefix'] ) ? $settings['qp_invoice_prefix'] : 'FAC-' . date( 'Y' ) . '-';
+		$prefix   = isset( $settings['qp_invoice_prefix'] ) && ! empty( $settings['qp_invoice_prefix'] ) ? $settings['qp_invoice_prefix'] : 'FAC-' . date( 'Y' ) . '-';
+
+		$amount = isset( $args['amount'] ) ? floatval( $args['amount'] ) : 0.0;
+		$tax_rate = isset( $args['tax_rate'] ) ? floatval( $args['tax_rate'] ) : 21.0;
+		$tax_amount = ( $amount * $tax_rate ) / ( 100 + $tax_rate );
 
 		$data = array(
 			'order_key'         => $order_key,
@@ -1326,17 +1628,26 @@ class WPAT_Quick_Pay {
 			'product_id'        => isset( $args['product_id'] ) ? $args['product_id'] : '',
 			'product_name'      => isset( $args['product_name'] ) ? $args['product_name'] : '',
 			'product_type'      => isset( $args['product_type'] ) ? $args['product_type'] : 'service',
-			'amount'            => isset( $args['amount'] ) ? floatval( $args['amount'] ) : 0.0,
+			'amount'            => $amount,
 			'currency'          => isset( $args['currency'] ) ? $args['currency'] : 'EUR',
 			'customer_name'     => isset( $args['customer_name'] ) ? $args['customer_name'] : '',
 			'customer_email'    => isset( $args['customer_email'] ) ? $args['customer_email'] : '',
 			'customer_phone'    => isset( $args['customer_phone'] ) ? $args['customer_phone'] : '',
 			'customer_dni'      => isset( $args['customer_dni'] ) ? $args['customer_dni'] : '',
+			'billing_company'   => isset( $args['billing_company'] ) ? $args['billing_company'] : '',
+			'billing_address'   => isset( $args['billing_address'] ) ? $args['billing_address'] : '',
+			'billing_city'      => isset( $args['billing_city'] ) ? $args['billing_city'] : '',
+			'billing_postcode'  => isset( $args['billing_postcode'] ) ? $args['billing_postcode'] : '',
+			'billing_state'     => isset( $args['billing_state'] ) ? $args['billing_state'] : '',
+			'billing_country'   => isset( $args['billing_country'] ) ? $args['billing_country'] : 'ES',
 			'shipping_address'  => isset( $args['shipping_address'] ) ? $args['shipping_address'] : '',
 			'shipping_city'     => isset( $args['shipping_city'] ) ? $args['shipping_city'] : '',
 			'shipping_postcode' => isset( $args['shipping_postcode'] ) ? $args['shipping_postcode'] : '',
+			'shipping_state'    => isset( $args['shipping_state'] ) ? $args['shipping_state'] : '',
+			'shipping_country'  => isset( $args['shipping_country'] ) ? $args['shipping_country'] : 'ES',
 			'shipping_cost'     => isset( $args['shipping_cost'] ) ? floatval( $args['shipping_cost'] ) : 0.0,
-			'tax_rate'          => isset( $args['tax_rate'] ) ? floatval( $args['tax_rate'] ) : 21.0,
+			'tax_rate'          => $tax_rate,
+			'tax_amount'        => round( $tax_amount, 2 ),
 			'coupon_code'       => isset( $args['coupon_code'] ) ? $args['coupon_code'] : '',
 			'discount_amount'   => isset( $args['discount_amount'] ) ? floatval( $args['discount_amount'] ) : 0.0,
 			'gateway'           => isset( $args['gateway'] ) ? $args['gateway'] : 'manual',
@@ -1349,7 +1660,7 @@ class WPAT_Quick_Pay {
 		$order_id = $wpdb->insert_id;
 
 		// Asignar número de factura correlativo
-		$invoice_num = $prefix . str_pad( $order_id, 4, '0', STR_PAD_LEFT );
+		$invoice_num = $prefix . str_pad( (string) $order_id, 4, '0', STR_PAD_LEFT );
 		$wpdb->update( $this->table_orders, array( 'invoice_number' => $invoice_num ), array( 'id' => $order_id ) );
 
 		return $order_id;
@@ -1383,7 +1694,7 @@ class WPAT_Quick_Pay {
 			$this->increment_coupon_usage( $order->coupon_code );
 		}
 
-		// Enviar emails de confirmación y factura PDF
+		// Enviar emails de confirmación y factura
 		$this->send_order_emails( $order_id, true );
 	}
 
@@ -1430,6 +1741,17 @@ class WPAT_Quick_Pay {
 				. '</div>';
 		}
 
+		$billing_info_html = '';
+		if ( ! empty( $order->billing_address ) || ! empty( $order->customer_dni ) || ! empty( $order->billing_company ) ) {
+			$billing_info_html = '<div style="margin: 16px 0; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px;">'
+				. '<strong style="color: #475569; text-transform: uppercase; font-size: 11px;">Datos de Facturación:</strong><br>'
+				. ( $order->billing_company ? '<strong>' . esc_html( $order->billing_company ) . '</strong><br>' : '' )
+				. ( $order->customer_dni ? 'NIF/CIF: ' . esc_html( $order->customer_dni ) . '<br>' : '' )
+				. ( $order->billing_address ? esc_html( $order->billing_address ) . '<br>' : '' )
+				. ( $order->billing_postcode || $order->billing_city ? esc_html( $order->billing_postcode . ' ' . $order->billing_city ) . '<br>' : '' )
+				. '</div>';
+		}
+
 		$body = '<div style="font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">'
 			. '<div style="background: #2563eb; color: #ffffff; padding: 24px; text-align: center;">'
 			. '<h1 style="margin: 0; font-size: 22px; font-weight: 800;">' . esc_html( $site_name ) . '</h1>'
@@ -1442,6 +1764,7 @@ class WPAT_Quick_Pay {
 			. '<tr style="border-bottom: 2px solid #e2e8f0; background: #f8fafc;"><th style="padding: 10px; text-align: left;">Concepto</th><th style="padding: 10px; text-align: right;">Total</th></tr>'
 			. '<tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 12px 10px;"><strong>' . esc_html( $order->product_name ) . '</strong><br><small style="color: #64748b;">Nº Factura: ' . esc_html( $order->invoice_number ) . '</small></td><td style="padding: 12px 10px; text-align: right; font-weight: 700;">' . number_format( $order->amount, 2, ',', '.' ) . ' ' . esc_html( $order->currency ) . '</td></tr>'
 			. '</table>'
+			. $billing_info_html
 			. $download_link
 			. '<p style="color: #64748b; font-size: 12.5px; margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 16px;">Si tienes alguna pregunta sobre tu pedido, responde directamente a este correo.</p>'
 			. '</div>'
@@ -1459,7 +1782,9 @@ class WPAT_Quick_Pay {
 			. "Factura: {$order->invoice_number}\n"
 			. "Cliente: {$order->customer_name} ({$order->customer_email})\n"
 			. "Teléfono: {$order->customer_phone}\n"
-			. "DNI/NIF: {$order->customer_dni}\n"
+			. "DNI/NIF/CIF: {$order->customer_dni}\n"
+			. "Empresa: {$order->billing_company}\n"
+			. "Dirección Facturación: {$order->billing_address}, {$order->billing_postcode} {$order->billing_city} ({$order->billing_country})\n"
 			. "Producto: {$order->product_name}\n"
 			. "Importe: " . number_format( $order->amount, 2, ',', '.' ) . " {$order->currency}\n"
 			. "Pasarela: {$order->gateway}\n"
@@ -1757,7 +2082,35 @@ class WPAT_Quick_Pay {
 		header( 'Content-Disposition: attachment; filename=wpat_ventas_' . date( 'Y-m-d' ) . '.csv' );
 
 		$output = fopen( 'php://output', 'w' );
-		fputcsv( $output, array( 'ID Pedido', 'Nº Factura', 'Fecha', 'Cliente', 'Email', 'Teléfono', 'DNI/NIF', 'Producto', 'Tipo', 'Importe', 'Moneda', 'Pasarela', 'Estado', 'Cupón', 'Descuento' ) );
+		fputcsv(
+			$output,
+			array(
+				'ID Pedido',
+				'Nº Factura',
+				'Fecha',
+				'Cliente',
+				'Email',
+				'Teléfono',
+				'DNI/NIF/CIF',
+				'Empresa',
+				'Dirección Facturación',
+				'CP Facturación',
+				'Ciudad Facturación',
+				'Provincia',
+				'País',
+				'Producto',
+				'Tipo',
+				'Importe Total',
+				'IVA (%)',
+				'Cuota IVA',
+				'Moneda',
+				'Pasarela',
+				'Estado',
+				'Transacción ID',
+				'Cupón',
+				'Descuento',
+			)
+		);
 
 		foreach ( $orders as $o ) {
 			fputcsv(
@@ -1770,14 +2123,23 @@ class WPAT_Quick_Pay {
 					$o->customer_email,
 					$o->customer_phone,
 					$o->customer_dni,
+					$o->billing_company ?? '',
+					$o->billing_address ?? '',
+					$o->billing_postcode ?? '',
+					$o->billing_city ?? '',
+					$o->billing_state ?? '',
+					$o->billing_country ?? 'ES',
 					$o->product_name,
 					$o->product_type,
-					number_format( $o->amount, 2, '.', '' ),
+					number_format( (float) $o->amount, 2, '.', '' ),
+					$o->tax_rate,
+					number_format( (float) $o->tax_amount, 2, '.', '' ),
 					$o->currency,
 					$o->gateway,
 					$o->status,
+					$o->transaction_id,
 					$o->coupon_code,
-					number_format( $o->discount_amount, 2, '.', '' ),
+					number_format( (float) $o->discount_amount, 2, '.', '' ),
 				)
 			);
 		}
@@ -1804,7 +2166,7 @@ class WPAT_Quick_Pay {
 		}
 
 		$settings = WPAT_Main::get_instance()->get_settings();
-		$company_name = isset( $settings['qp_company_name'] ) ? $settings['qp_company_name'] : get_bloginfo( 'name' );
+		$company_name = isset( $settings['qp_company_name'] ) && ! empty( $settings['qp_company_name'] ) ? $settings['qp_company_name'] : get_bloginfo( 'name' );
 		$company_cif  = isset( $settings['qp_company_cif'] ) ? $settings['qp_company_cif'] : '';
 		$company_addr = isset( $settings['qp_company_address'] ) ? $settings['qp_company_address'] : '';
 
@@ -1852,8 +2214,16 @@ class WPAT_Quick_Pay {
 					<div>
 						<strong style="color: #64748b; text-transform: uppercase; font-size: 11px;">Facturar a:</strong><br>
 						<strong style="font-size: 15px; color: #0f172a;"><?php echo esc_html( $order->customer_name ); ?></strong><br>
+						<?php if ( ! empty( $order->billing_company ) ) : ?>
+							<strong><?php echo esc_html( $order->billing_company ); ?></strong><br>
+						<?php endif; ?>
 						<?php if ( ! empty( $order->customer_dni ) ) : ?>
 							NIF/CIF: <?php echo esc_html( $order->customer_dni ); ?><br>
+						<?php endif; ?>
+						<?php if ( ! empty( $order->billing_address ) ) : ?>
+							<?php echo esc_html( $order->billing_address ); ?><br>
+							<?php echo esc_html( ( $order->billing_postcode ? $order->billing_postcode . ' ' : '' ) . ( $order->billing_city ?? '' ) . ( $order->billing_state ? ' (' . $order->billing_state . ')' : '' ) ); ?><br>
+							<?php echo esc_html( $order->billing_country ?? 'ES' ); ?><br>
 						<?php endif; ?>
 						Email: <?php echo esc_html( $order->customer_email ); ?><br>
 						<?php if ( ! empty( $order->customer_phone ) ) : ?>
@@ -1862,7 +2232,7 @@ class WPAT_Quick_Pay {
 					</div>
 					<div style="text-align: right;">
 						<strong style="color: #64748b; text-transform: uppercase; font-size: 11px;">Detalles del Pago:</strong><br>
-						Método: <?php echo esc_html( strtoupper( $order->gateway ) ); ?><br>
+						Método: <?php echo esc_html( strtoupper( str_replace( '_', ' ', $order->gateway ) ) ); ?><br>
 						Estado: <strong><?php echo ( 'completed' === $order->status ) ? 'PAGADO' : 'PENDIENTE'; ?></strong><br>
 						Transacción: <code><?php echo esc_html( $order->transaction_id ? $order->transaction_id : '#WPAT-' . $order->id ); ?></code>
 					</div>

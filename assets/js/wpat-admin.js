@@ -6077,19 +6077,367 @@ jQuery(document).ready(function($) {
 			$('#wpat_qr_fg_color').val('#000000');
 			$('#wpat_qr_bg_color').val('#ffffff');
 		}
-		$('#wpat_qr_logo_type').val('none').trigger('change');
-		debouncedQRPreview();
-		showToast('Formulario restablecido para un nuevo QR', false);
+	// =========================================================================
+	// VENTA DIRECTA SIN WOOCOMMERCE (QUICK PAY) - ADMIN JS
+	// =========================================================================
+
+	// Subtabs de Quick Pay
+	$(document).on('click', '.wpat-qp-tab-btn', function(e) {
+		e.preventDefault();
+		var tab = $(this).data('tab');
+		$('.wpat-qp-tab-btn').removeClass('active').css({
+			'border-bottom-color': 'transparent',
+			'color': '#64748b'
+		});
+		$(this).addClass('active').css({
+			'border-bottom-color': '#2563eb',
+			'color': '#2563eb'
+		});
+		$('.wpat-qp-tab-panel').hide();
+		$('#wpat_qp_tab_' + tab).fadeIn(150);
+		$('#wpat_qp_active_subtab').val(tab);
 	});
 
-	// Ejecutar render inicial al cargar
-	if ($('#wpat_qr_canvas_holder').length) {
-		setTimeout(function() {
-			renderLiveQRPreview();
-			initSavedQRsThumbnails();
-		}, 200);
-	}
+	// Toggle modalidad Bizum (Redsys Automático vs Manual)
+	$(document).on('change', '.wpat-qp-bizum-type-radio', function() {
+		var type = $(this).val();
+		if (type === 'redsys') {
+			$('#wpat_qp_bizum_manual_box').slideUp(120);
+			$('#wpat_qp_bizum_redsys_box').slideDown(120);
+		} else {
+			$('#wpat_qp_bizum_redsys_box').slideUp(120);
+			$('#wpat_qp_bizum_manual_box').slideDown(120);
+		}
+	});
+
+	// Toggle credenciales personalizadas de Bizum Redsys
+	$(document).on('change', '#wpat_qp_bizum_redsys_custom_toggle', function() {
+		if ($(this).is(':checked')) {
+			$('#wpat_qp_bizum_custom_creds').slideDown(120).css('display', 'grid');
+		} else {
+			$('#wpat_qp_bizum_custom_creds').slideUp(120);
+		}
+	});
+
+	// Toggle tipo de producto en modal de producto
+	$(document).on('change', '#wpat_qp_prod_type', function() {
+		var type = $(this).val();
+		if (type === 'digital') {
+			$('#wpat_qp_prod_digital_group').slideDown(120);
+			$('#wpat_qp_prod_physical_group').slideUp(120);
+		} else if (type === 'physical') {
+			$('#wpat_qp_prod_physical_group').slideDown(120);
+			$('#wpat_qp_prod_digital_group').slideUp(120);
+		} else {
+			$('#wpat_qp_prod_digital_group').slideUp(120);
+			$('#wpat_qp_prod_physical_group').slideUp(120);
+		}
+	});
+
+	// Abrir Modal Añadir Producto
+	$(document).on('click', '#wpat_qp_open_add_product_btn', function(e) {
+		e.preventDefault();
+		$('#wpat_qp_modal_prod_title').text('Añadir Nuevo Producto');
+		$('#wpat_qp_prod_id').val('');
+		$('#wpat_qp_prod_name').val('');
+		$('#wpat_qp_prod_price').val('');
+		$('#wpat_qp_prod_type').val('service').trigger('change');
+		$('#wpat_qp_prod_download_file').val('');
+		$('#wpat_qp_prod_shipping_cost').val('');
+		$('#wpat_qp_prod_tax_rate').val('21');
+		$('#wpat_qp_prod_btn_text').val('');
+		$('#wpat_qp_prod_desc').val('');
+		$('#wpat_qp_prod_image_url').val('');
+		$('#wpat_qp_product_modal').css('display', 'flex').hide().fadeIn(150);
+	});
+
+	// Editar Producto
+	$(document).on('click', '.wpat-qp-edit-prod-btn', function(e) {
+		e.preventDefault();
+		var p = $(this).data('prod');
+		if (!p) return;
+
+		$('#wpat_qp_modal_prod_title').text('Editar Producto: ' + p.name);
+		$('#wpat_qp_prod_id').val(p.id);
+		$('#wpat_qp_prod_name').val(p.name);
+		$('#wpat_qp_prod_price').val(p.price);
+		$('#wpat_qp_prod_type').val(p.type || 'service').trigger('change');
+		$('#wpat_qp_prod_download_file').val(p.download_file || '');
+		$('#wpat_qp_prod_shipping_cost').val(p.shipping_cost || '');
+		$('#wpat_qp_prod_tax_rate').val(p.tax_rate !== undefined ? p.tax_rate : 21);
+		$('#wpat_qp_prod_btn_text').val(p.button_text || '');
+		$('#wpat_qp_prod_desc').val(p.desc || '');
+		$('#wpat_qp_prod_image_url').val(p.image_url || '');
+		$('#wpat_qp_product_modal').css('display', 'flex').hide().fadeIn(150);
+	});
+
+	// Guardar Producto AJAX
+	$(document).on('click', '#wpat_qp_save_prod_btn', function(e) {
+		e.preventDefault();
+		var name = $('#wpat_qp_prod_name').val().trim();
+		var price = parseFloat($('#wpat_qp_prod_price').val());
+
+		if (!name || isNaN(price) || price <= 0) {
+			alert('Introduce un nombre válido y un precio mayor que 0.');
+			return;
+		}
+
+		var $btn = $(this);
+		$btn.prop('disabled', true).text('Guardando...');
+
+		var nonce = $('#wpat_qp_admin_nonce_field').val();
+
+		$.ajax({
+			url: (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php'),
+			type: 'POST',
+			data: {
+				action: 'wpat_qp_admin_save_product',
+				security: nonce,
+				product_id: $('#wpat_qp_prod_id').val(),
+				name: name,
+				price: price,
+				type: $('#wpat_qp_prod_type').val(),
+				download_file: $('#wpat_qp_prod_download_file').val(),
+				shipping_cost: $('#wpat_qp_prod_shipping_cost').val(),
+				tax_rate: $('#wpat_qp_prod_tax_rate').val(),
+				button_text: $('#wpat_qp_prod_btn_text').val(),
+				desc: $('#wpat_qp_prod_desc').val(),
+				image_url: $('#wpat_qp_prod_image_url').val()
+			},
+			success: function(res) {
+				$btn.prop('disabled', false).text('Guardar Producto');
+				if (res.success) {
+					$('#wpat_qp_product_modal').fadeOut(150);
+					showToast('Producto guardado correctamente', false);
+					setTimeout(function() {
+						window.location.reload();
+					}, 600);
+				} else {
+					alert(res.data ? res.data.message : 'Error al guardar producto');
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).text('Guardar Producto');
+				alert('Error al conectar con el servidor.');
+			}
+		});
+	});
+
+	// Eliminar Producto AJAX
+	$(document).on('click', '.wpat-qp-delete-prod-btn', function(e) {
+		e.preventDefault();
+		var id = $(this).data('id');
+		if (!id) return;
+
+		if (!confirm('¿Seguro que deseas eliminar este producto?')) {
+			return;
+		}
+
+		var nonce = $('#wpat_qp_admin_nonce_field').val();
+		var $row = $('#wpat_qp_row_prod_' + id);
+
+		$.ajax({
+			url: (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php'),
+			type: 'POST',
+			data: {
+				action: 'wpat_qp_admin_delete_product',
+				security: nonce,
+				product_id: id
+			},
+			success: function(res) {
+				if (res.success) {
+					$row.fadeOut(200, function() { $(this).remove(); });
+					showToast('Producto eliminado', 'deactivate');
+				} else {
+					alert(res.data ? res.data.message : 'Error al eliminar');
+				}
+			}
+		});
+	});
+
+	// Abrir Modal Añadir Cupón
+	$(document).on('click', '#wpat_qp_open_add_coupon_btn', function(e) {
+		e.preventDefault();
+		$('#wpat_qp_c_code').val('');
+		$('#wpat_qp_c_type').val('percent');
+		$('#wpat_qp_c_amount').val('');
+		$('#wpat_qp_c_expiry').val('');
+		$('#wpat_qp_c_limit').val('');
+		$('#wpat_qp_coupon_modal').css('display', 'flex').hide().fadeIn(150);
+	});
+
+	// Guardar Cupón AJAX
+	$(document).on('click', '#wpat_qp_save_coupon_btn', function(e) {
+		e.preventDefault();
+		var code = $('#wpat_qp_c_code').val().trim();
+		var amount = parseFloat($('#wpat_qp_c_amount').val());
+
+		if (!code || isNaN(amount) || amount <= 0) {
+			alert('Introduce un código de cupón y un importe mayor que 0.');
+			return;
+		}
+
+		var $btn = $(this);
+		$btn.prop('disabled', true).text('Guardando...');
+
+		var nonce = $('#wpat_qp_admin_nonce_field').val();
+
+		$.ajax({
+			url: (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php'),
+			type: 'POST',
+			data: {
+				action: 'wpat_qp_admin_save_coupon',
+				security: nonce,
+				code: code,
+				type: $('#wpat_qp_c_type').val(),
+				amount: amount,
+				expiry: $('#wpat_qp_c_expiry').val(),
+				usage_limit: $('#wpat_qp_c_limit').val()
+			},
+			success: function(res) {
+				$btn.prop('disabled', false).text('Guardar Cupón');
+				if (res.success) {
+					$('#wpat_qp_coupon_modal').fadeOut(150);
+					showToast('Cupón guardado correctamente', false);
+					setTimeout(function() {
+						window.location.reload();
+					}, 600);
+				} else {
+					alert(res.data ? res.data.message : 'Error al guardar cupón');
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).text('Guardar Cupón');
+				alert('Error al conectar con el servidor.');
+			}
+		});
+	});
+
+	// Eliminar Cupón AJAX
+	$(document).on('click', '.wpat-qp-delete-coupon-btn', function(e) {
+		e.preventDefault();
+		var code = $(this).data('code');
+		if (!code) return;
+
+		if (!confirm('¿Eliminar cupón ' + code + '?')) {
+			return;
+		}
+
+		var nonce = $('#wpat_qp_admin_nonce_field').val();
+		var $row = $('#wpat_qp_row_coupon_' + code);
+
+		$.ajax({
+			url: (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php'),
+			type: 'POST',
+			data: {
+				action: 'wpat_qp_admin_delete_coupon',
+				security: nonce,
+				code: code
+			},
+			success: function(res) {
+				if (res.success) {
+					$row.fadeOut(200, function() { $(this).remove(); });
+					showToast('Cupón eliminado', 'deactivate');
+				} else {
+					alert(res.data ? res.data.message : 'Error al eliminar');
+				}
+			}
+		});
+	});
+
+	// Cambiar estado de Pedido AJAX
+	$(document).on('change', '.wpat-qp-change-order-status', function() {
+		var $sel = $(this);
+		var orderId = $sel.data('id');
+		var newStatus = $sel.val();
+		var nonce = $('#wpat_qp_admin_nonce_field').val();
+
+		$sel.css('opacity', '0.5');
+
+		$.ajax({
+			url: (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php'),
+			type: 'POST',
+			data: {
+				action: 'wpat_qp_admin_update_order_status',
+				security: nonce,
+				order_id: orderId,
+				status: newStatus
+			},
+			success: function(res) {
+				$sel.css('opacity', '1');
+				if (res.success) {
+					if (newStatus === 'completed') {
+						$sel.css({ 'background': '#ecfdf5', 'color': '#059669' });
+					} else {
+						$sel.css({ 'background': '#fffbeb', 'color': '#d97706' });
+					}
+					showToast('Estado del pedido actualizado', false);
+				} else {
+					alert(res.data ? res.data.message : 'Error al actualizar estado');
+				}
+			},
+			error: function() {
+				$sel.css('opacity', '1');
+				alert('Error al conectar con el servidor.');
+			}
+		});
+	});
+
+	// Eliminar Pedido AJAX
+	$(document).on('click', '.wpat-qp-delete-order-btn', function(e) {
+		e.preventDefault();
+		var orderId = $(this).data('id');
+		if (!orderId) return;
+
+		if (!confirm('¿Seguro que deseas eliminar este pedido permanentemente?')) {
+			return;
+		}
+
+		var nonce = $('#wpat_qp_admin_nonce_field').val();
+		var $row = $('#wpat_qp_row_order_' + orderId);
+
+		$.ajax({
+			url: (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php'),
+			type: 'POST',
+			data: {
+				action: 'wpat_qp_admin_delete_order',
+				security: nonce,
+				order_id: orderId
+			},
+			success: function(res) {
+				if (res.success) {
+					$row.fadeOut(200, function() { $(this).remove(); });
+					showToast('Pedido eliminado', 'deactivate');
+				} else {
+					alert(res.data ? res.data.message : 'Error al eliminar pedido');
+				}
+			}
+		});
+	});
+
+	// Cerrar modales de admin
+	$(document).on('click', '.wpat-qp-close-admin-modal', function(e) {
+		e.preventDefault();
+		$('.wpat-modal-overlay').fadeOut(150);
+	});
+
+	$(document).on('click', '.wpat-modal-overlay', function(e) {
+		if ($(e.target).hasClass('wpat-modal-overlay')) {
+			$(this).fadeOut(150);
+		}
+	});
+
+	// Copiar shortcodes en admin Quick Pay
+	$(document).on('click', '.wpat-qp-copy-shortcode-btn', function(e) {
+		e.preventDefault();
+		var code = $(this).data('code');
+		if (navigator.clipboard) {
+			navigator.clipboard.writeText(code);
+			showToast('Shortcode copiado: ' + code, false);
+		}
+	});
 
 });
+
 
 

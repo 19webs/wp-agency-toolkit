@@ -38,6 +38,10 @@
 		$('#wpat_qp_checkout_form').show();
 		$('#wpat_qp_f_product_payload').val(productPayload);
 
+		// Estado inicial del toggle de envío
+		$('#wpat_qp_same_as_billing').prop('checked', true);
+		$('#wpat_qp_shipping_subfields').hide();
+
 		$.ajax({
 			url: wpatQuickPay.ajax_url,
 			type: 'POST',
@@ -69,7 +73,6 @@
 					// Mostrar u ocultar campos de envío físico
 					if (currentProduct.type === 'physical') {
 						$('#wpat_qp_shipping_fields_wrapper').slideDown(150);
-						$('#wpat_qp_f_address, #wpat_qp_f_city, #wpat_qp_f_postcode').prop('required', true);
 						if (parseFloat(d.shipping) > 0) {
 							$('#wpat_qp_b_shipping_row').show();
 							$('#wpat_qp_b_shipping').text(formatMoney(d.shipping));
@@ -78,7 +81,6 @@
 						}
 					} else {
 						$('#wpat_qp_shipping_fields_wrapper').hide();
-						$('#wpat_qp_f_address, #wpat_qp_f_city, #wpat_qp_f_postcode').prop('required', false);
 						$('#wpat_qp_b_shipping_row').hide();
 					}
 
@@ -92,6 +94,17 @@
 				alert('Error de conexión con el servidor.');
 			}
 		});
+	});
+
+	// Toggle dirección de envío si es física
+	$(document).on('change', '#wpat_qp_same_as_billing', function() {
+		if ($(this).is(':checked')) {
+			$('#wpat_qp_shipping_subfields').slideUp(120);
+			$('#wpat_qp_f_address, #wpat_qp_f_city, #wpat_qp_f_postcode').prop('required', false);
+		} else {
+			$('#wpat_qp_shipping_subfields').slideDown(120);
+			$('#wpat_qp_f_address, #wpat_qp_f_city, #wpat_qp_f_postcode').prop('required', true);
+		}
 	});
 
 	// 2. Cerrar Modal
@@ -174,6 +187,19 @@
 
 		$submitBtn.prop('disabled', true).html('⏳ ' + (wpatQuickPay.i18n ? wpatQuickPay.i18n.loading : 'Procesando...'));
 
+		var isSameShipping = $('#wpat_qp_same_as_billing').is(':checked');
+		var bAddress = $('#wpat_qp_f_billing_address').val();
+		var bCity = $('#wpat_qp_f_billing_city').val();
+		var bPostcode = $('#wpat_qp_f_billing_postcode').val();
+		var bState = $('#wpat_qp_f_billing_state').val();
+		var bCountry = $('#wpat_qp_f_billing_country').val();
+
+		var sAddress = isSameShipping ? bAddress : $('#wpat_qp_f_address').val();
+		var sCity = isSameShipping ? bCity : $('#wpat_qp_f_city').val();
+		var sPostcode = isSameShipping ? bPostcode : $('#wpat_qp_f_postcode').val();
+		var sState = isSameShipping ? bState : bState;
+		var sCountry = isSameShipping ? bCountry : bCountry;
+
 		var formData = {
 			security: wpatQuickPay.nonce,
 			product_id: $('#wpat_qp_f_product_id').val(),
@@ -183,10 +209,18 @@
 			customer_email: $('#wpat_qp_f_email').val(),
 			customer_phone: $('#wpat_qp_f_phone').val(),
 			customer_dni: $('#wpat_qp_f_dni').val(),
-			coupon_code: $('#wpat_qp_f_applied_coupon').val(),
-			shipping_address: $('#wpat_qp_f_address').val(),
-			shipping_city: $('#wpat_qp_f_city').val(),
-			shipping_postcode: $('#wpat_qp_f_postcode').val()
+			billing_company: $('#wpat_qp_f_billing_company').val(),
+			billing_address: bAddress,
+			billing_city: bCity,
+			billing_postcode: bPostcode,
+			billing_state: bState,
+			billing_country: bCountry,
+			shipping_address: sAddress,
+			shipping_city: sCity,
+			shipping_postcode: sPostcode,
+			shipping_state: sState,
+			shipping_country: sCountry,
+			coupon_code: $('#wpat_qp_f_applied_coupon').val()
 		};
 
 		// 6.1. Pasarela: STRIPE
@@ -213,9 +247,12 @@
 			return;
 		}
 
-		// 6.2. Pasarela: REDSYS TPV
-		if (gateway === 'redsys') {
+		// 6.2. Pasarela: REDSYS TPV O BIZUM AUTOMATIZADO SIS
+		if (gateway === 'redsys' || (gateway === 'bizum' && wpatQuickPay.bizum_type === 'redsys')) {
 			formData.action = 'wpat_qp_process_redsys_order';
+			if (gateway === 'bizum') {
+				formData.pay_method = 'z';
+			}
 			$.ajax({
 				url: wpatQuickPay.ajax_url,
 				type: 'POST',
@@ -232,12 +269,12 @@
 						$form.submit();
 					} else {
 						$submitBtn.prop('disabled', false).html(origText);
-						alert(response.data ? response.data.message : 'Error al procesar Redsys');
+						alert(response.data ? response.data.message : 'Error al procesar pasarela bancaria');
 					}
 				},
 				error: function() {
 					$submitBtn.prop('disabled', false).html(origText);
-					alert('Error al conectar con Redsys.');
+					alert('Error al conectar con la pasarela bancaria.');
 				}
 			});
 			return;
@@ -266,7 +303,7 @@
 			return;
 		}
 
-		// 6.4. Pasarela: BIZUM / TRANSFERENCIA MANUAL
+		// 6.4. Pasarela: BIZUM MANUAL O TRANSFERENCIA BANCARIA
 		formData.action = 'wpat_qp_process_manual_order';
 		$.ajax({
 			url: wpatQuickPay.ajax_url,
@@ -290,3 +327,4 @@
 	});
 
 })(jQuery);
+

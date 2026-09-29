@@ -1532,16 +1532,27 @@ class WPAT_Admin {
 			$new_settings['qp_redsys_terminal'] = isset( $input_settings['qp_redsys_terminal'] ) ? sanitize_text_field( $input_settings['qp_redsys_terminal'] ) : '1';
 			$new_settings['qp_redsys_key']      = isset( $input_settings['qp_redsys_key'] ) ? sanitize_text_field( $input_settings['qp_redsys_key'] ) : '';
 
-			$new_settings['qp_bizum_enabled']   = isset( $input_settings['qp_bizum_enabled'] ) && '1' === $input_settings['qp_bizum_enabled'] ? '1' : '0';
-			$new_settings['qp_bizum_phone']     = isset( $input_settings['qp_bizum_phone'] ) ? sanitize_text_field( $input_settings['qp_bizum_phone'] ) : '';
+			$new_settings['qp_bizum_enabled']         = isset( $input_settings['qp_bizum_enabled'] ) && '1' === $input_settings['qp_bizum_enabled'] ? '1' : '0';
+			$new_settings['qp_bizum_type']            = isset( $input_settings['qp_bizum_type'] ) && in_array( $input_settings['qp_bizum_type'], array( 'redsys', 'manual' ), true ) ? $input_settings['qp_bizum_type'] : 'redsys';
+			$new_settings['qp_bizum_redsys_custom']   = isset( $input_settings['qp_bizum_redsys_custom'] ) && '1' === $input_settings['qp_bizum_redsys_custom'] ? '1' : '0';
+			$new_settings['qp_bizum_redsys_fuc']      = isset( $input_settings['qp_bizum_redsys_fuc'] ) ? sanitize_text_field( $input_settings['qp_bizum_redsys_fuc'] ) : '';
+			$new_settings['qp_bizum_redsys_terminal'] = isset( $input_settings['qp_bizum_redsys_terminal'] ) ? sanitize_text_field( $input_settings['qp_bizum_redsys_terminal'] ) : '1';
+			$new_settings['qp_bizum_redsys_key']      = isset( $input_settings['qp_bizum_redsys_key'] ) ? sanitize_text_field( $input_settings['qp_bizum_redsys_key'] ) : '';
+			$new_settings['qp_bizum_phone']           = isset( $input_settings['qp_bizum_phone'] ) ? sanitize_text_field( $input_settings['qp_bizum_phone'] ) : '';
+			$new_settings['qp_bizum_instructions']    = isset( $input_settings['qp_bizum_instructions'] ) ? sanitize_textarea_field( $input_settings['qp_bizum_instructions'] ) : '';
 
 			$new_settings['qp_paypal_enabled']  = isset( $input_settings['qp_paypal_enabled'] ) && '1' === $input_settings['qp_paypal_enabled'] ? '1' : '0';
 			$new_settings['qp_paypal_mode']     = isset( $input_settings['qp_paypal_mode'] ) && 'live' === $input_settings['qp_paypal_mode'] ? 'live' : 'test';
 			$new_settings['qp_paypal_email']    = isset( $input_settings['qp_paypal_email'] ) ? sanitize_email( $input_settings['qp_paypal_email'] ) : '';
 
-			$new_settings['qp_bank_enabled']    = isset( $input_settings['qp_bank_enabled'] ) && '1' === $input_settings['qp_bank_enabled'] ? '1' : '0';
-			$new_settings['qp_bank_iban']       = isset( $input_settings['qp_bank_iban'] ) ? sanitize_text_field( $input_settings['qp_bank_iban'] ) : '';
-			$new_settings['qp_bank_holder']     = isset( $input_settings['qp_bank_holder'] ) ? sanitize_text_field( $input_settings['qp_bank_holder'] ) : '';
+			$new_settings['qp_bank_enabled']      = isset( $input_settings['qp_bank_enabled'] ) && '1' === $input_settings['qp_bank_enabled'] ? '1' : '0';
+			$new_settings['qp_bank_iban']         = isset( $input_settings['qp_bank_iban'] ) ? sanitize_text_field( $input_settings['qp_bank_iban'] ) : '';
+			$new_settings['qp_bank_holder']       = isset( $input_settings['qp_bank_holder'] ) ? sanitize_text_field( $input_settings['qp_bank_holder'] ) : '';
+			$new_settings['qp_bank_instructions'] = isset( $input_settings['qp_bank_instructions'] ) ? sanitize_textarea_field( $input_settings['qp_bank_instructions'] ) : '';
+
+			$new_settings['qp_require_billing_address'] = isset( $input_settings['qp_require_billing_address'] ) && '1' === $input_settings['qp_require_billing_address'] ? '1' : '0';
+			$new_settings['qp_require_phone']           = isset( $input_settings['qp_require_phone'] ) && '1' === $input_settings['qp_require_phone'] ? '1' : '0';
+			$new_settings['qp_require_dni']             = isset( $input_settings['qp_require_dni'] ) && '1' === $input_settings['qp_require_dni'] ? '1' : '0';
 		}
 
 		// Preservar colecciones gestionadas independientemente
@@ -12013,7 +12024,7 @@ class WPAT_Admin {
 								<div style="display: flex; align-items: center; gap: 10px;">
 									<span style="font-size: 24px;">💳</span>
 									<div>
-										<strong style="font-size: 15px; color: #0f172a;">Stripe (Tarjetas, Apple Pay, Google Pay)</strong>
+										<strong style="font-size: 15px; color: #0f172a;">Stripe (Tarjetas de Crédito/Débito, Apple Pay, Google Pay)</strong>
 										<span style="display: block; font-size: 12px; color: #64748b;">Cobros instantáneos con tarjeta y soporte para suscripciones periódicas.</span>
 									</div>
 								</div>
@@ -12050,14 +12061,14 @@ class WPAT_Admin {
 							</div>
 						</div>
 
-						<!-- 2. REDSYS TPV & BIZUM BANCO -->
+						<!-- 2. REDSYS TPV (TARJETAS BANCARIAS) -->
 						<div class="wpat-qp-gateway-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 22px;">
 							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
 								<div style="display: flex; align-items: center; gap: 10px;">
 									<span style="font-size: 24px;">🏦</span>
 									<div>
-										<strong style="font-size: 15px; color: #0f172a;">Redsys TPV Virtual & Bizum Bancario</strong>
-										<span style="display: block; font-size: 12px; color: #64748b;">Pasarela directa con firma HMAC SHA-256 sin plugins adicionales.</span>
+										<strong style="font-size: 15px; color: #0f172a;">Redsys TPV Virtual (Tarjetas Bancarias)</strong>
+										<span style="display: block; font-size: 12px; color: #64748b;">Pasarela bancaria oficial de Redsys con firma HMAC SHA-256 y notificación IPN automática.</span>
 									</div>
 								</div>
 								<label class="wpat-switch">
@@ -12089,14 +12100,18 @@ class WPAT_Admin {
 							</div>
 						</div>
 
-						<!-- 3. BIZUM DIRECTO MANUAL -->
+						<!-- 3. BIZUM (AUTOMÁTICO REDSYS O MANUAL) -->
+						<?php
+						$bizum_type          = isset( $settings['qp_bizum_type'] ) ? $settings['qp_bizum_type'] : 'redsys';
+						$bizum_redsys_custom = isset( $settings['qp_bizum_redsys_custom'] ) && '1' === $settings['qp_bizum_redsys_custom'];
+						?>
 						<div class="wpat-qp-gateway-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 22px;">
 							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
 								<div style="display: flex; align-items: center; gap: 10px;">
 									<span style="font-size: 24px;">📱</span>
 									<div>
-										<strong style="font-size: 15px; color: #0f172a;">Bizum Directo (Manual / Freelancers)</strong>
-										<span style="display: block; font-size: 12px; color: #64748b;">Muestra tu número de Bizum en el checkout y registra el pedido pendiente.</span>
+										<strong style="font-size: 15px; color: #0f172a;">Bizum (Pasarela Bancaria Redsys o Manual)</strong>
+										<span style="display: block; font-size: 12px; color: #64748b;">Cobros inmediatos por Bizum con integración automática vía Redsys SIS o recepción manual por teléfono.</span>
 									</div>
 								</div>
 								<label class="wpat-switch">
@@ -12105,9 +12120,60 @@ class WPAT_Admin {
 								</label>
 							</div>
 
-							<div class="wpat-field-group" style="max-width: 320px;">
-								<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Teléfono para recibir Bizum *</label>
-								<input type="text" name="wpat_settings[qp_bizum_phone]" value="<?php echo esc_attr( isset( $settings['qp_bizum_phone'] ) ? $settings['qp_bizum_phone'] : '' ); ?>" placeholder="Ej: 600 000 000" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+							<div style="margin-bottom: 16px;">
+								<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 6px; display: block;">Modalidad de Pago por Bizum:</label>
+								<div style="display: flex; gap: 16px; flex-wrap: wrap;">
+									<label style="font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+										<input type="radio" name="wpat_settings[qp_bizum_type]" value="redsys" class="wpat-qp-bizum-type-radio" <?php checked( $bizum_type, 'redsys' ); ?> />
+										⚡ Bizum Automático Oficial (Integrado vía Redsys TPV SIS)
+									</label>
+									<label style="font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+										<input type="radio" name="wpat_settings[qp_bizum_type]" value="manual" class="wpat-qp-bizum-type-radio" <?php checked( $bizum_type, 'manual' ); ?> />
+										📱 Bizum Manual (Transferencia directa a número de teléfono)
+									</label>
+								</div>
+							</div>
+
+							<!-- Sub-opciones Bizum Redsys -->
+							<div id="wpat_qp_bizum_redsys_box" style="display: <?php echo ( 'redsys' === $bizum_type ) ? 'block' : 'none'; ?>; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin-bottom: 10px;">
+								<div style="margin-bottom: 12px;">
+									<label style="font-size: 13px; font-weight: 700; color: #166534; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+										<input type="checkbox" name="wpat_settings[qp_bizum_redsys_custom]" id="wpat_qp_bizum_redsys_custom_toggle" value="1" <?php checked( $bizum_redsys_custom ); ?> />
+										Usar credenciales de comercio específicas para Bizum (si tu banco te asignó un FUC, Terminal o Clave diferente a Tarjetas)
+									</label>
+								</div>
+
+								<div id="wpat_qp_bizum_custom_creds" style="display: <?php echo $bizum_redsys_custom ? 'grid' : 'none'; ?>; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 10px;">
+									<div class="wpat-field-group">
+										<label style="font-weight: 600; font-size: 12px; color: #166534; margin-bottom: 4px; display: block;">FUC Específico de Bizum</label>
+										<input type="text" name="wpat_settings[qp_bizum_redsys_fuc]" value="<?php echo esc_attr( isset( $settings['qp_bizum_redsys_fuc'] ) ? $settings['qp_bizum_redsys_fuc'] : '' ); ?>" placeholder="Ej: 999008881" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px; background:#fff;" />
+									</div>
+									<div class="wpat-field-group">
+										<label style="font-weight: 600; font-size: 12px; color: #166534; margin-bottom: 4px; display: block;">Terminal Bizum</label>
+										<input type="text" name="wpat_settings[qp_bizum_redsys_terminal]" value="<?php echo esc_attr( isset( $settings['qp_bizum_redsys_terminal'] ) ? $settings['qp_bizum_redsys_terminal'] : '1' ); ?>" placeholder="Ej: 1" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px; background:#fff;" />
+									</div>
+									<div class="wpat-field-group">
+										<label style="font-weight: 600; font-size: 12px; color: #166534; margin-bottom: 4px; display: block;">Clave SHA-256 de Bizum</label>
+										<input type="password" name="wpat_settings[qp_bizum_redsys_key]" value="<?php echo esc_attr( isset( $settings['qp_bizum_redsys_key'] ) ? $settings['qp_bizum_redsys_key'] : '' ); ?>" placeholder="Clave Bizum si es distinta" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px; background:#fff;" />
+									</div>
+								</div>
+								<p style="margin: 8px 0 0 0; font-size: 12px; color: #15803d;">
+									💡 Al seleccionar Bizum en el checkout, el cliente es redirigido directamente a la pantalla oficial de Bizum en Redsys para introducir su teléfono y autorizar en su app bancaria.
+								</p>
+							</div>
+
+							<!-- Sub-opciones Bizum Manual -->
+							<div id="wpat_qp_bizum_manual_box" style="display: <?php echo ( 'manual' === $bizum_type ) ? 'block' : 'none'; ?>; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+								<div style="display: grid; grid-template-columns: 260px 1fr; gap: 14px;">
+									<div class="wpat-field-group">
+										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Teléfono para recibir Bizum *</label>
+										<input type="text" name="wpat_settings[qp_bizum_phone]" value="<?php echo esc_attr( isset( $settings['qp_bizum_phone'] ) ? $settings['qp_bizum_phone'] : '' ); ?>" placeholder="Ej: 600 000 000" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+									</div>
+									<div class="wpat-field-group">
+										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Instrucciones Personalizadas (Opcional)</label>
+										<input type="text" name="wpat_settings[qp_bizum_instructions]" value="<?php echo esc_attr( isset( $settings['qp_bizum_instructions'] ) ? $settings['qp_bizum_instructions'] : '' ); ?>" placeholder="Ej: Indica tu Nº de Pedido en el concepto del Bizum..." class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+									</div>
+								</div>
 							</div>
 						</div>
 
@@ -12120,6 +12186,13 @@ class WPAT_Admin {
 										<input type="checkbox" name="wpat_settings[qp_paypal_enabled]" value="1" <?php checked( isset( $settings['qp_paypal_enabled'] ) ? $settings['qp_paypal_enabled'] : '0', '1' ); ?> />
 										<span class="wpat-slider round"></span>
 									</label>
+								</div>
+								<div class="wpat-field-group" style="margin-bottom: 8px;">
+									<label style="font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 4px; display: block;">Modo PayPal</label>
+									<select name="wpat_settings[qp_paypal_mode]" style="width: 100%; height: 36px; border-radius: 6px;">
+										<option value="test" <?php selected( isset( $settings['qp_paypal_mode'] ) ? $settings['qp_paypal_mode'] : 'test', 'test' ); ?>>🧪 Sandbox (Pruebas)</option>
+										<option value="live" <?php selected( isset( $settings['qp_paypal_mode'] ) ? $settings['qp_paypal_mode'] : 'test', 'live' ); ?>>🚀 Producción (Real)</option>
+									</select>
 								</div>
 								<div class="wpat-field-group">
 									<label style="font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 4px; display: block;">Email de tu Cuenta PayPal</label>
@@ -12144,6 +12217,13 @@ class WPAT_Admin {
 									<input type="text" name="wpat_settings[qp_bank_holder]" value="<?php echo esc_attr( isset( $settings['qp_bank_holder'] ) ? $settings['qp_bank_holder'] : '' ); ?>" placeholder="Tu Empresa / Nombre" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
 								</div>
 							</div>
+						</div>
+
+						<!-- BOTÓN GUARDAR PASARELAS -->
+						<div style="margin-top: 10px; padding-top: 15px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: flex-end;">
+							<button type="submit" name="wpat_save_settings" value="1" class="button button-primary" style="background: #2563eb; border-color: #1d4ed8; font-weight: 700; height: 38px; padding: 0 24px; font-size: 13.5px; border-radius: 6px;">
+								💾 Guardar Ajustes de Pasarelas de Pago
+							</button>
 						</div>
 					</div>
 				</div>
@@ -12239,7 +12319,7 @@ class WPAT_Admin {
 								<tr>
 									<th style="width: 12%; padding: 12px 14px; font-weight: 700;">Pedido</th>
 									<th style="width: 14%; padding: 12px 14px; font-weight: 700;">Fecha</th>
-									<th style="width: 22%; padding: 12px 14px; font-weight: 700;">Cliente</th>
+									<th style="width: 22%; padding: 12px 14px; font-weight: 700;">Cliente / Facturación</th>
 									<th style="width: 20%; padding: 12px 14px; font-weight: 700;">Producto</th>
 									<th style="width: 10%; padding: 12px 14px; font-weight: 700;">Total</th>
 									<th style="width: 10%; padding: 12px 14px; font-weight: 700;">Estado</th>
@@ -12254,6 +12334,10 @@ class WPAT_Admin {
 										$st_bg   = $is_comp ? '#ecfdf5' : '#fffbeb';
 										$st_tx   = $is_comp ? '#059669' : '#d97706';
 										$st_lbl  = $is_comp ? 'Completado' : 'Pendiente';
+										$billing_summary = '';
+										if ( ! empty( $o->billing_address ) || ! empty( $o->billing_city ) ) {
+											$billing_summary = trim( ( ! empty( $o->billing_address ) ? $o->billing_address . ', ' : '' ) . ( ! empty( $o->billing_postcode ) ? $o->billing_postcode . ' ' : '' ) . ( ! empty( $o->billing_city ) ? $o->billing_city : '' ) );
+										}
 										?>
 										<tr id="wpat_qp_row_order_<?php echo esc_attr( $o->id ); ?>">
 											<td style="padding: 12px 14px;">
@@ -12265,9 +12349,15 @@ class WPAT_Admin {
 											</td>
 											<td style="padding: 12px 14px;">
 												<strong style="font-size: 13px; color: #0f172a;"><?php echo esc_html( $o->customer_name ); ?></strong>
+												<?php if ( ! empty( $o->billing_company ) ) : ?>
+													<div style="font-size: 11px; color: #1e40af; font-weight: 600;"><?php echo esc_html( $o->billing_company ); ?></div>
+												<?php endif; ?>
 												<div style="font-size: 11.5px; color: #64748b;"><?php echo esc_html( $o->customer_email ); ?></div>
 												<?php if ( ! empty( $o->customer_dni ) ) : ?>
-													<div style="font-size: 10.5px; color: #94a3b8;">DNI: <?php echo esc_html( $o->customer_dni ); ?></div>
+													<div style="font-size: 10.5px; color: #94a3b8;">NIF/CIF: <?php echo esc_html( $o->customer_dni ); ?></div>
+												<?php endif; ?>
+												<?php if ( ! empty( $billing_summary ) ) : ?>
+													<div style="font-size: 10.5px; color: #64748b; margin-top: 2px;">📍 <?php echo esc_html( $billing_summary ); ?></div>
 												<?php endif; ?>
 											</td>
 											<td style="padding: 12px 14px;">
@@ -12311,7 +12401,7 @@ class WPAT_Admin {
 						<!-- DATOS FISCALES PARA FACTURA -->
 						<div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px;">
 							<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 800; color: #0f172a; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
-								🏢 Datos Fiscales de Facturación
+								🏢 Datos Fiscales de Facturación (Emisor)
 							</h4>
 
 							<div class="wpat-field-group" style="margin-bottom: 12px;">
@@ -12335,11 +12425,30 @@ class WPAT_Admin {
 							</div>
 						</div>
 
-						<!-- MONEDA, IVA Y DISEÑO -->
+						<!-- MONEDA, IVA, CAMPOS DE FORMULARIO Y DISEÑO -->
 						<div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px;">
 							<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 800; color: #0f172a; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
-								⚙️ Moneda, Impuestos y Diseño
+								⚙️ Campos del Checkout & Configuración
 							</h4>
+
+							<!-- OPCIONES DE CAMPOS DEL CHECKOUT -->
+							<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+								<strong style="font-size: 13px; color: #1e293b; display: block; margin-bottom: 8px;">Campos a Solicitar al Comprador:</strong>
+								<div style="display: flex; flex-direction: column; gap: 8px;">
+									<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+										<input type="checkbox" name="wpat_settings[qp_require_billing_address]" value="1" <?php checked( ! isset( $settings['qp_require_billing_address'] ) || '1' === (string) $settings['qp_require_billing_address'] ); ?> />
+										Solicitar Dirección de Facturación Completa (Calle, CP, Ciudad, Provincia, País)
+									</label>
+									<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+										<input type="checkbox" name="wpat_settings[qp_require_dni]" value="1" <?php checked( ! isset( $settings['qp_require_dni'] ) || '1' === (string) $settings['qp_require_dni'] ); ?> />
+										Solicitar DNI / NIF / CIF para la factura
+									</label>
+									<label style="font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+										<input type="checkbox" name="wpat_settings[qp_require_phone]" value="1" <?php checked( ! isset( $settings['qp_require_phone'] ) || '1' === (string) $settings['qp_require_phone'] ); ?> />
+										Solicitar Teléfono / WhatsApp de contacto
+									</label>
+								</div>
+							</div>
 
 							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
 								<div class="wpat-field-group">
@@ -12369,6 +12478,13 @@ class WPAT_Admin {
 								</div>
 							</div>
 						</div>
+					</div>
+
+					<!-- BOTÓN GUARDAR FACTURACIÓN Y AJUSTES -->
+					<div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: flex-end;">
+						<button type="submit" name="wpat_save_settings" value="1" class="button button-primary" style="background: #2563eb; border-color: #1d4ed8; font-weight: 700; height: 38px; padding: 0 24px; font-size: 13.5px; border-radius: 6px;">
+							💾 Guardar Facturación y Ajustes
+						</button>
 					</div>
 				</div>
 

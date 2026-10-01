@@ -673,6 +673,7 @@ class WPAT_Admin {
 				'wpat-cookie-consent'        => 'cookie-consent',
 				'wpat-quick-pay'             => 'quick-pay',
 				'wpat-woo-direct-checkout'   => 'woo-direct-checkout',
+				'wpat-woo-abandoned-cart'    => 'woo-abandoned-cart',
 				'wpat-qr-generator'          => 'qr-generator',
 				'wpat-client-studio'         => 'client-studio',
 				'wpat-tools'                 => 'tools',
@@ -732,6 +733,7 @@ class WPAT_Admin {
 			'cookie-consent',
 			'quick-pay',
 			'woo-direct-checkout',
+			'woo-abandoned-cart',
 			'tools',
 		);
 
@@ -1598,6 +1600,29 @@ class WPAT_Admin {
 			$new_settings['woo_dc_excluded_categories'] = isset( $input_settings['woo_dc_excluded_categories'] ) && is_array( $input_settings['woo_dc_excluded_categories'] ) ? array_map( 'intval', $input_settings['woo_dc_excluded_categories'] ) : array();
 		}
 
+		// Sanitizar Recuperador de Carritos Abandonados
+		if ( 'woo-abandoned-cart' === $saving_module || ( empty( $saving_module ) && isset( $input_settings['wpat_ac_cutoff_time'] ) ) ) {
+			$new_settings['wpat_ac_cutoff_time']     = isset( $input_settings['wpat_ac_cutoff_time'] ) ? max( 10, intval( $input_settings['wpat_ac_cutoff_time'] ) ) : 20;
+			$new_settings['wpat_ac_prune_days']      = isset( $input_settings['wpat_ac_prune_days'] ) ? max( 7, intval( $input_settings['wpat_ac_prune_days'] ) ) : 30;
+			$new_settings['wpat_ac_email_btn_color'] = isset( $input_settings['wpat_ac_email_btn_color'] ) ? sanitize_hex_color( $input_settings['wpat_ac_email_btn_color'] ) : '#2563eb';
+			$new_settings['wpat_ac_email_logo']      = isset( $input_settings['wpat_ac_email_logo'] ) ? esc_url_raw( $input_settings['wpat_ac_email_logo'] ) : '';
+			$new_settings['wpat_ac_email_footer']    = isset( $input_settings['wpat_ac_email_footer'] ) ? wp_kses_post( $input_settings['wpat_ac_email_footer'] ) : '';
+
+			for ( $i = 1; $i <= 3; $i++ ) {
+				$new_settings[ "wpat_ac_email_{$i}_enabled" ]       = isset( $input_settings[ "wpat_ac_email_{$i}_enabled" ] ) && '1' === $input_settings[ "wpat_ac_email_{$i}_enabled" ] ? '1' : '0';
+				$new_settings[ "wpat_ac_email_{$i}_delay_val" ]     = isset( $input_settings[ "wpat_ac_email_{$i}_delay_val" ] ) ? max( 1, intval( $input_settings[ "wpat_ac_email_{$i}_delay_val" ] ) ) : 1;
+				$new_settings[ "wpat_ac_email_{$i}_delay_unit" ]    = isset( $input_settings[ "wpat_ac_email_{$i}_delay_unit" ] ) && in_array( $input_settings[ "wpat_ac_email_{$i}_delay_unit" ], array( 'minutes', 'hours', 'days' ), true ) ? $input_settings[ "wpat_ac_email_{$i}_delay_unit" ] : 'hours';
+				$new_settings[ "wpat_ac_email_{$i}_subject" ]       = isset( $input_settings[ "wpat_ac_email_{$i}_subject" ] ) ? sanitize_text_field( $input_settings[ "wpat_ac_email_{$i}_subject" ] ) : '';
+				$new_settings[ "wpat_ac_email_{$i}_heading" ]       = isset( $input_settings[ "wpat_ac_email_{$i}_heading" ] ) ? sanitize_text_field( $input_settings[ "wpat_ac_email_{$i}_heading" ] ) : '';
+				$new_settings[ "wpat_ac_email_{$i}_message" ]       = isset( $input_settings[ "wpat_ac_email_{$i}_message" ] ) ? wp_kses_post( $input_settings[ "wpat_ac_email_{$i}_message" ] ) : '';
+				$new_settings[ "wpat_ac_email_{$i}_coupon_enable" ] = isset( $input_settings[ "wpat_ac_email_{$i}_coupon_enable" ] ) && '1' === $input_settings[ "wpat_ac_email_{$i}_coupon_enable" ] ? '1' : '0';
+				$new_settings[ "wpat_ac_email_{$i}_coupon_type" ]   = isset( $input_settings[ "wpat_ac_email_{$i}_coupon_type" ] ) && 'fixed_cart' === $input_settings[ "wpat_ac_email_{$i}_coupon_type" ] ? 'fixed_cart' : 'percent';
+				$new_settings[ "wpat_ac_email_{$i}_coupon_amount" ] = isset( $input_settings[ "wpat_ac_email_{$i}_coupon_amount" ] ) ? floatval( $input_settings[ "wpat_ac_email_{$i}_coupon_amount" ] ) : 10;
+				$new_settings[ "wpat_ac_email_{$i}_coupon_expiry" ] = isset( $input_settings[ "wpat_ac_email_{$i}_coupon_expiry" ] ) ? max( 1, intval( $input_settings[ "wpat_ac_email_{$i}_coupon_expiry" ] ) ) : 48;
+				$new_settings[ "wpat_ac_email_{$i}_btn_text" ]      = isset( $input_settings[ "wpat_ac_email_{$i}_btn_text" ] ) ? sanitize_text_field( $input_settings[ "wpat_ac_email_{$i}_btn_text" ] ) : '';
+			}
+		}
+
 		// Preservar colecciones gestionadas independientemente
 		$saved_raw_wpat = get_option( 'wpat_settings', array() );
 		if ( isset( $saved_raw_wpat['qp_products'] ) && is_array( $saved_raw_wpat['qp_products'] ) ) {
@@ -1968,6 +1993,7 @@ class WPAT_Admin {
 			'cookie-consent',
 			'quick-pay',
 			'woo-direct-checkout',
+			'woo-abandoned-cart',
 			'qr-generator',
 			'client-studio',
 			'tools',
@@ -2845,6 +2871,7 @@ class WPAT_Admin {
 				'wpat-cookie-consent'    => 'cookie-consent',
 				'wpat-quick-pay'         => 'quick-pay',
 				'wpat-woo-direct-checkout' => 'woo-direct-checkout',
+				'wpat-woo-abandoned-cart' => 'woo-abandoned-cart',
 				'wpat-qr-generator'      => 'qr-generator',
 				'wpat-client-studio'     => 'client-studio',
 				'wpat-tools'             => 'tools',
@@ -3169,7 +3196,7 @@ class WPAT_Admin {
 			),
 			array(
 				'id'          => 'woo-direct-checkout',
-				'is_new'      => true,
+				'is_new'      => false,
 				'title'       => 'Compra Directa & Saltar Carrito',
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
@@ -3178,6 +3205,18 @@ class WPAT_Admin {
 				'icon'        => '⚡',
 				'icon_bg'     => 'woo',
 				'keywords'    => 'compra directa direct checkout saltar carrito comprar ahora 1 clic pago rapido express checkout'
+			),
+			array(
+				'id'          => 'woo-abandoned-cart',
+				'is_new'      => true,
+				'title'       => 'Recuperador de Carritos Abandonados',
+				'badge'       => 'Automatización',
+				'badge_class' => 'config',
+				'desc'        => 'Recupera ventas perdidas enviando secuencias automáticas de correos con tiempos personalizados (minutos, horas, días), fotos de productos, cupones dinámicos y restauración en 1 clic.',
+				'cat_class'   => 'cat-woocommerce cat-woo',
+				'icon'        => '🛒',
+				'icon_bg'     => 'woo',
+				'keywords'    => 'carritos abandonados abandoned cart recuperador emails secuencias recordatorios cupones woocommerce ventas perdidas'
 			),
 
 			array(
@@ -5458,6 +5497,316 @@ class WPAT_Admin {
 									<code style="font-size: 12px; color: #0f172a; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">https://tusitio.com/checkout/?add-to-cart=123</code>
 								</div>
 							</div>
+						</div>
+
+					</div>
+				</div>
+				<?php
+				break;
+			case 'woo-abandoned-cart':
+				require_once WPAT_PATH . 'includes/modules/class-wpat-woo-abandoned-cart.php';
+				$ac_instance     = WPAT_Woo_Abandoned_Cart::get_instance();
+				$ac_analytics    = $ac_instance->get_analytics_summary();
+				$ac_recent_carts = $ac_instance->get_recent_carts( 30 );
+
+				$ac_cutoff    = isset( $settings['wpat_ac_cutoff_time'] ) ? $settings['wpat_ac_cutoff_time'] : '20';
+				$ac_prune     = isset( $settings['wpat_ac_prune_days'] ) ? $settings['wpat_ac_prune_days'] : '30';
+				$ac_btn_color = isset( $settings['wpat_ac_email_btn_color'] ) ? $settings['wpat_ac_email_btn_color'] : '#2563eb';
+				$ac_logo      = isset( $settings['wpat_ac_email_logo'] ) ? $settings['wpat_ac_email_logo'] : '';
+				$ac_footer    = isset( $settings['wpat_ac_email_footer'] ) ? $settings['wpat_ac_email_footer'] : '';
+				?>
+				<div class="wpat-module-card">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Recuperador de Carritos Abandonados (WooCommerce)</h3>
+							<p>Envía secuencias automáticas de emails personalizados con descuentos dinámicos para recuperar ventas perdidas.</p>
+						</div>
+						<?php $this->render_module_toggle( 'woo-abandoned-cart', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block; padding: 22px;">
+
+						<!-- 1. RESUMEN DE ANALÍTICAS / KPIS -->
+						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+							<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+								<span style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">🛒 Carritos Abandonados</span>
+								<div style="font-size: 26px; font-weight: 800; color: #0f172a; margin-top: 4px;"><?php echo esc_html( $ac_analytics['total_abandoned'] ); ?></div>
+							</div>
+							<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+								<span style="font-size: 12px; font-weight: 700; color: #16a34a; text-transform: uppercase;">🎉 Carritos Recuperados</span>
+								<div style="font-size: 26px; font-weight: 800; color: #16a34a; margin-top: 4px;"><?php echo esc_html( $ac_analytics['total_recovered'] ); ?></div>
+							</div>
+							<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+								<span style="font-size: 12px; font-weight: 700; color: #2563eb; text-transform: uppercase;">📈 Tasa de Recuperación</span>
+								<div style="font-size: 26px; font-weight: 800; color: #2563eb; margin-top: 4px;"><?php echo esc_html( $ac_analytics['recovery_rate'] ); ?>%</div>
+							</div>
+							<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+								<span style="font-size: 12px; font-weight: 700; color: #059669; text-transform: uppercase;">💰 Ingresos Recuperados</span>
+								<div style="font-size: 26px; font-weight: 800; color: #059669; margin-top: 4px;"><?php echo function_exists( 'wc_price' ) ? wc_price( $ac_analytics['revenue_recovered'] ) : esc_html( number_format_i18n( $ac_analytics['revenue_recovered'], 2 ) . ' €' ); ?></div>
+							</div>
+						</div>
+
+						<!-- 2. PESTAÑAS DE CONTROL DEL MÓDULO -->
+						<div class="wpat-ac-tabs-bar" style="display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px;">
+							<button type="button" class="wpat-ac-tab-btn active" data-tab="sequences" style="background: none; border: none; padding: 10px 18px; font-size: 13.5px; font-weight: 700; color: #2563eb; border-bottom: 3px solid #2563eb; cursor: pointer; margin-bottom: -2px;">
+								✉️ Secuencia de Correos
+							</button>
+							<button type="button" class="wpat-ac-tab-btn" data-tab="settings" style="background: none; border: none; padding: 10px 18px; font-size: 13.5px; font-weight: 600; color: #64748b; cursor: pointer;">
+								⚙️ Tiempos & Plantilla
+							</button>
+							<button type="button" class="wpat-ac-tab-btn" data-tab="history" style="background: none; border: none; padding: 10px 18px; font-size: 13.5px; font-weight: 600; color: #64748b; cursor: pointer;">
+								📋 Historial de Carritos (<?php echo count( $ac_recent_carts ); ?>)
+							</button>
+						</div>
+
+						<!-- PESTAÑA 1: SECUENCIA DE CORREOS -->
+						<div class="wpat-ac-tab-content active" id="wpat-ac-tab-sequences">
+							
+							<div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
+								<strong style="font-size: 13px; color: #1e40af; display: block; margin-bottom: 4px;">💡 Variables dinámicas que puedes usar en el Asunto y Mensaje:</strong>
+								<div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px;">
+									<code style="background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #bfdbfe; color: #1e40af;">{customer_name}</code>
+									<code style="background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #bfdbfe; color: #1e40af;">{cart_total}</code>
+									<code style="background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #bfdbfe; color: #1e40af;">{site_title}</code>
+									<code style="background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #bfdbfe; color: #1e40af;">{coupon_code}</code>
+									<code style="background: #fff; padding: 3px 8px; border-radius: 4px; border: 1px solid #bfdbfe; color: #1e40af;">{discount_value}</code>
+								</div>
+							</div>
+
+							<?php for ( $i = 1; $i <= 3; $i++ ) : 
+								$step_enabled = ! empty( $settings["wpat_ac_email_{$i}_enabled"] ) && '1' === $settings["wpat_ac_email_{$i}_enabled"];
+								$step_val     = isset( $settings["wpat_ac_email_{$i}_delay_val"] ) ? $settings["wpat_ac_email_{$i}_delay_val"] : ( ( 1 === $i ) ? 1 : ( ( 2 === $i ) ? 24 : 72 ) );
+								$step_unit    = isset( $settings["wpat_ac_email_{$i}_delay_unit"] ) ? $settings["wpat_ac_email_{$i}_delay_unit"] : 'hours';
+								$step_sub     = isset( $settings["wpat_ac_email_{$i}_subject"] ) ? $settings["wpat_ac_email_{$i}_subject"] : ( ( 1 === $i ) ? '¿Olvidaste algo? Tu carrito te está esperando' : ( ( 2 === $i ) ? '¿Aún interesado? Tus artículos se están agotando' : '¡Última oportunidad! 10% de descuento en tu carrito' ) );
+								$step_head    = isset( $settings["wpat_ac_email_{$i}_heading"] ) ? $settings["wpat_ac_email_{$i}_heading"] : ( ( 1 === $i ) ? 'Has dejado artículos en tu carrito' : ( ( 2 === $i ) ? 'Tu carrito está a punto de caducar' : 'Te regalamos un cupón exclusivo para completar tu compra' ) );
+								$step_msg     = isset( $settings["wpat_ac_email_{$i}_message"] ) ? $settings["wpat_ac_email_{$i}_message"] : ( ( 1 === $i ) ? 'Hola {customer_name}, notamos que agregaste productos a tu carrito pero no completaste tu pedido. No te preocupes, los hemos guardado para ti para que puedas continuar cuando quieras.' : ( ( 2 === $i ) ? 'Hola {customer_name}, los productos que guardaste en tu carrito tienen alta demanda. Haz clic en el botón de abajo para recuperarlos antes de que se agoten las existencias.' : 'Hola {customer_name}, queremos que disfrutes de tu compra. Por eso hemos creado un cupón exclusivo para ti con descuento que puedes aplicar inmediatamente.' ) );
+								$step_btn     = isset( $settings["wpat_ac_email_{$i}_btn_text"] ) ? $settings["wpat_ac_email_{$i}_btn_text"] : 'Recuperar mi pedido →';
+								
+								$step_coup_en = ! empty( $settings["wpat_ac_email_{$i}_coupon_enable"] ) && '1' === $settings["wpat_ac_email_{$i}_coupon_enable"];
+								$step_coup_t  = isset( $settings["wpat_ac_email_{$i}_coupon_type"] ) ? $settings["wpat_ac_email_{$i}_coupon_type"] : 'percent';
+								$step_coup_a  = isset( $settings["wpat_ac_email_{$i}_coupon_amount"] ) ? $settings["wpat_ac_email_{$i}_coupon_amount"] : '10';
+								$step_coup_x  = isset( $settings["wpat_ac_email_{$i}_coupon_expiry"] ) ? $settings["wpat_ac_email_{$i}_coupon_expiry"] : '48';
+							?>
+								<div class="wpat-ac-email-step-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.02);">
+									
+									<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 14px; margin-bottom: 16px;">
+										<div style="display: flex; align-items: center; gap: 10px;">
+											<span style="background: #2563eb; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px;">
+												<?php echo esc_html( $i ); ?>
+											</span>
+											<h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #0f172a;">
+												Correo <?php echo esc_html( $i ); ?> de Recordatorio
+											</h4>
+										</div>
+										<label style="font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+											<input type="checkbox" name="wpat_settings[wpat_ac_email_<?php echo esc_attr( $i ); ?>_enabled]" value="1" <?php checked( $step_enabled ); ?> />
+											<span>Activar este correo en la secuencia</span>
+										</label>
+									</div>
+
+									<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+										<div>
+											<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">⏱️ Tiempo de espera tras el abandono:</label>
+											<div style="display: flex; gap: 8px; align-items: center;">
+												<input type="number" min="1" step="1" name="wpat_settings[wpat_ac_email_<?php echo esc_attr( $i ); ?>_delay_val]" value="<?php echo esc_attr( $step_val ); ?>" style="width: 90px; height: 36px; border-radius: 6px;" />
+												<select name="wpat_settings[wpat_ac_email_<?php echo esc_attr( $i ); ?>_delay_unit]" style="height: 36px; border-radius: 6px; font-size: 13px;">
+													<option value="minutes" <?php selected( $step_unit, 'minutes' ); ?>>Minutos (Oferta rápida)</option>
+													<option value="hours" <?php selected( $step_unit, 'hours' ); ?>>Horas (Ej. 1h, 24h, 72h, 144h)</option>
+													<option value="days" <?php selected( $step_unit, 'days' ); ?>>Días (Ej. 1 día, 3 días, 6 días)</option>
+												</select>
+											</div>
+										</div>
+
+										<div>
+											<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Texto del Botón de Recuperación:</label>
+											<input type="text" name="wpat_settings[wpat_ac_email_<?php echo esc_attr( $i ); ?>_btn_text]" value="<?php echo esc_attr( $step_btn ); ?>" class="regular-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+										</div>
+									</div>
+
+									<div style="margin-bottom: 14px;">
+										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Asunto del Correo:</label>
+										<input type="text" name="wpat_settings[wpat_ac_email_<?php echo esc_attr( $i ); ?>_subject]" value="<?php echo esc_attr( $step_sub ); ?>" class="large-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+									</div>
+
+									<div style="margin-bottom: 14px;">
+										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Título / Encabezado Principal:</label>
+										<input type="text" name="wpat_settings[wpat_ac_email_<?php echo esc_attr( $i ); ?>_heading]" value="<?php echo esc_attr( $step_head ); ?>" class="large-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+									</div>
+
+									<div style="margin-bottom: 18px;">
+										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Mensaje Introductorio:</label>
+										<textarea name="wpat_settings[wpat_ac_email_<?php echo esc_attr( $i ); ?>_message]" rows="3" style="width: 100%; border-radius: 6px;"><?php echo esc_textarea( $step_msg ); ?></textarea>
+									</div>
+
+									<!-- BLOQUE DE CUPÓN DINÁMICO -->
+									<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+										<label style="font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+											<input type="checkbox" name="wpat_settings[wpat_ac_email_<?php echo esc_attr( $i ); ?>_coupon_enable]" value="1" <?php checked( $step_coup_en ); ?> />
+											<span>🎁 Generar cupón de descuento automático exclusivo para este correo</span>
+										</label>
+
+										<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 8px;">
+											<div>
+												<label style="font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 3px;">Tipo de Descuento:</label>
+												<select name="wpat_settings[wpat_ac_email_<?php echo esc_attr( $i ); ?>_coupon_type]" style="width: 100%; height: 34px; border-radius: 6px; font-size: 12.5px;">
+													<option value="percent" <?php selected( $step_coup_t, 'percent' ); ?>>Porcentaje (%)</option>
+													<option value="fixed_cart" <?php selected( $step_coup_t, 'fixed_cart' ); ?>>Importe fijo (€ / $)</option>
+												</select>
+											</div>
+											<div>
+												<label style="font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 3px;">Cantidad de Descuento:</label>
+												<input type="number" min="1" step="0.5" name="wpat_settings[wpat_ac_email_<?php echo esc_attr( $i ); ?>_coupon_amount]" value="<?php echo esc_attr( $step_coup_a ); ?>" style="width: 100%; height: 34px; border-radius: 6px;" />
+											</div>
+											<div>
+												<label style="font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 3px;">Caducidad del Cupón (Horas):</label>
+												<input type="number" min="1" step="1" name="wpat_settings[wpat_ac_email_<?php echo esc_attr( $i ); ?>_coupon_expiry]" value="<?php echo esc_attr( $step_coup_x ); ?>" style="width: 100%; height: 34px; border-radius: 6px;" />
+											</div>
+										</div>
+									</div>
+
+									<div style="margin-top: 14px; text-align: right;">
+										<button type="button" class="button wpat-ac-send-test-btn" data-step="<?php echo esc_attr( $i ); ?>" style="font-weight: 600;">
+											✉️ Enviar prueba de este correo
+										</button>
+									</div>
+
+								</div>
+							<?php endfor; ?>
+
+						</div>
+
+						<!-- PESTAÑA 2: AJUSTES GLOBALES & PLANTILLA -->
+						<div class="wpat-ac-tab-content" id="wpat-ac-tab-settings" style="display: none;">
+							
+							<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+								<h4 style="margin: 0 0 15px 0; font-size: 15px; font-weight: 700; color: #0f172a;">⚙️ Reglas de Detección y Limpieza</h4>
+								
+								<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+									<div>
+										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Tiempo de inactividad para considerar abandono (Minutos):</label>
+										<input type="number" min="10" step="1" name="wpat_settings[wpat_ac_cutoff_time]" value="<?php echo esc_attr( $ac_cutoff ); ?>" style="width: 120px; height: 36px; border-radius: 6px;" />
+										<p class="description" style="font-size: 11.5px; margin-top: 4px;">Por defecto 20 minutos tras la última acción en la tienda.</p>
+									</div>
+
+									<div>
+										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Auto-limpieza de carritos antiguos (Días):</label>
+										<input type="number" min="7" step="1" name="wpat_settings[wpat_ac_prune_days]" value="<?php echo esc_attr( $ac_prune ); ?>" style="width: 120px; height: 36px; border-radius: 6px;" />
+										<p class="description" style="font-size: 11.5px; margin-top: 4px;">Elimina registros recuperados o caducados para mantener la base de datos ultra ligera.</p>
+									</div>
+								</div>
+							</div>
+
+							<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+								<h4 style="margin: 0 0 15px 0; font-size: 15px; font-weight: 700; color: #0f172a;">🎨 Diseño Visual de la Plantilla de Email</h4>
+
+								<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+									<div>
+										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Color del Botón Principal (CTA):</label>
+										<div style="display: flex; gap: 8px; align-items: center;">
+											<input type="color" name="wpat_settings[wpat_ac_email_btn_color]" value="<?php echo esc_attr( $ac_btn_color ); ?>" style="width: 40px; height: 36px; padding: 1px; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer;" />
+											<input type="text" value="<?php echo esc_attr( $ac_btn_color ); ?>" class="wpat-color-text-preview" style="width: 100px; height: 36px; border-radius: 6px; font-size: 13px;" readonly />
+										</div>
+									</div>
+
+									<div>
+										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">URL del Logotipo:</label>
+										<input type="text" name="wpat_settings[wpat_ac_email_logo]" id="wpat_ac_email_logo" value="<?php echo esc_attr( $ac_logo ); ?>" placeholder="https://tutienda.com/logo.png" class="large-text" style="width: 100%; height: 36px; border-radius: 6px;" />
+									</div>
+								</div>
+
+								<div style="margin-bottom: 10px;">
+									<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Texto personalizado de Pie de Página:</label>
+									<textarea name="wpat_settings[wpat_ac_email_footer]" rows="2" style="width: 100%; border-radius: 6px;" placeholder="¿Tienes dudas sobre tu compra? Escríbenos a soporte@tutienda.com o llámanos."><?php echo esc_textarea( $ac_footer ); ?></textarea>
+								</div>
+							</div>
+
+						</div>
+
+						<!-- PESTAÑA 3: HISTORIAL DE CARRITOS -->
+						<div class="wpat-ac-tab-content" id="wpat-ac-tab-history" style="display: none;">
+							
+							<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
+								<table class="wp-list-table widefat fixed striped" style="border: none;">
+									<thead>
+										<tr>
+											<th style="padding: 12px 14px; font-weight: 700; width: 22%;">Cliente / Email</th>
+											<th style="padding: 12px 14px; font-weight: 700; width: 30%;">Artículos del Carrito</th>
+											<th style="padding: 12px 14px; font-weight: 700; width: 12%;">Total</th>
+											<th style="padding: 12px 14px; font-weight: 700; width: 12%;">Estado</th>
+											<th style="padding: 12px 14px; font-weight: 700; width: 12%;">Correos</th>
+											<th style="padding: 12px 14px; font-weight: 700; width: 12%; text-align: right;">Acciones</th>
+										</tr>
+									</thead>
+									<tbody>
+										<?php if ( ! empty( $ac_recent_carts ) ) : ?>
+											<?php foreach ( $ac_recent_carts as $cart_row ) : 
+												$items = json_decode( $cart_row->cart_contents, true );
+												$items_count = is_array( $items ) ? count( $items ) : 0;
+												
+												$status_label = 'En progreso';
+												$status_badge = 'background: #f1f5f9; color: #475569;';
+												if ( 'abandoned' === $cart_row->status ) {
+													$status_label = 'Abandonado';
+													$status_badge = 'background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca;';
+												} elseif ( 'recovered' === $cart_row->status ) {
+													$status_label = '¡Recuperado!';
+													$status_badge = 'background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; font-weight: 800;';
+												}
+											?>
+												<tr id="wpat-ac-row-<?php echo esc_attr( $cart_row->id ); ?>">
+													<td style="padding: 12px 14px; vertical-align: middle;">
+														<strong><?php echo esc_html( ! empty( $cart_row->user_name ) ? $cart_row->user_name : 'Cliente Anónimo' ); ?></strong>
+														<div style="font-size: 11.5px; color: #64748b;"><?php echo esc_html( $cart_row->user_email ); ?></div>
+														<?php if ( ! empty( $cart_row->user_phone ) ) : ?>
+															<div style="font-size: 11px; color: #94a3b8;">📞 <?php echo esc_html( $cart_row->user_phone ); ?></div>
+														<?php endif; ?>
+													</td>
+													<td style="padding: 12px 14px; vertical-align: middle;">
+														<?php if ( is_array( $items ) && ! empty( $items ) ) : ?>
+															<div style="font-size: 12.5px; line-height: 1.4;">
+																<?php 
+																$item_names = array();
+																foreach ( $items as $it ) {
+																	$item_names[] = esc_html( $it['name'] ) . ' (x' . esc_html( $it['quantity'] ) . ')';
+																}
+																echo implode( '<br>', array_slice( $item_names, 0, 2 ) );
+																if ( count( $item_names ) > 2 ) {
+																	echo '<span style="color: #64748b; font-size: 11px;"> y ' . ( count( $item_names ) - 2 ) . ' más...</span>';
+																}
+																?>
+															</div>
+														<?php else : ?>
+															<span style="color: #94a3b8; font-size: 12px;">Sin artículos</span>
+														<?php endif; ?>
+													</td>
+													<td style="padding: 12px 14px; vertical-align: middle; font-weight: 800; color: #0f172a;">
+														<?php echo function_exists( 'wc_price' ) ? wc_price( $cart_row->cart_total ) : esc_html( number_format_i18n( $cart_row->cart_total, 2 ) . ' €' ); ?>
+													</td>
+													<td style="padding: 12px 14px; vertical-align: middle;">
+														<span style="display: inline-block; padding: 3px 9px; border-radius: 6px; font-size: 11.5px; <?php echo esc_attr( $status_badge ); ?>">
+															<?php echo esc_html( $status_label ); ?>
+														</span>
+													</td>
+													<td style="padding: 12px 14px; vertical-align: middle; font-size: 12px;">
+														<strong><?php echo esc_html( $cart_row->emails_sent ); ?></strong> / 3 enviados
+													</td>
+													<td style="padding: 12px 14px; vertical-align: middle; text-align: right;">
+														<button type="button" class="button button-small wpat-ac-delete-row-btn" data-id="<?php echo esc_attr( $cart_row->id ); ?>" style="color: #ef4444; border-color: #fca5a5;">
+															🗑️
+														</button>
+													</td>
+												</tr>
+											<?php endforeach; ?>
+										<?php else : ?>
+											<tr>
+												<td colspan="6" style="text-align: center; padding: 30px; color: #64748b;">
+													No hay carritos capturados por el momento.
+												</td>
+											</tr>
+										<?php endif; ?>
+									</tbody>
+								</table>
+							</div>
+
 						</div>
 
 					</div>

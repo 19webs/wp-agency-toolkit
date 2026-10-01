@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.102
+ * Version:     4.3.103
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.102' );
+define( 'WPAT_VERSION', '4.3.103' );
 define( 'WPAT_FILE', __FILE__ );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_DIR', WPAT_PATH );
@@ -223,6 +223,10 @@ class WPAT_Main {
 		'woo-direct-checkout' => array(
 			'file'  => 'includes/modules/class-wpat-woo-direct-checkout.php',
 			'class' => 'WPAT_Woo_Direct_Checkout',
+		),
+		'woo-abandoned-cart' => array(
+			'file'  => 'includes/modules/class-wpat-woo-abandoned-cart.php',
+			'class' => 'WPAT_Woo_Abandoned_Cart',
 		),
 	);
 
@@ -731,6 +735,47 @@ class WPAT_Main {
 				'woo_dc_excluded_products'           => array(),
 				'woo_dc_included_categories'         => array(),
 				'woo_dc_excluded_categories'         => array(),
+
+				// Opciones de Recuperador de Carritos Abandonados
+				'woo-abandoned-cart'                 => '0',
+				'wpat_ac_cutoff_time'                => '20',
+				'wpat_ac_prune_days'                 => '30',
+				'wpat_ac_email_btn_color'            => '#2563eb',
+				'wpat_ac_email_logo'                 => '',
+				'wpat_ac_email_footer'               => '',
+				'wpat_ac_email_1_enabled'            => '1',
+				'wpat_ac_email_1_delay_val'          => '1',
+				'wpat_ac_email_1_delay_unit'         => 'hours',
+				'wpat_ac_email_1_subject'            => '¿Olvidaste algo? Tu carrito te está esperando',
+				'wpat_ac_email_1_heading'            => 'Has dejado artículos en tu carrito',
+				'wpat_ac_email_1_message'            => 'Hola {customer_name}, notamos que agregaste productos a tu carrito pero no completaste tu pedido. No te preocupes, los hemos guardado para ti para que puedas continuar cuando quieras.',
+				'wpat_ac_email_1_coupon_enable'      => '0',
+				'wpat_ac_email_1_coupon_type'        => 'percent',
+				'wpat_ac_email_1_coupon_amount'      => '10',
+				'wpat_ac_email_1_coupon_expiry'      => '48',
+				'wpat_ac_email_1_btn_text'           => 'Recuperar mi pedido →',
+				'wpat_ac_email_2_enabled'            => '1',
+				'wpat_ac_email_2_delay_val'          => '24',
+				'wpat_ac_email_2_delay_unit'         => 'hours',
+				'wpat_ac_email_2_subject'            => '¿Aún interesado? Tus artículos se están agotando',
+				'wpat_ac_email_2_heading'            => 'Tu carrito está a punto de caducar',
+				'wpat_ac_email_2_message'            => 'Hola {customer_name}, los productos que guardaste en tu carrito tienen alta demanda. Haz clic en el botón de abajo para recuperarlos antes de que se agoten las existencias.',
+				'wpat_ac_email_2_coupon_enable'      => '0',
+				'wpat_ac_email_2_coupon_type'        => 'percent',
+				'wpat_ac_email_2_coupon_amount'      => '10',
+				'wpat_ac_email_2_coupon_expiry'      => '48',
+				'wpat_ac_email_2_btn_text'           => 'Completar mi compra ahora →',
+				'wpat_ac_email_3_enabled'            => '0',
+				'wpat_ac_email_3_delay_val'          => '72',
+				'wpat_ac_email_3_delay_unit'         => 'hours',
+				'wpat_ac_email_3_subject'            => '¡Última oportunidad! Descuento exclusivo para tu carrito',
+				'wpat_ac_email_3_heading'            => 'Te regalamos un cupón para completar tu pedido',
+				'wpat_ac_email_3_message'            => 'Hola {customer_name}, queremos que disfrutes de tu compra. Por eso hemos creado un cupón exclusivo para ti con {discount_value} que puedes aplicar inmediatamente.',
+				'wpat_ac_email_3_coupon_enable'      => '1',
+				'wpat_ac_email_3_coupon_type'        => 'percent',
+				'wpat_ac_email_3_coupon_amount'      => '10',
+				'wpat_ac_email_3_coupon_expiry'      => '48',
+				'wpat_ac_email_3_btn_text'           => 'Aprovechar mi descuento ahora →',
 			)
 		);
 

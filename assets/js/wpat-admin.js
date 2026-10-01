@@ -6113,6 +6113,88 @@ jQuery(document).ready(function($) {
 		}
 	});
 
+	// --- RECUPERADOR DE CARRITOS ABANDONADOS ---
+	// Sub-pestañas
+	$(document).on('click', '.wpat-ac-tab-btn', function(e) {
+		e.preventDefault();
+		var tab = $(this).data('tab');
+		$('.wpat-ac-tab-btn').removeClass('active').css({ 'color': '#64748b', 'border-bottom': 'none', 'font-weight': '600' });
+		$(this).addClass('active').css({ 'color': '#2563eb', 'border-bottom': '3px solid #2563eb', 'font-weight': '700' });
+		$('.wpat-ac-tab-content').hide();
+		$('#wpat-ac-tab-' + tab).fadeIn(150);
+	});
+
+	// Sincronizar texto de color
+	$(document).on('input change', 'input[name="wpat_settings[wpat_ac_email_btn_color]"]', function() {
+		$('.wpat-color-text-preview').val($(this).val());
+	});
+
+	// Enviar correo de prueba
+	$(document).on('click', '.wpat-ac-send-test-btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var step = $btn.data('step') || 1;
+		var email = prompt('Introduce el email de destino para la prueba:', 'tu-email@ejemplo.com');
+
+		if (!email || email.indexOf('@') === -1) {
+			return;
+		}
+
+		var origText = $btn.text();
+		$btn.prop('disabled', true).text('Enviando...');
+
+		$.ajax({
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
+			type: 'POST',
+			data: {
+				action: 'wpat_send_test_abandoned_email',
+				security: (typeof wpat_object !== 'undefined' ? wpat_object.nonce : ''),
+				email: email,
+				step: step
+			},
+			success: function(res) {
+				$btn.prop('disabled', false).text(origText);
+				if (res.success) {
+					alert(res.data ? res.data.message : 'Correo de prueba enviado con éxito.');
+				} else {
+					alert(res.data ? res.data.message : 'Error al enviar correo de prueba.');
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).text(origText);
+				alert('Error de conexión al enviar el correo de prueba.');
+			}
+		});
+	});
+
+	// Eliminar registro del historial
+	$(document).on('click', '.wpat-ac-delete-row-btn', function(e) {
+		e.preventDefault();
+		if (!confirm('¿Estás seguro de que deseas eliminar este registro de carrito?')) {
+			return;
+		}
+		var $btn = $(this);
+		var id = $btn.data('id');
+		var $row = $('#wpat-ac-row-' + id);
+
+		$.ajax({
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
+			type: 'POST',
+			data: {
+				action: 'wpat_delete_abandoned_cart_record',
+				security: (typeof wpat_object !== 'undefined' ? wpat_object.nonce : ''),
+				cart_id: id
+			},
+			success: function(res) {
+				if (res.success) {
+					$row.fadeOut(200, function() { $(this).remove(); });
+				} else {
+					alert(res.data ? res.data.message : 'Error al eliminar registro');
+				}
+			}
+		});
+	});
+
 });
 
 

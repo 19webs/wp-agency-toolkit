@@ -208,6 +208,7 @@ jQuery(document).ready(function($) {
 						$btn.addClass('disabled');
 						showToast('Módulo desactivado', 'deactivate');
 					}
+					filterModules();
 				} else {
 					$checkbox.prop('checked', !isChecked);
 					showToast('Error al actualizar módulo: ' + (response.data ? response.data.message : 'Error'), true);
@@ -258,8 +259,9 @@ jQuery(document).ready(function($) {
 	}
 
 	function filterModules() {
-		var cat = window.wpatActiveCat || 'all';
-		var query = $('#wpat_modules_search_input').length ? $('#wpat_modules_search_input').val().trim() : '';
+		var cat    = window.wpatActiveCat || 'all';
+		var status = $('#wpat_modules_status_filter').length ? $('#wpat_modules_status_filter').val() : 'all';
+		var query  = $('#wpat_modules_search_input').length ? $('#wpat_modules_search_input').val().trim() : '';
 		var visibleCount = 0;
 
 		$('.wpat-module-grid-card').each(function() {
@@ -268,11 +270,17 @@ jQuery(document).ready(function($) {
 
 			var matchesCategory = (cat === 'all' || $card.hasClass('cat-' + cat) || $card.hasClass(cat) || cardClasses.indexOf('cat-' + cat) !== -1);
 			
+			var isChecked      = $card.find('.wpat-ajax-toggle-module').is(':checked');
+			var isAlwaysActive = $card.find('.wpat-badge:contains("Siempre Activo")').length > 0;
+			var isActive       = isChecked || isAlwaysActive;
+
+			var matchesStatus  = (status === 'all') || (status === 'active' && isActive) || (status === 'inactive' && !isActive);
+
 			var searchableText = ($card.attr('data-search') || '') + ' ' + ($card.attr('data-name') || '') + ' ' + $card.find('h3').text() + ' ' + $card.find('p').text() + ' ' + ($card.find('.wpat-ajax-toggle-module').attr('data-module') || '');
 
-			var matchesSearch = matchesModuleSearch(searchableText, query);
+			var matchesSearch  = matchesModuleSearch(searchableText, query);
 
-			if (matchesCategory && matchesSearch) {
+			if (matchesCategory && matchesStatus && matchesSearch) {
 				$card.css('display', 'flex').show();
 				visibleCount++;
 			} else {
@@ -284,7 +292,7 @@ jQuery(document).ready(function($) {
 		var $noResults = $('#wpat_no_modules_found');
 		if (visibleCount === 0) {
 			if (!$noResults.length) {
-				$grid.append('<div id="wpat_no_modules_found" style="text-align: center; padding: 45px 20px; grid-column: 1 / -1; color: #64748b; background: var(--wpat-card-bg, #fff); border: 1px dashed var(--wpat-border, #cbd5e1); border-radius: 12px; margin-top: 10px;"><span class="dashicons dashicons-search" style="font-size: 36px; width: 36px; height: 36px; color: #94a3b8; margin-bottom: 10px; display: inline-block;"></span><h4 style="margin: 0 0 6px 0; font-size: 16px; font-weight: 700;">No se encontraron módulos</h4><p style="margin: 0; font-size: 13px; color: #94a3b8;">Prueba con otros términos de búsqueda o cambia el filtro de categoría.</p></div>');
+				$grid.append('<div id="wpat_no_modules_found" style="text-align: center; padding: 45px 20px; grid-column: 1 / -1; color: #64748b; background: var(--wpat-card-bg, #fff); border: 1px dashed var(--wpat-border, #cbd5e1); border-radius: 12px; margin-top: 10px;"><span class="dashicons dashicons-search" style="font-size: 36px; width: 36px; height: 36px; color: #94a3b8; margin-bottom: 10px; display: inline-block;"></span><h4 style="margin: 0 0 6px 0; font-size: 16px; font-weight: 700;">No se encontraron módulos</h4><p style="margin: 0; font-size: 13px; color: #94a3b8;">Prueba con otros términos de búsqueda o cambia el filtro de estado o categoría.</p></div>');
 			} else {
 				$noResults.show();
 			}
@@ -294,6 +302,8 @@ jQuery(document).ready(function($) {
 			}
 		}
 	}
+
+	$(document).on('change', '#wpat_modules_status_filter', filterModules);
 
 	// Función central para aplicar filtrado por Categoría
 	function applyCategoryFilter(cat) {
@@ -6194,6 +6204,38 @@ jQuery(document).ready(function($) {
 			}
 		});
 	});
+
+	// Filtrado y búsqueda en tiempo real de la tabla de carritos
+	function filterAbandonedCartTable() {
+		var status = $('#wpat_ac_filter_status').val() || 'all';
+		var query  = ($('#wpat_ac_search_input').val() || '').toLowerCase().trim();
+		var visibleCount = 0;
+
+		$('.wpat-ac-cart-row').each(function() {
+			var $row = $(this);
+			var rowStatus = $row.data('status');
+			var rowText = $row.text().toLowerCase();
+
+			var matchesStatus = (status === 'all' || rowStatus === status);
+			var matchesQuery  = (!query || rowText.indexOf(query) !== -1);
+
+			if (matchesStatus && matchesQuery) {
+				$row.show();
+				visibleCount++;
+			} else {
+				$row.hide();
+			}
+		});
+
+		if (visibleCount === 0 && $('.wpat-ac-cart-row').length > 0) {
+			$('#wpat_ac_no_results_row').show();
+		} else {
+			$('#wpat_ac_no_results_row').hide();
+		}
+	}
+
+	$(document).on('change', '#wpat_ac_filter_status', filterAbandonedCartTable);
+	$(document).on('input keyup', '#wpat_ac_search_input', filterAbandonedCartTable);
 
 });
 

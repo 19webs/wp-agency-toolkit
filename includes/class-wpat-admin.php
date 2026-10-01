@@ -3049,9 +3049,21 @@ class WPAT_Admin {
 												<h2 style="margin:0 0 4px 0; font-size:18px; font-weight:700;">Centro de Módulos & Herramientas</h2>
 												<p class="section-desc" style="margin:0; color:#646970; font-size:13px;">Activa o desactiva utilidades de forma independiente para mantener tu sitio rápido y ligero.</p>
 											</div>
-											<div class="wpat-search-box" style="position: relative; min-width: 240px;">
-												<span class="dashicons dashicons-search" style="position: absolute; left: 10px; top: 9px; color: #94a3b8; font-size: 16px;"></span>
-												<input type="text" id="wpat_modules_search_input" placeholder="Buscar módulo..." style="padding-left: 32px; width: 100%; border-radius: 8px; border: 1px solid #cbd5e1; height: 34px; font-size: 13px;" />
+											<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+												<!-- FILTRO POR ESTADO (TODOS / ACTIVOS / INACTIVOS) -->
+												<div class="wpat-status-filter-wrap">
+													<select id="wpat_modules_status_filter" style="height: 36px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 600; padding: 0 12px; background: #fff; cursor: pointer;">
+														<option value="all">⚡ Todos los módulos</option>
+														<option value="active">🟢 Solo Activos</option>
+														<option value="inactive">⚪ Solo Inactivos</option>
+													</select>
+												</div>
+
+												<!-- BUSCADOR EN VIVO -->
+												<div class="wpat-search-box" style="position: relative; min-width: 240px;">
+													<span class="dashicons dashicons-search" style="position: absolute; left: 10px; top: 9px; color: #94a3b8; font-size: 16px;"></span>
+													<input type="text" id="wpat_modules_search_input" placeholder="Buscar módulo..." style="padding-left: 32px; width: 100%; border-radius: 8px; border: 1px solid #cbd5e1; height: 36px; font-size: 13px;" />
+												</div>
 											</div>
 										</div>
 
@@ -5792,8 +5804,25 @@ class WPAT_Admin {
 						<!-- PESTAÑA 3: HISTORIAL DE CARRITOS -->
 						<div class="wpat-ac-tab-content" id="wpat-ac-tab-history" style="display: none;">
 							
+							<!-- BARRA DE FILTROS Y BÚSQUEDA -->
+							<div class="wpat-ac-history-filters-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px;">
+								<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+									<label style="font-size: 13px; font-weight: 700; color: #334155;">Filtrar por estado:</label>
+									<select id="wpat_ac_filter_status" style="height: 36px; border-radius: 6px; font-size: 13px; border-color: #cbd5e1; font-weight: 600;">
+										<option value="all">Todos los estados</option>
+										<option value="abandoned">⚠️ Abandonados (Pendientes)</option>
+										<option value="in_progress">🛒 En progreso (Activos / Comprando)</option>
+										<option value="recovered">🎉 Recuperados (Completados)</option>
+									</select>
+								</div>
+
+								<div style="display: flex; align-items: center; gap: 8px; min-width: 280px;">
+									<input type="text" id="wpat_ac_search_input" placeholder="🔍 Buscar por cliente, email o producto..." style="height: 36px; border-radius: 6px; font-size: 13px; width: 100%; border-color: #cbd5e1;" />
+								</div>
+							</div>
+
 							<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
-								<table class="wp-list-table widefat fixed striped" style="border: none;">
+								<table class="wp-list-table widefat fixed striped" style="border: none;" id="wpat_ac_history_table">
 									<thead>
 										<tr>
 											<th style="padding: 12px 14px; font-weight: 700; width: 22%;">Cliente / Email</th>
@@ -5804,7 +5833,7 @@ class WPAT_Admin {
 											<th style="padding: 12px 14px; font-weight: 700; width: 12%; text-align: right;">Acciones</th>
 										</tr>
 									</thead>
-									<tbody>
+									<tbody id="wpat_ac_tbody">
 										<?php if ( ! empty( $ac_recent_carts ) ) : ?>
 											<?php foreach ( $ac_recent_carts as $cart_row ) : 
 												$items = json_decode( $cart_row->cart_contents, true );
@@ -5820,7 +5849,7 @@ class WPAT_Admin {
 													$status_badge = 'background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; font-weight: 800;';
 												}
 											?>
-												<tr id="wpat-ac-row-<?php echo esc_attr( $cart_row->id ); ?>">
+												<tr id="wpat-ac-row-<?php echo esc_attr( $cart_row->id ); ?>" class="wpat-ac-cart-row" data-status="<?php echo esc_attr( $cart_row->status ); ?>">
 													<td style="padding: 12px 14px; vertical-align: middle;">
 														<strong><?php echo esc_html( ! empty( $cart_row->user_name ) ? $cart_row->user_name : 'Cliente Anónimo' ); ?></strong>
 														<div style="font-size: 11.5px; color: #64748b;"><?php echo esc_html( $cart_row->user_email ); ?></div>
@@ -5865,12 +5894,17 @@ class WPAT_Admin {
 												</tr>
 											<?php endforeach; ?>
 										<?php else : ?>
-											<tr>
+											<tr id="wpat_ac_empty_db_row">
 												<td colspan="6" style="text-align: center; padding: 30px; color: #64748b;">
 													No hay carritos capturados por el momento.
 												</td>
 											</tr>
 										<?php endif; ?>
+										<tr id="wpat_ac_no_results_row" style="display: none;">
+											<td colspan="6" style="text-align: center; padding: 30px; color: #64748b;">
+												No se encontraron carritos con los filtros seleccionados.
+											</td>
+										</tr>
 									</tbody>
 								</table>
 							</div>

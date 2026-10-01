@@ -646,9 +646,35 @@ class WPAT_Woo_Abandoned_Cart {
 		}
 		$email_html = ob_get_clean();
 
+		// Resolver remitente (From Name, From Email y Reply-To)
+		$from_name = ! empty( $settings['wpat_ac_from_name'] ) ? $settings['wpat_ac_from_name'] : '';
+		if ( empty( $from_name ) && ! empty( $settings['smtp_from_name'] ) ) {
+			$from_name = $settings['smtp_from_name'];
+		}
+		if ( empty( $from_name ) && function_exists( 'get_option' ) ) {
+			$from_name = get_option( 'woocommerce_email_from_name', get_bloginfo( 'name' ) );
+		}
+		if ( empty( $from_name ) ) {
+			$from_name = get_bloginfo( 'name' );
+		}
+
+		$from_email = ! empty( $settings['wpat_ac_from_email'] ) ? sanitize_email( $settings['wpat_ac_from_email'] ) : '';
+		if ( empty( $from_email ) && ! empty( $settings['smtp_from_email'] ) ) {
+			$from_email = sanitize_email( $settings['smtp_from_email'] );
+		}
+		if ( empty( $from_email ) && function_exists( 'get_option' ) ) {
+			$from_email = sanitize_email( get_option( 'woocommerce_email_from_address', get_option( 'admin_email' ) ) );
+		}
+		if ( empty( $from_email ) ) {
+			$from_email = get_option( 'admin_email' );
+		}
+
+		$reply_to = ! empty( $settings['wpat_ac_reply_to'] ) ? sanitize_email( $settings['wpat_ac_reply_to'] ) : $from_email;
+
 		$headers = array(
 			'Content-Type: text/html; charset=UTF-8',
-			'From: ' . $site_name . ' <' . get_option( 'admin_email' ) . '>',
+			'From: ' . $from_name . ' <' . $from_email . '>',
+			'Reply-To: ' . $from_name . ' <' . $reply_to . '>',
 		);
 
 		return wp_mail( $to, $subject, $email_html, $headers );

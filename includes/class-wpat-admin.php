@@ -1605,6 +1605,9 @@ class WPAT_Admin {
 			$new_settings['wpat_ac_cutoff_time']     = isset( $input_settings['wpat_ac_cutoff_time'] ) ? max( 10, intval( $input_settings['wpat_ac_cutoff_time'] ) ) : 20;
 			$new_settings['wpat_ac_batch_size']      = isset( $input_settings['wpat_ac_batch_size'] ) ? max( 5, min( 100, intval( $input_settings['wpat_ac_batch_size'] ) ) ) : 15;
 			$new_settings['wpat_ac_prune_days']      = isset( $input_settings['wpat_ac_prune_days'] ) ? max( 7, intval( $input_settings['wpat_ac_prune_days'] ) ) : 30;
+			$new_settings['wpat_ac_from_name']       = isset( $input_settings['wpat_ac_from_name'] ) ? sanitize_text_field( $input_settings['wpat_ac_from_name'] ) : '';
+			$new_settings['wpat_ac_from_email']      = isset( $input_settings['wpat_ac_from_email'] ) ? sanitize_email( $input_settings['wpat_ac_from_email'] ) : '';
+			$new_settings['wpat_ac_reply_to']        = isset( $input_settings['wpat_ac_reply_to'] ) ? sanitize_email( $input_settings['wpat_ac_reply_to'] ) : '';
 			$new_settings['wpat_ac_email_btn_color'] = isset( $input_settings['wpat_ac_email_btn_color'] ) ? sanitize_hex_color( $input_settings['wpat_ac_email_btn_color'] ) : '#2563eb';
 			$new_settings['wpat_ac_email_logo']      = isset( $input_settings['wpat_ac_email_logo'] ) ? esc_url_raw( $input_settings['wpat_ac_email_logo'] ) : '';
 			$new_settings['wpat_ac_email_footer']    = isset( $input_settings['wpat_ac_email_footer'] ) ? wp_kses_post( $input_settings['wpat_ac_email_footer'] ) : '';
@@ -5513,9 +5516,14 @@ class WPAT_Admin {
 				$ac_cutoff    = isset( $settings['wpat_ac_cutoff_time'] ) ? $settings['wpat_ac_cutoff_time'] : '20';
 				$ac_batch     = isset( $settings['wpat_ac_batch_size'] ) ? $settings['wpat_ac_batch_size'] : '15';
 				$ac_prune     = isset( $settings['wpat_ac_prune_days'] ) ? $settings['wpat_ac_prune_days'] : '30';
+				$ac_from_name = isset( $settings['wpat_ac_from_name'] ) ? $settings['wpat_ac_from_name'] : '';
+				$ac_from_mail = isset( $settings['wpat_ac_from_email'] ) ? $settings['wpat_ac_from_email'] : '';
+				$ac_reply_to  = isset( $settings['wpat_ac_reply_to'] ) ? $settings['wpat_ac_reply_to'] : '';
 				$ac_btn_color = isset( $settings['wpat_ac_email_btn_color'] ) ? $settings['wpat_ac_email_btn_color'] : '#2563eb';
 				$ac_logo      = isset( $settings['wpat_ac_email_logo'] ) ? $settings['wpat_ac_email_logo'] : '';
 				$ac_footer    = isset( $settings['wpat_ac_email_footer'] ) ? $settings['wpat_ac_email_footer'] : '';
+
+				$is_smtp_active = ! empty( $settings['smtp'] ) && '1' === $settings['smtp'];
 				?>
 				<div class="wpat-module-card">
 					<div class="wpat-module-header">
@@ -5526,6 +5534,29 @@ class WPAT_Admin {
 						<?php $this->render_module_toggle( 'woo-abandoned-cart', $settings, true ); ?>
 					</div>
 					<div class="wpat-module-body" style="display: block; padding: 22px;">
+
+						<!-- AVISO DE RECOMENDACIÓN SMTP & ENTREGABILIDAD -->
+						<?php if ( ! $is_smtp_active ) : ?>
+							<div style="background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 14px 18px; margin-bottom: 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+								<div style="display: flex; align-items: flex-start; gap: 10px; max-width: 800px;">
+									<span style="font-size: 20px; line-height: 1;">💡</span>
+									<div>
+										<strong style="color: #92400e; font-size: 13.5px; display: block; margin-bottom: 3px;">Recomendación de Entregabilidad: Activa el módulo SMTP</strong>
+										<span style="color: #b45309; font-size: 12.5px; line-height: 1.4; display: block;">
+											Para asegurar que los correos de recuperación lleguen directamente a la <strong>bandeja de entrada</strong> del cliente y evitar que caigan en Spam o sean bloqueados por Gmail/Outlook, te recomendamos activar y configurar el módulo de <strong>SMTP de WP Agency Toolkit</strong> (o tu servidor habitual como Acumbamail, SendGrid o Brevo).
+										</span>
+									</div>
+								</div>
+								<a href="?page=wp-agency-toolkit&module=smtp" class="button button-secondary" style="font-weight: 700; color: #b45309; border-color: #fcd34d; background: #ffffff;">
+									⚙️ Configurar SMTP ahora &rarr;
+								</a>
+							</div>
+						<?php else : ?>
+							<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a; border-radius: 8px; padding: 10px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #166534;">
+								<span>✅</span>
+								<span><strong>Módulo SMTP Activo:</strong> Tus correos de recuperación se enviarán a través del servidor SMTP configurado para máxima entregabilidad sin spam.</span>
+							</div>
+						<?php endif; ?>
 
 						<!-- 1. RESUMEN DE ANALÍTICAS / KPIS -->
 						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
@@ -5704,6 +5735,30 @@ class WPAT_Admin {
 										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Auto-limpieza de carritos (Días):</label>
 										<input type="number" min="7" step="1" name="wpat_settings[wpat_ac_prune_days]" value="<?php echo esc_attr( $ac_prune ); ?>" style="width: 100%; height: 36px; border-radius: 6px;" />
 										<p class="description" style="font-size: 11px; margin-top: 4px;">Elimina registros antiguos para mantener la base de datos ultra rápida.</p>
+									</div>
+								</div>
+							</div>
+
+							<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+								<h4 style="margin: 0 0 15px 0; font-size: 15px; font-weight: 700; color: #0f172a;">✉️ Datos del Remitente</h4>
+
+								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+									<div>
+										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Nombre del Remitente:</label>
+										<input type="text" name="wpat_settings[wpat_ac_from_name]" value="<?php echo esc_attr( $ac_from_name ); ?>" placeholder="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>" style="width: 100%; height: 36px; border-radius: 6px;" />
+										<p class="description" style="font-size: 11px; margin-top: 4px;">Nombre que verá el cliente al recibir el correo.</p>
+									</div>
+
+									<div>
+										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Email del Remitente:</label>
+										<input type="email" name="wpat_settings[wpat_ac_from_email]" value="<?php echo esc_attr( $ac_from_mail ); ?>" placeholder="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>" style="width: 100%; height: 36px; border-radius: 6px;" />
+										<p class="description" style="font-size: 11px; margin-top: 4px;">Dirección desde la que se envían los correos.</p>
+									</div>
+
+									<div>
+										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Email de Respuesta (Reply-To):</label>
+										<input type="email" name="wpat_settings[wpat_ac_reply_to]" value="<?php echo esc_attr( $ac_reply_to ); ?>" placeholder="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>" style="width: 100%; height: 36px; border-radius: 6px;" />
+										<p class="description" style="font-size: 11px; margin-top: 4px;">Si el cliente responde al email, le llegará a esta dirección.</p>
 									</div>
 								</div>
 							</div>

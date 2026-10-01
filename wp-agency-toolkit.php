@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.103
+ * Version:     4.3.104
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.103' );
+define( 'WPAT_VERSION', '4.3.104' );
 define( 'WPAT_FILE', __FILE__ );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_DIR', WPAT_PATH );
@@ -739,6 +739,7 @@ class WPAT_Main {
 				// Opciones de Recuperador de Carritos Abandonados
 				'woo-abandoned-cart'                 => '0',
 				'wpat_ac_cutoff_time'                => '20',
+				'wpat_ac_batch_size'                 => '15',
 				'wpat_ac_prune_days'                 => '30',
 				'wpat_ac_email_btn_color'            => '#2563eb',
 				'wpat_ac_email_logo'                 => '',

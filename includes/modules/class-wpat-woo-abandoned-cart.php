@@ -438,12 +438,14 @@ class WPAT_Woo_Abandoned_Cart {
 		) );
 
 		// 2. Obtener secuencias de correos configuradas
-		$sequences = $this->get_email_sequences_config( $settings );
+		$sequences  = $this->get_email_sequences_config( $settings );
+		$batch_size = isset( $settings['wpat_ac_batch_size'] ) ? max( 5, min( 100, intval( $settings['wpat_ac_batch_size'] ) ) ) : 15;
 
-		// 3. Procesar carritos abandonados en lotes pequeños (15 carritos por tanda para no sobrecargar)
-		$abandoned_carts = $wpdb->get_results(
-			"SELECT * FROM {$this->table_name} WHERE status = 'abandoned' AND emails_sent < 3 ORDER BY last_modified ASC LIMIT 15"
-		);
+		// 3. Procesar carritos abandonados en lotes controlados (por paquetes para no sobrecargar el servidor)
+		$abandoned_carts = $wpdb->get_results( $wpdb->prepare(
+			"SELECT * FROM {$this->table_name} WHERE status = 'abandoned' AND emails_sent < 3 ORDER BY last_modified ASC LIMIT %d",
+			$batch_size
+		) );
 
 		if ( empty( $abandoned_carts ) ) {
 			$this->auto_prune_old_records( $settings );

@@ -1603,6 +1603,7 @@ class WPAT_Admin {
 		// Sanitizar Recuperador de Carritos Abandonados
 		if ( 'woo-abandoned-cart' === $saving_module || ( empty( $saving_module ) && isset( $input_settings['wpat_ac_cutoff_time'] ) ) ) {
 			$new_settings['wpat_ac_cutoff_time']     = isset( $input_settings['wpat_ac_cutoff_time'] ) ? max( 10, intval( $input_settings['wpat_ac_cutoff_time'] ) ) : 20;
+			$new_settings['wpat_ac_batch_size']      = isset( $input_settings['wpat_ac_batch_size'] ) ? max( 5, min( 100, intval( $input_settings['wpat_ac_batch_size'] ) ) ) : 15;
 			$new_settings['wpat_ac_prune_days']      = isset( $input_settings['wpat_ac_prune_days'] ) ? max( 7, intval( $input_settings['wpat_ac_prune_days'] ) ) : 30;
 			$new_settings['wpat_ac_email_btn_color'] = isset( $input_settings['wpat_ac_email_btn_color'] ) ? sanitize_hex_color( $input_settings['wpat_ac_email_btn_color'] ) : '#2563eb';
 			$new_settings['wpat_ac_email_logo']      = isset( $input_settings['wpat_ac_email_logo'] ) ? esc_url_raw( $input_settings['wpat_ac_email_logo'] ) : '';
@@ -5510,6 +5511,7 @@ class WPAT_Admin {
 				$ac_recent_carts = $ac_instance->get_recent_carts( 30 );
 
 				$ac_cutoff    = isset( $settings['wpat_ac_cutoff_time'] ) ? $settings['wpat_ac_cutoff_time'] : '20';
+				$ac_batch     = isset( $settings['wpat_ac_batch_size'] ) ? $settings['wpat_ac_batch_size'] : '15';
 				$ac_prune     = isset( $settings['wpat_ac_prune_days'] ) ? $settings['wpat_ac_prune_days'] : '30';
 				$ac_btn_color = isset( $settings['wpat_ac_email_btn_color'] ) ? $settings['wpat_ac_email_btn_color'] : '#2563eb';
 				$ac_logo      = isset( $settings['wpat_ac_email_logo'] ) ? $settings['wpat_ac_email_logo'] : '';
@@ -5678,19 +5680,30 @@ class WPAT_Admin {
 						<div class="wpat-ac-tab-content" id="wpat-ac-tab-settings" style="display: none;">
 							
 							<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
-								<h4 style="margin: 0 0 15px 0; font-size: 15px; font-weight: 700; color: #0f172a;">⚙️ Reglas de Detección y Limpieza</h4>
+								<h4 style="margin: 0 0 15px 0; font-size: 15px; font-weight: 700; color: #0f172a;">⚙️ Reglas de Detección, Envío y Limpieza</h4>
 								
-								<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
 									<div>
-										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Tiempo de inactividad para considerar abandono (Minutos):</label>
-										<input type="number" min="10" step="1" name="wpat_settings[wpat_ac_cutoff_time]" value="<?php echo esc_attr( $ac_cutoff ); ?>" style="width: 120px; height: 36px; border-radius: 6px;" />
-										<p class="description" style="font-size: 11.5px; margin-top: 4px;">Por defecto 20 minutos tras la última acción en la tienda.</p>
+										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Inactividad para abandono (Minutos):</label>
+										<input type="number" min="10" step="1" name="wpat_settings[wpat_ac_cutoff_time]" value="<?php echo esc_attr( $ac_cutoff ); ?>" style="width: 100%; height: 36px; border-radius: 6px;" />
+										<p class="description" style="font-size: 11px; margin-top: 4px;">Tiempo de espera antes de marcar el carrito como abandonado (def. 20 min).</p>
 									</div>
 
 									<div>
-										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Auto-limpieza de carritos antiguos (Días):</label>
-										<input type="number" min="7" step="1" name="wpat_settings[wpat_ac_prune_days]" value="<?php echo esc_attr( $ac_prune ); ?>" style="width: 120px; height: 36px; border-radius: 6px;" />
-										<p class="description" style="font-size: 11.5px; margin-top: 4px;">Elimina registros recuperados o caducados para mantener la base de datos ultra ligera.</p>
+										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">📦 Tamaño de lote por tanda (Emails):</label>
+										<select name="wpat_settings[wpat_ac_batch_size]" style="width: 100%; height: 36px; border-radius: 6px; font-size: 13px;">
+											<option value="10" <?php selected( $ac_batch, 10 ); ?>>10 correos por tanda (Hosting modesto)</option>
+											<option value="15" <?php selected( $ac_batch, 15 ); ?>>15 correos por tanda (Recomendado)</option>
+											<option value="25" <?php selected( $ac_batch, 25 ); ?>>25 correos por tanda (Hosting medio / VPS)</option>
+											<option value="50" <?php selected( $ac_batch, 50 ); ?>>50 correos por tanda (Gran volumen / Servidor dedicado)</option>
+										</select>
+										<p class="description" style="font-size: 11px; margin-top: 4px;">Envío escalonado en lotes para evitar bloqueos del servidor.</p>
+									</div>
+
+									<div>
+										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Auto-limpieza de carritos (Días):</label>
+										<input type="number" min="7" step="1" name="wpat_settings[wpat_ac_prune_days]" value="<?php echo esc_attr( $ac_prune ); ?>" style="width: 100%; height: 36px; border-radius: 6px;" />
+										<p class="description" style="font-size: 11px; margin-top: 4px;">Elimina registros antiguos para mantener la base de datos ultra rápida.</p>
 									</div>
 								</div>
 							</div>

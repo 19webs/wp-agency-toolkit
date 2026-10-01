@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.106
+ * Version:     4.3.107
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.106' );
+define( 'WPAT_VERSION', '4.3.107' );
 define( 'WPAT_FILE', __FILE__ );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_DIR', WPAT_PATH );
@@ -228,6 +228,10 @@ class WPAT_Main {
 			'file'  => 'includes/modules/class-wpat-woo-abandoned-cart.php',
 			'class' => 'WPAT_Woo_Abandoned_Cart',
 		),
+		'legal-pages' => array(
+			'file'  => 'includes/modules/class-wpat-legal-pages.php',
+			'class' => 'WPAT_Legal_Pages',
+		),
 	);
 
 	/**
@@ -351,6 +355,32 @@ class WPAT_Main {
 				'quick-pay'                 => '0',
 				'qr-generator'              => '0',
 				'client-studio'             => '0',
+				'legal-pages'               => '0',
+
+				// Sub-opciones de Textos Legales RGPD / LSSI-CE
+				'legal_titular'             => '',
+				'legal_nif'                 => '',
+				'legal_direccion'           => '',
+				'legal_cp'                  => '',
+				'legal_ciudad'              => '',
+				'legal_provincia'           => '',
+				'legal_pais'                => 'España',
+				'legal_email_rgpd'          => '',
+				'legal_telefono'            => '',
+				'legal_registro_mercantil'  => '',
+				'legal_dpd'                 => '',
+				'legal_hosting'             => 'Proveedores con servidores ubicados en el Espacio Económico Europeo (EEE)',
+				'legal_actividad'           => 'Prestación de servicios y comercio electrónico',
+				'legal_site_url'            => '',
+				'legal_site_name'           => '',
+				'legal_aviso_page_url'      => '',
+				'legal_privacy_page_url'    => '',
+				'legal_cookies_page_url'    => '',
+				'legal_condiciones_page_url'=> '',
+				'legal_template_aviso'      => '',
+				'legal_template_privacidad' => '',
+				'legal_template_cookies'    => '',
+				'legal_template_condiciones'=> '',
 
 				// Sub-opciones internas de Client Studio (SaaS para Listados y Edición)
 				'studio_density'            => 'comfortable',

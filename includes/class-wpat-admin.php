@@ -674,6 +674,7 @@ class WPAT_Admin {
 				'wpat-quick-pay'             => 'quick-pay',
 				'wpat-woo-direct-checkout'   => 'woo-direct-checkout',
 				'wpat-woo-abandoned-cart'    => 'woo-abandoned-cart',
+				'wpat-legal-pages'           => 'legal-pages',
 				'wpat-qr-generator'          => 'qr-generator',
 				'wpat-client-studio'         => 'client-studio',
 				'wpat-tools'                 => 'tools',
@@ -734,6 +735,9 @@ class WPAT_Admin {
 			'quick-pay',
 			'woo-direct-checkout',
 			'woo-abandoned-cart',
+			'legal-pages',
+			'qr-generator',
+			'client-studio',
 			'tools',
 		);
 
@@ -1627,6 +1631,33 @@ class WPAT_Admin {
 			}
 		}
 
+		// Sanitizar Textos Legales RGPD / LSSI-CE
+		if ( 'legal-pages' === $saving_module || ( empty( $saving_module ) && isset( $input_settings['legal_titular'] ) ) ) {
+			$new_settings['legal_titular']             = isset( $input_settings['legal_titular'] ) ? sanitize_text_field( $input_settings['legal_titular'] ) : '';
+			$new_settings['legal_nif']                 = isset( $input_settings['legal_nif'] ) ? sanitize_text_field( $input_settings['legal_nif'] ) : '';
+			$new_settings['legal_direccion']           = isset( $input_settings['legal_direccion'] ) ? sanitize_text_field( $input_settings['legal_direccion'] ) : '';
+			$new_settings['legal_cp']                  = isset( $input_settings['legal_cp'] ) ? sanitize_text_field( $input_settings['legal_cp'] ) : '';
+			$new_settings['legal_ciudad']              = isset( $input_settings['legal_ciudad'] ) ? sanitize_text_field( $input_settings['legal_ciudad'] ) : '';
+			$new_settings['legal_provincia']           = isset( $input_settings['legal_provincia'] ) ? sanitize_text_field( $input_settings['legal_provincia'] ) : '';
+			$new_settings['legal_pais']                = isset( $input_settings['legal_pais'] ) ? sanitize_text_field( $input_settings['legal_pais'] ) : 'España';
+			$new_settings['legal_email_rgpd']          = isset( $input_settings['legal_email_rgpd'] ) ? sanitize_email( $input_settings['legal_email_rgpd'] ) : '';
+			$new_settings['legal_telefono']            = isset( $input_settings['legal_telefono'] ) ? sanitize_text_field( $input_settings['legal_telefono'] ) : '';
+			$new_settings['legal_registro_mercantil']  = isset( $input_settings['legal_registro_mercantil'] ) ? sanitize_textarea_field( $input_settings['legal_registro_mercantil'] ) : '';
+			$new_settings['legal_dpd']                 = isset( $input_settings['legal_dpd'] ) ? sanitize_text_field( $input_settings['legal_dpd'] ) : '';
+			$new_settings['legal_hosting']             = isset( $input_settings['legal_hosting'] ) ? sanitize_text_field( $input_settings['legal_hosting'] ) : '';
+			$new_settings['legal_actividad']           = isset( $input_settings['legal_actividad'] ) ? sanitize_text_field( $input_settings['legal_actividad'] ) : '';
+			$new_settings['legal_site_url']            = isset( $input_settings['legal_site_url'] ) ? esc_url_raw( $input_settings['legal_site_url'] ) : '';
+			$new_settings['legal_site_name']           = isset( $input_settings['legal_site_name'] ) ? sanitize_text_field( $input_settings['legal_site_name'] ) : '';
+			$new_settings['legal_aviso_page_url']      = isset( $input_settings['legal_aviso_page_url'] ) ? esc_url_raw( $input_settings['legal_aviso_page_url'] ) : '';
+			$new_settings['legal_privacy_page_url']    = isset( $input_settings['legal_privacy_page_url'] ) ? esc_url_raw( $input_settings['legal_privacy_page_url'] ) : '';
+			$new_settings['legal_cookies_page_url']    = isset( $input_settings['legal_cookies_page_url'] ) ? esc_url_raw( $input_settings['legal_cookies_page_url'] ) : '';
+			$new_settings['legal_condiciones_page_url']= isset( $input_settings['legal_condiciones_page_url'] ) ? esc_url_raw( $input_settings['legal_condiciones_page_url'] ) : '';
+			$new_settings['legal_template_aviso']      = isset( $input_settings['legal_template_aviso'] ) ? wp_kses_post( $input_settings['legal_template_aviso'] ) : '';
+			$new_settings['legal_template_privacidad'] = isset( $input_settings['legal_template_privacidad'] ) ? wp_kses_post( $input_settings['legal_template_privacidad'] ) : '';
+			$new_settings['legal_template_cookies']    = isset( $input_settings['legal_template_cookies'] ) ? wp_kses_post( $input_settings['legal_template_cookies'] ) : '';
+			$new_settings['legal_template_condiciones']= isset( $input_settings['legal_template_condiciones'] ) ? wp_kses_post( $input_settings['legal_template_condiciones'] ) : '';
+		}
+
 		// Preservar colecciones gestionadas independientemente
 		$saved_raw_wpat = get_option( 'wpat_settings', array() );
 		if ( isset( $saved_raw_wpat['qp_products'] ) && is_array( $saved_raw_wpat['qp_products'] ) ) {
@@ -1998,6 +2029,7 @@ class WPAT_Admin {
 			'quick-pay',
 			'woo-direct-checkout',
 			'woo-abandoned-cart',
+			'legal-pages',
 			'qr-generator',
 			'client-studio',
 			'tools',
@@ -3381,6 +3413,18 @@ class WPAT_Admin {
 				'icon'        => '🍪',
 				'icon_bg'     => 'sec',
 				'keywords'    => 'cookies rgpd gdpr banner consentimiento consent mode v2 analytics aepd legal aviso privacidad'
+			),
+			array(
+				'id'          => 'legal-pages',
+				'is_new'      => true,
+				'title'       => 'Textos Legales RGPD / LSSI-CE',
+				'badge'       => 'Subpágina',
+				'badge_class' => 'subpage',
+				'desc'        => 'Generador dinámico de Aviso Legal, Privacidad, Cookies, Condiciones de Venta (WooCommerce) y Cláusulas para formularios con shortcodes.',
+				'cat_class'   => 'cat-security cat-sec cat-tools',
+				'icon'        => '⚖️',
+				'icon_bg'     => 'sec',
+				'keywords'    => 'textos legales aviso legal privacidad cookies rgpd lssi clausulas formularios terminos condiciones venta devoluciones'
 			),
 
 			// RENDIMIENTO & SEO (7)
@@ -11201,6 +11245,9 @@ class WPAT_Admin {
 			case 'cookie-consent':
 				$this->render_cookie_consent_content( $settings );
 				break;
+			case 'legal-pages':
+				$this->render_legal_pages_content( $settings );
+				break;
 			case 'quick-pay':
 				$this->render_quick_pay_content( $settings );
 				break;
@@ -14157,6 +14204,430 @@ class WPAT_Admin {
 
 			</div>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Renderiza la interfaz de administración del módulo Textos Legales RGPD / LSSI-CE.
+	 *
+	 * @param array $settings Ajustes del plugin.
+	 */
+	public function render_legal_pages_content( $settings ) {
+		if ( ! class_exists( 'WPAT_Legal_Pages' ) ) {
+			require_once WPAT_PATH . 'includes/modules/class-wpat-legal-pages.php';
+		}
+
+		$is_active = isset( $settings['legal-pages'] ) && '1' === (string) $settings['legal-pages'];
+		$active_subtab = isset( $_GET['subtab'] ) && in_array( $_GET['subtab'], array( 'datos', 'aviso', 'privacidad', 'cookies', 'condiciones', 'shortcodes' ), true ) ? sanitize_key( $_GET['subtab'] ) : 'datos';
+
+		// Datos de la empresa
+		$titular       = isset( $settings['legal_titular'] ) ? $settings['legal_titular'] : get_bloginfo( 'name' );
+		$nif           = isset( $settings['legal_nif'] ) ? $settings['legal_nif'] : '';
+		$direccion     = isset( $settings['legal_direccion'] ) ? $settings['legal_direccion'] : '';
+		$cp            = isset( $settings['legal_cp'] ) ? $settings['legal_cp'] : '';
+		$ciudad        = isset( $settings['legal_ciudad'] ) ? $settings['legal_ciudad'] : '';
+		$provincia     = isset( $settings['legal_provincia'] ) ? $settings['legal_provincia'] : '';
+		$pais          = isset( $settings['legal_pais'] ) && ! empty( $settings['legal_pais'] ) ? $settings['legal_pais'] : 'España';
+		$email_rgpd    = isset( $settings['legal_email_rgpd'] ) ? $settings['legal_email_rgpd'] : get_option( 'admin_email' );
+		$telefono      = isset( $settings['legal_telefono'] ) ? $settings['legal_telefono'] : '';
+		$registro_merc = isset( $settings['legal_registro_mercantil'] ) ? $settings['legal_registro_mercantil'] : '';
+		$dpd           = isset( $settings['legal_dpd'] ) ? $settings['legal_dpd'] : '';
+		$hosting       = isset( $settings['legal_hosting'] ) && ! empty( $settings['legal_hosting'] ) ? $settings['legal_hosting'] : 'Proveedores con servidores ubicados en el Espacio Económico Europeo (EEE)';
+		$actividad     = isset( $settings['legal_actividad'] ) && ! empty( $settings['legal_actividad'] ) ? $settings['legal_actividad'] : 'Prestación de servicios y comercio electrónico';
+		$site_url      = isset( $settings['legal_site_url'] ) && ! empty( $settings['legal_site_url'] ) ? $settings['legal_site_url'] : home_url();
+		$site_name     = isset( $settings['legal_site_name'] ) && ! empty( $settings['legal_site_name'] ) ? $settings['legal_site_name'] : get_bloginfo( 'name' );
+
+		// Plantillas
+		$tpl_aviso       = ! empty( $settings['legal_template_aviso'] ) ? $settings['legal_template_aviso'] : WPAT_Legal_Pages::get_default_aviso_legal();
+		$tpl_privacidad  = ! empty( $settings['legal_template_privacidad'] ) ? $settings['legal_template_privacidad'] : WPAT_Legal_Pages::get_default_privacidad();
+		$tpl_cookies     = ! empty( $settings['legal_template_cookies'] ) ? $settings['legal_template_cookies'] : WPAT_Legal_Pages::get_default_cookies();
+		$tpl_condiciones = ! empty( $settings['legal_template_condiciones'] ) ? $settings['legal_template_condiciones'] : WPAT_Legal_Pages::get_default_condiciones_venta();
+
+		// Comprobar estado del módulo de cookies consent
+		$cookie_module_active = isset( $settings['cookie-consent'] ) && '1' === (string) $settings['cookie-consent'];
+		?>
+		<div class="wpat-module-card wpat-legal-pages-admin-wrap" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+			<input type="hidden" name="wpat_active_subtab" id="wpat_legal_active_subtab" value="<?php echo esc_attr( $active_subtab ); ?>" />
+
+			<!-- CABECERA DEL MÓDULO -->
+			<div class="wpat-module-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 22px;">
+				<div class="wpat-module-info">
+					<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+						<span style="font-size: 26px; line-height: 1;">⚖️</span>
+						<h3 style="margin: 0; font-size: 19px; font-weight: 700; color: #1e293b;">Generador y Gestor de Textos Legales RGPD / LSSI-CE</h3>
+						<span class="wpat-badge wpat-badge-new" style="background: #10b981; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px; text-transform: uppercase;">Nuevo</span>
+					</div>
+					<p style="margin: 0; font-size: 13.5px; color: #64748b; line-height: 1.5;">
+						Centraliza los datos fiscales y legales de tu cliente y genera dinámicamente mediante shortcodes el <strong>Aviso Legal</strong>, <strong>Política de Privacidad</strong>, <strong>Política de Cookies</strong>, <strong>Condiciones de Venta</strong> y las <strong>Cláusulas de 1ª capa para formularios</strong>.
+					</p>
+				</div>
+				<div>
+					<?php $this->render_module_toggle( 'legal-pages', $settings, true ); ?>
+				</div>
+			</div>
+
+			<!-- SUB-PESTAÑAS -->
+			<div class="wpat-legal-subtabs" style="display: flex; gap: 6px; border-bottom: 2px solid #e2e8f0; margin-bottom: 22px; flex-wrap: wrap;">
+				<button type="button" class="wpat-legal-tab-btn <?php echo 'datos' === $active_subtab ? 'active' : ''; ?>" data-tab="datos" style="background: none; border: none; padding: 10px 16px; font-weight: <?php echo 'datos' === $active_subtab ? '700' : '600'; ?>; font-size: 13.5px; color: <?php echo 'datos' === $active_subtab ? '#2563eb' : '#64748b'; ?>; border-bottom: 2px solid <?php echo 'datos' === $active_subtab ? '#2563eb' : 'transparent'; ?>; margin-bottom: -2px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+					<span class="dashicons dashicons-id"></span> Datos del Titular / Negocio
+				</button>
+				<button type="button" class="wpat-legal-tab-btn <?php echo 'aviso' === $active_subtab ? 'active' : ''; ?>" data-tab="aviso" style="background: none; border: none; padding: 10px 16px; font-weight: <?php echo 'aviso' === $active_subtab ? '700' : '600'; ?>; font-size: 13.5px; color: <?php echo 'aviso' === $active_subtab ? '#2563eb' : '#64748b'; ?>; border-bottom: 2px solid <?php echo 'aviso' === $active_subtab ? '#2563eb' : 'transparent'; ?>; margin-bottom: -2px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+					<span class="dashicons dashicons-media-document"></span> Aviso Legal
+				</button>
+				<button type="button" class="wpat-legal-tab-btn <?php echo 'privacidad' === $active_subtab ? 'active' : ''; ?>" data-tab="privacidad" style="background: none; border: none; padding: 10px 16px; font-weight: <?php echo 'privacidad' === $active_subtab ? '700' : '600'; ?>; font-size: 13.5px; color: <?php echo 'privacidad' === $active_subtab ? '#2563eb' : '#64748b'; ?>; border-bottom: 2px solid <?php echo 'privacidad' === $active_subtab ? '#2563eb' : 'transparent'; ?>; margin-bottom: -2px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+					<span class="dashicons dashicons-shield"></span> Política de Privacidad
+				</button>
+				<button type="button" class="wpat-legal-tab-btn <?php echo 'cookies' === $active_subtab ? 'active' : ''; ?>" data-tab="cookies" style="background: none; border: none; padding: 10px 16px; font-weight: <?php echo 'cookies' === $active_subtab ? '700' : '600'; ?>; font-size: 13.5px; color: <?php echo 'cookies' === $active_subtab ? '#2563eb' : '#64748b'; ?>; border-bottom: 2px solid <?php echo 'cookies' === $active_subtab ? '#2563eb' : 'transparent'; ?>; margin-bottom: -2px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+					<span class="dashicons dashicons-rest-api"></span> Política de Cookies
+				</button>
+				<button type="button" class="wpat-legal-tab-btn <?php echo 'condiciones' === $active_subtab ? 'active' : ''; ?>" data-tab="condiciones" style="background: none; border: none; padding: 10px 16px; font-weight: <?php echo 'condiciones' === $active_subtab ? '700' : '600'; ?>; font-size: 13.5px; color: <?php echo 'condiciones' === $active_subtab ? '#2563eb' : '#64748b'; ?>; border-bottom: 2px solid <?php echo 'condiciones' === $active_subtab ? '#2563eb' : 'transparent'; ?>; margin-bottom: -2px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+					<span class="dashicons dashicons-cart"></span> Condiciones de Venta
+				</button>
+				<button type="button" class="wpat-legal-tab-btn <?php echo 'shortcodes' === $active_subtab ? 'active' : ''; ?>" data-tab="shortcodes" style="background: none; border: none; padding: 10px 16px; font-weight: <?php echo 'shortcodes' === $active_subtab ? '700' : '600'; ?>; font-size: 13.5px; color: <?php echo 'shortcodes' === $active_subtab ? '#2563eb' : '#64748b'; ?>; border-bottom: 2px solid <?php echo 'shortcodes' === $active_subtab ? '#2563eb' : 'transparent'; ?>; margin-bottom: -2px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+					<span class="dashicons dashicons-shortcode"></span> Shortcodes & Cláusulas
+				</button>
+			</div>
+
+			<!-- TAB 1: DATOS DEL TITULAR / NEGOCIO -->
+			<div class="wpat-legal-tab-panel <?php echo 'datos' === $active_subtab ? 'active' : ''; ?>" id="wpat_legal_tab_datos" style="<?php echo 'datos' === $active_subtab ? 'display:block;' : 'display:none;'; ?>">
+				<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+					<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+						<span>🏢</span> Identificación Fiscal y Contacto Legal
+					</h4>
+					<p style="font-size: 12.5px; color: #64748b; margin: 0 0 16px 0;">
+						Rellena estos datos una sola vez. Se insertarán automáticamente en todas las páginas legales y cláusulas de formularios donde uses los shortcodes.
+					</p>
+
+					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+						<div>
+							<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 5px;">Nombre del Titular o Razón Social <span style="color:#ef4444;">*</span></label>
+							<input type="text" name="wpat_settings[legal_titular]" value="<?php echo esc_attr( $titular ); ?>" class="widefat" placeholder="Ej: Manolo Ruiz Nieto / 19webs Digital S.L." required />
+							<span style="font-size: 11px; color: #64748b;">Token: <code>{titular}</code></span>
+						</div>
+						<div>
+							<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 5px;">N.I.F. / C.I.F. <span style="color:#ef4444;">*</span></label>
+							<input type="text" name="wpat_settings[legal_nif]" value="<?php echo esc_attr( $nif ); ?>" class="widefat" placeholder="Ej: 56482687-C o B-12345678" required />
+							<span style="font-size: 11px; color: #64748b;">Token: <code>{nif}</code></span>
+						</div>
+						<div>
+							<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 5px;">Email de Contacto y RGPD <span style="color:#ef4444;">*</span></label>
+							<input type="email" name="wpat_settings[legal_email_rgpd]" value="<?php echo esc_attr( $email_rgpd ); ?>" class="widefat" placeholder="info@tudominio.com" required />
+							<span style="font-size: 11px; color: #64748b;">Token: <code>{email_rgpd}</code></span>
+						</div>
+						<div>
+							<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 5px;">Teléfono de Contacto</label>
+							<input type="text" name="wpat_settings[legal_telefono]" value="<?php echo esc_attr( $telefono ); ?>" class="widefat" placeholder="Ej: +34 912 345 678" />
+							<span style="font-size: 11px; color: #64748b;">Token: <code>{telefono}</code></span>
+						</div>
+					</div>
+
+					<div style="margin-top: 16px; display: grid; grid-template-columns: 2fr 1fr 1.5fr 1.5fr 1fr; gap: 12px;">
+						<div>
+							<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 5px;">Dirección / Calle y Número</label>
+							<input type="text" name="wpat_settings[legal_direccion]" value="<?php echo esc_attr( $direccion ); ?>" class="widefat" placeholder="Ej: C/ Gran Vía 28, 4º B" />
+						</div>
+						<div>
+							<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 5px;">Código Postal</label>
+							<input type="text" name="wpat_settings[legal_cp]" value="<?php echo esc_attr( $cp ); ?>" class="widefat" placeholder="28013" />
+						</div>
+						<div>
+							<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 5px;">Ciudad / Municipio</label>
+							<input type="text" name="wpat_settings[legal_ciudad]" value="<?php echo esc_attr( $ciudad ); ?>" class="widefat" placeholder="Madrid" />
+						</div>
+						<div>
+							<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 5px;">Provincia</label>
+							<input type="text" name="wpat_settings[legal_provincia]" value="<?php echo esc_attr( $provincia ); ?>" class="widefat" placeholder="Madrid" />
+						</div>
+						<div>
+							<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 5px;">País</label>
+							<input type="text" name="wpat_settings[legal_pais]" value="<?php echo esc_attr( $pais ); ?>" class="widefat" placeholder="España" />
+						</div>
+					</div>
+					<div style="margin-top: 6px;">
+						<span style="font-size: 11px; color: #64748b;">Token para dirección completa unificada: <code>{direccion_completa}</code></span>
+					</div>
+				</div>
+
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+					<!-- Datos Registrales y DPD -->
+					<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px;">
+						<h4 style="margin: 0 0 12px 0; font-size: 14.5px; font-weight: 700; color: #1e293b;">⚖️ Registro Mercantil & DPD</h4>
+						
+						<div style="margin-bottom: 14px;">
+							<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 5px;">Datos del Registro Mercantil (Obligatorio para Sociedades SL/SA)</label>
+							<textarea name="wpat_settings[legal_registro_mercantil]" rows="2" class="widefat" placeholder="Inscrita en el Registro Mercantil de Madrid, Tomo 1234, Folio 56, Hoja M-78901, Inscripción 1ª."><?php echo esc_textarea( $registro_merc ); ?></textarea>
+							<span style="font-size: 11px; color: #64748b;">Token: <code>{datos_registrales}</code> (dejar en blanco si es autónomo/persona física).</span>
+						</div>
+
+						<div>
+							<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 5px;">Delegado de Protección de Datos (DPD / DPO)</label>
+							<input type="text" name="wpat_settings[legal_dpd]" value="<?php echo esc_attr( $dpd ); ?>" class="widefat" placeholder="Ej: dpo@tudominio.com / No aplica" />
+							<span style="font-size: 11px; color: #64748b;">Token: <code>{dpd_contacto}</code> (opcional).</span>
+						</div>
+					</div>
+
+					<!-- Configuración de la Actividad y Hosting -->
+					<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px;">
+						<h4 style="margin: 0 0 12px 0; font-size: 14.5px; font-weight: 700; color: #1e293b;">🌐 Actividad y Servidores</h4>
+
+						<div style="margin-bottom: 14px;">
+							<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 5px;">Proveedor / Ubicación del Servidor Hosting</label>
+							<input type="text" name="wpat_settings[legal_hosting]" value="<?php echo esc_attr( $hosting ); ?>" class="widefat" placeholder="Ej: Raiola Networks / Webempresa / Servidores en la UE" />
+							<span style="font-size: 11px; color: #64748b;">Token: <code>{hosting_proveedor}</code></span>
+						</div>
+
+						<div>
+							<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 5px;">Actividad Comercial / Objeto</label>
+							<input type="text" name="wpat_settings[legal_actividad]" value="<?php echo esc_attr( $actividad ); ?>" class="widefat" placeholder="Venta de productos online y prestación de servicios" />
+							<span style="font-size: 11px; color: #64748b;">Token: <code>{actividad_comercial}</code></span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- TAB 2: AVISO LEGAL -->
+			<div class="wpat-legal-tab-panel <?php echo 'aviso' === $active_subtab ? 'active' : ''; ?>" id="wpat_legal_tab_aviso" style="<?php echo 'aviso' === $active_subtab ? 'display:block;' : 'display:none;'; ?>">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+					<div>
+						<h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">📄 Plantilla del Aviso Legal (LSSI-CE)</h4>
+						<p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0;">Usa el shortcode <code>[wpat_aviso_legal]</code> en tu página de Aviso Legal.</p>
+					</div>
+					<button type="button" class="button button-secondary wpat-reset-tpl-btn" data-target="wpat_tpl_aviso" data-default="<?php echo esc_attr( WPAT_Legal_Pages::get_default_aviso_legal() ); ?>">
+						🔄 Restaurar Texto Predeterminado
+					</button>
+				</div>
+				<textarea name="wpat_settings[legal_template_aviso]" id="wpat_tpl_aviso" rows="18" class="widefat code" style="font-family: monospace; font-size: 12.5px; line-height: 1.5; padding: 12px; border-radius: 8px;"><?php echo esc_textarea( $tpl_aviso ); ?></textarea>
+			</div>
+
+			<!-- TAB 3: POLÍTICA DE PRIVACIDAD -->
+			<div class="wpat-legal-tab-panel <?php echo 'privacidad' === $active_subtab ? 'active' : ''; ?>" id="wpat_legal_tab_privacidad" style="<?php echo 'privacidad' === $active_subtab ? 'display:block;' : 'display:none;'; ?>">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+					<div>
+						<h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">🛡️ Plantilla de la Política de Privacidad (RGPD / LOPDGDD)</h4>
+						<p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0;">Usa el shortcode <code>[wpat_politica_privacidad]</code> o su alias <code>[wpat_privacidad]</code>.</p>
+					</div>
+					<button type="button" class="button button-secondary wpat-reset-tpl-btn" data-target="wpat_tpl_privacidad" data-default="<?php echo esc_attr( WPAT_Legal_Pages::get_default_privacidad() ); ?>">
+						🔄 Restaurar Texto Predeterminado
+					</button>
+				</div>
+				<textarea name="wpat_settings[legal_template_privacidad]" id="wpat_tpl_privacidad" rows="18" class="widefat code" style="font-family: monospace; font-size: 12.5px; line-height: 1.5; padding: 12px; border-radius: 8px;"><?php echo esc_textarea( $tpl_privacidad ); ?></textarea>
+			</div>
+
+			<!-- TAB 4: POLÍTICA DE COOKIES -->
+			<div class="wpat-legal-tab-panel <?php echo 'cookies' === $active_subtab ? 'active' : ''; ?>" id="wpat_legal_tab_cookies" style="<?php echo 'cookies' === $active_subtab ? 'display:block;' : 'display:none;'; ?>">
+				<div style="background: <?php echo $cookie_module_active ? '#ecfdf5' : '#fffbeb'; ?>; border: 1px solid <?php echo $cookie_module_active ? '#a7f3d0' : '#fde68a'; ?>; border-radius: 8px; padding: 14px 18px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+					<div style="display: flex; align-items: center; gap: 10px;">
+						<span style="font-size: 22px;"><?php echo $cookie_module_active ? '✅' : '💡'; ?></span>
+						<div style="font-size: 13px; color: <?php echo $cookie_module_active ? '#065f46' : '#92400e'; ?>;">
+							<?php if ( $cookie_module_active ) : ?>
+								<strong>Módulo de Banner de Cookies y RGPD activo:</strong> La tabla dinámica <code>[wpat_cookie_table]</code> y el botón modal de preferencias <code>[wpat_cookie_modal_button]</code> están perfectamente sincronizados y enlazados con tu escáner.
+							<?php else : ?>
+								<strong>Consejo Pro:</strong> Puedes activar el módulo <strong>Banner de Cookies y RGPD</strong> en el Centro de Módulos para permitir a los usuarios rechazar/aceptar cookies por categorías y escanear cookies automáticamente.
+							<?php endif; ?>
+						</div>
+					</div>
+					<?php if ( ! $cookie_module_active ) : ?>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit#mod-cookie-consent' ) ); ?>" class="button button-small" style="white-space: nowrap;">Ver Módulo Cookies</a>
+					<?php endif; ?>
+				</div>
+
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+					<div>
+						<h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">🍪 Plantilla de la Política de Cookies (AEPD 2024)</h4>
+						<p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0;">Usa el shortcode <code>[wpat_politica_cookies]</code> o su alias <code>[wpat_cookies]</code>.</p>
+					</div>
+					<button type="button" class="button button-secondary wpat-reset-tpl-btn" data-target="wpat_tpl_cookies" data-default="<?php echo esc_attr( WPAT_Legal_Pages::get_default_cookies() ); ?>">
+						🔄 Restaurar Texto Predeterminado
+					</button>
+				</div>
+				<textarea name="wpat_settings[legal_template_cookies]" id="wpat_tpl_cookies" rows="18" class="widefat code" style="font-family: monospace; font-size: 12.5px; line-height: 1.5; padding: 12px; border-radius: 8px;"><?php echo esc_textarea( $tpl_cookies ); ?></textarea>
+			</div>
+
+			<!-- TAB 5: CONDICIONES DE VENTA (WOOCOMMERCE) -->
+			<div class="wpat-legal-tab-panel <?php echo 'condiciones' === $active_subtab ? 'active' : ''; ?>" id="wpat_legal_tab_condiciones" style="<?php echo 'condiciones' === $active_subtab ? 'display:block;' : 'display:none;'; ?>">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+					<div>
+						<h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">🛒 Plantilla de Condiciones de Venta & Devoluciones (TRLGDCU)</h4>
+						<p style="font-size: 12.5px; color: #64748b; margin: 4px 0 0 0;">Usa el shortcode <code>[wpat_condiciones_venta]</code> o <code>[wpat_terminos_condiciones]</code>.</p>
+					</div>
+					<button type="button" class="button button-secondary wpat-reset-tpl-btn" data-target="wpat_tpl_condiciones" data-default="<?php echo esc_attr( WPAT_Legal_Pages::get_default_condiciones_venta() ); ?>">
+						🔄 Restaurar Texto Predeterminado
+					</button>
+				</div>
+				<textarea name="wpat_settings[legal_template_condiciones]" id="wpat_tpl_condiciones" rows="18" class="widefat code" style="font-family: monospace; font-size: 12.5px; line-height: 1.5; padding: 12px; border-radius: 8px;"><?php echo esc_textarea( $tpl_condiciones ); ?></textarea>
+			</div>
+
+			<!-- TAB 6: GUÍA DE SHORTCODES & CLÁUSULAS -->
+			<div class="wpat-legal-tab-panel <?php echo 'shortcodes' === $active_subtab ? 'active' : ''; ?>" id="wpat_legal_tab_shortcodes" style="<?php echo 'shortcodes' === $active_subtab ? 'display:block;' : 'display:none;'; ?>">
+				<div style="margin-bottom: 24px;">
+					<h4 style="margin: 0 0 8px 0; font-size: 15px; font-weight: 700; color: #1e293b;">📋 Shortcodes Principales para Páginas Legales</h4>
+					<p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">Crea las páginas correspondientes en WordPress y añade estos shortcodes dentro de tu maquetador (Elementor, Gutenberg, Divi, Bricks, etc.):</p>
+					
+					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px;">
+						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center;">
+							<div>
+								<strong style="color: #1e293b; font-size: 13.5px; display: block;">Aviso Legal Completo</strong>
+								<code style="font-size: 12.5px; color: #2563eb;">[wpat_aviso_legal]</code>
+							</div>
+							<button type="button" class="button button-small wpat-copy-code-btn" data-copy="[wpat_aviso_legal]">📋 Copiar</button>
+						</div>
+
+						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center;">
+							<div>
+								<strong style="color: #1e293b; font-size: 13.5px; display: block;">Política de Privacidad</strong>
+								<code style="font-size: 12.5px; color: #2563eb;">[wpat_politica_privacidad]</code>
+							</div>
+							<button type="button" class="button button-small wpat-copy-code-btn" data-copy="[wpat_politica_privacidad]">📋 Copiar</button>
+						</div>
+
+						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center;">
+							<div>
+								<strong style="color: #1e293b; font-size: 13.5px; display: block;">Política de Cookies Dinámica</strong>
+								<code style="font-size: 12.5px; color: #2563eb;">[wpat_politica_cookies]</code>
+							</div>
+							<button type="button" class="button button-small wpat-copy-code-btn" data-copy="[wpat_politica_cookies]">📋 Copiar</button>
+						</div>
+
+						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center;">
+							<div>
+								<strong style="color: #1e293b; font-size: 13.5px; display: block;">Condiciones de Venta (WooCommerce)</strong>
+								<code style="font-size: 12.5px; color: #2563eb;">[wpat_condiciones_venta]</code>
+							</div>
+							<button type="button" class="button button-small wpat-copy-code-btn" data-copy="[wpat_condiciones_venta]">📋 Copiar</button>
+						</div>
+					</div>
+				</div>
+
+				<!-- CLÁUSULAS INFORMATIVAS DE 1ª CAPA PARA FORMULARIOS -->
+				<div style="margin-bottom: 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px;">
+					<h4 style="margin: 0 0 8px 0; font-size: 15px; font-weight: 700; color: #1e293b;">🛡️ Cláusulas Informativas de 1ª Capa (Para Formularios)</h4>
+					<p style="font-size: 12.5px; color: #64748b; margin: 0 0 16px 0;">
+						La AEPD y el RGPD exigen informar de forma visible al usuario <strong>justo debajo del botón de envío</strong> del formulario antes de que ceda sus datos:
+					</p>
+
+					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px;">
+						<div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+								<strong style="font-size: 13px; color: #1e293b;">Formulario de Contacto</strong>
+								<button type="button" class="button button-small wpat-copy-code-btn" data-copy='[wpat_clausula tipo="contacto"]'>📋 Copiar</button>
+							</div>
+							<code style="font-size: 12px; color: #2563eb; display: block; margin-bottom: 8px;">[wpat_clausula tipo="contacto"]</code>
+							<div style="font-size: 11px; color: #64748b;">(También disponible formato texto sin caja: <code>[wpat_clausula tipo="contacto" estilo="texto"]</code>)</div>
+						</div>
+
+						<div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+								<strong style="font-size: 13px; color: #1e293b;">Suscripción a Newsletter</strong>
+								<button type="button" class="button button-small wpat-copy-code-btn" data-copy='[wpat_clausula tipo="newsletter"]'>📋 Copiar</button>
+							</div>
+							<code style="font-size: 12px; color: #2563eb; display: block; margin-bottom: 8px;">[wpat_clausula tipo="newsletter"]</code>
+							<div style="font-size: 11px; color: #64748b;">Aclara la finalidad de marketing comercial.</div>
+						</div>
+
+						<div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+								<strong style="font-size: 13px; color: #1e293b;">Finalización de Compra (Checkout)</strong>
+								<button type="button" class="button button-small wpat-copy-code-btn" data-copy='[wpat_clausula tipo="checkout"]'>📋 Copiar</button>
+							</div>
+							<code style="font-size: 12px; color: #2563eb; display: block; margin-bottom: 8px;">[wpat_clausula tipo="checkout"]</code>
+							<div style="font-size: 11px; color: #64748b;">Para la pantalla de pago de WooCommerce.</div>
+						</div>
+
+						<div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+								<strong style="font-size: 13px; color: #1e293b;">Cajetín de Comentarios</strong>
+								<button type="button" class="button button-small wpat-copy-code-btn" data-copy='[wpat_clausula tipo="comentarios"]'>📋 Copiar</button>
+							</div>
+							<code style="font-size: 12px; color: #2563eb; display: block; margin-bottom: 8px;">[wpat_clausula tipo="comentarios"]</code>
+							<div style="font-size: 11px; color: #64748b;">Para el área de opiniones del blog.</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- TOKENS DINÁMICOS DISPONIBLES -->
+				<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px;">
+					<h4 style="margin: 0 0 10px 0; font-size: 15px; font-weight: 700; color: #1e293b;">🏷️ Etiquetas Dinámicas (Tokens) para Personalizar tus Textos</h4>
+					<p style="font-size: 12.5px; color: #64748b; margin: 0 0 14px 0;">Puedes usar estas etiquetas dentro de cualquiera de las plantillas editables anteriores:</p>
+					
+					<div style="display: flex; flex-wrap: wrap; gap: 8px;">
+						<span style="background: #e2e8f0; color: #1e293b; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; cursor: pointer;" title="Nombre o razón social">{titular}</span>
+						<span style="background: #e2e8f0; color: #1e293b; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; cursor: pointer;" title="NIF o CIF">{nif}</span>
+						<span style="background: #e2e8f0; color: #1e293b; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; cursor: pointer;" title="Dirección unificada">{direccion_completa}</span>
+						<span style="background: #e2e8f0; color: #1e293b; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; cursor: pointer;" title="Email con enlace">{email_rgpd}</span>
+						<span style="background: #e2e8f0; color: #1e293b; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; cursor: pointer;" title="Teléfono con enlace">{telefono}</span>
+						<span style="background: #e2e8f0; color: #1e293b; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; cursor: pointer;" title="Web con enlace">{sitio_web}</span>
+						<span style="background: #e2e8f0; color: #1e293b; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; cursor: pointer;" title="Datos registrales mercantiles">{datos_registrales}</span>
+						<span style="background: #e2e8f0; color: #1e293b; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; cursor: pointer;" title="Delegado de Protección de Datos">{dpd_contacto}</span>
+						<span style="background: #e2e8f0; color: #1e293b; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; cursor: pointer;" title="Proveedor de hosting">{hosting_proveedor}</span>
+						<span style="background: #e2e8f0; color: #1e293b; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; cursor: pointer;" title="URL de privacidad">{url_privacidad}</span>
+						<span style="background: #e2e8f0; color: #1e293b; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; cursor: pointer;" title="Tabla dinámica de cookies">[wpat_cookie_table]</span>
+						<span style="background: #e2e8f0; color: #1e293b; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; cursor: pointer;" title="Botón de preferencias de cookies">[wpat_cookie_modal_button]</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- BOTÓN DE GUARDAR FIJO / ACCIONES -->
+			<div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; align-items: center; gap: 12px;">
+				<button type="submit" class="button button-primary button-large" style="font-weight: 700; padding: 6px 24px; font-size: 14px;">
+					💾 Guardar Textos y Ajustes Legales
+				</button>
+			</div>
+		</div>
+
+		<script>
+		jQuery(document).ready(function($) {
+			// Cambio de pestañas
+			$('.wpat-legal-tab-btn').on('click', function(e) {
+				e.preventDefault();
+				var tab = $(this).data('tab');
+				$('.wpat-legal-tab-btn').removeClass('active').css({
+					'font-weight': '600',
+					'color': '#64748b',
+					'border-bottom-color': 'transparent'
+				});
+				$(this).addClass('active').css({
+					'font-weight': '700',
+					'color': '#2563eb',
+					'border-bottom-color': '#2563eb'
+				});
+				$('.wpat-legal-tab-panel').hide().removeClass('active');
+				$('#wpat_legal_tab_' + tab).show().addClass('active');
+				$('#wpat_legal_active_subtab').val(tab);
+			});
+
+			// Botón restaurar plantilla por defecto
+			$('.wpat-reset-tpl-btn').on('click', function(e) {
+				e.preventDefault();
+				var targetId = $(this).data('target');
+				var defVal   = $(this).data('default');
+				if (confirm('¿Estás seguro de que deseas restaurar la plantilla predeterminada? Cualquier cambio manual no guardado se reemplazará.')) {
+					$('#' + targetId).val(defVal);
+				}
+			});
+
+			// Copiar shortcodes al portapapeles
+			$('.wpat-copy-code-btn').on('click', function(e) {
+				e.preventDefault();
+				var code = $(this).data('copy');
+				var btn = $(this);
+				var orig = btn.text();
+				if (navigator.clipboard) {
+					navigator.clipboard.writeText(code).then(function() {
+						btn.text('✅ ¡Copiado!');
+						setTimeout(function() { btn.text(orig); }, 2000);
+					});
+				} else {
+					var $temp = $('<input>');
+					$('body').append($temp);
+					$temp.val(code).select();
+					document.execCommand('copy');
+					$temp.remove();
+					btn.text('✅ ¡Copiado!');
+					setTimeout(function() { btn.text(orig); }, 2000);
+				}
+			});
+		});
+		</script>
 		<?php
 	}
 }

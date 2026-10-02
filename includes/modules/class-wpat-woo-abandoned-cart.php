@@ -75,6 +75,7 @@ class WPAT_Woo_Abandoned_Cart {
 		add_action( 'wp_ajax_wpat_send_test_abandoned_email', array( $this, 'ajax_send_test_email' ) );
 		add_action( 'wp_ajax_wpat_delete_abandoned_cart_record', array( $this, 'ajax_delete_cart_record' ) );
 		add_action( 'wp_ajax_wpat_process_abandoned_carts_now', array( $this, 'ajax_process_carts_now' ) );
+		add_action( 'wp_ajax_wpat_get_abandoned_email_preview', array( $this, 'ajax_get_email_preview' ) );
 	}
 
 	/**
@@ -572,23 +573,103 @@ class WPAT_Woo_Abandoned_Cart {
 			$coupon_amount  = isset( $settings[ "wpat_ac_email_{$i}_coupon_amount" ] ) ? floatval( $settings[ "wpat_ac_email_{$i}_coupon_amount" ] ) : 10;
 			$coupon_expiry  = isset( $settings[ "wpat_ac_email_{$i}_coupon_expiry" ] ) ? intval( $settings[ "wpat_ac_email_{$i}_coupon_expiry" ] ) : 48;
 
+			// Productos recomendados (Cross-sells)
+			$cross_sell_enable = ! empty( $settings[ "wpat_ac_email_{$i}_cross_sell_enable" ] ) && '1' === $settings[ "wpat_ac_email_{$i}_cross_sell_enable" ];
+			$cross_sell_count  = isset( $settings[ "wpat_ac_email_{$i}_cross_sell_count" ] ) ? max( 1, min( 4, intval( $settings[ "wpat_ac_email_{$i}_cross_sell_count" ] ) ) ) : 3;
+
 			$sequences[ $i ] = array(
-				'enabled'        => $enabled,
-				'delay_val'      => $val,
-				'delay_unit'     => $unit,
-				'delay_seconds'  => $seconds,
-				'subject'        => $subject,
-				'heading'        => $heading,
-				'message'        => $message,
-				'coupon_enabled' => $coupon_enabled,
-				'coupon_type'    => $coupon_type,
-				'coupon_amount'  => $coupon_amount,
-				'coupon_expiry'  => $coupon_expiry,
-				'button_text'    => ! empty( $settings[ "wpat_ac_email_{$i}_btn_text" ] ) ? $settings[ "wpat_ac_email_{$i}_btn_text" ] : 'Recuperar mi pedido →',
+				'enabled'           => $enabled,
+				'delay_val'         => $val,
+				'delay_unit'        => $unit,
+				'delay_seconds'     => $seconds,
+				'subject'           => $subject,
+				'heading'           => $heading,
+				'message'           => $message,
+				'coupon_enabled'    => $coupon_enabled,
+				'coupon_type'       => $coupon_type,
+				'coupon_amount'     => $coupon_amount,
+				'coupon_expiry'     => $coupon_expiry,
+				'cross_sell_enable' => $cross_sell_enable,
+				'cross_sell_count'  => $cross_sell_count,
+				'button_text'       => ! empty( $settings[ "wpat_ac_email_{$i}_btn_text" ] ) ? $settings[ "wpat_ac_email_{$i}_btn_text" ] : 'Recuperar mi pedido →',
 			);
 		}
 
 		return $sequences;
+	}
+
+	/**
+	 * Obtiene productos recomendados (cross-sells) basados en los items del carrito o productos populares.
+	 *
+	 * @param array $cart_items
+	 * @param int   $limit
+	 * @return array
+	 */
+	public function get_cross_sell_products( $cart_items = array(), $limit = 3 ) {
+		$products = array();
+		if ( ! function_exists( 'wc_get_product' ) ) {
+			return $products;
+		}
+
+		$cross_sell_ids   = array();
+		$cart_product_ids = array();
+
+		if ( is_array( $cart_items ) ) {
+			foreach ( $cart_items as $item ) {
+				$pid = ! empty( $item['product_id'] ) ? intval( $item['product_id'] ) : 0;
+				if ( $pid > 0 ) {
+					$cart_product_ids[] = $pid;
+					$product = wc_get_product( $pid );
+					if ( $product && method_exists( $product, 'get_cross_sell_ids' ) ) {
+						$item_cross = $product->get_cross_sell_ids();
+						if ( ! empty( $item_cross ) ) {
+							$cross_sell_ids = array_merge( $cross_sell_ids, $item_cross );
+						}
+					}
+				}
+			}
+		}
+
+		$cross_sell_ids = array_diff( array_unique( array_filter( $cross_sell_ids ) ), $cart_product_ids );
+
+		// Si no hay cross-sells específicos, obtener productos destacados o populares de la tienda
+		if ( count( $cross_sell_ids ) < $limit && function_exists( 'wc_get_products' ) ) {
+			$fallback_ids = wc_get_products( array(
+				'limit'   => $limit,
+				'status'  => 'publish',
+				'exclude' => array_merge( $cart_product_ids, $cross_sell_ids ),
+				'orderby' => 'popularity',
+				'order'   => 'DESC',
+				'return'  => 'ids',
+			) );
+			if ( ! empty( $fallback_ids ) ) {
+				$cross_sell_ids = array_merge( $cross_sell_ids, $fallback_ids );
+			}
+		}
+
+		$cross_sell_ids = array_slice( $cross_sell_ids, 0, $limit );
+
+		foreach ( $cross_sell_ids as $pid ) {
+			$prod = wc_get_product( $pid );
+			if ( ! $prod || ! $prod->is_visible() ) {
+				continue;
+			}
+			$img_id  = $prod->get_image_id();
+			$img_url = $img_id ? wp_get_attachment_image_url( $img_id, 'woocommerce_thumbnail' ) : ( function_exists( 'wc_placeholder_img_src' ) ? wc_placeholder_img_src() : '' );
+
+			$price_float     = (float) $prod->get_price();
+			$price_formatted = function_exists( 'wc_price' ) ? html_entity_decode( wp_strip_all_tags( wc_price( $price_float ) ) ) : number_format_i18n( $price_float, 2 ) . ' €';
+
+			$products[] = array(
+				'id'        => $prod->get_id(),
+				'name'      => $prod->get_name(),
+				'price'     => $price_formatted,
+				'url'       => $prod->get_permalink(),
+				'image_url' => $img_url,
+			);
+		}
+
+		return $products;
 	}
 
 	/**
@@ -648,6 +729,12 @@ class WPAT_Woo_Abandoned_Cart {
 			$discount_text = ( 'percent' === $step_config['coupon_type'] )
 				? $step_config['coupon_amount'] . '% DE DESCUENTO'
 				: ( function_exists( 'wc_price' ) ? html_entity_decode( wp_strip_all_tags( wc_price( $step_config['coupon_amount'] ) ) ) : $step_config['coupon_amount'] . ' €' ) . ' DE DESCUENTO';
+		}
+
+		// Cross-sells
+		$cross_sell_products = array();
+		if ( ! empty( $step_config['cross_sell_enable'] ) ) {
+			$cross_sell_products = $this->get_cross_sell_products( $cart_items, ! empty( $step_config['cross_sell_count'] ) ? $step_config['cross_sell_count'] : 3 );
 		}
 
 		$recovery_url = add_query_arg( 'wpat_recover_cart', $cart->recovery_token, home_url( '/' ) );
@@ -866,5 +953,106 @@ class WPAT_Woo_Abandoned_Cart {
 			'message' => $msg,
 			'stats'   => $stats,
 		) );
+	}
+
+	/**
+	 * Endpoint AJAX para previsualización en tiempo real del correo de recuperación.
+	 */
+	public function ajax_get_email_preview() {
+		check_ajax_referer( 'wpat_save_settings_action', 'security' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Sin permisos.' ) );
+		}
+
+		$settings      = WPAT_Main::get_instance()->get_settings();
+		$site_name     = get_bloginfo( 'name' );
+		$site_url      = home_url( '/' );
+		$customer_name = 'Juan Pérez';
+		$cart_total    = '79,90 €';
+		$recovery_url  = '#preview-recovery-url';
+
+		$subject       = isset( $_POST['subject'] ) ? sanitize_text_field( wp_unslash( $_POST['subject'] ) ) : '¿Olvidaste algo? Tu carrito te está esperando';
+		$heading       = isset( $_POST['heading'] ) ? sanitize_text_field( wp_unslash( $_POST['heading'] ) ) : 'Has dejado artículos en tu carrito';
+		$message       = isset( $_POST['message'] ) ? wp_kses_post( wp_unslash( $_POST['message'] ) ) : 'Hola {customer_name}, notamos que agregaste productos a tu carrito pero no completaste tu pedido.';
+		$button_text   = isset( $_POST['button_text'] ) ? sanitize_text_field( wp_unslash( $_POST['button_text'] ) ) : 'Recuperar mi pedido →';
+		$button_color  = isset( $_POST['button_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['button_color'] ) ) : ( ! empty( $settings['wpat_ac_email_btn_color'] ) ? $settings['wpat_ac_email_btn_color'] : '#2563eb' );
+		$logo_url      = isset( $_POST['logo_url'] ) ? esc_url_raw( wp_unslash( $_POST['logo_url'] ) ) : ( ! empty( $settings['wpat_ac_email_logo'] ) ? $settings['wpat_ac_email_logo'] : '' );
+		$footer_text   = isset( $_POST['footer_text'] ) ? wp_kses_post( wp_unslash( $_POST['footer_text'] ) ) : ( ! empty( $settings['wpat_ac_email_footer'] ) ? $settings['wpat_ac_email_footer'] : '' );
+
+		$coupon_enable = ! empty( $_POST['coupon_enable'] ) && '1' === $_POST['coupon_enable'];
+		$coupon_type   = isset( $_POST['coupon_type'] ) ? sanitize_text_field( wp_unslash( $_POST['coupon_type'] ) ) : 'percent';
+		$coupon_amount = isset( $_POST['coupon_amount'] ) ? floatval( $_POST['coupon_amount'] ) : 10;
+
+		$coupon_code   = '';
+		$discount_text = '';
+		if ( $coupon_enable ) {
+			$coupon_code   = 'OFERTA10';
+			$discount_text = ( 'percent' === $coupon_type )
+				? $coupon_amount . '% DE DESCUENTO'
+				: ( function_exists( 'wc_price' ) ? html_entity_decode( wp_strip_all_tags( wc_price( $coupon_amount ) ) ) : $coupon_amount . ' €' ) . ' DE DESCUENTO';
+		}
+
+		$find = array( '{customer_name}', '{cart_total}', '{site_title}', '{coupon_code}', '{discount_value}' );
+		$replace = array(
+			$customer_name,
+			$cart_total,
+			$site_name,
+			$coupon_code,
+			$discount_text,
+		);
+
+		$email_title   = str_replace( $find, $replace, $heading );
+		$email_content = str_replace( $find, $replace, $message );
+		$button_text   = str_replace( $find, $replace, $button_text );
+
+		$cart_items = array(
+			array(
+				'name'       => 'Camiseta Orgánica Algodón Premium',
+				'quantity'   => 1,
+				'price'      => 49.90,
+				'price_html' => '49,90 €',
+				'image_url'  => 'https://picsum.photos/120/120?random=1',
+				'meta'       => 'Talla: M, Color: Azul Marino',
+			),
+			array(
+				'name'       => 'Gorra Urbana Ajustable',
+				'quantity'   => 2,
+				'price'      => 15.00,
+				'price_html' => '30,00 €',
+				'image_url'  => 'https://picsum.photos/120/120?random=2',
+				'meta'       => 'Color: Negro',
+			),
+		);
+
+		$cross_sell_enable = ! empty( $_POST['cross_sell_enable'] ) && '1' === $_POST['cross_sell_enable'];
+		$cross_sell_count  = isset( $_POST['cross_sell_count'] ) ? max( 1, min( 4, intval( $_POST['cross_sell_count'] ) ) ) : 3;
+
+		$cross_sell_products = array();
+		if ( $cross_sell_enable ) {
+			$cross_sell_products = $this->get_cross_sell_products( $cart_items, $cross_sell_count );
+			// Si no hay productos de WooCommerce en la tienda, proveer productos de muestra
+			if ( empty( $cross_sell_products ) ) {
+				$sample_names = array( 'Mochila Urbana Impermeable', 'Calcetines Deportivos Pack x3', 'Gafas de Sol Polarizadas', 'Cinturón de Cuero Genuino' );
+				for ( $k = 0; $k < $cross_sell_count; $k++ ) {
+					$cross_sell_products[] = array(
+						'id'        => 9990 + $k,
+						'name'      => isset( $sample_names[ $k ] ) ? $sample_names[ $k ] : 'Accesorio Recomendado #' . ( $k + 1 ),
+						'price'     => ( 19.99 + ( $k * 5 ) ) . ' €',
+						'url'       => '#',
+						'image_url' => 'https://picsum.photos/120/120?random=' . ( $k + 3 ),
+					);
+				}
+			}
+		}
+
+		ob_start();
+		$template = WPAT_PATH . 'templates/emails/abandoned-cart-email.php';
+		if ( file_exists( $template ) ) {
+			include $template;
+		}
+		$html = ob_get_clean();
+
+		wp_send_json_success( array( 'html' => $html ) );
 	}
 }

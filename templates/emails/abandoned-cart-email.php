@@ -132,7 +132,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 													x<?php echo esc_html( $item['quantity'] ); ?>
 												</td>
 												<td align="right" class="product-price-col" style="padding: 12px 15px; font-size: 14px; font-weight: 700; color: #0f172a; vertical-align: middle;">
-													<?php echo wp_strip_all_tags( html_entity_decode( $item['price_html'] ) ); ?>
+													<?php 
+													if ( isset( $item['price'] ) && is_numeric( $item['price'] ) && function_exists( 'wc_price' ) ) {
+														echo esc_html( wp_strip_all_tags( html_entity_decode( wc_price( $item['price'] ) ) ) );
+													} else {
+														echo esc_html( wp_strip_all_tags( html_entity_decode( wp_strip_all_tags( $item['price_html'] ) ) ) );
+													}
+													?>
 												</td>
 											</tr>
 										<?php endforeach; ?>
@@ -144,7 +150,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 											Total de tu pedido:
 										</td>
 										<td align="right" style="padding: 14px 15px; font-size: 17px; font-weight: 800; color: #0f172a;">
-											<?php echo wp_strip_all_tags( html_entity_decode( $cart_total ) ); ?>
+											<?php echo esc_html( wp_strip_all_tags( html_entity_decode( wp_strip_all_tags( $cart_total ) ) ) ); ?>
 										</td>
 									</tr>
 								</tfoot>
@@ -160,6 +166,51 @@ if ( ! defined( 'ABSPATH' ) ) {
 									</td>
 								</tr>
 							</table>
+
+							<!-- BLOQUE DE PRODUCTOS RECOMENDADOS (CROSS-SELLS) SI ESTÁ ACTIVO -->
+							<?php if ( ! empty( $cross_sell_products ) && is_array( $cross_sell_products ) ) : ?>
+								<table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 35px; border-top: 2px dashed #e2e8f0; padding-top: 25px;">
+									<tr>
+										<td align="center" style="padding-bottom: 16px;">
+											<span style="font-size: 13.5px; font-weight: 800; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px;">
+												También te podría interesar:
+											</span>
+										</td>
+									</tr>
+									<tr>
+										<td>
+											<table border="0" cellpadding="0" cellspacing="0" width="100%">
+												<tr>
+													<?php 
+													$cs_count = count( $cross_sell_products );
+													$col_width = ( $cs_count > 1 ) ? round( 100 / $cs_count ) . '%' : '100%';
+													foreach ( $cross_sell_products as $cs_prod ) : 
+													?>
+														<td align="center" width="<?php echo esc_attr( $col_width ); ?>" style="padding: 10px; vertical-align: top; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+															<?php if ( ! empty( $cs_prod['image_url'] ) ) : ?>
+																<a href="<?php echo esc_url( $cs_prod['url'] ); ?>" target="_blank">
+																	<img src="<?php echo esc_url( $cs_prod['image_url'] ); ?>" alt="<?php echo esc_attr( $cs_prod['name'] ); ?>" width="75" height="75" style="border-radius: 6px; object-fit: cover; display: block; margin: 0 auto 8px auto; border: 1px solid #e2e8f0;" />
+																</a>
+															<?php endif; ?>
+															<strong style="font-size: 12.5px; color: #1e293b; display: block; margin-bottom: 4px; line-height: 1.3;">
+																<a href="<?php echo esc_url( $cs_prod['url'] ); ?>" target="_blank" style="color: #1e293b; text-decoration: none;">
+																	<?php echo esc_html( $cs_prod['name'] ); ?>
+																</a>
+															</strong>
+															<span style="font-size: 13px; font-weight: 700; color: #059669; display: block; margin-bottom: 8px;">
+																<?php echo esc_html( $cs_prod['price'] ); ?>
+															</span>
+															<a href="<?php echo esc_url( $cs_prod['url'] ); ?>" target="_blank" style="display: inline-block; background-color: #ffffff; border: 1px solid #cbd5e1; color: #334155; font-size: 11px; font-weight: 700; text-decoration: none; padding: 4px 10px; border-radius: 4px;">
+																Ver producto
+															</a>
+														</td>
+													<?php endforeach; ?>
+												</tr>
+											</table>
+										</td>
+									</tr>
+								</table>
+							<?php endif; ?>
 
 						</td>
 					</tr>

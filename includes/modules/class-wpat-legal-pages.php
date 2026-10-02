@@ -60,6 +60,7 @@ class WPAT_Legal_Pages {
 		$site_url = ! empty( $settings['legal_site_url'] ) ? esc_url( $settings['legal_site_url'] ) : home_url();
 		$site_name = ! empty( $settings['legal_site_name'] ) ? esc_html( $settings['legal_site_name'] ) : get_bloginfo( 'name' );
 		$titular = ! empty( $settings['legal_titular'] ) ? esc_html( $settings['legal_titular'] ) : get_bloginfo( 'name' );
+		$nombre_comercial = ! empty( $settings['legal_nombre_comercial'] ) ? esc_html( $settings['legal_nombre_comercial'] ) : '';
 		$nif = ! empty( $settings['legal_nif'] ) ? esc_html( $settings['legal_nif'] ) : 'B-00000000';
 		$direccion = ! empty( $settings['legal_direccion'] ) ? esc_html( $settings['legal_direccion'] ) : '';
 		$cp = ! empty( $settings['legal_cp'] ) ? esc_html( $settings['legal_cp'] ) : '';
@@ -84,31 +85,37 @@ class WPAT_Legal_Pages {
 		$aviso_url = ! empty( $settings['legal_aviso_page_url'] ) ? esc_url( $settings['legal_aviso_page_url'] ) : home_url( '/aviso-legal/' );
 		$condiciones_url = ! empty( $settings['legal_condiciones_page_url'] ) ? esc_url( $settings['legal_condiciones_page_url'] ) : home_url( '/terminos-y-condiciones/' );
 
+		$titular_completo = ! empty( $nombre_comercial ) ? $titular . ' (' . $nombre_comercial . ')' : $titular;
+
 		return array(
-			'{sitio_web}'           => '<a href="' . esc_url( $site_url ) . '" target="_blank" rel="noopener">' . esc_html( $site_url ) . '</a>',
-			'{sitio_web_url}'       => esc_url( $site_url ),
-			'{nombre_sitio}'        => $site_name,
-			'{titular}'             => $titular,
-			'{nif}'                 => $nif,
-			'{cif}'                 => $nif,
-			'{direccion}'           => $direccion,
-			'{cp}'                  => $cp,
-			'{ciudad}'              => $ciudad,
-			'{provincia}'           => $provincia,
-			'{pais}'                => $pais,
-			'{direccion_completa}'  => $direccion_completa,
-			'{email_rgpd}'          => '<a href="mailto:' . esc_attr( $email_rgpd ) . '">' . esc_html( $email_rgpd ) . '</a>',
-			'{email_rgpd_plano}'    => $email_rgpd,
-			'{telefono}'            => $telefono ? '<a href="tel:' . esc_attr( preg_replace( '/[^0-9\+]/', '', $telefono ) ) . '">' . esc_html( $telefono ) . '</a>' : '',
-			'{telefono_plano}'      => $telefono,
-			'{datos_registrales}'   => $datos_registrales,
-			'{dpd_contacto}'        => $dpd_contacto,
-			'{hosting_proveedor}'   => $hosting,
-			'{actividad_comercial}' => $actividad,
-			'{url_privacidad}'      => esc_url( $privacy_url ),
-			'{url_cookies}'         => esc_url( $cookies_url ),
-			'{url_aviso_legal}'     => esc_url( $aviso_url ),
-			'{url_condiciones}'     => esc_url( $condiciones_url ),
+			'{sitio_web}'                   => '<a href="' . esc_url( $site_url ) . '" target="_blank" rel="noopener">' . esc_html( $site_url ) . '</a>',
+			'{sitio_web_url}'               => esc_url( $site_url ),
+			'{nombre_sitio}'                => $site_name,
+			'{titular}'                     => $titular,
+			'{nombre_comercial}'            => $nombre_comercial,
+			'{marca}'                       => $nombre_comercial,
+			'{titular_completo}'            => $titular_completo,
+			'{nombre_comercial_o_titular}'  => ! empty( $nombre_comercial ) ? $nombre_comercial : $titular,
+			'{nif}'                         => $nif,
+			'{cif}'                         => $nif,
+			'{direccion}'                   => $direccion,
+			'{cp}'                          => $cp,
+			'{ciudad}'                      => $ciudad,
+			'{provincia}'                   => $provincia,
+			'{pais}'                        => $pais,
+			'{direccion_completa}'          => $direccion_completa,
+			'{email_rgpd}'                  => '<a href="mailto:' . esc_attr( $email_rgpd ) . '">' . esc_html( $email_rgpd ) . '</a>',
+			'{email_rgpd_plano}'            => $email_rgpd,
+			'{telefono}'                    => $telefono ? '<a href="tel:' . esc_attr( preg_replace( '/[^0-9\+]/', '', $telefono ) ) . '">' . esc_html( $telefono ) . '</a>' : '',
+			'{telefono_plano}'              => $telefono,
+			'{datos_registrales}'           => $datos_registrales,
+			'{dpd_contacto}'                => $dpd_contacto,
+			'{hosting_proveedor}'           => $hosting,
+			'{actividad_comercial}'         => $actividad,
+			'{url_privacidad}'              => esc_url( $privacy_url ),
+			'{url_cookies}'                 => esc_url( $cookies_url ),
+			'{url_aviso_legal}'             => esc_url( $aviso_url ),
+			'{url_condiciones}'             => esc_url( $condiciones_url ),
 		);
 	}
 
@@ -312,6 +319,11 @@ class WPAT_Legal_Pages {
 			case 'empresa':
 			case 'razon_social':
 				return $tokens['{titular}'];
+			case 'nombre_comercial':
+			case 'marca':
+				return $tokens['{nombre_comercial}'];
+			case 'titular_completo':
+				return $tokens['{titular_completo}'];
 			case 'nif':
 			case 'cif':
 			case 'dni':

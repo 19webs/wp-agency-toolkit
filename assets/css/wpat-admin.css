@@ -1661,4 +1661,107 @@ html.wpat-dark-mode #wpcontent,
 	color: #f8fafc !important;
 }
 
+/* ==========================================================================
+   Módulo: Recuperador de Carritos Abandonados (Acordeón & Live Preview)
+   ========================================================================== */
+.wpat-ac-sequences-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.95fr);
+	gap: 24px;
+	align-items: flex-start;
+}
+
+@media screen and (max-width: 1180px) {
+	.wpat-ac-sequences-layout {
+		grid-template-columns: 1fr;
+	}
+	.wpat-ac-right-col {
+		position: static !important;
+		margin-top: 20px;
+	}
+}
+
+.wpat-ac-accordion-item {
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	margin-bottom: 14px;
+	overflow: hidden;
+	transition: all 0.2s ease;
+}
+
+.wpat-ac-accordion-item.open {
+	border-color: #93c5fd;
+	box-shadow: 0 4px 12px rgba(37,99,235,0.06);
+}
+
+.wpat-ac-acc-header:hover {
+	background: #f8fafc !important;
+}
+
+.wpat-ac-accordion-item.open .wpat-ac-acc-header {
+	background: #f1f5f9 !important;
+}
+
+.wpat-ac-device-btn.active {
+	background: #2563eb !important;
+	color: #ffffff !important;
+	border-color: #2563eb !important;
+}
+
+.wpat-ac-preview-tab-btn.active {
+	background: #ffffff !important;
+	color: #2563eb !important;
+	border-color: #93c5fd !important;
+	font-weight: 700 !important;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.wpat-ac-preview-viewport.mobile-view #wpat_ac_preview_frame_wrapper {
+	width: 360px !important;
+	max-width: 100%;
+	border: 10px solid #1e293b;
+	border-radius: 32px;
+	box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+	overflow: hidden;
+	background: #1e293b;
+	padding-top: 8px;
+	padding-bottom: 8px;
+}
+
+.wpat-ac-preview-viewport.mobile-view #wpat_ac_preview_iframe {
+	border-radius: 20px;
+	height: 520px;
+}
+
+/* Dark mode for abandoned cart recovery */
+.wpat-dark-mode .wpat-ac-accordion-item {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+}
+
+.wpat-dark-mode .wpat-ac-acc-header {
+	background: #1e293b !important;
+	color: #f8fafc !important;
+}
+
+.wpat-dark-mode .wpat-ac-accordion-item.open .wpat-ac-acc-header {
+	background: #0f172a !important;
+	border-bottom-color: #334155 !important;
+}
+
+.wpat-dark-mode .wpat-ac-acc-body {
+	background: #1e293b !important;
+	color: #f8fafc !important;
+}
+
+.wpat-dark-mode .wpat-ac-preview-card {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+}
+
+.wpat-dark-mode .wpat-ac-preview-viewport {
+	background: #0f172a !important;
+}
+
+
 

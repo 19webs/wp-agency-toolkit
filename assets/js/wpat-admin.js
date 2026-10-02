@@ -6124,7 +6124,7 @@ jQuery(document).ready(function($) {
 	});
 
 	// --- RECUPERADOR DE CARRITOS ABANDONADOS ---
-	// Sub-pestañas
+	// Sub-pestañas principales del módulo
 	$(document).on('click', '.wpat-ac-tab-btn', function(e) {
 		e.preventDefault();
 		var tab = $(this).data('tab');
@@ -6132,12 +6132,228 @@ jQuery(document).ready(function($) {
 		$(this).addClass('active').css({ 'color': '#2563eb', 'border-bottom': '3px solid #2563eb', 'font-weight': '700' });
 		$('.wpat-ac-tab-content').hide();
 		$('#wpat-ac-tab-' + tab).fadeIn(150);
+
+		if (tab === 'sequences') {
+			updateAbandonedEmailPreview();
+		}
 	});
 
 	// Sincronizar texto de color
 	$(document).on('input change', 'input[name="wpat_settings[wpat_ac_email_btn_color]"]', function() {
 		$('.wpat-color-text-preview').val($(this).val());
 	});
+
+	// Acordeón de secuencias de correo
+	$(document).on('click', '.wpat-ac-acc-header', function(e) {
+		if ($(e.target).closest('.wpat-switch, input').length) {
+			return;
+		}
+		var $item = $(this).closest('.wpat-ac-accordion-item');
+		var step = $item.data('step');
+		var isOpen = $item.hasClass('open');
+
+		if (isOpen) {
+			$item.removeClass('open');
+			$item.find('.wpat-ac-acc-body').slideUp(200);
+			$(this).css('border-bottom', 'none');
+			$item.find('.wpat-ac-acc-arrow').css('transform', 'rotate(0deg)');
+		} else {
+			$item.addClass('open');
+			$item.find('.wpat-ac-acc-body').slideDown(200);
+			$(this).css('border-bottom', '1px solid #e2e8f0');
+			$item.find('.wpat-ac-acc-arrow').css('transform', 'rotate(180deg)');
+			switchLivePreviewStep(step);
+		}
+	});
+
+	// Actualización reactiva de estado en la cabecera del acordeón
+	$(document).on('change', '.wpat-ac-step-toggle', function() {
+		var step = $(this).data('step');
+		var isChecked = $(this).is(':checked');
+		var $item = $('.wpat-ac-accordion-item[data-step="' + step + '"]');
+		var $badge = $item.find('.wpat-ac-badge-status');
+		if (isChecked) {
+			$badge.text('● Activo').css({ 'color': '#16a34a', 'font-weight': '700' });
+		} else {
+			$badge.text('○ Inactivo').css({ 'color': '#94a3b8', 'font-weight': '600' });
+		}
+	});
+
+	// Actualización reactiva del tiempo de espera en la cabecera
+	$(document).on('input change', 'input[name*="_delay_val"], select[name*="_delay_unit"]', function() {
+		var step = $(this).data('step');
+		var val = $('input[name="wpat_settings[wpat_ac_email_' + step + '_delay_val]"]').val() || 1;
+		var unit = $('select[name="wpat_settings[wpat_ac_email_' + step + '_delay_unit]"]').val() || 'hours';
+		var unitLabel = (unit === 'minutes') ? 'minutos' : ((unit === 'hours') ? 'horas' : 'días');
+		var $item = $('.wpat-ac-accordion-item[data-step="' + step + '"]');
+		$item.find('.wpat-ac-badge-delay').text('⏱️ ' + val + ' ' + unitLabel);
+	});
+
+	// Toggle caja de opciones de cupones
+	$(document).on('change', '.wpat-ac-coupon-toggle', function() {
+		var $opts = $(this).closest('.wpat-ac-accordion-item').find('.wpat-ac-coupon-options');
+		if ($(this).is(':checked')) {
+			$opts.slideDown(150).css('display', 'grid');
+		} else {
+			$opts.slideUp(150);
+		}
+	});
+
+	// Toggle caja de opciones de productos recomendados (cross-sells)
+	$(document).on('change', '.wpat-ac-cross-sell-toggle', function() {
+		var $opts = $(this).closest('.wpat-ac-accordion-item').find('.wpat-ac-cross-sell-options');
+		if ($(this).is(':checked')) {
+			$opts.slideDown(150).css('display', 'flex');
+		} else {
+			$opts.slideUp(150);
+		}
+	});
+
+	// --- EDITOR Y VISTA PREVIA EN VIVO ---
+	var activePreviewStep = 1;
+	var previewDebounceTimer = null;
+
+	function switchLivePreviewStep(step) {
+		activePreviewStep = parseInt(step, 10) || 1;
+		$('#wpat_ac_preview_step_indicator').text('Correo ' + activePreviewStep);
+		$('.wpat-ac-preview-tab-btn').removeClass('active').css({
+			'background': 'transparent',
+			'color': '#64748b',
+			'border-color': 'transparent',
+			'font-weight': '600'
+		});
+		$('.wpat-ac-preview-tab-btn[data-step="' + activePreviewStep + '"]').addClass('active').css({
+			'background': '#ffffff',
+			'color': '#2563eb',
+			'border-color': '#93c5fd',
+			'font-weight': '700'
+		});
+		updateAbandonedEmailPreview();
+	}
+
+	// Pestañas de paso en el previsualizador
+	$(document).on('click', '.wpat-ac-preview-tab-btn', function(e) {
+		e.preventDefault();
+		var step = $(this).data('step');
+		switchLivePreviewStep(step);
+	});
+
+	// Botón "Previsualizar este correo" dentro del acordeón
+	$(document).on('click', '.wpat-ac-preview-step-btn', function(e) {
+		e.preventDefault();
+		var step = $(this).data('step');
+		switchLivePreviewStep(step);
+	});
+
+	// Conmutador de dispositivo (Escritorio vs Móvil)
+	$(document).on('click', '.wpat-ac-device-btn', function(e) {
+		e.preventDefault();
+		var device = $(this).data('device');
+		$('.wpat-ac-device-btn').removeClass('active').css({
+			'background': '#f1f5f9',
+			'color': '#64748b',
+			'border-color': '#cbd5e1',
+			'font-weight': '600'
+		});
+		$(this).addClass('active').css({
+			'background': '#2563eb',
+			'color': '#ffffff',
+			'border-color': '#2563eb',
+			'font-weight': '700'
+		});
+
+		var $viewport = $('.wpat-ac-preview-viewport');
+		if (device === 'mobile') {
+			$viewport.addClass('mobile-view');
+		} else {
+			$viewport.removeClass('mobile-view');
+		}
+	});
+
+	// Botón refrescar vista previa
+	$(document).on('click', '#wpat_ac_refresh_preview_btn', function(e) {
+		e.preventDefault();
+		updateAbandonedEmailPreview();
+	});
+
+	// Renderizar la vista previa mediante AJAX
+	function updateAbandonedEmailPreview() {
+		var $iframe = $('#wpat_ac_preview_iframe');
+		if (!$iframe.length) {
+			return;
+		}
+
+		var step = activePreviewStep;
+		var subject = $('input[name="wpat_settings[wpat_ac_email_' + step + '_subject]"]').val() || '';
+		var heading = $('input[name="wpat_settings[wpat_ac_email_' + step + '_heading]"]').val() || '';
+		var message = $('textarea[name="wpat_settings[wpat_ac_email_' + step + '_message]"]').val() || '';
+		var btnText = $('input[name="wpat_settings[wpat_ac_email_' + step + '_btn_text]"]').val() || '';
+
+		var couponEn = $('input[name="wpat_settings[wpat_ac_email_' + step + '_coupon_enable]"]').is(':checked') ? '1' : '0';
+		var couponType = $('select[name="wpat_settings[wpat_ac_email_' + step + '_coupon_type]"]').val() || 'percent';
+		var couponAmount = $('input[name="wpat_settings[wpat_ac_email_' + step + '_coupon_amount]"]').val() || 10;
+
+		var crossEn = $('input[name="wpat_settings[wpat_ac_email_' + step + '_cross_sell_enable]"]').is(':checked') ? '1' : '0';
+		var crossCount = $('select[name="wpat_settings[wpat_ac_email_' + step + '_cross_sell_count]"]').val() || 3;
+
+		var btnColor = $('input[name="wpat_settings[wpat_ac_email_btn_color]"]').val() || '#2563eb';
+		var logoUrl  = $('input[name="wpat_settings[wpat_ac_email_logo]"]').val() || '';
+		var footer   = $('textarea[name="wpat_settings[wpat_ac_email_footer]"]').val() || '';
+
+		$('#wpat_ac_preview_loader').stop(true, true).fadeIn(100);
+
+		$.ajax({
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
+			type: 'POST',
+			data: {
+				action: 'wpat_get_abandoned_email_preview',
+				security: (typeof wpat_object !== 'undefined' ? wpat_object.nonce : ''),
+				step: step,
+				subject: subject,
+				heading: heading,
+				message: message,
+				button_text: btnText,
+				coupon_enable: couponEn,
+				coupon_type: couponType,
+				coupon_amount: couponAmount,
+				cross_sell_enable: crossEn,
+				cross_sell_count: crossCount,
+				button_color: btnColor,
+				logo_url: logoUrl,
+				footer_text: footer
+			},
+			success: function(res) {
+				$('#wpat_ac_preview_loader').fadeOut(150);
+				if (res.success && res.data && res.data.html) {
+					var iframeDoc = $iframe[0].contentDocument || $iframe[0].contentWindow.document;
+					iframeDoc.open();
+					iframeDoc.write(res.data.html);
+					iframeDoc.close();
+				}
+			},
+			error: function() {
+				$('#wpat_ac_preview_loader').fadeOut(150);
+			}
+		});
+	}
+
+	// Escuchar cambios en vivo con debounce de 300ms
+	$(document).on('input change keyup', '.wpat-ac-input-trigger, .wpat-ac-global-input-trigger', function() {
+		var step = $(this).data('step');
+		if (!step || parseInt(step, 10) === activePreviewStep || $(this).hasClass('wpat-ac-global-input-trigger')) {
+			clearTimeout(previewDebounceTimer);
+			previewDebounceTimer = setTimeout(function() {
+				updateAbandonedEmailPreview();
+			}, 300);
+		}
+	});
+
+	// Inicializar la vista previa si estamos en la vista de carritos
+	if ($('#wpat_ac_preview_iframe').length) {
+		setTimeout(function() {
+			updateAbandonedEmailPreview();
+		}, 400);
+	}
 
 	// Enviar correo de prueba
 	$(document).on('click', '.wpat-ac-send-test-btn', function(e) {

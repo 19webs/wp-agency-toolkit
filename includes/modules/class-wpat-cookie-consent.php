@@ -496,7 +496,7 @@ gtag('consent', 'default', {
 	/**
 	 * Shortcode [wpat_cookie_table] para mostrar la tabla de cookies en la Política de Cookies.
 	 */
-	public function render_cookie_table_shortcode( $atts ) {
+	public static function render_cookie_table_shortcode( $atts = array() ) {
 		$cookies_db = self::get_detected_cookies_list();
 
 		ob_start();

@@ -155,15 +155,17 @@ class WPAT_Legal_Pages {
 		$settings = class_exists( 'WPAT_Main' ) ? WPAT_Main::get_instance()->get_settings() : array();
 		$template = ! empty( $settings['legal_template_cookies'] ) ? $settings['legal_template_cookies'] : self::get_default_cookies();
 
-		// Inyección de la tabla de cookies y botón de preferencias sin conflicto
+		$html = $this->parse_template( $template );
+		$html = wpautop( $html );
+
+		// Inyección de la tabla de cookies y botón de preferencias de forma limpia y segura
 		$cookie_table_html = $this->get_cookie_table_output();
 		$cookie_btn_html   = $this->render_cookie_modal_button_shortcode();
 
-		$template = str_replace( '[wpat_cookie_table]', $cookie_table_html, $template );
-		$template = str_replace( '[wpat_cookie_modal_button]', $cookie_btn_html, $template );
+		$html = str_replace( array( '[wpat_cookie_table]', '<p>[wpat_cookie_table]</p>' ), $cookie_table_html, $html );
+		$html = str_replace( array( '[wpat_cookie_modal_button]', '<p>[wpat_cookie_modal_button]</p>' ), $cookie_btn_html, $html );
 
-		$html = $this->parse_template( $template );
-		return '<div class="wpat-legal-document wpat-legal-cookies">' . wp_kses_post( wpautop( $html ) ) . '</div>';
+		return '<div class="wpat-legal-document wpat-legal-cookies">' . wp_kses_post( $html ) . '</div>';
 	}
 
 	/**
@@ -191,7 +193,7 @@ class WPAT_Legal_Pages {
 			'wpat_cookie_modal_button'
 		);
 
-		return '<p style="margin: 20px 0;"><button type="button" class="' . esc_attr( $atts['clase'] ) . '" data-wpat-action="open-cookie-modal" onclick="if(window.wpatOpenCookieModal){window.wpatOpenCookieModal();}else if(document.getElementById(\'wpat-cookie-modal\')){document.getElementById(\'wpat-cookie-modal\').style.display=\'flex\';}else{alert(\'El panel de configuración de cookies no está activo o todas las cookies técnicas están preconfiguradas.\');}" style="cursor:pointer; background:#1e293b; color:#ffffff; border:none; padding:10px 18px; border-radius:6px; font-weight:600; font-size:14px; display:inline-flex; align-items:center; gap:8px;">' . esc_html( $atts['texto'] ) . '</button></p>';
+		return '<div style="margin: 20px 0;"><button type="button" class="' . esc_attr( $atts['clase'] ) . '" data-wpat-action="open-cookie-modal" onclick="if(window.wpatOpenCookieModal){window.wpatOpenCookieModal();}else if(document.getElementById(\'wpat-cookie-modal\')){document.getElementById(\'wpat-cookie-modal\').style.display=\'flex\';}else{alert(\'El panel de configuración de cookies no está activo o todas las cookies técnicas están preconfiguradas.\');}" style="cursor:pointer; background:#1e293b; color:#ffffff; border:none; padding:10px 18px; border-radius:6px; font-weight:600; font-size:14px; display:inline-flex; align-items:center; gap:8px;">' . esc_html( $atts['texto'] ) . '</button></div>';
 	}
 
 	/**
@@ -200,21 +202,21 @@ class WPAT_Legal_Pages {
 	 * @return string
 	 */
 	public function get_cookie_table_output() {
-		// 1. Si el módulo de cookies está cargado y disponible, usar su tabla
-		if ( class_exists( 'WPAT_Cookie_Consent' ) ) {
-			return WPAT_Cookie_Consent::render_cookie_table_shortcode();
+		$cookie_file = WPAT_PATH . 'includes/modules/class-wpat-cookie-consent.php';
+		if ( ! class_exists( 'WPAT_Cookie_Consent' ) && file_exists( $cookie_file ) ) {
+			require_once $cookie_file;
 		}
 
-		// 2. Si no está instanciado pero existe el archivo, requerirlo
-		$cookie_file = WPAT_PATH . 'includes/modules/class-wpat-cookie-consent.php';
-		if ( file_exists( $cookie_file ) ) {
-			require_once $cookie_file;
-			if ( class_exists( 'WPAT_Cookie_Consent' ) ) {
+		// 1. Si el módulo de cookies está cargado y disponible, usar su tabla
+		if ( class_exists( 'WPAT_Cookie_Consent' ) ) {
+			if ( method_exists( 'WPAT_Cookie_Consent', 'render_cookie_table_shortcode' ) ) {
 				return WPAT_Cookie_Consent::render_cookie_table_shortcode();
+			} elseif ( method_exists( 'WPAT_Cookie_Consent', 'get_instance' ) ) {
+				return WPAT_Cookie_Consent::get_instance()->render_cookie_table_shortcode();
 			}
 		}
 
-		// 3. Fallback elegante si el módulo no estuviera disponible
+		// 2. Fallback elegante si el módulo no estuviera disponible
 		return '<div class="wpat-cookie-table-wrapper"><table class="wpat-cookie-table" style="width:100%; border-collapse:collapse; margin:20px 0;"><thead><tr style="background:#f8fafc;"><th style="border:1px solid #e2e8f0; padding:10px; text-align:left;">Cookie</th><th style="border:1px solid #e2e8f0; padding:10px; text-align:left;">Proveedor</th><th style="border:1px solid #e2e8f0; padding:10px; text-align:left;">Finalidad</th><th style="border:1px solid #e2e8f0; padding:10px; text-align:left;">Caducidad</th><th style="border:1px solid #e2e8f0; padding:10px; text-align:left;">Tipo</th></tr></thead><tbody><tr><td style="border:1px solid #e2e8f0; padding:10px;"><code>wpat_cookie_consent</code></td><td style="border:1px solid #e2e8f0; padding:10px;">Este Sitio Web</td><td style="border:1px solid #e2e8f0; padding:10px;">Guarda las preferencias de consentimiento de cookies del usuario.</td><td style="border:1px solid #e2e8f0; padding:10px;">6 meses</td><td style="border:1px solid #e2e8f0; padding:10px;">Necesaria</td></tr></tbody></table></div>';
 	}
 

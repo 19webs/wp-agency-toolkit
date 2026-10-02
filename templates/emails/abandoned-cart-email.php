@@ -132,7 +132,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 													x<?php echo esc_html( $item['quantity'] ); ?>
 												</td>
 												<td align="right" class="product-price-col" style="padding: 12px 15px; font-size: 14px; font-weight: 700; color: #0f172a; vertical-align: middle;">
-													<?php echo esc_html( $item['price_html'] ); ?>
+													<?php echo wp_strip_all_tags( html_entity_decode( $item['price_html'] ) ); ?>
 												</td>
 											</tr>
 										<?php endforeach; ?>
@@ -144,7 +144,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 											Total de tu pedido:
 										</td>
 										<td align="right" style="padding: 14px 15px; font-size: 17px; font-weight: 800; color: #0f172a;">
-											<?php echo esc_html( $cart_total ); ?>
+											<?php echo wp_strip_all_tags( html_entity_decode( $cart_total ) ); ?>
 										</td>
 									</tr>
 								</tfoot>

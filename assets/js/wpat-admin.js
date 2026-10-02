@@ -6237,6 +6237,36 @@ jQuery(document).ready(function($) {
 	$(document).on('change', '#wpat_ac_filter_status', filterAbandonedCartTable);
 	$(document).on('input keyup', '#wpat_ac_search_input', filterAbandonedCartTable);
 
+	// Procesar carritos abandonados ahora manualmente
+	$(document).on('click', '#wpat_ac_process_now_btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var orig = $btn.html();
+		$btn.prop('disabled', true).html('⏳ Comprobando carritos...');
+
+		$.ajax({
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
+			type: 'POST',
+			data: {
+				action: 'wpat_process_abandoned_carts_now',
+				security: (typeof wpat_object !== 'undefined' ? wpat_object.nonce : '')
+			},
+			success: function(res) {
+				$btn.prop('disabled', false).html(orig);
+				if (res.success) {
+					alert(res.data ? res.data.message : 'Carritos comprobados con éxito.');
+					location.reload();
+				} else {
+					alert(res.data ? res.data.message : 'Error al procesar carritos.');
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).html(orig);
+				alert('Error de conexión al procesar los carritos.');
+			}
+		});
+	});
+
 });
 
 

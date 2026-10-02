@@ -63,14 +63,18 @@ class WPAT_Woo_Abandoned_Cart {
 		// Restauración de carrito en 1 clic mediante URL mágica
 		add_action( 'template_redirect', array( $this, 'handle_cart_recovery_link' ) );
 
-		// Cron Job periódico para envíos automáticos
+		// Cron Job periódico para envíos automáticos (cada 5 minutos)
 		add_filter( 'cron_schedules', array( $this, 'add_cron_intervals' ) );
 		add_action( 'wpat_abandoned_cart_cron_event', array( $this, 'process_abandoned_carts_cron' ) );
 		$this->schedule_cron_job();
 
+		// Disparador oportunista para asegurar ejecuciones sin cron de servidor
+		add_action( 'init', array( $this, 'maybe_run_opportunistic_cron' ) );
+
 		// Acciones AJAX del panel de administración
 		add_action( 'wp_ajax_wpat_send_test_abandoned_email', array( $this, 'ajax_send_test_email' ) );
 		add_action( 'wp_ajax_wpat_delete_abandoned_cart_record', array( $this, 'ajax_delete_cart_record' ) );
+		add_action( 'wp_ajax_wpat_process_abandoned_carts_now', array( $this, 'ajax_process_carts_now' ) );
 	}
 
 	/**
@@ -395,12 +399,12 @@ class WPAT_Woo_Abandoned_Cart {
 	}
 
 	/**
-	 * Añade intervalos personalizados para el WP-Cron.
+	 * Añade intervalos personalizados para el WP-Cron (cada 5 minutos para alta reactividad).
 	 */
 	public function add_cron_intervals( $schedules ) {
-		$schedules['wpat_every_15_minutes'] = array(
-			'interval' => 15 * 60,
-			'display'  => __( 'Cada 15 minutos (WPAT Carritos Abandonados)', 'wp-agency-toolkit' ),
+		$schedules['wpat_every_5_minutes'] = array(
+			'interval' => 5 * 60,
+			'display'  => __( 'Cada 5 minutos (WPAT Carritos Abandonados)', 'wp-agency-toolkit' ),
 		);
 		return $schedules;
 	}
@@ -410,32 +414,58 @@ class WPAT_Woo_Abandoned_Cart {
 	 */
 	public function schedule_cron_job() {
 		if ( ! wp_next_scheduled( 'wpat_abandoned_cart_cron_event' ) ) {
-			wp_schedule_event( time() + 120, 'wpat_every_15_minutes', 'wpat_abandoned_cart_cron_event' );
+			wp_schedule_event( time() + 60, 'wpat_every_5_minutes', 'wpat_abandoned_cart_cron_event' );
 		}
 	}
 
 	/**
-	 * Proceso en segundo plano disparado por el Cron Job.
+	 * Disparador oportunista para asegurar ejecuciones automáticas en segundo plano
+	 * sin depender exclusivamente del cron del sistema (cada 3 minutos máx).
 	 */
-	public function process_abandoned_carts_cron() {
+	public function maybe_run_opportunistic_cron() {
+		if ( wp_doing_ajax() || wp_doing_cron() ) {
+			return;
+		}
+		$last_run = (int) get_transient( 'wpat_ac_last_opportunistic_run' );
+		if ( ! $last_run || ( time() - $last_run ) > 180 ) {
+			set_transient( 'wpat_ac_last_opportunistic_run', time(), 180 );
+			$this->process_abandoned_carts_cron();
+		}
+	}
+
+	/**
+	 * Proceso en segundo plano disparado por el Cron Job o manualmente.
+	 *
+	 * @param bool $return_stats Si es true devuelve array con estadísticas.
+	 * @return array|bool
+	 */
+	public function process_abandoned_carts_cron( $return_stats = false ) {
 		global $wpdb;
 
 		$settings = WPAT_Main::get_instance()->get_settings();
 		$enabled  = ! empty( $settings['woo-abandoned-cart'] ) && '1' === $settings['woo-abandoned-cart'];
 
+		$stats = array(
+			'marked_abandoned' => 0,
+			'emails_sent'      => 0,
+		);
+
 		if ( ! $enabled ) {
-			return;
+			return $return_stats ? $stats : false;
 		}
 
-		$cutoff_minutes = isset( $settings['wpat_ac_cutoff_time'] ) ? max( 10, intval( $settings['wpat_ac_cutoff_time'] ) ) : 20;
-		$now_time       = current_time( 'timestamp' );
-		$cutoff_date    = gmdate( 'Y-m-d H:i:s', $now_time - ( $cutoff_minutes * 60 ) );
+		$cutoff_minutes = isset( $settings['wpat_ac_cutoff_time'] ) ? max( 5, intval( $settings['wpat_ac_cutoff_time'] ) ) : 20;
+		$now_ts         = current_time( 'timestamp' );
+		$cutoff_date    = date( 'Y-m-d H:i:s', $now_ts - ( $cutoff_minutes * 60 ) );
 
-		// 1. Pasar carritos 'in_progress' a 'abandoned' si han superado el tiempo de corte
-		$wpdb->query( $wpdb->prepare(
+		// 1. Pasar carritos 'in_progress' a 'abandoned' si han superado el tiempo de corte (con zona horaria WP correcta)
+		$marked = $wpdb->query( $wpdb->prepare(
 			"UPDATE {$this->table_name} SET status = 'abandoned' WHERE status = 'in_progress' AND last_modified <= %s",
 			$cutoff_date
 		) );
+		if ( false !== $marked ) {
+			$stats['marked_abandoned'] = (int) $marked;
+		}
 
 		// 2. Obtener secuencias de correos configuradas
 		$sequences  = $this->get_email_sequences_config( $settings );
@@ -449,7 +479,7 @@ class WPAT_Woo_Abandoned_Cart {
 
 		if ( empty( $abandoned_carts ) ) {
 			$this->auto_prune_old_records( $settings );
-			return;
+			return $return_stats ? $stats : true;
 		}
 
 		foreach ( $abandoned_carts as $cart ) {
@@ -462,13 +492,14 @@ class WPAT_Woo_Abandoned_Cart {
 
 			$step_config    = $sequences[ $next_step ];
 			$delay_seconds  = $step_config['delay_seconds'];
-			$cart_time      = strtotime( $cart->last_modified );
-			$time_passed    = $now_time - $cart_time;
+			$cart_ts        = strtotime( $cart->last_modified );
+			$time_passed    = $now_ts - $cart_ts;
 
 			// Verificar si ha transcurrido el tiempo requerido para este correo
 			if ( $time_passed >= $delay_seconds ) {
 				$sent = $this->send_recovery_email( $cart, $step_config, $next_step );
 				if ( $sent ) {
+					$stats['emails_sent']++;
 					$history = json_decode( $cart->email_history, true );
 					if ( ! is_array( $history ) ) {
 						$history = array();
@@ -495,6 +526,7 @@ class WPAT_Woo_Abandoned_Cart {
 
 		// 4. Limpieza de registros antiguos
 		$this->auto_prune_old_records( $settings );
+		return $return_stats ? $stats : true;
 	}
 
 	/**
@@ -605,7 +637,7 @@ class WPAT_Woo_Abandoned_Cart {
 		}
 
 		$customer_name = ! empty( $cart->user_name ) ? $cart->user_name : 'Cliente';
-		$cart_total    = wc_price( $cart->cart_total );
+		$cart_total    = function_exists( 'wc_price' ) ? html_entity_decode( wp_strip_all_tags( wc_price( $cart->cart_total ) ) ) : number_format_i18n( $cart->cart_total, 2 ) . ' €';
 
 		// Generar cupón si está configurado en esta etapa
 		$coupon_code   = '';
@@ -615,7 +647,7 @@ class WPAT_Woo_Abandoned_Cart {
 			$step_config['coupon_code'] = $coupon_code;
 			$discount_text = ( 'percent' === $step_config['coupon_type'] )
 				? $step_config['coupon_amount'] . '% DE DESCUENTO'
-				: wc_price( $step_config['coupon_amount'] ) . ' DE DESCUENTO';
+				: ( function_exists( 'wc_price' ) ? html_entity_decode( wp_strip_all_tags( wc_price( $step_config['coupon_amount'] ) ) ) : $step_config['coupon_amount'] . ' €' ) . ' DE DESCUENTO';
 		}
 
 		$recovery_url = add_query_arg( 'wpat_recover_cart', $cart->recovery_token, home_url( '/' ) );
@@ -809,6 +841,30 @@ class WPAT_Woo_Abandoned_Cart {
 		return $wpdb->get_results( $wpdb->prepare(
 			"SELECT * FROM {$this->table_name} {$where} ORDER BY last_modified DESC LIMIT %d",
 			$limit
+		) );
+	}
+
+	/**
+	 * Endpoint AJAX para forzar el procesamiento y envío inmediato de carritos abandonados.
+	 */
+	public function ajax_process_carts_now() {
+		check_ajax_referer( 'wpat_save_settings_action', 'security' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Sin permisos suficientes.' ) );
+		}
+
+		$stats = $this->process_abandoned_carts_cron( true );
+
+		$msg = sprintf(
+			'Comprobación completada. Se marcaron %d carritos como abandonados y se enviaron %d correos de recuperación.',
+			$stats['marked_abandoned'],
+			$stats['emails_sent']
+		);
+
+		wp_send_json_success( array(
+			'message' => $msg,
+			'stats'   => $stats,
 		) );
 	}
 }

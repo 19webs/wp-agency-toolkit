@@ -5767,17 +5767,17 @@ class WPAT_Admin {
 						<div class="wpat-ac-tab-content" id="wpat-ac-tab-settings" style="display: none;">
 							
 							<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
-								<h4 style="margin: 0 0 15px 0; font-size: 15px; font-weight: 700; color: #0f172a;">⚙️ Reglas de Detección, Envío y Limpieza</h4>
+								<h4 style="margin: 0 0 15px 0; font-size: 15px; font-weight: 700; color: #0f172a;">Reglas de Detección, Envío y Limpieza</h4>
 								
 								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
 									<div>
 										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Inactividad para abandono (Minutos):</label>
-										<input type="number" min="10" step="1" name="wpat_settings[wpat_ac_cutoff_time]" value="<?php echo esc_attr( $ac_cutoff ); ?>" style="width: 100%; height: 36px; border-radius: 6px;" />
-										<p class="description" style="font-size: 11px; margin-top: 4px;">Tiempo de espera antes de marcar el carrito como abandonado (def. 20 min).</p>
+										<input type="number" min="5" step="1" name="wpat_settings[wpat_ac_cutoff_time]" value="<?php echo esc_attr( $ac_cutoff ); ?>" style="width: 100%; height: 36px; border-radius: 6px;" />
+										<p class="description" style="font-size: 11px; margin-top: 4px;">Tiempo de espera antes de marcar el carrito como abandonado (mín. 5 min, def. 20 min).</p>
 									</div>
 
 									<div>
-										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">📦 Tamaño de lote por tanda (Emails):</label>
+										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Tamaño de lote por tanda (Emails):</label>
 										<select name="wpat_settings[wpat_ac_batch_size]" style="width: 100%; height: 36px; border-radius: 6px; font-size: 13px;">
 											<option value="10" <?php selected( $ac_batch, 10 ); ?>>10 correos por tanda (Hosting modesto)</option>
 											<option value="15" <?php selected( $ac_batch, 15 ); ?>>15 correos por tanda (Recomendado)</option>
@@ -5796,31 +5796,45 @@ class WPAT_Admin {
 							</div>
 
 							<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
-								<h4 style="margin: 0 0 15px 0; font-size: 15px; font-weight: 700; color: #0f172a;">✉️ Datos del Remitente</h4>
+								<h4 style="margin: 0 0 15px 0; font-size: 15px; font-weight: 700; color: #0f172a;">Datos del Remitente</h4>
+
+								<?php 
+								$smtp_from_mail = ! empty( $settings['smtp_from_email'] ) ? $settings['smtp_from_email'] : ( ! empty( $settings['smtp_username'] ) && is_email( $settings['smtp_username'] ) ? $settings['smtp_username'] : '' );
+								$smtp_from_name = ! empty( $settings['smtp_from_name'] ) ? $settings['smtp_from_name'] : '';
+								?>
+
+								<?php if ( $is_smtp_active && ! empty( $smtp_from_mail ) ) : ?>
+									<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px; margin-bottom: 15px; font-size: 12.5px; color: #166534; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+										<div>
+											<strong>Sincronizado con SMTP:</strong> Remitente configurado: <code><?php echo esc_html( $smtp_from_mail ); ?></code><?php echo $smtp_from_name ? ' (' . esc_html( $smtp_from_name ) . ')' : ''; ?>. Puedes dejar los campos en blanco para usar estos datos automáticamente.
+										</div>
+										<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit#mod-smtp' ) ); ?>" class="button button-small">Ver SMTP</a>
+									</div>
+								<?php endif; ?>
 
 								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
 									<div>
 										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Nombre del Remitente:</label>
-										<input type="text" name="wpat_settings[wpat_ac_from_name]" value="<?php echo esc_attr( $ac_from_name ); ?>" placeholder="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>" style="width: 100%; height: 36px; border-radius: 6px;" />
+										<input type="text" name="wpat_settings[wpat_ac_from_name]" value="<?php echo esc_attr( $ac_from_name ); ?>" placeholder="<?php echo esc_attr( $smtp_from_name ? $smtp_from_name : get_bloginfo( 'name' ) ); ?>" style="width: 100%; height: 36px; border-radius: 6px;" />
 										<p class="description" style="font-size: 11px; margin-top: 4px;">Nombre que verá el cliente al recibir el correo.</p>
 									</div>
 
 									<div>
 										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Email del Remitente:</label>
-										<input type="email" name="wpat_settings[wpat_ac_from_email]" value="<?php echo esc_attr( $ac_from_mail ); ?>" placeholder="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>" style="width: 100%; height: 36px; border-radius: 6px;" />
+										<input type="email" name="wpat_settings[wpat_ac_from_email]" value="<?php echo esc_attr( $ac_from_mail ); ?>" placeholder="<?php echo esc_attr( $smtp_from_mail ? $smtp_from_mail : get_option( 'admin_email' ) ); ?>" style="width: 100%; height: 36px; border-radius: 6px;" />
 										<p class="description" style="font-size: 11px; margin-top: 4px;">Dirección desde la que se envían los correos.</p>
 									</div>
 
 									<div>
 										<label style="font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 4px; display: block;">Email de Respuesta (Reply-To):</label>
-										<input type="email" name="wpat_settings[wpat_ac_reply_to]" value="<?php echo esc_attr( $ac_reply_to ); ?>" placeholder="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>" style="width: 100%; height: 36px; border-radius: 6px;" />
+										<input type="email" name="wpat_settings[wpat_ac_reply_to]" value="<?php echo esc_attr( $ac_reply_to ); ?>" placeholder="<?php echo esc_attr( $smtp_from_mail ? $smtp_from_mail : get_option( 'admin_email' ) ); ?>" style="width: 100%; height: 36px; border-radius: 6px;" />
 										<p class="description" style="font-size: 11px; margin-top: 4px;">Si el cliente responde al email, le llegará a esta dirección.</p>
 									</div>
 								</div>
 							</div>
 
 							<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
-								<h4 style="margin: 0 0 15px 0; font-size: 15px; font-weight: 700; color: #0f172a;">🎨 Diseño Visual de la Plantilla de Email</h4>
+								<h4 style="margin: 0 0 15px 0; font-size: 15px; font-weight: 700; color: #0f172a;">Diseño Visual de la Plantilla de Email</h4>
 
 								<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
 									<div>
@@ -5858,7 +5872,16 @@ class WPAT_Admin {
 										<option value="in_progress">🛒 En progreso (Activos / Comprando)</option>
 										<option value="recovered">🎉 Recuperados (Completados)</option>
 									</select>
+
+									<button type="button" class="button button-primary" id="wpat_ac_process_now_btn" style="height: 36px; font-weight: 700;">
+										⚡ Comprobar y Enviar Correos Ahora
+									</button>
 								</div>
+
+								<div style="display: flex; align-items: center; gap: 8px; min-width: 280px;">
+									<input type="text" id="wpat_ac_search_input" placeholder="🔍 Buscar por cliente, email o producto..." style="height: 36px; border-radius: 6px; font-size: 13px; width: 100%; border-color: #cbd5e1;" />
+								</div>
+							</div>
 
 								<div style="display: flex; align-items: center; gap: 8px; min-width: 280px;">
 									<input type="text" id="wpat_ac_search_input" placeholder="🔍 Buscar por cliente, email o producto..." style="height: 36px; border-radius: 6px; font-size: 13px; width: 100%; border-color: #cbd5e1;" />
@@ -14564,13 +14587,6 @@ class WPAT_Admin {
 						<span style="background: #e2e8f0; color: #1e293b; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; cursor: pointer;" title="Botón de preferencias de cookies">[wpat_cookie_modal_button]</span>
 					</div>
 				</div>
-			</div>
-
-			<!-- BOTÓN DE GUARDAR FIJO / ACCIONES -->
-			<div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; align-items: center; gap: 12px;">
-				<button type="submit" class="button button-primary button-large" style="font-weight: 700; padding: 6px 24px; font-size: 14px;">
-					💾 Guardar Textos y Ajustes Legales
-				</button>
 			</div>
 		</div>
 

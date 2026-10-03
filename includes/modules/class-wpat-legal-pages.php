@@ -129,8 +129,30 @@ class WPAT_Legal_Pages {
 		if ( empty( $content ) ) {
 			return '';
 		}
+
+		$settings = class_exists( 'WPAT_Main' ) ? WPAT_Main::get_instance()->get_settings() : array();
+		$nombre_comercial = ! empty( $settings['legal_nombre_comercial'] ) ? esc_html( $settings['legal_nombre_comercial'] ) : '';
+
+		// Si el usuario configuró un nombre comercial pero la plantilla guardada aún no contiene {nombre_comercial} ni {titular_completo}
+		if ( ! empty( $nombre_comercial ) && false === strpos( $content, '{nombre_comercial}' ) && false === strpos( $content, '{titular_completo}' ) ) {
+			// Auto-insertar en listas de datos de identificación tras la fila del Titular
+			if ( preg_match( '/(<li><strong>(?:Titular|Responsable)[^<]*:<\/strong>\s*\{titular\}\s*<\/li>)/i', $content ) ) {
+				$content = preg_replace(
+					'/(<li><strong>(?:Titular|Responsable)[^<]*:<\/strong>\s*\{titular\}\s*<\/li>)/i',
+					"$1\n\t<li><strong>Nombre Comercial:</strong> {nombre_comercial}</li>",
+					$content
+				);
+			}
+		}
+
 		$tokens = $this->get_tokens_map();
-		return strtr( $content, $tokens );
+		$parsed = strtr( $content, $tokens );
+
+		// Limpieza de elementos de lista (li) o párrafos (p) opcionales que hayan quedado vacíos (ej. Datos registrales, Teléfono, Nombre Comercial)
+		$parsed = preg_replace( '/<li[^>]*>\s*(?:<strong>|<b>)[^<]+:(?:<\/strong>|<\/b>)\s*(?:&nbsp;|\s|<br\s*\/?>)*<\/li>\s*/i', '', $parsed );
+		$parsed = preg_replace( '/<p[^>]*>\s*(?:<strong>|<b>)[^<]+:(?:<\/strong>|<\/b>)\s*(?:&nbsp;|\s|<br\s*\/?>)*<\/p>\s*/i', '', $parsed );
+
+		return $parsed;
 	}
 
 	/**
@@ -276,7 +298,7 @@ class WPAT_Legal_Pages {
 		if ( 'texto' === $estilo ) {
 			$output = '<div class="wpat-legal-clausula-text" style="font-size: 11px; line-height: 1.45; color: #64748b; margin-top: 10px;">' .
 				'<strong>Información básica sobre protección de datos:</strong> ' .
-				'<strong>Responsable:</strong> ' . $tokens['{titular}'] . ' (' . $tokens['{nif}'] . '). ' .
+				'<strong>Responsable:</strong> ' . $tokens['{titular_completo}'] . ' (' . $tokens['{nif}'] . '). ' .
 				'<strong>Finalidad:</strong> ' . $finalidad . ' ' .
 				'<strong>Legitimación:</strong> ' . $legitimacion . ' ' .
 				'<strong>Derechos:</strong> ' . $derechos . '. ' .
@@ -286,7 +308,7 @@ class WPAT_Legal_Pages {
 			$output = '<div class="wpat-legal-clausula-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; font-size:11px; line-height:1.45; color:#475569; margin:14px 0;">' .
 				'<div style="font-weight:700; color:#1e293b; margin-bottom:6px; font-size:12px;">🛡️ Información sobre Protección de Datos</div>' .
 				'<table style="width:100%; border:none; margin:0; font-size:11px; line-height:1.4;">' .
-				'<tr><td style="padding:2px 6px 2px 0; font-weight:600; width:95px; vertical-align:top; color:#334155;">Responsable:</td><td style="padding:2px 0; vertical-align:top;">' . $tokens['{titular}'] . ' (' . $tokens['{nif}'] . ')</td></tr>' .
+				'<tr><td style="padding:2px 6px 2px 0; font-weight:600; width:95px; vertical-align:top; color:#334155;">Responsable:</td><td style="padding:2px 0; vertical-align:top;">' . $tokens['{titular_completo}'] . ' (' . $tokens['{nif}'] . ')</td></tr>' .
 				'<tr><td style="padding:2px 6px 2px 0; font-weight:600; vertical-align:top; color:#334155;">Finalidad:</td><td style="padding:2px 0; vertical-align:top;">' . $finalidad . '</td></tr>' .
 				'<tr><td style="padding:2px 6px 2px 0; font-weight:600; vertical-align:top; color:#334155;">Legitimación:</td><td style="padding:2px 0; vertical-align:top;">' . $legitimacion . '</td></tr>' .
 				'<tr><td style="padding:2px 6px 2px 0; font-weight:600; vertical-align:top; color:#334155;">Destinatarios:</td><td style="padding:2px 0; vertical-align:top;">' . $destinatarios . '</td></tr>' .
@@ -359,6 +381,7 @@ class WPAT_Legal_Pages {
 <p>En cumplimiento de lo dispuesto en el artículo 10 de la Ley 34/2002, de 11 de julio, de Servicios de la Sociedad de la Información y de Comercio Electrónico (LSSI-CE), se informa a los usuarios de los datos identificativos del titular de este Sitio Web:</p>
 <ul>
 	<li><strong>Titular / Razón Social:</strong> {titular}</li>
+	<li><strong>Nombre Comercial:</strong> {nombre_comercial}</li>
 	<li><strong>N.I.F. / C.I.F.:</strong> {nif}</li>
 	<li><strong>Domicilio social:</strong> {direccion_completa}</li>
 	<li><strong>Correo electrónico de contacto:</strong> {email_rgpd}</li>
@@ -409,10 +432,11 @@ class WPAT_Legal_Pages {
 	 */
 	public static function get_default_privacidad() {
 		return '<h2>1. Información al Usuario y Responsable del Tratamiento</h2>
-<p>{titular}, como Responsable del Tratamiento, le informa de que, en cumplimiento del Reglamento (UE) 2016/679 del Parlamento Europeo y del Consejo, de 27 de abril de 2016 (RGPD), y de la Ley Orgánica 3/2018, de 5 de diciembre, de Protección de Datos Personales y garantía de los derechos digitales (LOPDGDD), tratará sus datos personales conforme a los principios de licitud, lealtad, transparencia, limitación de la finalidad y minimización de datos.</p>
+<p>{titular_completo}, como Responsable del Tratamiento, le informa de que, en cumplimiento del Reglamento (UE) 2016/679 del Parlamento Europeo y del Consejo, de 27 de abril de 2016 (RGPD), y de la Ley Orgánica 3/2018, de 5 de diciembre, de Protección de Datos Personales y garantía de los derechos digitales (LOPDGDD), tratará sus datos personales conforme a los principios de licitud, lealtad, transparencia, limitación de la finalidad y minimización de datos.</p>
 
 <ul>
 	<li><strong>Responsable del tratamiento:</strong> {titular}</li>
+	<li><strong>Nombre Comercial:</strong> {nombre_comercial}</li>
 	<li><strong>N.I.F. / C.I.F.:</strong> {nif}</li>
 	<li><strong>Dirección postal:</strong> {direccion_completa}</li>
 	<li><strong>Correo electrónico RGPD:</strong> {email_rgpd}</li>

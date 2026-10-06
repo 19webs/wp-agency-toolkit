@@ -675,6 +675,8 @@ class WPAT_Admin {
 				'wpat-woo-direct-checkout'   => 'woo-direct-checkout',
 				'wpat-woo-abandoned-cart'    => 'woo-abandoned-cart',
 				'wpat-legal-pages'           => 'legal-pages',
+				'wpat-maintenance-mode'      => 'maintenance-mode',
+				'wpat-media-renamer'         => 'media-renamer',
 				'wpat-qr-generator'          => 'qr-generator',
 				'wpat-client-studio'         => 'client-studio',
 				'wpat-tools'                 => 'tools',
@@ -736,6 +738,8 @@ class WPAT_Admin {
 			'woo-direct-checkout',
 			'woo-abandoned-cart',
 			'legal-pages',
+			'maintenance-mode',
+			'media-renamer',
 			'qr-generator',
 			'client-studio',
 			'tools',
@@ -1661,6 +1665,39 @@ class WPAT_Admin {
 			$new_settings['legal_template_condiciones']= isset( $input_settings['legal_template_condiciones'] ) ? wp_kses_post( $input_settings['legal_template_condiciones'] ) : '';
 		}
 
+		// Sanitizar Modo Mantenimiento & Próximamente
+		if ( 'maintenance-mode' === $saving_module || ( empty( $saving_module ) && isset( $input_settings['wpat_maintenance_title'] ) ) ) {
+			$new_settings['wpat_maintenance_mode_type']     = isset( $input_settings['wpat_maintenance_mode_type'] ) && 'coming_soon' === $input_settings['wpat_maintenance_mode_type'] ? 'coming_soon' : 'maintenance';
+			$new_settings['wpat_maintenance_status_code']   = isset( $input_settings['wpat_maintenance_status_code'] ) && '200' === $input_settings['wpat_maintenance_status_code'] ? '200' : '503';
+			$new_settings['wpat_maintenance_page_source']   = isset( $input_settings['wpat_maintenance_page_source'] ) && 'page' === $input_settings['wpat_maintenance_page_source'] ? 'page' : 'default';
+			$new_settings['wpat_maintenance_page_id']       = isset( $input_settings['wpat_maintenance_page_id'] ) ? intval( $input_settings['wpat_maintenance_page_id'] ) : 0;
+			$new_settings['wpat_maintenance_title']         = isset( $input_settings['wpat_maintenance_title'] ) ? sanitize_text_field( $input_settings['wpat_maintenance_title'] ) : '';
+			$new_settings['wpat_maintenance_message']       = isset( $input_settings['wpat_maintenance_message'] ) ? sanitize_textarea_field( $input_settings['wpat_maintenance_message'] ) : '';
+			$new_settings['wpat_maintenance_ip_whitelist']   = isset( $input_settings['wpat_maintenance_ip_whitelist'] ) ? sanitize_textarea_field( $input_settings['wpat_maintenance_ip_whitelist'] ) : '';
+			$new_settings['wpat_maintenance_roles_allowed']  = ( isset( $input_settings['wpat_maintenance_roles_allowed'] ) && is_array( $input_settings['wpat_maintenance_roles_allowed'] ) ) ? array_map( 'sanitize_key', $input_settings['wpat_maintenance_roles_allowed'] ) : array( 'administrator' );
+			$new_settings['wpat_maintenance_show_admin_bar'] = isset( $input_settings['wpat_maintenance_show_admin_bar'] ) && '1' === $input_settings['wpat_maintenance_show_admin_bar'] ? '1' : '0';
+			$new_settings['wpat_maintenance_logo']          = isset( $input_settings['wpat_maintenance_logo'] ) ? esc_url_raw( $input_settings['wpat_maintenance_logo'] ) : '';
+			$new_settings['wpat_maintenance_bg_color']      = isset( $input_settings['wpat_maintenance_bg_color'] ) ? sanitize_hex_color( $input_settings['wpat_maintenance_bg_color'] ) : '#0f172a';
+			$new_settings['wpat_maintenance_contact_email'] = isset( $input_settings['wpat_maintenance_contact_email'] ) ? sanitize_email( $input_settings['wpat_maintenance_contact_email'] ) : '';
+			$new_settings['wpat_maintenance_social_ig']     = isset( $input_settings['wpat_maintenance_social_ig'] ) ? esc_url_raw( $input_settings['wpat_maintenance_social_ig'] ) : '';
+			$new_settings['wpat_maintenance_social_fb']     = isset( $input_settings['wpat_maintenance_social_fb'] ) ? esc_url_raw( $input_settings['wpat_maintenance_social_fb'] ) : '';
+			$new_settings['wpat_maintenance_social_wa']     = isset( $input_settings['wpat_maintenance_social_wa'] ) ? sanitize_text_field( $input_settings['wpat_maintenance_social_wa'] ) : '';
+			
+			$bypass_token = isset( $input_settings['wpat_maintenance_bypass_token'] ) ? sanitize_key( $input_settings['wpat_maintenance_bypass_token'] ) : '';
+			if ( empty( $bypass_token ) ) {
+				$bypass_token = wp_generate_password( 12, false );
+			}
+			$new_settings['wpat_maintenance_bypass_token'] = $bypass_token;
+		}
+
+		// Sanitizar Renombrador de Archivos de Medios
+		if ( 'media-renamer' === $saving_module || ( empty( $saving_module ) && isset( $input_settings['wpat_media_auto_sanitize'] ) ) ) {
+			$new_settings['wpat_media_auto_sanitize'] = isset( $input_settings['wpat_media_auto_sanitize'] ) && '1' === $input_settings['wpat_media_auto_sanitize'] ? '1' : '0';
+			$new_settings['wpat_media_update_posts']  = isset( $input_settings['wpat_media_update_posts'] ) && '1' === $input_settings['wpat_media_update_posts'] ? '1' : '0';
+			$new_settings['wpat_media_sync_title']    = isset( $input_settings['wpat_media_sync_title'] ) && '1' === $input_settings['wpat_media_sync_title'] ? '1' : '0';
+			$new_settings['wpat_media_sync_alt']      = isset( $input_settings['wpat_media_sync_alt'] ) && '1' === $input_settings['wpat_media_sync_alt'] ? '1' : '0';
+		}
+
 		// Preservar colecciones gestionadas independientemente
 		$saved_raw_wpat = get_option( 'wpat_settings', array() );
 		if ( isset( $saved_raw_wpat['qp_products'] ) && is_array( $saved_raw_wpat['qp_products'] ) ) {
@@ -2033,6 +2070,8 @@ class WPAT_Admin {
 			'woo-direct-checkout',
 			'woo-abandoned-cart',
 			'legal-pages',
+			'maintenance-mode',
+			'media-renamer',
 			'qr-generator',
 			'client-studio',
 			'tools',
@@ -2911,6 +2950,9 @@ class WPAT_Admin {
 				'wpat-quick-pay'         => 'quick-pay',
 				'wpat-woo-direct-checkout' => 'woo-direct-checkout',
 				'wpat-woo-abandoned-cart' => 'woo-abandoned-cart',
+				'wpat-legal-pages'       => 'legal-pages',
+				'wpat-maintenance-mode'  => 'maintenance-mode',
+				'wpat-media-renamer'     => 'media-renamer',
 				'wpat-qr-generator'      => 'qr-generator',
 				'wpat-client-studio'     => 'client-studio',
 				'wpat-tools'             => 'tools',
@@ -3429,6 +3471,18 @@ class WPAT_Admin {
 				'icon_bg'     => 'sec',
 				'keywords'    => 'textos legales aviso legal privacidad cookies rgpd lssi clausulas formularios terminos condiciones venta devoluciones'
 			),
+			array(
+				'id'          => 'maintenance-mode',
+				'is_new'      => true,
+				'title'       => 'Modo Mantenimiento & Próximamente',
+				'badge'       => 'Subpágina',
+				'badge_class' => 'subpage',
+				'desc'        => 'Página de mantenimiento o Coming Soon con bypass por IP/rol, enlace secreto con cookie para clientes y respuesta SEO 503/200.',
+				'cat_class'   => 'cat-security cat-sec cat-tools',
+				'icon'        => '🚧',
+				'icon_bg'     => 'sec',
+				'keywords'    => 'mantenimiento coming soon proximamente construccion bypass whitelist 503 seo'
+			),
 
 			// RENDIMIENTO & SEO (7)
 			array(
@@ -3467,6 +3521,18 @@ class WPAT_Admin {
 				'icon'        => '🖼️',
 				'icon_bg'     => 'perf',
 				'keywords'    => 'optimizacion imagenes webp compresion biblioteca'
+			),
+			array(
+				'id'          => 'media-renamer',
+				'is_new'      => true,
+				'title'       => 'Renombrador de Archivos de Medios',
+				'badge'       => 'Subpágina',
+				'badge_class' => 'subpage',
+				'desc'        => 'Renombra archivos e imágenes de la Biblioteca de Medios en disco, actualizando miniaturas, metadatos y enlaces en posts/páginas.',
+				'cat_class'   => 'cat-performance cat-perf cat-tools',
+				'icon'        => '🏷️',
+				'icon_bg'     => 'perf',
+				'keywords'    => 'renombrar medios archivos fotos media renamer imagenes seo uploads'
 			),
 			array(
 				'id'          => 'svg-support',
@@ -11392,6 +11458,12 @@ class WPAT_Admin {
 			case 'legal-pages':
 				$this->render_legal_pages_content( $settings );
 				break;
+			case 'maintenance-mode':
+				$this->render_maintenance_mode_content( $settings );
+				break;
+			case 'media-renamer':
+				$this->render_media_renamer_content( $settings );
+				break;
 			case 'quick-pay':
 				$this->render_quick_pay_content( $settings );
 				break;
@@ -14773,6 +14845,410 @@ class WPAT_Admin {
 			});
 		});
 		</script>
+		<?php
+	}
+
+	/**
+	 * Renderiza la interfaz del módulo de Modo Mantenimiento & Próximamente (Coming Soon).
+	 *
+	 * @param array $settings Ajustes del plugin.
+	 */
+	public function render_maintenance_mode_content( $settings ) {
+		if ( ! class_exists( 'WPAT_Maintenance_Mode' ) ) {
+			require_once WPAT_PATH . 'includes/modules/class-wpat-maintenance-mode.php';
+		}
+
+		$is_active       = isset( $settings['maintenance-mode'] ) && '1' === (string) $settings['maintenance-mode'];
+		$mode_type       = isset( $settings['wpat_maintenance_mode_type'] ) ? $settings['wpat_maintenance_mode_type'] : 'maintenance';
+		$status_code     = isset( $settings['wpat_maintenance_status_code'] ) ? (string) $settings['wpat_maintenance_status_code'] : '503';
+		$page_source     = isset( $settings['wpat_maintenance_page_source'] ) ? $settings['wpat_maintenance_page_source'] : 'default';
+		$page_id         = isset( $settings['wpat_maintenance_page_id'] ) ? intval( $settings['wpat_maintenance_page_id'] ) : 0;
+		$title           = isset( $settings['wpat_maintenance_title'] ) && '' !== $settings['wpat_maintenance_title'] ? $settings['wpat_maintenance_title'] : ( 'coming_soon' === $mode_type ? 'Próximamente' : 'Sitio Web en Mantenimiento' );
+		$message         = isset( $settings['wpat_maintenance_message'] ) && '' !== $settings['wpat_maintenance_message'] ? $settings['wpat_maintenance_message'] : 'Estamos realizando tareas de mejora y optimización. Volveremos a estar disponibles muy pronto. Gracias por tu paciencia.';
+		$ip_whitelist    = isset( $settings['wpat_maintenance_ip_whitelist'] ) ? $settings['wpat_maintenance_ip_whitelist'] : '';
+		$roles_allowed   = ( isset( $settings['wpat_maintenance_roles_allowed'] ) && is_array( $settings['wpat_maintenance_roles_allowed'] ) ) ? $settings['wpat_maintenance_roles_allowed'] : array( 'administrator' );
+		$show_admin_bar  = ! isset( $settings['wpat_maintenance_show_admin_bar'] ) || '1' === (string) $settings['wpat_maintenance_show_admin_bar'];
+		$logo_url        = isset( $settings['wpat_maintenance_logo'] ) ? $settings['wpat_maintenance_logo'] : '';
+		$bg_color        = ! empty( $settings['wpat_maintenance_bg_color'] ) ? $settings['wpat_maintenance_bg_color'] : '#0f172a';
+		$contact_email   = isset( $settings['wpat_maintenance_contact_email'] ) ? $settings['wpat_maintenance_contact_email'] : '';
+		$social_ig       = isset( $settings['wpat_maintenance_social_ig'] ) ? $settings['wpat_maintenance_social_ig'] : '';
+		$social_fb       = isset( $settings['wpat_maintenance_social_fb'] ) ? $settings['wpat_maintenance_social_fb'] : '';
+		$social_wa       = isset( $settings['wpat_maintenance_social_wa'] ) ? $settings['wpat_maintenance_social_wa'] : '';
+
+		$bypass_token    = ! empty( $settings['wpat_maintenance_bypass_token'] ) ? $settings['wpat_maintenance_bypass_token'] : wp_generate_password( 12, false );
+		$client_ip       = WPAT_Maintenance_Mode::get_client_ip();
+		$bypass_url      = add_query_arg( 'wpat_bypass_maintenance', $bypass_token, home_url( '/' ) );
+
+		$all_wp_pages    = get_pages( array( 'post_status' => 'publish' ) );
+		$all_roles       = wp_roles()->roles;
+		?>
+		<div class="wpat-module-card wpat-maintenance-mode-wrap" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+			<!-- CABECERA DEL MÓDULO -->
+			<div class="wpat-module-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 22px;">
+				<div class="wpat-module-info">
+					<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+						<span style="font-size: 26px; line-height: 1;">🚧</span>
+						<h3 style="margin: 0; font-size: 19px; font-weight: 700; color: #1e293b;">Modo Mantenimiento & Próximamente (Coming Soon)</h3>
+						<span class="wpat-badge wpat-badge-new" style="background: #10b981; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px; text-transform: uppercase;">Nuevo</span>
+					</div>
+					<p style="margin: 0; font-size: 13.5px; color: #64748b; line-height: 1.5;">
+						Bloquea el acceso público a tu web durante tareas de actualización o lanzamientos. Controla el acceso por <strong>IP</strong>, por <strong>Rol</strong>, mediante un <strong>Enlace Secreto de Bypass</strong> y define las <strong>cabeceras HTTP (503/200)</strong> para proteger el SEO ante Google.
+					</p>
+				</div>
+				<div>
+					<?php $this->render_module_toggle( 'maintenance-mode', $settings, true ); ?>
+				</div>
+			</div>
+
+			<?php if ( $is_active ) : ?>
+				<div style="background: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #ef4444; border-radius: 8px; padding: 14px 18px; margin-bottom: 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+					<div style="display: flex; align-items: center; gap: 10px;">
+						<span style="font-size: 20px;">⚠️</span>
+						<div>
+							<strong style="color: #991b1b; font-size: 14px;">El Modo Mantenimiento está actualmente ACTIVO</strong>
+							<p style="margin: 2px 0 0 0; color: #b91c1c; font-size: 12.5px;">Los visitantes no autorizados verán la pantalla de mantenimiento. Los administradores logueados pueden ver la web con normalidad.</p>
+						</div>
+					</div>
+					<a href="<?php echo esc_url( home_url( '/' ) ); ?>" target="_blank" class="button button-secondary" style="font-size: 12px; font-weight: 600;">
+						Ver Sitio Frontend ↗
+					</a>
+				</div>
+			<?php endif; ?>
+
+			<!-- BLOQUE 1: TIPO DE MODO Y SEO -->
+			<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 22px;">
+				<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+					<span>🎯</span> Propósito del Modo y Estado SEO
+				</h4>
+
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+					<!-- Selector de Tipo -->
+					<div>
+						<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 6px;">Tipo de Pantalla</label>
+						<select name="wpat_settings[wpat_maintenance_mode_type]" id="wpat_maintenance_mode_type" class="widefat" style="height: 38px;">
+							<option value="maintenance" <?php selected( $mode_type, 'maintenance' ); ?>>🛠️ Modo Mantenimiento (Web existente temporalmente cerrada)</option>
+							<option value="coming_soon" <?php selected( $mode_type, 'coming_soon' ); ?>>🚀 Próximamente / Coming Soon (Web nueva en construcción)</option>
+						</select>
+						<span style="font-size: 11.5px; color: #64748b; display: block; margin-top: 4px;">
+							Define el enfoque y los textos por defecto de la plantilla.
+						</span>
+					</div>
+
+					<!-- Selector de Código de Respuesta HTTP -->
+					<div>
+						<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 6px;">Respuesta HTTP para Motores de Búsqueda (SEO)</label>
+						<select name="wpat_settings[wpat_maintenance_status_code]" id="wpat_maintenance_status_code" class="widefat" style="height: 38px;">
+							<option value="503" <?php selected( $status_code, '503' ); ?>>503 Service Unavailable (Recomendado para Mantenimiento temporal)</option>
+							<option value="200" <?php selected( $status_code, '200' ); ?>>200 OK (Recomendado para Próximamente / Coming Soon indexable)</option>
+						</select>
+						<span style="font-size: 11.5px; color: #64748b; display: block; margin-top: 4px;">
+							El código <strong>503</strong> le dice a Google que no desindexe tu web y vuelva a pasar en 1 hora.
+						</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- BLOQUE 2: DISEÑO Y CONTENIDO -->
+			<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 22px;">
+				<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+					<span>🎨</span> Diseño y Contenido de la Pantalla
+				</h4>
+
+				<div style="margin-bottom: 18px;">
+					<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 8px;">Origen de la Plantilla:</label>
+					<div style="display: flex; gap: 20px; flex-wrap: wrap;">
+						<label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+							<input type="radio" name="wpat_settings[wpat_maintenance_page_source]" value="default" <?php checked( $page_source, 'default' ); ?> class="wpat-maint-source-radio" />
+							<strong>Plantilla Elegante Zero-Bloat por Defecto</strong> (Rápida, moderna, responsive)
+						</label>
+						<label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+							<input type="radio" name="wpat_settings[wpat_maintenance_page_source]" value="page" <?php checked( $page_source, 'page' ); ?> class="wpat-maint-source-radio" />
+							<strong>Usar una Página existente de WordPress</strong> (Diseñada con Elementor, Gutenberg, etc.)
+						</label>
+					</div>
+				</div>
+
+				<!-- Opciones si usa Página de WordPress -->
+				<div id="wpat_maint_page_picker_wrap" style="<?php echo 'page' === $page_source ? 'display: block;' : 'display: none;'; ?> margin-bottom: 18px; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px;">
+					<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 6px;">Selecciona la Página de Mantenimiento:</label>
+					<select name="wpat_settings[wpat_maintenance_page_id]" class="widefat" style="max-width: 450px;">
+						<option value="">— Seleccionar página publicada —</option>
+						<?php if ( ! empty( $all_wp_pages ) ) : ?>
+							<?php foreach ( $all_wp_pages as $p ) : ?>
+								<option value="<?php echo esc_attr( $p->ID ); ?>" <?php selected( $page_id, $p->ID ); ?>>
+									<?php echo esc_html( $p->post_title ); ?> (ID: <?php echo esc_html( $p->ID ); ?>)
+								</option>
+							<?php endforeach; ?>
+						<?php endif; ?>
+					</select>
+				</div>
+
+				<!-- Opciones de la Plantilla Nativa -->
+				<div id="wpat_maint_default_template_options" style="<?php echo 'default' === $page_source ? 'display: block;' : 'display: none;'; ?>">
+					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 16px;">
+						<div>
+							<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 5px;">Título Principal</label>
+							<input type="text" name="wpat_settings[wpat_maintenance_title]" value="<?php echo esc_attr( $title ); ?>" class="widefat" placeholder="Ej: Sitio Web en Mantenimiento" />
+						</div>
+						<div>
+							<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 5px;">Color de Fondo</label>
+							<input type="text" name="wpat_settings[wpat_maintenance_bg_color]" value="<?php echo esc_attr( $bg_color ); ?>" class="wpat-color-picker" data-default-color="#0f172a" />
+						</div>
+					</div>
+
+					<div style="margin-bottom: 16px;">
+						<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 5px;">Mensaje o Explicación para los Visitantes</label>
+						<textarea name="wpat_settings[wpat_maintenance_message]" rows="3" class="widefat" placeholder="Escribe el mensaje explicativo..."><?php echo esc_textarea( $message ); ?></textarea>
+					</div>
+
+					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 16px;">
+						<div>
+							<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 5px;">URL del Logotipo (Opcional)</label>
+							<div style="display: flex; gap: 8px;">
+								<input type="text" name="wpat_settings[wpat_maintenance_logo]" id="wpat_maintenance_logo_input" value="<?php echo esc_attr( $logo_url ); ?>" class="widefat" placeholder="https://tusitio.com/logo.png" />
+								<button type="button" class="button wpat-upload-img-btn" data-target="#wpat_maintenance_logo_input">Subir</button>
+							</div>
+						</div>
+						<div>
+							<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 5px;">Email de Contacto / Soporte Urgente</label>
+							<input type="email" name="wpat_settings[wpat_maintenance_contact_email]" value="<?php echo esc_attr( $contact_email ); ?>" class="widefat" placeholder="contacto@tusitio.com" />
+						</div>
+					</div>
+
+					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
+						<div>
+							<label style="display: block; font-weight: 600; font-size: 12.5px; color: #334155; margin-bottom: 4px;">Instagram URL</label>
+							<input type="url" name="wpat_settings[wpat_maintenance_social_ig]" value="<?php echo esc_attr( $social_ig ); ?>" class="widefat" placeholder="https://instagram.com/tuempresa" />
+						</div>
+						<div>
+							<label style="display: block; font-weight: 600; font-size: 12.5px; color: #334155; margin-bottom: 4px;">Facebook URL</label>
+							<input type="url" name="wpat_settings[wpat_maintenance_social_fb]" value="<?php echo esc_attr( $social_fb ); ?>" class="widefat" placeholder="https://facebook.com/tuempresa" />
+						</div>
+						<div>
+							<label style="display: block; font-weight: 600; font-size: 12.5px; color: #334155; margin-bottom: 4px;">WhatsApp (Número internacional)</label>
+							<input type="text" name="wpat_settings[wpat_maintenance_social_wa]" value="<?php echo esc_attr( $social_wa ); ?>" class="widefat" placeholder="34600000000" />
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- BLOQUE 3: CONTROL DE ACCESO & WHITELIST -->
+			<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 22px;">
+				<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+					<span>🛡️</span> Control de Acceso, IPs y Bypass Secreto
+				</h4>
+
+				<!-- Lista Blanca de IPs -->
+				<div style="margin-bottom: 18px;">
+					<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 8px;">
+						<label style="font-weight: 600; font-size: 13px; color: #334155;">Lista Blanca de Direcciones IP (Una por línea o separadas por comas):</label>
+						<button type="button" class="button button-small button-secondary" id="wpat_add_current_ip_btn" data-ip="<?php echo esc_attr( $client_ip ); ?>">
+							➕ Añadir mi IP actual (<?php echo esc_html( $client_ip ); ?>)
+						</button>
+					</div>
+					<textarea name="wpat_settings[wpat_maintenance_ip_whitelist]" id="wpat_maintenance_ip_whitelist" rows="3" class="widefat" placeholder="Ej: 192.168.1.1&#10;85.120.45.67"><?php echo esc_textarea( $ip_whitelist ); ?></textarea>
+					<span style="font-size: 11.5px; color: #64748b;">
+						Las personas o desarrolladores que conecten desde estas direcciones IP verán la web completa sin ninguna restricción.
+					</span>
+				</div>
+
+				<!-- Roles autorizados -->
+				<div style="margin-bottom: 18px;">
+					<label style="display: block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 8px;">Roles de usuario autorizados a ver la web:</label>
+					<div style="display: flex; gap: 16px; flex-wrap: wrap;">
+						<?php foreach ( $all_roles as $role_key => $role_data ) : ?>
+							<label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer;">
+								<input type="checkbox" name="wpat_settings[wpat_maintenance_roles_allowed][]" value="<?php echo esc_attr( $role_key ); ?>" <?php echo ( in_array( $role_key, $roles_allowed, true ) || 'administrator' === $role_key ) ? 'checked' : ''; ?> <?php echo 'administrator' === $role_key ? 'disabled' : ''; ?> />
+								<?php echo esc_html( translate_user_role( $role_data['name'] ) ); ?>
+							</label>
+						<?php endforeach; ?>
+					</div>
+					<span style="font-size: 11.5px; color: #64748b; display: block; margin-top: 4px;">
+						Los Administradores siempre tienen acceso garantizado.
+					</span>
+				</div>
+
+				<!-- Enlace Secreto de Bypass para Clientes / Móvil -->
+				<div style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 18px;">
+					<label style="display: block; font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 4px;">
+						🔑 Enlace Secreto de Acceso Directo (Bypass URL para Clientes)
+					</label>
+					<p style="font-size: 12px; color: #64748b; margin: 0 0 10px 0;">
+						Comparte este enlace con tu cliente o utilízalo para verificar la web en el móvil. Al acceder una sola vez mediante este enlace, se guarda una cookie segura (7 días) para navegar por toda la tienda sin ver la pantalla de mantenimiento:
+					</p>
+					<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+						<input type="text" readonly id="wpat_maintenance_bypass_url_input" value="<?php echo esc_url( $bypass_url ); ?>" class="widefat" style="flex: 1; min-width: 250px; background: #f8fafc; font-family: monospace; font-size: 12px;" />
+						<input type="hidden" name="wpat_settings[wpat_maintenance_bypass_token]" value="<?php echo esc_attr( $bypass_token ); ?>" />
+						<button type="button" class="button button-primary" id="wpat_copy_bypass_url_btn">📋 Copiar Enlace</button>
+					</div>
+				</div>
+
+				<!-- Aviso en la barra de administración -->
+				<div>
+					<label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #334155; cursor: pointer;">
+						<input type="checkbox" name="wpat_settings[wpat_maintenance_show_admin_bar]" value="1" <?php checked( $show_admin_bar ); ?> />
+						Mostrar indicador destacado en la Barra Superior de WordPress cuando el mantenimiento esté activo
+					</label>
+				</div>
+			</div>
+		</div>
+
+		<script>
+		jQuery(document).ready(function($) {
+			// Toggle entre plantilla por defecto y página WP
+			$('.wpat-maint-source-radio').on('change', function() {
+				if ($(this).val() === 'page') {
+					$('#wpat_maint_page_picker_wrap').slideDown(200);
+					$('#wpat_maint_default_template_options').slideUp(200);
+				} else {
+					$('#wpat_maint_page_picker_wrap').slideUp(200);
+					$('#wpat_maint_default_template_options').slideDown(200);
+				}
+			});
+
+			// Inicializar color picker si está disponible
+			if ($.fn.wpColorPicker) {
+				$('.wpat-color-picker').wpColorPicker();
+			}
+
+			// Subida de imagen nativa de WP
+			$('.wpat-upload-img-btn').on('click', function(e) {
+				e.preventDefault();
+				var targetInput = $($(this).data('target'));
+				var frame = wp.media({
+					title: 'Seleccionar Logotipo',
+					button: { text: 'Usar esta imagen' },
+					multiple: false
+				});
+				frame.on('select', function() {
+					var attachment = frame.state().get('selection').first().toJSON();
+					targetInput.val(attachment.url);
+				});
+				frame.open();
+			});
+		});
+		</script>
+		<?php
+	}
+
+	/**
+	 * Renderiza la interfaz del módulo de Renombrador de Archivos de Medios (Media Renamer).
+	 *
+	 * @param array $settings Ajustes del plugin.
+	 */
+	public function render_media_renamer_content( $settings ) {
+		if ( ! class_exists( 'WPAT_Media_Renamer' ) ) {
+			require_once WPAT_PATH . 'includes/modules/class-wpat-media-renamer.php';
+		}
+
+		$is_active     = isset( $settings['media-renamer'] ) && '1' === (string) $settings['media-renamer'];
+		$auto_sanitize = ! isset( $settings['wpat_media_auto_sanitize'] ) || '1' === (string) $settings['wpat_media_auto_sanitize'];
+		$update_posts  = ! isset( $settings['wpat_media_update_posts'] ) || '1' === (string) $settings['wpat_media_update_posts'];
+		$sync_title    = isset( $settings['wpat_media_sync_title'] ) && '1' === (string) $settings['wpat_media_sync_title'];
+		$sync_alt      = isset( $settings['wpat_media_sync_alt'] ) && '1' === (string) $settings['wpat_media_sync_alt'];
+		?>
+		<div class="wpat-module-card wpat-media-renamer-wrap" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+			<!-- CABECERA DEL MÓDULO -->
+			<div class="wpat-module-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 22px;">
+				<div class="wpat-module-info">
+					<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+						<span style="font-size: 26px; line-height: 1;">🏷️</span>
+						<h3 style="margin: 0; font-size: 19px; font-weight: 700; color: #1e293b;">Renombrador de Archivos de Medios (Media Renamer)</h3>
+						<span class="wpat-badge wpat-badge-new" style="background: #10b981; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px; text-transform: uppercase;">Nuevo</span>
+					</div>
+					<p style="margin: 0; font-size: 13.5px; color: #64748b; line-height: 1.5;">
+						Renombra directamente el nombre de archivo físico de cualquier imagen o documento en la <strong>Biblioteca de Medios</strong> de WordPress. Actualiza automáticamente en disco el archivo principal, todas sus <strong>miniaturas generadas</strong>, metadatos y las referencias en <strong>entradas, páginas y productos</strong> sin romper enlaces.
+					</p>
+				</div>
+				<div>
+					<?php $this->render_module_toggle( 'media-renamer', $settings, true ); ?>
+				</div>
+			</div>
+
+			<!-- BLOQUE 1: CONFIGURACIÓN DE RENOMBRADO AUTOMÁTICO -->
+			<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 22px;">
+				<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+					<span>⚙️</span> Opciones de Sanitización y Reemplazo Automático
+				</h4>
+
+				<div style="display: flex; flex-direction: column; gap: 14px;">
+					<label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #334155; cursor: pointer;">
+						<input type="checkbox" name="wpat_settings[wpat_media_auto_sanitize]" value="1" <?php checked( $auto_sanitize ); ?> style="margin-top: 2px;" />
+						<div>
+							<strong>Sanitización Estricta SEO y Web</strong>
+							<p style="margin: 2px 0 0 0; color: #64748b; font-size: 12px;">
+								Convierte a minúsculas, elimina acentos/tildes (ej: <code>camión</code> &rarr; <code>camion</code>), caracteres especiales y reemplaza espacios por guiones limpios.
+							</p>
+						</div>
+					</label>
+
+					<label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #334155; cursor: pointer;">
+						<input type="checkbox" name="wpat_settings[wpat_media_update_posts]" value="1" <?php checked( $update_posts ); ?> style="margin-top: 2px;" />
+						<div>
+							<strong>Actualizar enlaces en el contenido de Entradas, Páginas y Productos</strong>
+							<p style="margin: 2px 0 0 0; color: #64748b; font-size: 12px;">
+								Busca y reemplaza en la base de datos las URLs del archivo antiguo y todas sus miniaturas por las nuevas para evitar imágenes rotas en el diseño de tu web.
+							</p>
+						</div>
+					</label>
+
+					<label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #334155; cursor: pointer;">
+						<input type="checkbox" name="wpat_settings[wpat_media_sync_title]" value="1" <?php checked( $sync_title ); ?> style="margin-top: 2px;" />
+						<div>
+							<strong>Sincronizar el Título del adjunto al renombrar</strong>
+							<p style="margin: 2px 0 0 0; color: #64748b; font-size: 12px;">
+								Actualiza el título visible del medio adaptándolo al nuevo nombre del archivo en formato legible.
+							</p>
+						</div>
+					</label>
+
+					<label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #334155; cursor: pointer;">
+						<input type="checkbox" name="wpat_settings[wpat_media_sync_alt]" value="1" <?php checked( $sync_alt ); ?> style="margin-top: 2px;" />
+						<div>
+							<strong>Sincronizar el Texto Alternativo (ALT) al renombrar</strong>
+							<p style="margin: 2px 0 0 0; color: #64748b; font-size: 12px;">
+								Actualiza la etiqueta ALT de la imagen para accesibilidad y posicionamiento en buscadores.
+							</p>
+						</div>
+					</label>
+				</div>
+			</div>
+
+			<!-- BLOQUE 2: GUÍA DE USO VISUAL & ACCESO RÁPIDO -->
+			<div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 20px;">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+					<h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e40af; display: flex; align-items: center; gap: 8px;">
+						<span>💡</span> ¿Cómo renombrar tus archivos de medios?
+					</h4>
+					<a href="<?php echo esc_url( admin_url( 'upload.php' ) ); ?>" class="button button-primary" style="font-size: 12.5px;">
+						Ir a la Biblioteca de Medios ↗
+					</a>
+				</div>
+
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 14px;">
+					<div style="background: #fff; border: 1px solid #dbeafe; border-radius: 8px; padding: 14px;">
+						<div style="font-weight: 700; color: #1e3a8a; font-size: 13px; margin-bottom: 4px;">1. Modal de Medios</div>
+						<p style="font-size: 12px; color: #475569; margin: 0; line-height: 1.45;">
+							Haz clic en cualquier imagen en la vista de cuadrícula. En la columna derecha encontrarás el campo <strong>"Nombre de Archivo"</strong> y el botón <strong>"Renombrar ahora"</strong>.
+						</p>
+					</div>
+
+					<div style="background: #fff; border: 1px solid #dbeafe; border-radius: 8px; padding: 14px;">
+						<div style="font-weight: 700; color: #1e3a8a; font-size: 13px; margin-bottom: 4px;">2. Vista de Lista</div>
+						<p style="font-size: 12px; color: #475569; margin: 0; line-height: 1.45;">
+							En la vista de lista de la Biblioteca de Medios, pasa el cursor sobre cualquier elemento y haz clic en el enlace rápido <strong>"Renombrar"</strong>.
+						</p>
+					</div>
+
+					<div style="background: #fff; border: 1px solid #dbeafe; border-radius: 8px; padding: 14px;">
+						<div style="font-weight: 700; color: #1e3a8a; font-size: 13px; margin-bottom: 4px;">3. Seguridad Total</div>
+						<p style="font-size: 12px; color: #475569; margin: 0; line-height: 1.45;">
+							La extensión original del archivo (ej: <code>.png</code>, <code>.webp</code>) se mantiene siempre protegida para garantizar la integridad de las imágenes.
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
 		<?php
 	}
 }

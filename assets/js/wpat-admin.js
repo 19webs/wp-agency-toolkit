@@ -6481,6 +6481,149 @@ jQuery(document).ready(function($) {
 				alert('Error de conexión al procesar los carritos.');
 			}
 		});
+	// Modo Mantenimiento: Añadir IP actual a la lista blanca
+	$(document).on('click', '#wpat_add_current_ip_btn', function(e) {
+		e.preventDefault();
+		var ip = $(this).data('ip');
+		var $textarea = $('#wpat_maintenance_ip_whitelist');
+		if (!ip || !$textarea.length) return;
+		var currentVal = $textarea.val().trim();
+		if (currentVal.indexOf(ip) !== -1) {
+			alert('Tu IP actual (' + ip + ') ya está incluida en la lista blanca.');
+			return;
+		}
+		if (currentVal.length > 0) {
+			$textarea.val(currentVal + '\n' + ip);
+		} else {
+			$textarea.val(ip);
+		}
+		if (typeof showToast === 'function') {
+			showToast('IP ' + ip + ' añadida a la lista blanca');
+		}
+	});
+
+	// Modo Mantenimiento: Copiar enlace de bypass
+	$(document).on('click', '#wpat_copy_bypass_url_btn', function(e) {
+		e.preventDefault();
+		var url = $('#wpat_maintenance_bypass_url_input').val();
+		if (!url) return;
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			navigator.clipboard.writeText(url).then(function() {
+				if (typeof showToast === 'function') {
+					showToast('Enlace de bypass copiado al portapapeles');
+				} else {
+					alert('Enlace copiado al portapapeles.');
+				}
+			}).catch(function() {
+				var $input = $('#wpat_maintenance_bypass_url_input');
+				$input.select();
+				document.execCommand('copy');
+				alert('Enlace copiado.');
+			});
+		} else {
+			var $input = $('#wpat_maintenance_bypass_url_input');
+			$input.select();
+			document.execCommand('copy');
+			alert('Enlace copiado.');
+		}
+	});
+
+	// Media Renamer: AJAX rename from attachment modal
+	$(document).on('click', '.wpat-ajax-rename-btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		var attachId = $btn.data('attachment-id');
+		var $input = $('#wpat_rename_' + attachId);
+		var newName = $input.val().trim();
+
+		if (!newName) {
+			alert('Por favor, escribe un nombre de archivo válido.');
+			return;
+		}
+
+		var origText = $btn.text();
+		$btn.prop('disabled', true).text('Guardando...');
+
+		var ajaxEndpoint = (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php'));
+		var nonce = (typeof wpatMediaRenamer !== 'undefined' ? wpatMediaRenamer.nonce : (typeof wpat_object !== 'undefined' ? wpat_object.nonce : ''));
+
+		$.ajax({
+			url: ajaxEndpoint,
+			type: 'POST',
+			data: {
+				action: 'wpat_rename_attachment',
+				nonce: nonce,
+				attachment_id: attachId,
+				new_filename: newName
+			},
+			success: function(res) {
+				$btn.prop('disabled', false).text(origText);
+				if (res.success) {
+					if (typeof showToast === 'function') {
+						showToast(res.data.message || 'Archivo renombrado con éxito');
+					} else {
+						alert(res.data.message || 'Archivo renombrado con éxito');
+					}
+					if (res.data.filename) {
+						var dotPos = res.data.filename.lastIndexOf('.');
+						var baseOnly = dotPos !== -1 ? res.data.filename.substring(0, dotPos) : res.data.filename;
+						$input.val(baseOnly);
+					}
+				} else {
+					alert(res.data ? res.data.message : 'Error al renombrar.');
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).text(origText);
+				alert('Error de conexión al renombrar el archivo.');
+			}
+		});
+	});
+
+	// Media Renamer: Quick rename trigger from list table
+	$(document).on('click', '.wpat-quick-rename-trigger', function(e) {
+		e.preventDefault();
+		var $link = $(this);
+		var attachId = $link.data('id');
+		var currentName = $link.data('current');
+
+		var proposedName = prompt('Introduce el nuevo nombre del archivo (sin extensión):', currentName);
+		if (proposedName === null || !proposedName.trim() || proposedName.trim() === currentName) {
+			return;
+		}
+
+		var ajaxEndpoint = (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php'));
+		var nonce = (typeof wpatMediaRenamer !== 'undefined' ? wpatMediaRenamer.nonce : (typeof wpat_object !== 'undefined' ? wpat_object.nonce : ''));
+
+		$link.text('Renombrando...');
+
+		$.ajax({
+			url: ajaxEndpoint,
+			type: 'POST',
+			data: {
+				action: 'wpat_rename_attachment',
+				nonce: nonce,
+				attachment_id: attachId,
+				new_filename: proposedName.trim()
+			},
+			success: function(res) {
+				if (res.success) {
+					if (typeof showToast === 'function') {
+						showToast('Archivo renombrado: ' + res.data.filename);
+					}
+					setTimeout(function() {
+						location.reload();
+					}, 600);
+				} else {
+					$link.text('Renombrar');
+					alert(res.data ? res.data.message : 'Error al renombrar.');
+				}
+			},
+			error: function() {
+				$link.text('Renombrar');
+				alert('Error de conexión al renombrar el archivo.');
+			}
+		});
 	});
 
 });

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.110
+ * Version:     4.3.111
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.110' );
+define( 'WPAT_VERSION', '4.3.111' );
 define( 'WPAT_FILE', __FILE__ );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_DIR', WPAT_PATH );
@@ -232,6 +232,14 @@ class WPAT_Main {
 			'file'  => 'includes/modules/class-wpat-legal-pages.php',
 			'class' => 'WPAT_Legal_Pages',
 		),
+		'maintenance-mode' => array(
+			'file'  => 'includes/modules/class-wpat-maintenance-mode.php',
+			'class' => 'WPAT_Maintenance_Mode',
+		),
+		'media-renamer' => array(
+			'file'  => 'includes/modules/class-wpat-media-renamer.php',
+			'class' => 'WPAT_Media_Renamer',
+		),
 	);
 
 	/**
@@ -356,6 +364,32 @@ class WPAT_Main {
 				'qr-generator'              => '0',
 				'client-studio'             => '0',
 				'legal-pages'               => '0',
+				'maintenance-mode'          => '0',
+				'media-renamer'             => '0',
+
+				// Sub-opciones de Modo Mantenimiento & Próximamente
+				'wpat_maintenance_mode_type'    => 'maintenance',
+				'wpat_maintenance_status_code'  => '503',
+				'wpat_maintenance_page_source'  => 'default',
+				'wpat_maintenance_page_id'      => '',
+				'wpat_maintenance_title'        => 'Sitio Web en Mantenimiento',
+				'wpat_maintenance_message'      => 'Estamos realizando tareas de mejora y optimización. Volveremos a estar disponibles muy pronto. Gracias por tu paciencia.',
+				'wpat_maintenance_ip_whitelist'  => '',
+				'wpat_maintenance_roles_allowed' => array( 'administrator' ),
+				'wpat_maintenance_bypass_token'  => '',
+				'wpat_maintenance_show_admin_bar'=> '1',
+				'wpat_maintenance_logo'         => '',
+				'wpat_maintenance_bg_color'     => '#0f172a',
+				'wpat_maintenance_contact_email'=> '',
+				'wpat_maintenance_social_ig'    => '',
+				'wpat_maintenance_social_fb'    => '',
+				'wpat_maintenance_social_wa'    => '',
+
+				// Sub-opciones de Renombrador de Archivos de Medios
+				'wpat_media_auto_sanitize'      => '1',
+				'wpat_media_update_posts'       => '1',
+				'wpat_media_sync_title'         => '0',
+				'wpat_media_sync_alt'           => '0',
 
 				// Sub-opciones de Textos Legales RGPD / LSSI-CE
 				'legal_titular'             => '',

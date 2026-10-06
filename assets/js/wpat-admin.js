@@ -6481,6 +6481,8 @@ jQuery(document).ready(function($) {
 				alert('Error de conexión al procesar los carritos.');
 			}
 		});
+	});
+
 	// Modo Mantenimiento: Añadir IP actual a la lista blanca
 	$(document).on('click', '#wpat_add_current_ip_btn', function(e) {
 		e.preventDefault();

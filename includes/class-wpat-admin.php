@@ -228,9 +228,15 @@ class WPAT_Admin {
 			// Borrar caché de transients
 			delete_transient( 'wpat_github_update_check' );
 			delete_site_transient( 'update_plugins' );
+
+			if ( class_exists( 'WPAT_Updater' ) ) {
+				WPAT_Updater::get_instance()->get_latest_github_release( true );
+			}
 			
-			// Redirigir de vuelta al panel para ver los resultados actualizados
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-agency-toolkit' ) );
+			// Redirigir de vuelta a la página actual limpia
+			$redirect_page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : 'wp-agency-toolkit';
+			$redirect_url  = admin_url( 'admin.php?page=' . $redirect_page . '&wpat_update_checked=1' );
+			wp_safe_redirect( $redirect_url );
 			exit;
 		}
 
@@ -2972,6 +2978,30 @@ class WPAT_Admin {
 				document.documentElement.classList.add('wpat-dark-mode');
 				document.write('<style id="wpat-early-dark">html.wpat-dark-mode, html.wpat-dark-mode body, html.wpat-dark-mode #wpbody-content, html.wpat-dark-mode .wpat-admin-wrapper { background-color: #0f172a !important; color: #f8fafc !important; }</style>');
 			}
+
+			// Controlador autónomo e independiente para el Modo Oscuro
+			document.addEventListener('DOMContentLoaded', function() {
+				var themeBtn = document.getElementById('wpat_theme_toggle_btn');
+				if (themeBtn) {
+					var updateThemeUI = function() {
+						var isDark = document.documentElement.classList.contains('wpat-dark-mode');
+						var icon = document.getElementById('wpat_theme_icon');
+						var label = document.getElementById('wpat_theme_label');
+						if (icon) icon.textContent = isDark ? '☀️' : '🌙';
+						if (label) label.textContent = isDark ? 'Modo Claro' : 'Modo Oscuro';
+					};
+					updateThemeUI();
+					themeBtn.addEventListener('click', function(e) {
+						e.preventDefault();
+						var isDark = document.documentElement.classList.toggle('wpat-dark-mode');
+						var wrapper = document.querySelector('.wpat-admin-wrapper');
+						if (wrapper) wrapper.classList.toggle('wpat-dark-mode', isDark);
+						localStorage.setItem('wpat_theme_mode', isDark ? 'dark' : 'light');
+						document.cookie = 'wpat_theme_mode=' + (isDark ? 'dark' : 'light') + '; path=/; max-age=' + (60*60*24*365);
+						updateThemeUI();
+					});
+				}
+			});
 		})();
 		</script>
 		<div class="wrap wpat-admin-wrapper <?php echo $is_dark ? 'wpat-dark-mode' : ''; ?>">
@@ -2999,6 +3029,8 @@ class WPAT_Admin {
 						}
 					}
 					$has_update = ! empty( $new_version ) && version_compare( WPAT_VERSION, $new_version, '<' );
+					$force_check_page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : 'wp-agency-toolkit';
+					$force_check_url  = admin_url( 'admin.php?page=' . $force_check_page . '&wpat_force_update_check=1' );
 					?>
 					<div id="wpat_updater_header_container" style="display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.05); padding: 6px 14px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
 						<div id="wpat_updater_widget_status" style="font-size: 12px; color: #e2e8f0; text-align: right; line-height: 1.3;">
@@ -3018,9 +3050,9 @@ class WPAT_Admin {
 									Actualizar ahora
 								</a>
 							<?php else : ?>
-								<button type="button" id="wpat_force_update_check_btn" class="button button-secondary" style="background:transparent; border-color:rgba(255,255,255,0.2); color:#fff; height:32px; line-height:30px; border-radius:4px; margin:0; cursor:pointer; font-weight:600; box-shadow:none; display: block; box-sizing: border-box;">
+								<a href="<?php echo esc_url( $force_check_url ); ?>" id="wpat_force_update_check_btn" class="button button-secondary" style="background:transparent; border-color:rgba(255,255,255,0.2); color:#fff; height:32px; line-height:30px; border-radius:4px; margin:0; cursor:pointer; font-weight:600; box-shadow:none; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; text-decoration: none;">
 									Comprobar versión
-								</button>
+								</a>
 							<?php endif; ?>
 						</div>
 					</div>

@@ -128,6 +128,48 @@ class WPAT_Admin {
 			'wpat-tools',
 			array( $this, 'render_admin_page' )
 		);
+
+		add_submenu_page(
+			'wp-agency-toolkit',
+			'Visor de Logs',
+			'Visor de Logs',
+			'manage_options',
+			'wpat-error-log-viewer',
+			array( $this, 'render_admin_page' )
+		);
+
+		if ( ! empty( $settings['role-manager'] ) || ! empty( $settings['role_manager'] ) ) {
+			add_submenu_page(
+				'wp-agency-toolkit',
+				'Gestor de Roles',
+				'Gestor de Roles',
+				'manage_options',
+				'wpat-role-manager',
+				array( $this, 'render_admin_page' )
+			);
+		}
+
+		if ( ! empty( $settings['snippets'] ) ) {
+			add_submenu_page(
+				'wp-agency-toolkit',
+				'Snippets de Código',
+				'Snippets de Código',
+				'manage_options',
+				'wpat-snippets',
+				array( $this, 'render_admin_page' )
+			);
+		}
+
+		if ( ! empty( $settings['envato-importer'] ) || ! empty( $settings['envato_importer'] ) ) {
+			add_submenu_page(
+				'wp-agency-toolkit',
+				'Importador Kits Template',
+				'Importador Kits Template',
+				'manage_options',
+				'wpat-envato-importer',
+				array( $this, 'render_admin_page' )
+			);
+		}
 	}
 
 	/**
@@ -2961,6 +3003,7 @@ class WPAT_Admin {
 				'wpat-media-renamer'     => 'media-renamer',
 				'wpat-qr-generator'      => 'qr-generator',
 				'wpat-client-studio'     => 'client-studio',
+				'wpat-envato-importer'   => 'envato-importer',
 				'wpat-tools'             => 'tools',
 			);
 			if ( isset( $map[ $page_slug ] ) ) {
@@ -2971,12 +3014,17 @@ class WPAT_Admin {
 		$is_single_module_view = ! empty( $mod_id );
 		?>
 		<?php $is_dark = ( isset( $_COOKIE['wpat_theme_mode'] ) && 'dark' === $_COOKIE['wpat_theme_mode'] ); ?>
+		<style id="wpat-early-dark">
+			html.wpat-dark-mode, html.wpat-dark-mode body, html.wpat-dark-mode #wpbody-content, html.wpat-dark-mode .wpat-admin-wrapper {
+				background-color: #0f172a !important;
+				color: #f8fafc !important;
+			}
+		</style>
 		<script>
 		(function() {
 			var saved = localStorage.getItem('wpat_theme_mode');
 			if (saved === 'dark' || (!saved && document.cookie.indexOf('wpat_theme_mode=dark') !== -1)) {
 				document.documentElement.classList.add('wpat-dark-mode');
-				document.write('<style id="wpat-early-dark">html.wpat-dark-mode, html.wpat-dark-mode body, html.wpat-dark-mode #wpbody-content, html.wpat-dark-mode .wpat-admin-wrapper { background-color: #0f172a !important; color: #f8fafc !important; }</style>');
 			}
 
 			// Controlador autónomo e independiente para el Modo Oscuro
@@ -3153,12 +3201,21 @@ class WPAT_Admin {
 											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=error-log-viewer' ) ); ?>" class="wpat-cat-direct-link">
 												<span class="wpat-cat-label">📜 Visor de Logs</span>
 											</a>
+											<?php if ( ! empty( $settings['role-manager'] ) || ! empty( $settings['role_manager'] ) ) : ?>
 											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=role-manager' ) ); ?>" class="wpat-cat-direct-link">
 												<span class="wpat-cat-label">👥 Gestor de Roles</span>
 											</a>
+											<?php endif; ?>
+											<?php if ( ! empty( $settings['snippets'] ) ) : ?>
 											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=snippets' ) ); ?>" class="wpat-cat-direct-link">
 												<span class="wpat-cat-label">💻 Snippets de Código</span>
 											</a>
+											<?php endif; ?>
+											<?php if ( ! empty( $settings['envato-importer'] ) || ! empty( $settings['envato_importer'] ) ) : ?>
+											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=envato-importer' ) ); ?>" class="wpat-cat-direct-link">
+												<span class="wpat-cat-label">📥 Importador Kits Template</span>
+											</a>
+											<?php endif; ?>
 										</div>
 									</aside>
 
@@ -3925,7 +3982,7 @@ class WPAT_Admin {
 							<span class="dot"></span> <span class="text"><?php echo ( $is_always_active || $is_active ) ? 'Activo' : 'Inactivo'; ?></span>
 						</span>
 						<?php if ( $has_settings ) : ?>
-							<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'wp-agency-toolkit', 'mod' => $mod['id'], 'cat' => isset( $_GET['cat'] ) ? sanitize_key( $_GET['cat'] ) : '' ), admin_url( 'admin.php' ) ) ); ?>" class="wpat-card-action-btn primary wpat-remember-scroll-btn <?php echo ( $is_always_active || $is_active ) ? '' : 'disabled'; ?>">
+							<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'wp-agency-toolkit', 'mod' => $mod['id'], 'cat' => isset( $_GET['cat'] ) ? sanitize_key( $_GET['cat'] ) : '' ), admin_url( 'admin.php' ) ) ); ?>" class="wpat-card-action-btn primary <?php echo ( $is_always_active || $is_active ) ? '' : 'disabled'; ?>">
 								<?php echo ( $mod['id'] === 'tools' ) ? 'Herramientas ⚙️' : 'Ajustes ⚙️'; ?>
 							</a>
 						<?php endif; ?>

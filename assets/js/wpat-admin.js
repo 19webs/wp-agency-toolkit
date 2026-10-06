@@ -367,13 +367,20 @@ jQuery(document).ready(function($) {
 		filterModules();
 	});
 
-	// Restaurar Categoría Activa al Cargar la Página
-	var urlParams = new URLSearchParams(window.location.search);
-	var savedCat = urlParams.get('cat') || localStorage.getItem('wpat_active_cat') || sessionStorage.getItem('wpat_active_cat');
-	if (savedCat && validCategories.indexOf(savedCat) !== -1) {
-		applyCategoryFilter(savedCat);
+	// Inicializar Categoría Activa al Cargar la Página sin re-filtrar el DOM (PHP ya lo renderiza)
+	var currentUrlParams = new URLSearchParams(window.location.search);
+	var urlCat = currentUrlParams.get('cat');
+	if (urlCat && validCategories.indexOf(urlCat) !== -1) {
+		window.wpatActiveCat = urlCat;
+		$('.wpat-card-action-btn').each(function() {
+			var href = $(this).attr('href');
+			if (href) {
+				href = href.replace(/&cat=[^&]*/g, '') + '&cat=' + encodeURIComponent(urlCat);
+				$(this).attr('href', href);
+			}
+		});
 	} else {
-		applyCategoryFilter('all');
+		window.wpatActiveCat = 'all';
 	}
 
 	// LÓGICA MODO CLARO / MODO OSCURO (DARK MODE)

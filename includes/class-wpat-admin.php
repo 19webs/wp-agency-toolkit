@@ -138,7 +138,7 @@ class WPAT_Admin {
 			array( $this, 'render_admin_page' )
 		);
 
-		if ( ! empty( $settings['role-manager'] ) || ! empty( $settings['role_manager'] ) ) {
+		if ( isset( $settings['role-manager'] ) && '1' === (string) $settings['role-manager'] ) {
 			add_submenu_page(
 				'wp-agency-toolkit',
 				'Gestor de Roles',
@@ -149,7 +149,7 @@ class WPAT_Admin {
 			);
 		}
 
-		if ( ! empty( $settings['snippets'] ) ) {
+		if ( isset( $settings['snippets'] ) && '1' === (string) $settings['snippets'] ) {
 			add_submenu_page(
 				'wp-agency-toolkit',
 				'Snippets de Código',
@@ -160,7 +160,7 @@ class WPAT_Admin {
 			);
 		}
 
-		if ( ! empty( $settings['envato-importer'] ) || ! empty( $settings['envato_importer'] ) ) {
+		if ( isset( $settings['envato-importer'] ) && '1' === (string) $settings['envato-importer'] ) {
 			add_submenu_page(
 				'wp-agency-toolkit',
 				'Importador Kits Template',
@@ -3150,44 +3150,47 @@ class WPAT_Admin {
 							<div id="tab-modules" class="wpat-tab-panel active">
 								<div class="wpat-layout-container" style="display: flex; gap: 20px; align-items: flex-start;">
 									<!-- COLUMNA VERTICAL NAVEGACIÓN (ESCRITORIO) -->
+									<?php
+									$active_cat = isset( $_GET['cat'] ) && in_array( $_GET['cat'], array( 'all', 'woocommerce', 'marketing', 'security', 'legal', 'performance', 'seo', 'tools', 'system' ), true ) ? sanitize_key( $_GET['cat'] ) : 'all';
+									?>
 									<aside class="wpat-cat-sidebar" style="width: 230px; flex-shrink: 0; background: var(--wpat-card-bg, #fff); border: 1px solid var(--wpat-border, #e2e8f0); border-radius: 12px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
 										<div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; padding: 6px 10px 10px 10px; border-bottom: 1px solid var(--wpat-border, #e2e8f0); margin-bottom: 8px;">
 											Categorías
 										</div>
 										<div class="wpat-cat-nav-list" style="display: flex; flex-direction: column; gap: 4px;">
-											<button type="button" class="wpat-cat-item active" data-cat="all">
+											<button type="button" class="wpat-cat-item <?php echo ( 'all' === $active_cat ) ? 'active' : ''; ?>" data-cat="all">
 												<span class="wpat-cat-label">📌 Todos</span>
 												<span class="wpat-cat-badge">50</span>
 											</button>
-											<button type="button" class="wpat-cat-item" data-cat="woocommerce">
+											<button type="button" class="wpat-cat-item <?php echo ( 'woocommerce' === $active_cat ) ? 'active' : ''; ?>" data-cat="woocommerce">
 												<span class="wpat-cat-label">🛍️ WooCommerce</span>
 												<span class="wpat-cat-badge">16</span>
 											</button>
-											<button type="button" class="wpat-cat-item" data-cat="marketing">
+											<button type="button" class="wpat-cat-item <?php echo ( 'marketing' === $active_cat ) ? 'active' : ''; ?>" data-cat="marketing">
 												<span class="wpat-cat-label">📣 Marketing</span>
 												<span class="wpat-cat-badge">5</span>
 											</button>
-											<button type="button" class="wpat-cat-item" data-cat="security">
+											<button type="button" class="wpat-cat-item <?php echo ( 'security' === $active_cat ) ? 'active' : ''; ?>" data-cat="security">
 												<span class="wpat-cat-label">🛡️ Seguridad</span>
 												<span class="wpat-cat-badge">6</span>
 											</button>
-											<button type="button" class="wpat-cat-item" data-cat="legal">
+											<button type="button" class="wpat-cat-item <?php echo ( 'legal' === $active_cat ) ? 'active' : ''; ?>" data-cat="legal">
 												<span class="wpat-cat-label">⚖️ Legal & Privacidad</span>
 												<span class="wpat-cat-badge">3</span>
 											</button>
-											<button type="button" class="wpat-cat-item" data-cat="performance">
+											<button type="button" class="wpat-cat-item <?php echo ( 'performance' === $active_cat ) ? 'active' : ''; ?>" data-cat="performance">
 												<span class="wpat-cat-label">⚡ Rendimiento</span>
 												<span class="wpat-cat-badge">5</span>
 											</button>
-											<button type="button" class="wpat-cat-item" data-cat="seo">
+											<button type="button" class="wpat-cat-item <?php echo ( 'seo' === $active_cat ) ? 'active' : ''; ?>" data-cat="seo">
 												<span class="wpat-cat-label">🚀 SEO</span>
 												<span class="wpat-cat-badge">2</span>
 											</button>
-											<button type="button" class="wpat-cat-item" data-cat="tools">
+											<button type="button" class="wpat-cat-item <?php echo ( 'tools' === $active_cat ) ? 'active' : ''; ?>" data-cat="tools">
 												<span class="wpat-cat-label">🛠️ Herramientas</span>
 												<span class="wpat-cat-badge">4</span>
 											</button>
-											<button type="button" class="wpat-cat-item" data-cat="system">
+											<button type="button" class="wpat-cat-item <?php echo ( 'system' === $active_cat ) ? 'active' : ''; ?>" data-cat="system">
 												<span class="wpat-cat-label">⚙️ Sistema & Admin</span>
 												<span class="wpat-cat-badge">9</span>
 											</button>
@@ -3201,17 +3204,17 @@ class WPAT_Admin {
 											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=error-log-viewer' ) ); ?>" class="wpat-cat-direct-link">
 												<span class="wpat-cat-label">📜 Visor de Logs</span>
 											</a>
-											<?php if ( ! empty( $settings['role-manager'] ) || ! empty( $settings['role_manager'] ) ) : ?>
+											<?php if ( isset( $settings['role-manager'] ) && '1' === (string) $settings['role-manager'] ) : ?>
 											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=role-manager' ) ); ?>" class="wpat-cat-direct-link">
 												<span class="wpat-cat-label">👥 Gestor de Roles</span>
 											</a>
 											<?php endif; ?>
-											<?php if ( ! empty( $settings['snippets'] ) ) : ?>
+											<?php if ( isset( $settings['snippets'] ) && '1' === (string) $settings['snippets'] ) : ?>
 											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=snippets' ) ); ?>" class="wpat-cat-direct-link">
 												<span class="wpat-cat-label">💻 Snippets de Código</span>
 											</a>
 											<?php endif; ?>
-											<?php if ( ! empty( $settings['envato-importer'] ) || ! empty( $settings['envato_importer'] ) ) : ?>
+											<?php if ( isset( $settings['envato-importer'] ) && '1' === (string) $settings['envato-importer'] ) : ?>
 											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=envato-importer' ) ); ?>" class="wpat-cat-direct-link">
 												<span class="wpat-cat-label">📥 Importador Kits Template</span>
 											</a>
@@ -3223,15 +3226,15 @@ class WPAT_Admin {
 									<div class="wpat-mobile-cat-container" style="display: none; width: 100%; margin-bottom: 15px;">
 										<label for="wpat_mobile_cat_select" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 6px;">Categoría:</label>
 										<select id="wpat_mobile_cat_select" style="width: 100%; height: 38px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 0 12px; font-weight: 600; font-size: 13px; background: #fff;">
-											<option value="all">📌 Todos (50)</option>
-											<option value="woocommerce">🛍️ WooCommerce (16)</option>
-											<option value="marketing">📣 Marketing (5)</option>
-											<option value="security">🛡️ Seguridad (6)</option>
-											<option value="legal">⚖️ Legal & Privacidad (3)</option>
-											<option value="performance">⚡ Rendimiento (5)</option>
-											<option value="seo">🚀 SEO (2)</option>
-											<option value="tools">🛠️ Herramientas (4)</option>
-											<option value="system">⚙️ Sistema & Admin (9)</option>
+											<option value="all" <?php selected( $active_cat, 'all' ); ?>>📌 Todos (50)</option>
+											<option value="woocommerce" <?php selected( $active_cat, 'woocommerce' ); ?>>🛍️ WooCommerce (16)</option>
+											<option value="marketing" <?php selected( $active_cat, 'marketing' ); ?>>📣 Marketing (5)</option>
+											<option value="security" <?php selected( $active_cat, 'security' ); ?>>🛡️ Seguridad (6)</option>
+											<option value="legal" <?php selected( $active_cat, 'legal' ); ?>>⚖️ Legal & Privacidad (3)</option>
+											<option value="performance" <?php selected( $active_cat, 'performance' ); ?>>⚡ Rendimiento (5)</option>
+											<option value="seo" <?php selected( $active_cat, 'seo' ); ?>>🚀 SEO (2)</option>
+											<option value="tools" <?php selected( $active_cat, 'tools' ); ?>>🛠️ Herramientas (4)</option>
+											<option value="system" <?php selected( $active_cat, 'system' ); ?>>⚙️ Sistema & Admin (9)</option>
 										</select>
 									</div>
 

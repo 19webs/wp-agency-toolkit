@@ -6544,7 +6544,7 @@ jQuery(document).ready(function($) {
 		}
 
 		var origText = $btn.text();
-		$btn.prop('disabled', true).text('Guardando...');
+		$btn.prop('disabled', true).text('⏳ Guardando y Renombrando...');
 
 		var ajaxEndpoint = (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php'));
 		var nonce = (typeof wpatMediaRenamer !== 'undefined' ? wpatMediaRenamer.nonce : (typeof wpat_object !== 'undefined' ? wpat_object.nonce : ''));
@@ -6560,16 +6560,29 @@ jQuery(document).ready(function($) {
 			},
 			success: function(res) {
 				$btn.prop('disabled', false).text(origText);
-				if (res.success) {
-					if (typeof showToast === 'function') {
-						showToast(res.data.message || 'Archivo renombrado con éxito');
-					} else {
-						alert(res.data.message || 'Archivo renombrado con éxito');
-					}
-					if (res.data.filename) {
-						var dotPos = res.data.filename.lastIndexOf('.');
-						var baseOnly = dotPos !== -1 ? res.data.filename.substring(0, dotPos) : res.data.filename;
+				if (res.success && res.data) {
+					var data = res.data;
+					if (data.filename) {
+						var dotPos = data.filename.lastIndexOf('.');
+						var baseOnly = dotPos !== -1 ? data.filename.substring(0, dotPos) : data.filename;
 						$input.val(baseOnly);
+					}
+
+					if (typeof showToast === 'function') {
+						showToast(data.message || 'Archivo renombrado con éxito');
+					}
+
+					// Si estamos en la página clásica de edición (post.php?post=ID), volver a la Biblioteca de Medios
+					if (window.location.href.indexOf('post.php') !== -1 && window.location.href.indexOf('action=edit') !== -1) {
+						window.location.href = '/wp-admin/upload.php?wpat_renamed=' + encodeURIComponent(data.filename);
+						return;
+					}
+
+					// Si estamos en la Biblioteca de Medios (upload.php), recargar fluidamente tras 500ms
+					if (window.location.href.indexOf('upload.php') !== -1) {
+						setTimeout(function() {
+							window.location.href = '/wp-admin/upload.php?wpat_renamed=' + encodeURIComponent(data.filename);
+						}, 600);
 					}
 				} else {
 					alert(res.data ? res.data.message : 'Error al renombrar.');
@@ -6597,7 +6610,7 @@ jQuery(document).ready(function($) {
 		var ajaxEndpoint = (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php'));
 		var nonce = (typeof wpatMediaRenamer !== 'undefined' ? wpatMediaRenamer.nonce : (typeof wpat_object !== 'undefined' ? wpat_object.nonce : ''));
 
-		$link.text('Renombrando...');
+		$link.text('⏳ Renombrando...');
 
 		$.ajax({
 			url: ajaxEndpoint,
@@ -6609,13 +6622,8 @@ jQuery(document).ready(function($) {
 				new_filename: proposedName.trim()
 			},
 			success: function(res) {
-				if (res.success) {
-					if (typeof showToast === 'function') {
-						showToast('Archivo renombrado: ' + res.data.filename);
-					}
-					setTimeout(function() {
-						location.reload();
-					}, 600);
+				if (res.success && res.data) {
+					window.location.href = '/wp-admin/upload.php?wpat_renamed=' + encodeURIComponent(res.data.filename);
 				} else {
 					$link.text('Renombrar');
 					alert(res.data ? res.data.message : 'Error al renombrar.');

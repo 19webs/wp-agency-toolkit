@@ -46,28 +46,27 @@ class WPAT_Media_Renamer {
 		// AJAX para renombrado en vivo
 		add_action( 'wp_ajax_wpat_rename_attachment', array( $this, 'ajax_rename_attachment' ) );
 
-		// Encolar scripts en la biblioteca de medios
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_media_assets' ) );
+		// Inyectar scripts y estilos auxiliares en el pie de administración
+		add_action( 'admin_footer', array( $this, 'render_admin_footer_scripts' ) );
+
+		// Aviso de éxito tras guardar y redirigir
+		add_action( 'admin_notices', array( $this, 'render_admin_notices' ) );
 	}
 
 	/**
-	 * Encola scripts auxiliares para el renombrado en la Biblioteca de Medios.
-	 *
-	 * @param string $hook Pestaña actual.
+	 * Muestra aviso de éxito en la biblioteca de medios al volver tras renombrar.
 	 */
-	public function enqueue_media_assets( $hook ) {
-		if ( 'upload.php' === $hook || 'post.php' === $hook || 'post-new.php' === $hook ) {
-			wp_localize_script( 'jquery', 'wpatMediaRenamer', array(
-				'ajax_url' => admin_url( 'admin-ajax.php' ),
-				'nonce'    => wp_create_nonce( 'wpat_media_rename_nonce' ),
-				'strings'  => array(
-					'prompt'       => __( 'Introduce el nuevo nombre para el archivo (sin extensión):', 'wp-agency-toolkit' ),
-					'renaming'     => __( 'Renombrando archivo y miniaturas...', 'wp-agency-toolkit' ),
-					'success'      => __( '¡Archivo renombrado con éxito!', 'wp-agency-toolkit' ),
-					'error'        => __( 'Error al renombrar el archivo.', 'wp-agency-toolkit' ),
-					'confirm_btn'  => __( 'Renombrar', 'wp-agency-toolkit' ),
-				),
-			) );
+	public function render_admin_notices() {
+		if ( isset( $_GET['wpat_renamed'] ) && ! empty( $_GET['wpat_renamed'] ) ) {
+			$name = sanitize_text_field( wp_unslash( $_GET['wpat_renamed'] ) );
+			?>
+			<div class="notice notice-success is-dismissible" style="border-left-color: #10b981; padding: 10px 15px; margin: 15px 0;">
+				<p style="font-size: 13.5px; margin: 0; display: flex; align-items: center; gap: 8px;">
+					<span style="color: #10b981; font-size: 18px; font-weight: bold;">✓</span>
+					<span><strong><?php esc_html_e( 'Archivo renombrado con éxito:', 'wp-agency-toolkit' ); ?></strong> <code><?php echo esc_html( $name ); ?></code> <?php esc_html_e( '(actualizado en disco, miniaturas y contenido)', 'wp-agency-toolkit' ); ?></span>
+				</p>
+			</div>
+			<?php
 		}
 	}
 
@@ -88,12 +87,13 @@ class WPAT_Media_Renamer {
 		$ext               = pathinfo( $filename_with_ext, PATHINFO_EXTENSION );
 		$filename_only     = pathinfo( $filename_with_ext, PATHINFO_FILENAME );
 
-		$html  = '<div class="wpat-rename-field-wrap" style="display: flex; gap: 8px; align-items: center; max-width: 100%; flex-wrap: wrap;">';
-		$html .= '<input type="text" class="text wpat-rename-input" id="wpat_rename_' . esc_attr( $post->ID ) . '" name="attachments[' . esc_attr( $post->ID ) . '][wpat_new_filename]" value="' . esc_attr( $filename_only ) . '" style="flex: 1; min-width: 200px;" />';
-		$html .= '<span style="font-weight: 600; color: #64748b; font-size: 13px;">.' . esc_html( $ext ) . '</span>';
-		$html .= '<button type="button" class="button button-secondary wpat-ajax-rename-btn" data-attachment-id="' . esc_attr( $post->ID ) . '" style="font-size: 12px;">' . esc_html__( 'Renombrar ahora', 'wp-agency-toolkit' ) . '</button>';
+		$html  = '<div class="wpat-rename-field-wrap" style="display: flex; gap: 8px; align-items: center; max-width: 100%; flex-wrap: wrap; margin-bottom: 4px;">';
+		$html .= '<input type="text" class="text wpat-rename-input" id="wpat_rename_' . esc_attr( $post->ID ) . '" name="attachments[' . esc_attr( $post->ID ) . '][wpat_new_filename]" value="' . esc_attr( $filename_only ) . '" style="flex: 1; min-width: 180px; font-weight: 600;" />';
+		$html .= '<span class="wpat-rename-ext-badge" style="font-weight: 700; color: #475569; font-size: 13px; background: #e2e8f0; padding: 4px 8px; border-radius: 4px;">.' . esc_html( $ext ) . '</span>';
+		$html .= '<button type="button" class="button button-primary wpat-ajax-rename-btn" data-attachment-id="' . esc_attr( $post->ID ) . '" style="font-size: 12px; font-weight: 600;">' . esc_html__( 'Renombrar y Guardar', 'wp-agency-toolkit' ) . '</button>';
+		$html .= '<span class="wpat-rename-feedback-' . esc_attr( $post->ID ) . '" style="display: none; width: 100%; font-size: 12px; margin-top: 4px;"></span>';
 		$html .= '</div>';
-		$html .= '<p class="description" style="margin-top: 4px; font-size: 11.5px; color: #64748b;">' . esc_html__( 'Cambia el nombre físico en disco, todas sus miniaturas y actualiza las referencias en posts y páginas.', 'wp-agency-toolkit' ) . '</p>';
+		$html .= '<p class="description" style="margin-top: 2px; font-size: 11.5px; color: #64748b;">' . esc_html__( 'Cambia el nombre físico en disco, todas sus miniaturas y actualiza las referencias en posts y páginas.', 'wp-agency-toolkit' ) . '</p>';
 
 		$form_fields['wpat_filename'] = array(
 			'label' => __( 'Nombre de Archivo', 'wp-agency-toolkit' ),
@@ -105,7 +105,7 @@ class WPAT_Media_Renamer {
 	}
 
 	/**
-	 * Procesa el guardado tradicional si se envió el formulario nativo de medios.
+	 * Procesa el guardado tradicional si se envió el formulario nativo de medios y redirige a la biblioteca.
 	 *
 	 * @param array $post Datos del post.
 	 * @param array $attachment Datos del formulario de adjunto.
@@ -113,7 +113,13 @@ class WPAT_Media_Renamer {
 	 */
 	public function save_attachment_rename_field( $post, $attachment ) {
 		if ( isset( $attachment['wpat_new_filename'] ) && ! empty( $attachment['wpat_new_filename'] ) ) {
-			$this->rename_attachment( $post['ID'], $attachment['wpat_new_filename'] );
+			$result = $this->rename_attachment( $post['ID'], $attachment['wpat_new_filename'] );
+			if ( ! is_wp_error( $result ) && isset( $result['filename'] ) ) {
+				// Redirigir de vuelta a la Biblioteca de Medios tras guardar en la pantalla clásica
+				add_filter( 'redirect_post_location', function( $location ) use ( $result ) {
+					return admin_url( 'upload.php?wpat_renamed=' . urlencode( $result['filename'] ) );
+				}, 99 );
+			}
 		}
 		return $post;
 	}
@@ -230,10 +236,12 @@ class WPAT_Media_Renamer {
 		// Si el nombre es exactamente igual al actual, no hacer nada
 		if ( $old_base_name === $new_base_name ) {
 			return array(
-				'message'      => __( 'El archivo ya tiene este nombre.', 'wp-agency-toolkit' ),
-				'filename'     => $old_filename_full,
-				'new_url'      => wp_get_attachment_url( $attachment_id ),
-				'thumbnails'   => 0,
+				'message'       => __( 'El archivo ya tiene este nombre.', 'wp-agency-toolkit' ),
+				'filename'      => $old_filename_full,
+				'old_filename'  => $old_filename_full,
+				'new_url'       => wp_get_attachment_url( $attachment_id ),
+				'thumbnails'    => 0,
+				'posts_updated' => 0,
 			);
 		}
 
@@ -280,8 +288,7 @@ class WPAT_Media_Renamer {
 
 			// Renombrar todas las miniaturas generadas
 			if ( ! empty( $metadata['sizes'] ) && is_array( $metadata['sizes'] ) ) {
-				$upload_dir = wp_upload_dir();
-				$base_url   = trailingslashit( pathinfo( $old_url, PATHINFO_DIRNAME ) );
+				$base_url = trailingslashit( pathinfo( $old_url, PATHINFO_DIRNAME ) );
 
 				foreach ( $metadata['sizes'] as $size_key => $size_data ) {
 					if ( empty( $size_data['file'] ) ) {
@@ -292,7 +299,6 @@ class WPAT_Media_Renamer {
 					$old_thumb_path = $file_dir . '/' . $old_thumb_name;
 
 					// Reemplazar la raíz del nombre antiguo por la nueva
-					// Formato habitual: {nombre_antiguo}-{ancho}x{alto}.{ext}
 					if ( 0 === strpos( $old_thumb_name, $old_base_name ) ) {
 						$suffix = substr( $old_thumb_name, strlen( $old_base_name ) );
 						$new_thumb_name = $new_base_name . $suffix;
@@ -322,13 +328,14 @@ class WPAT_Media_Renamer {
 		}
 
 		// 3. Actualizar ruta relativa en _wp_attached_file
-		$upload_dir   = wp_upload_dir();
 		$new_rel_path = _wp_relative_upload_path( $new_full_path );
 		update_attached_file( $attachment_id, $new_rel_path );
 
 		// 4. Actualizar Post adjunto (slug, guid, y opcionalmente título/alt)
 		$new_url = wp_get_attachment_url( $attachment_id );
 		$url_replacements[ $old_url ] = $new_url;
+
+		$clean_readable_title = ucwords( str_replace( array( '-', '_' ), ' ', $new_base_name ) );
 
 		$post_update_args = array(
 			'ID'        => $attachment_id,
@@ -337,16 +344,13 @@ class WPAT_Media_Renamer {
 		);
 
 		if ( $sync_title ) {
-			// Convertir guiones a espacios legibles para el título
-			$clean_title = ucwords( str_replace( array( '-', '_' ), ' ', $new_base_name ) );
-			$post_update_args['post_title'] = $clean_title;
+			$post_update_args['post_title'] = $clean_readable_title;
 		}
 
 		wp_update_post( $post_update_args );
 
 		if ( $sync_alt ) {
-			$clean_alt = ucwords( str_replace( array( '-', '_' ), ' ', $new_base_name ) );
-			update_post_meta( $attachment_id, '_wp_attachment_image_alt', $clean_alt );
+			update_post_meta( $attachment_id, '_wp_attachment_image_alt', $clean_readable_title );
 		}
 
 		// 5. Actualizar referencias en el contenido de Posts, Páginas y Productos
@@ -376,9 +380,160 @@ class WPAT_Media_Renamer {
 		return array(
 			'message'       => __( 'Archivo y miniaturas renombrados correctamente.', 'wp-agency-toolkit' ),
 			'filename'      => $new_filename_full,
+			'old_filename'  => $old_filename_full,
 			'new_url'       => $new_url,
+			'title'         => $clean_readable_title,
 			'thumbnails'    => $renamed_thumbs,
 			'posts_updated' => $updated_posts_count,
 		);
+	}
+
+	/**
+	 * Imprime scripts JS y estilos necesarios para el renombrado en vivo en la Biblioteca de Medios y pantallas de edición.
+	 */
+	public function render_admin_footer_scripts() {
+		$nonce = wp_create_nonce( 'wpat_media_rename_nonce' );
+		?>
+		<script type="text/javascript">
+		(function($) {
+			if (!$) return;
+
+			var mediaNonce = '<?php echo esc_js( $nonce ); ?>';
+			var ajaxEndpoint = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
+
+			// 1. Renombrado AJAX desde la Modal o formulario de adjuntos
+			$(document).on('click', '.wpat-ajax-rename-btn', function(e) {
+				e.preventDefault();
+				var $btn = $(this);
+				var attachId = $btn.data('attachment-id');
+				var $input = $('#wpat_rename_' + attachId);
+				var newName = $input.val().trim();
+				var $feedback = $('.wpat-rename-feedback-' + attachId);
+
+				if (!newName) {
+					alert('Por favor, escribe un nombre de archivo válido.');
+					return;
+				}
+
+				var origText = $btn.text();
+				$btn.prop('disabled', true).text('⏳ Guardando y Renombrando...');
+				$feedback.hide().empty();
+
+				$.ajax({
+					url: ajaxEndpoint,
+					type: 'POST',
+					data: {
+						action: 'wpat_rename_attachment',
+						nonce: mediaNonce,
+						attachment_id: attachId,
+						new_filename: newName
+					},
+					success: function(res) {
+						$btn.prop('disabled', false).text(origText);
+						if (res.success && res.data) {
+							var data = res.data;
+							
+							// Actualizar input con el nombre limpio sin extensión
+							if (data.filename) {
+								var dotPos = data.filename.lastIndexOf('.');
+								var baseOnly = dotPos !== -1 ? data.filename.substring(0, dotPos) : data.filename;
+								$input.val(baseOnly);
+							}
+
+							// Mostrar mensaje de éxito local
+							$feedback.html('<span style="color: #059669; font-weight: 700;">✓ ¡Renombrado a: ' + data.filename + '!</span>').fadeIn(200);
+
+							// Actualizar textos y enlaces en la Modal / Sidebar de WordPress
+							var $modal = $btn.closest('.media-modal, .attachment-details, .media-sidebar, .edit-attachment-frame, body');
+							$modal.find('.attachment-info .filename, .attachment-details .filename, .media-sidebar .filename, .details .filename, span.filename').text(data.filename);
+							
+							// Actualizar campos de URL y botones de copiado de URL
+							$modal.find('input.url, .setting[data-setting="url"] input, #attachment-details-two-column-copy-link').val(data.new_url);
+							$modal.find('.attachment-details-two-column-copy-link, .copy-attachment-url').attr('data-clipboard-text', data.new_url);
+
+							// Actualizar imágenes y miniaturas con cache-buster
+							var cacheBustUrl = data.new_url + '?t=' + Date.now();
+							$modal.find('.thumbnail img, .details-image img, img.details-image').attr('src', cacheBustUrl);
+							$('.attachment[data-id="' + attachId + '"] img').attr('src', cacheBustUrl);
+							$('.attachment[data-id="' + attachId + '"] .filename').text(data.filename);
+
+							// Actualizar modelo de Backbone en wp.media si existe
+							if (typeof wp !== 'undefined' && wp.media && wp.media.model && wp.media.model.Attachment) {
+								var att = wp.media.model.Attachment.get(attachId);
+								if (att) {
+									att.set({
+										filename: data.filename,
+										url: data.new_url
+									});
+									if (data.title) att.set('title', data.title);
+								}
+							}
+
+							// Si estamos en la pantalla clásica de edición (post.php?post=ID), volver a la Biblioteca de Medios
+							if (window.location.href.indexOf('post.php') !== -1 && window.location.href.indexOf('action=edit') !== -1) {
+								window.location.href = '<?php echo esc_js( admin_url( 'upload.php?wpat_renamed=' ) ); ?>' + encodeURIComponent(data.filename);
+								return;
+							}
+
+							// Si estamos en la Biblioteca de Medios (upload.php), recargar fluidamente tras 500ms para refrescar cuadrícula completa
+							if (window.location.href.indexOf('upload.php') !== -1) {
+								setTimeout(function() {
+									window.location.href = '<?php echo esc_js( admin_url( 'upload.php?wpat_renamed=' ) ); ?>' + encodeURIComponent(data.filename);
+								}, 600);
+							}
+						} else {
+							$feedback.html('<span style="color: #dc2626; font-weight: 700;">✕ ' + (res.data ? res.data.message : 'Error al renombrar.') + '</span>').fadeIn(200);
+							alert(res.data ? res.data.message : 'Error al renombrar.');
+						}
+					},
+					error: function() {
+						$btn.prop('disabled', false).text(origText);
+						$feedback.html('<span style="color: #dc2626; font-weight: 700;">✕ Error de conexión con el servidor.</span>').fadeIn(200);
+						alert('Error de conexión al renombrar el archivo.');
+					}
+				});
+			});
+
+			// 2. Renombrado rápido desde la vista de lista de Medios
+			$(document).on('click', '.wpat-quick-rename-trigger', function(e) {
+				e.preventDefault();
+				var $link = $(this);
+				var attachId = $link.data('id');
+				var currentName = $link.data('current');
+
+				var proposedName = prompt('Introduce el nuevo nombre del archivo (sin extensión):', currentName);
+				if (proposedName === null || !proposedName.trim() || proposedName.trim() === currentName) {
+					return;
+				}
+
+				$link.text('Renombrando...');
+
+				$.ajax({
+					url: ajaxEndpoint,
+					type: 'POST',
+					data: {
+						action: 'wpat_rename_attachment',
+						nonce: mediaNonce,
+						attachment_id: attachId,
+						new_filename: proposedName.trim()
+					},
+					success: function(res) {
+						if (res.success && res.data) {
+							window.location.href = '<?php echo esc_js( admin_url( 'upload.php?wpat_renamed=' ) ); ?>' + encodeURIComponent(res.data.filename);
+						} else {
+							$link.text('Renombrar');
+							alert(res.data ? res.data.message : 'Error al renombrar.');
+						}
+					},
+					error: function() {
+						$link.text('Renombrar');
+						alert('Error de conexión al renombrar el archivo.');
+					}
+				});
+			});
+
+		})(window.jQuery);
+		</script>
+		<?php
 	}
 }

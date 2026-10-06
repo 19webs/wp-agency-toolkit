@@ -223,7 +223,7 @@ jQuery(document).ready(function($) {
 	});
 
 	// 1.1 Centro de Módulos (Buscador, Categorías y AJAX Toggle)
-	var validCategories = ['all', 'woocommerce', 'security', 'performance', 'tools', 'system'];
+	var validCategories = ['all', 'woocommerce', 'marketing', 'security', 'legal', 'performance', 'seo', 'tools', 'system'];
 
 	function removeAccents(str) {
 		if (!str) return '';

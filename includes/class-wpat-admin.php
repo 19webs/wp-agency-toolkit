@@ -3109,31 +3109,55 @@ class WPAT_Admin {
 										<div class="wpat-cat-nav-list" style="display: flex; flex-direction: column; gap: 4px;">
 											<button type="button" class="wpat-cat-item active" data-cat="all">
 												<span class="wpat-cat-label">📌 Todos</span>
-												<span class="wpat-cat-badge">39</span>
+												<span class="wpat-cat-badge">50</span>
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="woocommerce">
 												<span class="wpat-cat-label">🛍️ WooCommerce</span>
-												<span class="wpat-cat-badge">10</span>
+												<span class="wpat-cat-badge">16</span>
+											</button>
+											<button type="button" class="wpat-cat-item" data-cat="marketing">
+												<span class="wpat-cat-label">📣 Marketing</span>
+												<span class="wpat-cat-badge">5</span>
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="security">
 												<span class="wpat-cat-label">🛡️ Seguridad</span>
-												<span class="wpat-cat-badge">7</span>
+												<span class="wpat-cat-badge">6</span>
+											</button>
+											<button type="button" class="wpat-cat-item" data-cat="legal">
+												<span class="wpat-cat-label">⚖️ Legal & Privacidad</span>
+												<span class="wpat-cat-badge">3</span>
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="performance">
-												<span class="wpat-cat-label">⚡ Rendimiento & SEO</span>
-												<span class="wpat-cat-badge">8</span>
+												<span class="wpat-cat-label">⚡ Rendimiento</span>
+												<span class="wpat-cat-badge">5</span>
+											</button>
+											<button type="button" class="wpat-cat-item" data-cat="seo">
+												<span class="wpat-cat-label">🚀 SEO</span>
+												<span class="wpat-cat-badge">2</span>
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="tools">
 												<span class="wpat-cat-label">🛠️ Herramientas</span>
-												<span class="wpat-cat-badge">9</span>
+												<span class="wpat-cat-badge">4</span>
 											</button>
 											<button type="button" class="wpat-cat-item" data-cat="system">
 												<span class="wpat-cat-label">⚙️ Sistema & Admin</span>
 												<span class="wpat-cat-badge">9</span>
 											</button>
 											<div class="wpat-sidebar-divider"></div>
+											<div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; padding: 6px 10px 4px 10px;">
+												Accesos Directos
+											</div>
 											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=tools' ) ); ?>" class="wpat-cat-direct-link">
 												<span class="wpat-cat-label">🛠️ Salud & Limpieza BD</span>
+											</a>
+											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=error-log-viewer' ) ); ?>" class="wpat-cat-direct-link">
+												<span class="wpat-cat-label">📜 Visor de Logs</span>
+											</a>
+											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=role-manager' ) ); ?>" class="wpat-cat-direct-link">
+												<span class="wpat-cat-label">👥 Gestor de Roles</span>
+											</a>
+											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=snippets' ) ); ?>" class="wpat-cat-direct-link">
+												<span class="wpat-cat-label">💻 Snippets de Código</span>
 											</a>
 										</div>
 									</aside>
@@ -3142,11 +3166,14 @@ class WPAT_Admin {
 									<div class="wpat-mobile-cat-container" style="display: none; width: 100%; margin-bottom: 15px;">
 										<label for="wpat_mobile_cat_select" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 6px;">Categoría:</label>
 										<select id="wpat_mobile_cat_select" style="width: 100%; height: 38px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 0 12px; font-weight: 600; font-size: 13px; background: #fff;">
-											<option value="all">📌 Todos (39)</option>
-											<option value="woocommerce">🛍️ WooCommerce (10)</option>
-											<option value="security">🛡️ Seguridad (7)</option>
-											<option value="performance">⚡ Rendimiento & SEO (8)</option>
-											<option value="tools">🛠️ Herramientas (9)</option>
+											<option value="all">📌 Todos (50)</option>
+											<option value="woocommerce">🛍️ WooCommerce (16)</option>
+											<option value="marketing">📣 Marketing (5)</option>
+											<option value="security">🛡️ Seguridad (6)</option>
+											<option value="legal">⚖️ Legal & Privacidad (3)</option>
+											<option value="performance">⚡ Rendimiento (5)</option>
+											<option value="seo">🚀 SEO (2)</option>
+											<option value="tools">🛠️ Herramientas (4)</option>
 											<option value="system">⚙️ Sistema & Admin (9)</option>
 										</select>
 									</div>
@@ -3192,22 +3219,58 @@ class WPAT_Admin {
 	}
 
 	/**
-	 * Renderiza el grid completo de 35 tarjetas de módulos en el Centro de Módulos.
+	 * Renderiza el grid completo de tarjetas de módulos clasificados en el Centro de Módulos.
 	 */
-		public function render_all_modules_grid_cards( $settings ) {
-				$modules_data = array(
-			// WOOCOMMERCE (9)
+	public function render_all_modules_grid_cards( $settings ) {
+		$modules_data = array(
+			// 1. WOOCOMMERCE (16)
 			array(
-				'id'          => 'woo-extra-options',
+				'id'          => 'woo-checkout-designer',
 				'is_updated'  => true,
-				'title'       => 'Campos Extra',
+				'title'       => 'Diseñador de Carrito y Checkout',
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
-				'desc'        => 'Añade opciones personalizadas a productos (textos, selects, archivos) y convierte desplegables en botones de color.',
-				'cat_class'   => 'cat-woocommerce cat-woo',
-				'icon'        => '🛍️',
+				'desc'        => 'Diseño de Carrito y Checkout de alta conversión con plantillas responsivas (Classic, Express, Accordion, Minimalist, Shop-Style, Slide-Out Drawer Cart) y barra de envío gratis.',
+				'cat_class'   => 'cat-woocommerce',
+				'icon'        => '🛒',
 				'icon_bg'     => 'woo',
-				'keywords'    => 'campos extras swatches woocommerce opciones producto'
+				'keywords'    => 'checkout carrito cart diseñador plantillas woocommerce plantilla classic express minimalista acordeon deslizable drawer'
+			),
+			array(
+				'id'          => 'woo-abandoned-cart',
+				'is_new'      => true,
+				'title'       => 'Recuperador de Carritos Abandonados',
+				'badge'       => 'Automatización',
+				'badge_class' => 'config',
+				'desc'        => 'Recupera ventas perdidas enviando secuencias automáticas de correos con tiempos personalizados (minutos, horas, días), fotos de productos, cupones dinámicos y restauración en 1 clic.',
+				'cat_class'   => 'cat-woocommerce',
+				'icon'        => '🛒',
+				'icon_bg'     => 'woo',
+				'keywords'    => 'carritos abandonados abandoned cart recuperador emails secuencias recordatorios cupones woocommerce ventas perdidas'
+			),
+			array(
+				'id'          => 'woo-promotions',
+				'is_updated'  => true,
+				'title'       => 'Promociones Dinámicas y Descuentos',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Crea reglas avanzadas de descuento en el carrito: tramos por gasto, 3x2, volumen, descuento global y por método de pago.',
+				'cat_class'   => 'cat-woocommerce',
+				'icon'        => '🎁',
+				'icon_bg'     => 'woo',
+				'keywords'    => 'promociones descuentos 3x2 tramos volumen oferta pago woocommerce'
+			),
+			array(
+				'id'          => 'woo-direct-checkout',
+				'is_new'      => false,
+				'title'       => 'Compra Directa & Saltar Carrito',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Redirige automáticamente al checkout al añadir productos, con botón dual "Comprar Ahora", vaciado opcional y filtros.',
+				'cat_class'   => 'cat-woocommerce',
+				'icon'        => '⚡',
+				'icon_bg'     => 'woo',
+				'keywords'    => 'compra directa direct checkout saltar carrito comprar ahora 1 clic pago rapido express checkout'
 			),
 			array(
 				'id'          => 'woo-pdf-invoices',
@@ -3216,10 +3279,46 @@ class WPAT_Admin {
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
 				'desc'        => 'Genera facturas y albaranes en PDF adjuntos automáticamente a los correos de pedido de WooCommerce.',
-				'cat_class'   => 'cat-woocommerce cat-woo',
+				'cat_class'   => 'cat-woocommerce',
 				'icon'        => '📄',
 				'icon_bg'     => 'woo',
 				'keywords'    => 'facturas pdf albaranes woocommerce'
+			),
+			array(
+				'id'          => 'woo-sale-badges',
+				'is_updated'  => true,
+				'title'       => 'Badges y Etiquetas de Oferta',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Añade badges y cintas de oferta de alto impacto personalizables (Soft, Pill, Rect, Circle, Corner Ribbon, Price Tag) con cálculo automático de % de descuento.',
+				'cat_class'   => 'cat-woocommerce',
+				'icon'        => '🏷️',
+				'icon_bg'     => 'woo',
+				'keywords'    => 'badges oferta etiquetas descuento sale flash ribbon woocommerce'
+			),
+			array(
+				'id'          => 'woo-extra-options',
+				'is_updated'  => true,
+				'title'       => 'Campos Extra',
+				'badge'       => 'Subpágina',
+				'badge_class' => 'subpage',
+				'desc'        => 'Añade opciones personalizadas a productos (textos, selects, archivos) y convierte desplegables en botones de color.',
+				'cat_class'   => 'cat-woocommerce',
+				'icon'        => '🛍️',
+				'icon_bg'     => 'woo',
+				'keywords'    => 'campos extras swatches woocommerce opciones producto'
+			),
+			array(
+				'id'          => 'woo-variation-swatches',
+				'is_updated'  => true,
+				'title'       => 'Swatches de Variación',
+				'badge'       => 'Subpágina',
+				'badge_class' => 'subpage',
+				'desc'        => 'Transforma desplegables de variaciones en botones visuales de color, imagen o etiqueta.',
+				'cat_class'   => 'cat-woocommerce',
+				'icon'        => '🎨',
+				'icon_bg'     => 'woo',
+				'keywords'    => 'swatches variaciones botones color imagen atributos'
 			),
 			array(
 				'id'          => 'woo-live-search',
@@ -3228,7 +3327,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Reemplaza la búsqueda estándar por autocompletado ultra rápido por SKU, nombre e ID de producto.',
-				'cat_class'   => 'cat-woocommerce cat-woo',
+				'cat_class'   => 'cat-woocommerce',
 				'icon'        => '🔍',
 				'icon_bg'     => 'woo',
 				'keywords'    => 'buscador live ajax woocommerce sku'
@@ -3240,7 +3339,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Filtros ultrarrápidos para catálogo por precio, stock, categorías, atributos u ordenación.',
-				'cat_class'   => 'cat-woocommerce cat-woo',
+				'cat_class'   => 'cat-woocommerce',
 				'icon'        => '⚡',
 				'icon_bg'     => 'woo',
 				'keywords'    => 'filtros facetas woocommerce catalogo'
@@ -3252,10 +3351,22 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Añade, edita u oculta campos en el formulario de finalizar compra de WooCommerce.',
-				'cat_class'   => 'cat-woocommerce cat-woo',
+				'cat_class'   => 'cat-woocommerce',
 				'icon'        => '🛒',
 				'icon_bg'     => 'woo',
 				'keywords'    => 'editor checkout campos finalizar compra'
+			),
+			array(
+				'id'          => 'woo-email-designer',
+				'is_updated'  => true,
+				'title'       => 'Diseñador de Emails',
+				'badge'       => 'Configuración',
+				'badge_class' => 'config',
+				'desc'        => 'Personaliza visualmente las plantillas de correo de WooCommerce con 3 diseños modernos (Clásica, Moderna, Minimalista), logotipo, colores corporativos y envío de pruebas.',
+				'cat_class'   => 'cat-woocommerce',
+				'icon'        => '📧',
+				'icon_bg'     => 'woo',
+				'keywords'    => 'email correo plantilla plantillas diseñador woocommerce mail pedido enviado'
 			),
 			array(
 				'id'          => 'woo-dni',
@@ -3264,97 +3375,11 @@ class WPAT_Admin {
 				'badge'       => 'Automático',
 				'badge_class' => 'tweak',
 				'desc'        => 'Inyecta un campo obligatorio de DNI/CIF en los datos de facturación de WooCommerce.',
-				'cat_class'   => 'cat-woocommerce cat-woo',
+				'cat_class'   => 'cat-woocommerce',
 				'icon'        => '🆔',
 				'icon_bg'     => 'woo',
 				'keywords'    => 'dni cif nif woocommerce checkout',
 				'has_settings'=> false
-			),
-			array(
-				'id'          => 'woo-catalog',
-				'is_updated'  => true,
-				'title'       => 'Modo Catálogo',
-				'badge'       => 'Configuración',
-				'badge_class' => 'tweak',
-				'desc'        => 'Desactiva la compra de productos, ocultando precios o los botones de añadir al carrito.',
-				'cat_class'   => 'cat-woocommerce cat-woo',
-				'icon'        => '🏷️',
-				'icon_bg'     => 'woo',
-				'keywords'    => 'modo catalogo ocultar precios carrito whatsapp'
-			),
-			array(
-				'id'          => 'woo-sale-badges',
-				'is_updated'  => true,
-				'title'       => 'Badges y Etiquetas de Oferta',
-				'badge'       => 'Configuración',
-				'badge_class' => 'tweak',
-				'desc'        => 'Añade badges y cintas de oferta de alto impacto personalizables (Soft, Pill, Rect, Circle, Corner Ribbon, Price Tag) con cálculo automático de % de descuento.',
-				'cat_class'   => 'cat-woocommerce cat-woo',
-				'icon'        => '🏷️',
-				'icon_bg'     => 'woo',
-				'keywords'    => 'badges oferta etiquetas descuento sale flash ribbon woocommerce'
-			),
-
-			array(
-				'id'          => 'woo-promotions',
-				'is_updated'  => true,
-				'title'       => 'Promociones Dinámicas y Descuentos',
-				'badge'       => 'Configuración',
-				'badge_class' => 'tweak',
-				'desc'        => 'Crea reglas avanzadas de descuento en el carrito: tramos por gasto, 3x2, volumen, descuento global y por método de pago.',
-				'cat_class'   => 'cat-woocommerce cat-woo',
-				'icon'        => '🎁',
-				'icon_bg'     => 'woo',
-				'keywords'    => 'promociones descuentos 3x2 tramos volumen oferta pago woocommerce'
-			),
-			array(
-				'id'          => 'woo-checkout-designer',
-				'is_updated'  => true,
-				'title'       => 'Diseñador de Carrito y Checkout',
-				'badge'       => 'Subpágina',
-				'badge_class' => 'subpage',
-				'desc'        => 'Diseño de Carrito y Checkout de alta conversión con plantillas responsivas (Classic, Express, Accordion, Minimalist, Shop-Style, Slide-Out Drawer Cart) y barra de envío gratis.',
-				'cat_class'   => 'cat-woocommerce cat-woo',
-				'icon'        => '🛒',
-				'icon_bg'     => 'woo',
-				'keywords'    => 'checkout carrito cart diseñador plantillas woocommerce plantilla classic express minimalista acordeon deslizable drawer'
-			),
-			array(
-				'id'          => 'woo-direct-checkout',
-				'is_new'      => false,
-				'title'       => 'Compra Directa & Saltar Carrito',
-				'badge'       => 'Configuración',
-				'badge_class' => 'tweak',
-				'desc'        => 'Redirige automáticamente al checkout al añadir productos, con botón dual "Comprar Ahora", vaciado opcional y filtros.',
-				'cat_class'   => 'cat-woocommerce cat-woo',
-				'icon'        => '⚡',
-				'icon_bg'     => 'woo',
-				'keywords'    => 'compra directa direct checkout saltar carrito comprar ahora 1 clic pago rapido express checkout'
-			),
-			array(
-				'id'          => 'woo-abandoned-cart',
-				'is_new'      => true,
-				'title'       => 'Recuperador de Carritos Abandonados',
-				'badge'       => 'Automatización',
-				'badge_class' => 'config',
-				'desc'        => 'Recupera ventas perdidas enviando secuencias automáticas de correos con tiempos personalizados (minutos, horas, días), fotos de productos, cupones dinámicos y restauración en 1 clic.',
-				'cat_class'   => 'cat-woocommerce cat-woo',
-				'icon'        => '🛒',
-				'icon_bg'     => 'woo',
-				'keywords'    => 'carritos abandonados abandoned cart recuperador emails secuencias recordatorios cupones woocommerce ventas perdidas'
-			),
-
-			array(
-				'id'          => 'woo-email-designer',
-				'is_updated'  => true,
-				'title'       => 'Diseñador de Emails',
-				'badge'       => 'Configuración',
-				'badge_class' => 'config',
-				'desc'        => 'Personaliza visualmente las plantillas de correo de WooCommerce con 3 diseños modernos (Clásica, Moderna, Minimalista), logotipo, colores corporativos y envío de pruebas.',
-				'cat_class'   => 'cat-woocommerce cat-woo',
-				'icon'        => '📧',
-				'icon_bg'     => 'woo',
-				'keywords'    => 'email correo plantilla plantillas diseñador woocommerce mail pedido enviado'
 			),
 			array(
 				'id'          => 'woo-address-autofill',
@@ -3363,10 +3388,22 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Detecta automáticamente la Provincia y sugiere la Población según el Código Postal (España).',
-				'cat_class'   => 'cat-woocommerce cat-woo',
+				'cat_class'   => 'cat-woocommerce',
 				'icon'        => '📍',
 				'icon_bg'     => 'woo',
 				'keywords'    => 'autocompletado codigo postal provincia poblacion españa woocommerce checkout'
+			),
+			array(
+				'id'          => 'woo-catalog',
+				'is_updated'  => true,
+				'title'       => 'Modo Catálogo',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Desactiva la compra de productos, ocultando precios o los botones de añadir al carrito.',
+				'cat_class'   => 'cat-woocommerce',
+				'icon'        => '🏷️',
+				'icon_bg'     => 'woo',
+				'keywords'    => 'modo catalogo ocultar precios carrito whatsapp'
 			),
 			array(
 				'id'          => 'woo-zoom',
@@ -3375,23 +3412,13 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Desactiva de forma independiente funciones nativas de la galería de producto como Zoom, Lightbox o Slider.',
-				'cat_class'   => 'cat-woocommerce cat-woo',
+				'cat_class'   => 'cat-woocommerce',
 				'icon'        => '🔍',
 				'icon_bg'     => 'woo',
 				'keywords'    => 'woo zoom galeria lightbox slider desactivar'
 			),
-			array(
-				'id'          => 'woo-variation-swatches',
-				'is_updated'  => true,
-				'title'       => 'Swatches de Variación',
-				'badge'       => 'Subpágina',
-				'badge_class' => 'subpage',
-				'desc'        => 'Transforma desplegables de variaciones en botones visuales de color, imagen o etiqueta.',
-				'cat_class'   => 'cat-woocommerce cat-woo',
-				'icon'        => '🎨',
-				'icon_bg'     => 'woo',
-				'keywords'    => 'swatches variaciones botones color imagen atributos'
-			),
+
+			// 2. MARKETING (5)
 			array(
 				'id'          => 'quick-pay',
 				'is_new'      => true,
@@ -3399,13 +3426,61 @@ class WPAT_Admin {
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
 				'desc'        => 'Vende servicios, cursos, productos digitales, físicos y suscripciones sin WooCommerce con Stripe, Redsys TPV, Bizum, PayPal y facturación PDF.',
-				'cat_class'   => 'cat-woocommerce cat-woo cat-tools cat-performance',
+				'cat_class'   => 'cat-marketing',
 				'icon'        => '💳',
 				'icon_bg'     => 'woo',
 				'keywords'    => 'venta directa pagos rapidos stripe redsys bizum paypal checkout sin woocommerce infoproductos servicios compras pedidos facturas cupones quick pay'
 			),
+			array(
+				'id'          => 'whatsapp',
+				'is_updated'  => true,
+				'title'       => 'Botón Flotante WhatsApp',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Añade un botón flotante directo de contacto por WhatsApp en la esquina de tu sitio web.',
+				'cat_class'   => 'cat-marketing',
+				'icon'        => '💬',
+				'icon_bg'     => 'woo',
+				'keywords'    => 'whatsapp boton flotante contacto chat'
+			),
+			array(
+				'id'          => 'qr-generator',
+				'is_new'      => true,
+				'title'       => 'Generador de Códigos QR',
+				'badge'       => 'Subpágina',
+				'badge_class' => 'subpage',
+				'desc'        => 'Genera códigos QR dinámicos para WhatsApp, enlaces directos, Wi-Fi, vCard, emails y pagos con previsualización en vivo y descarga PNG/SVG.',
+				'cat_class'   => 'cat-marketing',
+				'icon'        => '📱',
+				'icon_bg'     => 'perf',
+				'keywords'    => 'qr codigos qr generador whatsapp enlace wifi vcard bizum pago svg png'
+			),
+			array(
+				'id'          => 'reading-progress',
+				'is_updated'  => true,
+				'title'       => 'Progreso de Lectura',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Muestra una barra de progreso superior animada al hacer scroll en artículos del blog.',
+				'cat_class'   => 'cat-marketing',
+				'icon'        => '📏',
+				'icon_bg'     => 'perf',
+				'keywords'    => 'barra progreso lectura scroll blog'
+			),
+			array(
+				'id'          => 'integrations',
+				'is_updated'  => true,
+				'title'       => 'Integraciones & Scripts',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Inyecta código de Google Analytics, Tag Manager, Facebook Pixel y scripts en Head/Body sin plugins.',
+				'cat_class'   => 'cat-marketing',
+				'icon'        => '🔗',
+				'icon_bg'     => 'admin',
+				'keywords'    => 'integraciones analytics tag manager pixel scripts head body'
+			),
 
-			// SEGURIDAD (6)
+			// 3. SEGURIDAD (6)
 			array(
 				'id'          => 'security-hardening',
 				'is_updated'  => true,
@@ -3413,7 +3488,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Protección activa contra inyecciones PHP, desactivación de XML-RPC, enumeración de usuarios y ocultación de versión.',
-				'cat_class'   => 'cat-security cat-sec',
+				'cat_class'   => 'cat-security',
 				'icon'        => '🛡️',
 				'icon_bg'     => 'sec',
 				'keywords'    => 'seguridad hardening xmlrpc uploads php usuarios edicion'
@@ -3425,7 +3500,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Cambia la URL nativa wp-login.php por un slug personalizado e incluye captcha anti fuerza bruta.',
-				'cat_class'   => 'cat-security cat-sec',
+				'cat_class'   => 'cat-security',
 				'icon'        => '🔐',
 				'icon_bg'     => 'sec',
 				'keywords'    => 'ocultar login acceso wp-login slug captcha'
@@ -3437,7 +3512,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Limita solicitudes maliciosas por IP por segundo y bloquea bots abusivos o ataques DDoS.',
-				'cat_class'   => 'cat-security cat-sec',
+				'cat_class'   => 'cat-security',
 				'icon'        => '🤖',
 				'icon_bg'     => 'sec',
 				'keywords'    => 'bot blocker ddos ip whitelist solicitudes limite'
@@ -3449,23 +3524,11 @@ class WPAT_Admin {
 				'badge'       => 'Automático',
 				'badge_class' => 'tweak',
 				'desc'        => 'Protección Honeypot invisible sin captchas molestos para comentarios y formularios.',
-				'cat_class'   => 'cat-security cat-sec',
+				'cat_class'   => 'cat-security',
 				'icon'        => '🚫',
 				'icon_bg'     => 'sec',
 				'keywords'    => 'antispam honeypot comentarios formularios',
 				'has_settings'=> false
-			),
-			array(
-				'id'          => 'conflict-detector',
-				'is_updated'  => true,
-				'title'       => 'Detector de Conflictos JS/CSS',
-				'badge'       => 'Configuración',
-				'badge_class' => 'tweak',
-				'desc'        => 'Supervisa errores de Javascript en la consola y problemas de carga de scripts de plugins.',
-				'cat_class'   => 'cat-security cat-sec',
-				'icon'        => '⚠️',
-				'icon_bg'     => 'sec',
-				'keywords'    => 'conflictos js css errores consola depuracion'
 			),
 			array(
 				'id'          => 'ssl-fixer',
@@ -3474,10 +3537,36 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Fuerza redirección HTTPS y repara automáticamente imágenes o scripts cargados por HTTP.',
-				'cat_class'   => 'cat-security cat-sec',
+				'cat_class'   => 'cat-security',
 				'icon'        => '🔒',
 				'icon_bg'     => 'sec',
 				'keywords'    => 'ssl https contenido mixto redireccion 301'
+			),
+			array(
+				'id'          => 'conflict-detector',
+				'is_updated'  => true,
+				'title'       => 'Detector de Conflictos JS/CSS',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Supervisa errores de Javascript en la consola y problemas de carga de scripts de plugins.',
+				'cat_class'   => 'cat-security',
+				'icon'        => '⚠️',
+				'icon_bg'     => 'sec',
+				'keywords'    => 'conflictos js css errores consola depuracion'
+			),
+
+			// 4. LEGAL & PRIVACIDAD (3)
+			array(
+				'id'          => 'legal-pages',
+				'is_new'      => true,
+				'title'       => 'Textos Legales RGPD / LSSI-CE',
+				'badge'       => 'Subpágina',
+				'badge_class' => 'subpage',
+				'desc'        => 'Generador dinámico de Aviso Legal, Privacidad, Cookies, Condiciones de Venta (WooCommerce) y Cláusulas para formularios con shortcodes.',
+				'cat_class'   => 'cat-legal',
+				'icon'        => '⚖️',
+				'icon_bg'     => 'sec',
+				'keywords'    => 'textos legales aviso legal privacidad cookies rgpd lssi clausulas formularios terminos condiciones venta devoluciones'
 			),
 			array(
 				'id'          => 'cookie-consent',
@@ -3486,22 +3575,10 @@ class WPAT_Admin {
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
 				'desc'        => 'Banner legal RGPD/AEPD con Google Consent Mode v2, bloqueo previo de scripts, modal de preferencias y escáner inteligente de cookies.',
-				'cat_class'   => 'cat-security cat-sec cat-performance cat-perf cat-tools',
+				'cat_class'   => 'cat-legal',
 				'icon'        => '🍪',
 				'icon_bg'     => 'sec',
 				'keywords'    => 'cookies rgpd gdpr banner consentimiento consent mode v2 analytics aepd legal aviso privacidad'
-			),
-			array(
-				'id'          => 'legal-pages',
-				'is_new'      => true,
-				'title'       => 'Textos Legales RGPD / LSSI-CE',
-				'badge'       => 'Subpágina',
-				'badge_class' => 'subpage',
-				'desc'        => 'Generador dinámico de Aviso Legal, Privacidad, Cookies, Condiciones de Venta (WooCommerce) y Cláusulas para formularios con shortcodes.',
-				'cat_class'   => 'cat-security cat-sec cat-tools',
-				'icon'        => '⚖️',
-				'icon_bg'     => 'sec',
-				'keywords'    => 'textos legales aviso legal privacidad cookies rgpd lssi clausulas formularios terminos condiciones venta devoluciones'
 			),
 			array(
 				'id'          => 'maintenance-mode',
@@ -3510,13 +3587,13 @@ class WPAT_Admin {
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
 				'desc'        => 'Página de mantenimiento o Coming Soon con bypass por IP/rol, enlace secreto con cookie para clientes y respuesta SEO 503/200.',
-				'cat_class'   => 'cat-security cat-sec cat-tools',
+				'cat_class'   => 'cat-legal',
 				'icon'        => '🚧',
 				'icon_bg'     => 'sec',
 				'keywords'    => 'mantenimiento coming soon proximamente construccion bypass whitelist 503 seo'
 			),
 
-			// RENDIMIENTO & SEO (7)
+			// 5. RENDIMIENTO (5)
 			array(
 				'id'          => 'performance',
 				'is_updated'  => true,
@@ -3524,23 +3601,11 @@ class WPAT_Admin {
 				'badge'       => 'Automático',
 				'badge_class' => 'tweak',
 				'desc'        => 'Limpieza de cabeceras WP, control de Heartbeat API, límites de revisiones y desactivación de emojis.',
-				'cat_class'   => 'cat-performance cat-perf',
+				'cat_class'   => 'cat-performance',
 				'icon'        => '⚡',
 				'icon_bg'     => 'perf',
 				'keywords'    => 'rendimiento performance heartbeat emojis cabeceras',
 				'has_settings'=> false
-			),
-			array(
-				'id'          => 'disable-comments',
-				'is_updated'  => true,
-				'title'       => 'Deshabilitar Comentarios',
-				'badge'       => 'Configuración',
-				'badge_class' => 'tweak',
-				'desc'        => 'Desactiva globalmente o por tipos de contenido los comentarios, trackbacks y widgets.',
-				'cat_class'   => 'cat-performance cat-perf',
-				'icon'        => '💬',
-				'icon_bg'     => 'perf',
-				'keywords'    => 'deshabilitar comentarios trackbacks spam'
 			),
 			array(
 				'id'          => 'image-optimizer',
@@ -3549,7 +3614,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Compresión en lote y conversión automática a formato WebP de nueva generación al subir imágenes.',
-				'cat_class'   => 'cat-performance cat-perf',
+				'cat_class'   => 'cat-performance',
 				'icon'        => '🖼️',
 				'icon_bg'     => 'perf',
 				'keywords'    => 'optimizacion imagenes webp compresion biblioteca'
@@ -3561,7 +3626,7 @@ class WPAT_Admin {
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
 				'desc'        => 'Renombra archivos e imágenes de la Biblioteca de Medios en disco, actualizando miniaturas, metadatos y enlaces en posts/páginas.',
-				'cat_class'   => 'cat-performance cat-perf cat-tools',
+				'cat_class'   => 'cat-performance',
 				'icon'        => '🏷️',
 				'icon_bg'     => 'perf',
 				'keywords'    => 'renombrar medios archivos fotos media renamer imagenes seo uploads'
@@ -3573,12 +3638,26 @@ class WPAT_Admin {
 				'badge'       => 'Automático',
 				'badge_class' => 'tweak',
 				'desc'        => 'Permite la subida segura de archivos vectoriales SVG a la biblioteca multimedia con sanitización.',
-				'cat_class'   => 'cat-performance cat-perf',
+				'cat_class'   => 'cat-performance',
 				'icon'        => '📐',
 				'icon_bg'     => 'perf',
 				'keywords'    => 'svg vectorial biblioteca medios soporte',
 				'has_settings'=> false
 			),
+			array(
+				'id'          => 'disable-comments',
+				'is_updated'  => true,
+				'title'       => 'Deshabilitar Comentarios',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Desactiva globalmente o por tipos de contenido los comentarios, trackbacks y widgets.',
+				'cat_class'   => 'cat-performance',
+				'icon'        => '💬',
+				'icon_bg'     => 'perf',
+				'keywords'    => 'deshabilitar comentarios trackbacks spam'
+			),
+
+			// 6. SEO (2)
 			array(
 				'id'          => 'seo',
 				'is_updated'  => true,
@@ -3586,7 +3665,7 @@ class WPAT_Admin {
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
 				'desc'        => 'Campos SEO en el editor (título, meta descripción, noindex), previsualización de Google y metadatos Open Graph.',
-				'cat_class'   => 'cat-performance cat-perf',
+				'cat_class'   => 'cat-seo',
 				'icon'        => '🚀',
 				'icon_bg'     => 'perf',
 				'keywords'    => 'seo optimizacion meta titulos auditoria alt'
@@ -3598,25 +3677,13 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Genera automáticamente un sitemap XML dinámico en la raíz (/sitemap.xml) excluyendo contenido noindex.',
-				'cat_class'   => 'cat-performance cat-perf cat-seo',
+				'cat_class'   => 'cat-seo',
 				'icon'        => '🗺️',
 				'icon_bg'     => 'perf',
 				'keywords'    => 'sitemap xml seo sitemaps noindex'
 			),
-			array(
-				'id'          => 'reading-progress',
-				'is_updated'  => true,
-				'title'       => 'Progreso de Lectura',
-				'badge'       => 'Configuración',
-				'badge_class' => 'tweak',
-				'desc'        => 'Muestra una barra de progreso superior animada al hacer scroll en artículos del blog.',
-				'cat_class'   => 'cat-performance cat-perf',
-				'icon'        => '📏',
-				'icon_bg'     => 'perf',
-				'keywords'    => 'barra progreso lectura scroll blog'
-			),
 
-			// HERRAMIENTAS (6)
+			// 7. HERRAMIENTAS (4)
 			array(
 				'id'          => 'snippets',
 				'is_updated'  => true,
@@ -3666,44 +3733,8 @@ class WPAT_Admin {
 				'icon_bg'     => 'perf',
 				'keywords'    => 'accesibilidad fuente contraste lectura boton flotante'
 			),
-			array(
-				'id'          => 'integrations',
-				'is_updated'  => true,
-				'title'       => 'Integraciones & Scripts',
-				'badge'       => 'Configuración',
-				'badge_class' => 'tweak',
-				'desc'        => 'Inyecta código de Google Analytics, Tag Manager, Facebook Pixel y scripts en Head/Body sin plugins.',
-				'cat_class'   => 'cat-tools',
-				'icon'        => '🔗',
-				'icon_bg'     => 'admin',
-				'keywords'    => 'integraciones analytics tag manager pixel scripts head body'
-			),
-			array(
-				'id'          => 'whatsapp',
-				'is_updated'  => true,
-				'title'       => 'Botón Flotante WhatsApp',
-				'badge'       => 'Configuración',
-				'badge_class' => 'tweak',
-				'desc'        => 'Añade un botón flotante directo de contacto por WhatsApp en la esquina de tu sitio web.',
-				'cat_class'   => 'cat-tools',
-				'icon'        => '💬',
-				'icon_bg'     => 'woo',
-				'keywords'    => 'whatsapp boton flotante contacto chat'
-			),
-			array(
-				'id'          => 'qr-generator',
-				'is_new'      => true,
-				'title'       => 'Generador de Códigos QR',
-				'badge'       => 'Subpágina',
-				'badge_class' => 'subpage',
-				'desc'        => 'Genera códigos QR dinámicos para WhatsApp, enlaces directos, Wi-Fi, vCard, emails y pagos con previsualización en vivo y descarga PNG/SVG.',
-				'cat_class'   => 'cat-tools',
-				'icon'        => '📱',
-				'icon_bg'     => 'perf',
-				'keywords'    => 'qr codigos qr generador whatsapp enlace wifi vcard bizum pago svg png'
-			),
 
-			// SISTEMA & ADMIN (8)
+			// 8. SISTEMA & ADMIN (9)
 			array(
 				'id'          => 'login-customizer',
 				'is_updated'  => true,
@@ -3711,7 +3742,7 @@ class WPAT_Admin {
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
 				'desc'        => 'Personaliza visualmente la pantalla de acceso wp-login.php con tu logotipo, fondo personalizado, colores corporativos y textos.',
-				'cat_class'   => 'cat-system cat-admin cat-security cat-sec',
+				'cat_class'   => 'cat-system',
 				'icon'        => '🎨',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'personalizador login customizer wp-login acceso logo fondo imagen color inicio sesion'
@@ -3723,7 +3754,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Configura rápidamente zona horaria, enlaces permanentes, página de inicio y limpieza inicial.',
-				'cat_class'   => 'cat-system cat-admin',
+				'cat_class'   => 'cat-system',
 				'icon'        => '⚙️',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'configuracion inicial sitio permalinks zona horaria'
@@ -3735,7 +3766,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Sustituye el Escritorio estándar por un panel de control limpio con accesos rápidos y estadísticas.',
-				'cat_class'   => 'cat-system cat-admin',
+				'cat_class'   => 'cat-system',
 				'icon'        => '📊',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'escritorio personalizado limpiador widgets soporte'
@@ -3747,7 +3778,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Modo Marca Blanca para agencias: oculta las menciones de WP Agency Toolkit a los clientes final.',
-				'cat_class'   => 'cat-system cat-admin',
+				'cat_class'   => 'cat-system',
 				'icon'        => '🎭',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'marca blanca marca agencia huella silent skin',
@@ -3760,7 +3791,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Oculta la barra superior negra de WordPress y bloquea el acceso a wp-admin a clientes/suscriptores.',
-				'cat_class'   => 'cat-system cat-admin',
+				'cat_class'   => 'cat-system',
 				'icon'        => '🚫',
 				'icon_bg'     => 'sec',
 				'keywords'    => 'restringir barra admin wp-admin acceso clientes',
@@ -3773,7 +3804,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Servicio seguro de envío de correo SMTP con soporte TLS/SSL y comprobación de envío.',
-				'cat_class'   => 'cat-system cat-admin',
+				'cat_class'   => 'cat-system',
 				'icon'        => '📧',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'smtp correo envio email servidor tls ssl'
@@ -3785,7 +3816,7 @@ class WPAT_Admin {
 				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
 				'desc'        => 'Importador masivo de kits de maquetación de Envato Elements y plantillas listas para Elementor.',
-				'cat_class'   => 'cat-system cat-admin',
+				'cat_class'   => 'cat-system',
 				'icon'        => '📥',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'importador kits plantillas envato elementor'
@@ -3797,7 +3828,7 @@ class WPAT_Admin {
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
 				'desc'        => 'Monitor en tiempo real de debug.log con detección de severidades, stack traces colapsables, filtrado y vaciado.',
-				'cat_class'   => 'cat-system cat-admin cat-tools',
+				'cat_class'   => 'cat-system',
 				'icon'        => '📜',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'logs debug error fatal warning visor depuracion monitor registro errores'
@@ -3809,7 +3840,7 @@ class WPAT_Admin {
 				'badge'       => 'Subpágina',
 				'badge_class' => 'subpage',
 				'desc'        => 'Administra, crea, clona y audita roles de usuario y permisos de WordPress y WooCommerce con matriz visual y protección anti-bloqueo.',
-				'cat_class'   => 'cat-system cat-admin cat-tools',
+				'cat_class'   => 'cat-system',
 				'icon'        => '👥',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'roles permisos capabilities usuarios roles perfil editor administrador permisos capacidades clonar reset'
@@ -3821,7 +3852,7 @@ class WPAT_Admin {
 				'badge'       => 'Próximamente',
 				'badge_class' => 'warning',
 				'desc'        => 'Workspace editorial SaaS completo con editor WYSIWYG moderno, gestión simplificada de CPTs y optimización SEO en tiempo real.',
-				'cat_class'   => 'cat-system cat-admin cat-tools',
+				'cat_class'   => 'cat-system',
 				'icon'        => '✨',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'client studio diseno saas tablas listados redaccion entradas productos cpts notion ghost wysiwyg editores',
@@ -3834,7 +3865,7 @@ class WPAT_Admin {
 				'badge'       => 'Herramienta',
 				'badge_class' => 'subpage',
 				'desc'        => 'Limpieza profunda de la base de datos, detector de conflictos, escaneo de imágenes huérfanas e informes.',
-				'cat_class'   => 'cat-system cat-admin',
+				'cat_class'   => 'cat-system',
 				'icon'        => '🛠️',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'salud herramientas base de datos imagenes no usadas detector conflictos',

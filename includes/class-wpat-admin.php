@@ -42,6 +42,8 @@ class WPAT_Admin {
 
 		// Acciones AJAX para Módulos y Base de Datos
 		add_action( 'wp_ajax_wpat_toggle_module', array( $this, 'ajax_toggle_module' ) );
+		add_action( 'wp_ajax_wpat_load_module_view', array( $this, 'ajax_load_module_view' ) );
+		add_action( 'wp_ajax_wpat_load_hub_view', array( $this, 'ajax_load_hub_view' ) );
 		add_action( 'wp_ajax_wpat_cleanup_database', array( $this, 'ajax_cleanup_database' ) );
 		add_action( 'wp_ajax_wpat_get_health_status', array( $this, 'ajax_get_health_status' ) );
 		add_action( 'wp_ajax_wpat_scan_unused_images', array( $this, 'ajax_scan_unused_images' ) );
@@ -2143,6 +2145,192 @@ class WPAT_Admin {
 	}
 
 	/**
+	 * Carga asíncrona (AJAX / SPA) de la vista de configuración de un módulo individual.
+	 */
+	public function ajax_load_module_view() {
+		if ( ! check_ajax_referer( 'wpat_save_settings_action', 'security', false ) ) {
+			wp_send_json_error( array( 'message' => 'Error de seguridad (nonce inválido).' ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
+		}
+
+		$mod_id   = isset( $_POST['mod_id'] ) ? sanitize_key( $_POST['mod_id'] ) : '';
+		$cat      = isset( $_POST['cat'] ) ? sanitize_key( $_POST['cat'] ) : 'all';
+		$settings = WPAT_Main::get_instance()->get_settings();
+
+		if ( empty( $mod_id ) ) {
+			wp_send_json_error( array( 'message' => 'Módulo no especificado.' ) );
+		}
+
+		ob_start();
+		?>
+		<div class="wpat-back-bar" style="margin: 0 0 20px 0; display: flex; align-items: center; justify-content: space-between; background: var(--wpat-card-bg, #fff); padding: 12px 20px; border-radius: 8px; border: 1px solid var(--wpat-border, #dcdcde); box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+			<a href="<?php echo esc_url( add_query_arg( array( 'cat' => $cat ), admin_url( 'admin.php?page=wp-agency-toolkit' ) ) ); ?>" class="button button-secondary wpat-ajax-back-btn" data-cat="<?php echo esc_attr( $cat ); ?>" style="background: #f6f7f7; border-color: #cbd5e1; color: #1e293b; font-weight: 700; border-radius: 6px; height: 34px; line-height: 32px; padding: 0 16px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; cursor: pointer;">
+				<span class="dashicons dashicons-arrow-left-alt" style="font-size: 16px; width: 16px; height: 16px; margin: 0; line-height: 1;"></span> Volver al Centro de Módulos
+			</a>
+			<button type="submit" name="wpat_save_settings" value="1" class="button button-primary" style="background: #2271b1; border-color: #135e96; font-weight: 700; height: 34px; line-height: 32px; padding: 0 20px; border-radius: 6px;">
+				Guardar Cambios
+			</button>
+		</div>
+		<div class="wpat-single-module-standalone-wrapper" style="width: 100%;">
+			<?php $this->render_single_module_standalone_view( $mod_id, $settings ); ?>
+		</div>
+		<?php
+		$html = ob_get_clean();
+
+		wp_send_json_success( array(
+			'html'   => $html,
+			'mod_id' => $mod_id,
+			'cat'    => $cat,
+		) );
+	}
+
+	/**
+	 * Carga asíncrona (AJAX / SPA) de la vista principal del Centro de Módulos (Hub).
+	 */
+	public function ajax_load_hub_view() {
+		if ( ! check_ajax_referer( 'wpat_save_settings_action', 'security', false ) ) {
+			wp_send_json_error( array( 'message' => 'Error de seguridad (nonce inválido).' ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
+		}
+
+		$cat      = isset( $_POST['cat'] ) ? sanitize_key( $_POST['cat'] ) : 'all';
+		$settings = WPAT_Main::get_instance()->get_settings();
+		$_GET['cat'] = $cat;
+
+		ob_start();
+		?>
+		<div id="tab-modules" class="wpat-tab-panel active">
+			<div class="wpat-layout-container" style="display: flex; gap: 20px; align-items: flex-start;">
+				<!-- COLUMNA VERTICAL NAVEGACIÓN (ESCRITORIO) -->
+				<?php
+				$active_cat = in_array( $cat, array( 'all', 'woocommerce', 'marketing', 'security', 'legal', 'performance', 'seo', 'tools', 'system' ), true ) ? $cat : 'all';
+				?>
+				<aside class="wpat-cat-sidebar" style="width: 230px; flex-shrink: 0; background: var(--wpat-card-bg, #fff); border: 1px solid var(--wpat-border, #e2e8f0); border-radius: 12px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+					<div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; padding: 6px 10px 10px 10px; border-bottom: 1px solid var(--wpat-border, #e2e8f0); margin-bottom: 8px;">
+						Categorías
+					</div>
+					<div class="wpat-cat-nav-list" style="display: flex; flex-direction: column; gap: 4px;">
+						<button type="button" class="wpat-cat-item <?php echo ( 'all' === $active_cat ) ? 'active' : ''; ?>" data-cat="all">
+							<span class="wpat-cat-label">📌 Todos</span>
+							<span class="wpat-cat-badge">50</span>
+						</button>
+						<button type="button" class="wpat-cat-item <?php echo ( 'woocommerce' === $active_cat ) ? 'active' : ''; ?>" data-cat="woocommerce">
+							<span class="wpat-cat-label">🛍️ WooCommerce</span>
+							<span class="wpat-cat-badge">16</span>
+						</button>
+						<button type="button" class="wpat-cat-item <?php echo ( 'marketing' === $active_cat ) ? 'active' : ''; ?>" data-cat="marketing">
+							<span class="wpat-cat-label">📣 Marketing</span>
+							<span class="wpat-cat-badge">5</span>
+						</button>
+						<button type="button" class="wpat-cat-item <?php echo ( 'security' === $active_cat ) ? 'active' : ''; ?>" data-cat="security">
+							<span class="wpat-cat-label">🛡️ Seguridad</span>
+							<span class="wpat-cat-badge">6</span>
+						</button>
+						<button type="button" class="wpat-cat-item <?php echo ( 'legal' === $active_cat ) ? 'active' : ''; ?>" data-cat="legal">
+							<span class="wpat-cat-label">⚖️ Legal & Privacidad</span>
+							<span class="wpat-cat-badge">3</span>
+						</button>
+						<button type="button" class="wpat-cat-item <?php echo ( 'performance' === $active_cat ) ? 'active' : ''; ?>" data-cat="performance">
+							<span class="wpat-cat-label">⚡ Rendimiento</span>
+							<span class="wpat-cat-badge">5</span>
+						</button>
+						<button type="button" class="wpat-cat-item <?php echo ( 'seo' === $active_cat ) ? 'active' : ''; ?>" data-cat="seo">
+							<span class="wpat-cat-label">🚀 SEO</span>
+							<span class="wpat-cat-badge">2</span>
+						</button>
+						<button type="button" class="wpat-cat-item <?php echo ( 'tools' === $active_cat ) ? 'active' : ''; ?>" data-cat="tools">
+							<span class="wpat-cat-label">🛠️ Herramientas</span>
+							<span class="wpat-cat-badge">4</span>
+						</button>
+						<button type="button" class="wpat-cat-item <?php echo ( 'system' === $active_cat ) ? 'active' : ''; ?>" data-cat="system">
+							<span class="wpat-cat-label">⚙️ Sistema & Admin</span>
+							<span class="wpat-cat-badge">9</span>
+						</button>
+						<div class="wpat-sidebar-divider"></div>
+						<div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; padding: 6px 10px 4px 10px;">
+							Accesos Directos
+						</div>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=tools' ) ); ?>" class="wpat-cat-direct-link" data-direct-link="tools">
+							<span class="wpat-cat-label">🛠️ Salud & Limpieza BD</span>
+						</a>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=error-log-viewer' ) ); ?>" class="wpat-cat-direct-link" data-direct-link="error-log-viewer">
+							<span class="wpat-cat-label">📜 Visor de Logs</span>
+						</a>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=role-manager' ) ); ?>" class="wpat-cat-direct-link" data-direct-link="role-manager" style="<?php echo ( isset( $settings['role-manager'] ) && '1' === (string) $settings['role-manager'] ) ? '' : 'display:none;'; ?>">
+							<span class="wpat-cat-label">👥 Gestor de Roles</span>
+						</a>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=snippets' ) ); ?>" class="wpat-cat-direct-link" data-direct-link="snippets" style="<?php echo ( isset( $settings['snippets'] ) && '1' === (string) $settings['snippets'] ) ? '' : 'display:none;'; ?>">
+							<span class="wpat-cat-label">💻 Snippets de Código</span>
+						</a>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=envato-importer' ) ); ?>" class="wpat-cat-direct-link" data-direct-link="envato-importer" style="<?php echo ( isset( $settings['envato-importer'] ) && '1' === (string) $settings['envato-importer'] ) ? '' : 'display:none;'; ?>">
+							<span class="wpat-cat-label">📥 Importador Kits Template</span>
+						</a>
+					</div>
+				</aside>
+
+				<!-- SELECTOR DESPLEGABLE MÓVIL (< 768px) -->
+				<div class="wpat-mobile-cat-container" style="display: none; width: 100%; margin-bottom: 15px;">
+					<label for="wpat_mobile_cat_select" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 6px;">Categoría:</label>
+					<select id="wpat_mobile_cat_select" style="width: 100%; height: 38px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 0 12px; font-weight: 600; font-size: 13px; background: #fff;">
+						<option value="all" <?php selected( $active_cat, 'all' ); ?>>📌 Todos (50)</option>
+						<option value="woocommerce" <?php selected( $active_cat, 'woocommerce' ); ?>>🛍️ WooCommerce (16)</option>
+						<option value="marketing" <?php selected( $active_cat, 'marketing' ); ?>>📣 Marketing (5)</option>
+						<option value="security" <?php selected( $active_cat, 'security' ); ?>>🛡️ Seguridad (6)</option>
+						<option value="legal" <?php selected( $active_cat, 'legal' ); ?>>⚖️ Legal & Privacidad (3)</option>
+						<option value="performance" <?php selected( $active_cat, 'performance' ); ?>>⚡ Rendimiento (5)</option>
+						<option value="seo" <?php selected( $active_cat, 'seo' ); ?>>🚀 SEO (2)</option>
+						<option value="tools" <?php selected( $active_cat, 'tools' ); ?>>🛠️ Herramientas (4)</option>
+						<option value="system" <?php selected( $active_cat, 'system' ); ?>>⚙️ Sistema & Admin (9)</option>
+					</select>
+				</div>
+
+				<!-- ÁREA PRINCIPAL CON BUSCADOR Y GRID -->
+				<main class="wpat-main-content" style="flex: 1; min-width: 0;">
+					<div class="wpat-dashboard-toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap; background: var(--wpat-card-bg, #fff); border: 1px solid var(--wpat-border, #e2e8f0); padding: 14px 18px; border-radius: 12px;">
+						<div>
+							<h2 style="margin:0 0 4px 0; font-size:18px; font-weight:700;">Centro de Módulos & Herramientas</h2>
+							<p class="section-desc" style="margin:0; color:#646970; font-size:13px;">Activa o desactiva utilidades de forma independiente para mantener tu sitio rápido y ligero.</p>
+						</div>
+						<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+							<!-- FILTRO POR ESTADO (TODOS / ACTIVOS / INACTIVOS) -->
+							<div class="wpat-status-filter-wrap">
+								<select id="wpat_modules_status_filter" style="height: 36px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 600; padding: 0 12px; background: #fff; cursor: pointer;">
+									<option value="all">⚡ Todos los módulos</option>
+									<option value="active">🟢 Solo Activos</option>
+									<option value="inactive">⚪ Solo Inactivos</option>
+								</select>
+							</div>
+
+							<!-- BUSCADOR EN VIVO -->
+							<div class="wpat-search-box" style="position: relative; min-width: 240px;">
+								<span class="dashicons dashicons-search" style="position: absolute; left: 10px; top: 9px; color: #94a3b8; font-size: 16px;"></span>
+								<input type="text" id="wpat_modules_search_input" placeholder="Buscar módulo..." style="padding-left: 32px; width: 100%; border-radius: 8px; border: 1px solid #cbd5e1; height: 36px; font-size: 13px;" />
+							</div>
+						</div>
+					</div>
+
+					<div class="wpat-modules-grid-container" id="wpat_modules_grid">
+						<?php $this->render_all_modules_grid_cards( $settings ); ?>
+					</div>
+				</main>
+			</div>
+		</div>
+		<?php
+		$html = ob_get_clean();
+
+		wp_send_json_success( array(
+			'html' => $html,
+			'cat'  => $active_cat,
+		) );
+	}
+
+	/**
 	 * Obtiene el conteo de elementos sobrantes de la Base de Datos para limpiar.
 	 *
 	 * @return array Estadísticas de elementos huérfanos/basura.
@@ -3128,20 +3316,17 @@ class WPAT_Admin {
 				}
 				?>
 
-				<?php if ( $is_single_module_view ) : ?>
-					<div class="wpat-back-bar" style="margin: 15px 0 20px 0; display: flex; align-items: center; justify-content: space-between; background: #fff; padding: 12px 20px; border-radius: 8px; border: 1px solid #dcdcde; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-						<a href="<?php echo esc_url( add_query_arg( array( 'cat' => isset( $_GET['cat'] ) ? sanitize_key( $_GET['cat'] ) : '' ), admin_url( 'admin.php?page=wp-agency-toolkit' ) ) ); ?>" class="button button-secondary" style="background: #f6f7f7; border-color: #cbd5e1; color: #1e293b; font-weight: 700; border-radius: 6px; height: 34px; line-height: 32px; padding: 0 16px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
-							<span class="dashicons dashicons-arrow-left-alt" style="font-size: 16px; width: 16px; height: 16px; margin: 0; line-height: 1;"></span> Volver al Centro de Módulos
-						</a>
-						<button type="submit" name="wpat_save_settings" value="1" class="button button-primary" style="background: #2271b1; border-color: #135e96; font-weight: 700; height: 34px; line-height: 32px; padding: 0 20px; border-radius: 6px;">
-							Guardar Cambios
-						</button>
-					</div>
-				<?php endif; ?>
-
 				<div class="wpat-container">
-					<div class="wpat-tabs-content">
+					<div class="wpat-tabs-content" id="wpat_spa_tabs_content">
 						<?php if ( $is_single_module_view ) : ?>
+							<div class="wpat-back-bar" style="margin: 0 0 20px 0; display: flex; align-items: center; justify-content: space-between; background: var(--wpat-card-bg, #fff); padding: 12px 20px; border-radius: 8px; border: 1px solid var(--wpat-border, #dcdcde); box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+								<a href="<?php echo esc_url( add_query_arg( array( 'cat' => isset( $_GET['cat'] ) ? sanitize_key( $_GET['cat'] ) : 'all' ), admin_url( 'admin.php?page=wp-agency-toolkit' ) ) ); ?>" class="button button-secondary wpat-ajax-back-btn" data-cat="<?php echo esc_attr( isset( $_GET['cat'] ) ? sanitize_key( $_GET['cat'] ) : 'all' ); ?>" style="background: #f6f7f7; border-color: #cbd5e1; color: #1e293b; font-weight: 700; border-radius: 6px; height: 34px; line-height: 32px; padding: 0 16px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; cursor: pointer;">
+									<span class="dashicons dashicons-arrow-left-alt" style="font-size: 16px; width: 16px; height: 16px; margin: 0; line-height: 1;"></span> Volver al Centro de Módulos
+								</a>
+								<button type="submit" name="wpat_save_settings" value="1" class="button button-primary" style="background: #2271b1; border-color: #135e96; font-weight: 700; height: 34px; line-height: 32px; padding: 0 20px; border-radius: 6px;">
+									Guardar Cambios
+								</button>
+							</div>
 							<div class="wpat-single-module-standalone-wrapper" style="width: 100%;">
 								<?php $this->render_single_module_standalone_view( $mod_id, $settings ); ?>
 							</div>
@@ -3198,27 +3383,21 @@ class WPAT_Admin {
 											<div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; padding: 6px 10px 4px 10px;">
 												Accesos Directos
 											</div>
-											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=tools' ) ); ?>" class="wpat-cat-direct-link">
+											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=tools' ) ); ?>" class="wpat-cat-direct-link" data-direct-link="tools">
 												<span class="wpat-cat-label">🛠️ Salud & Limpieza BD</span>
 											</a>
-											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=error-log-viewer' ) ); ?>" class="wpat-cat-direct-link">
+											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=error-log-viewer' ) ); ?>" class="wpat-cat-direct-link" data-direct-link="error-log-viewer">
 												<span class="wpat-cat-label">📜 Visor de Logs</span>
 											</a>
-											<?php if ( isset( $settings['role-manager'] ) && '1' === (string) $settings['role-manager'] ) : ?>
-											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=role-manager' ) ); ?>" class="wpat-cat-direct-link">
+											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=role-manager' ) ); ?>" class="wpat-cat-direct-link" data-direct-link="role-manager" style="<?php echo ( isset( $settings['role-manager'] ) && '1' === (string) $settings['role-manager'] ) ? '' : 'display:none;'; ?>">
 												<span class="wpat-cat-label">👥 Gestor de Roles</span>
 											</a>
-											<?php endif; ?>
-											<?php if ( isset( $settings['snippets'] ) && '1' === (string) $settings['snippets'] ) : ?>
-											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=snippets' ) ); ?>" class="wpat-cat-direct-link">
+											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=snippets' ) ); ?>" class="wpat-cat-direct-link" data-direct-link="snippets" style="<?php echo ( isset( $settings['snippets'] ) && '1' === (string) $settings['snippets'] ) ? '' : 'display:none;'; ?>">
 												<span class="wpat-cat-label">💻 Snippets de Código</span>
 											</a>
-											<?php endif; ?>
-											<?php if ( isset( $settings['envato-importer'] ) && '1' === (string) $settings['envato-importer'] ) : ?>
-											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=envato-importer' ) ); ?>" class="wpat-cat-direct-link">
+											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=envato-importer' ) ); ?>" class="wpat-cat-direct-link" data-direct-link="envato-importer" style="<?php echo ( isset( $settings['envato-importer'] ) && '1' === (string) $settings['envato-importer'] ) ? '' : 'display:none;'; ?>">
 												<span class="wpat-cat-label">📥 Importador Kits Template</span>
 											</a>
-											<?php endif; ?>
 										</div>
 									</aside>
 
@@ -3985,7 +4164,7 @@ class WPAT_Admin {
 							<span class="dot"></span> <span class="text"><?php echo ( $is_always_active || $is_active ) ? 'Activo' : 'Inactivo'; ?></span>
 						</span>
 						<?php if ( $has_settings ) : ?>
-							<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'wp-agency-toolkit', 'mod' => $mod['id'], 'cat' => isset( $_GET['cat'] ) ? sanitize_key( $_GET['cat'] ) : '' ), admin_url( 'admin.php' ) ) ); ?>" class="wpat-card-action-btn primary <?php echo ( $is_always_active || $is_active ) ? '' : 'disabled'; ?>">
+							<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'wp-agency-toolkit', 'mod' => $mod['id'], 'cat' => isset( $_GET['cat'] ) ? sanitize_key( $_GET['cat'] ) : '' ), admin_url( 'admin.php' ) ) ); ?>" class="wpat-card-action-btn primary <?php echo ( $is_always_active || $is_active ) ? '' : 'disabled'; ?>" data-mod="<?php echo esc_attr( $mod['id'] ); ?>" data-cat="<?php echo esc_attr( isset( $_GET['cat'] ) ? sanitize_key( $_GET['cat'] ) : 'all' ); ?>">
 								<?php echo ( $mod['id'] === 'tools' ) ? 'Herramientas ⚙️' : 'Ajustes ⚙️'; ?>
 							</a>
 						<?php endif; ?>

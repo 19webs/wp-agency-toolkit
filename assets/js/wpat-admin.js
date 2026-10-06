@@ -212,10 +212,14 @@ jQuery(document).ready(function($) {
 					if (isChecked) {
 						$status.addClass('active').find('.text').text('Activo');
 						$btn.removeClass('disabled');
+						$('[data-direct-link="' + moduleId + '"]').slideDown(150);
+						$('#adminmenu a[href*="wpat-' + moduleId + '"], #adminmenu a[href*="mod=' + moduleId + '"]').closest('li').show();
 						showToast('Módulo activado', false);
 					} else {
 						$status.removeClass('active').find('.text').text('Inactivo');
 						$btn.addClass('disabled');
+						$('[data-direct-link="' + moduleId + '"]').slideUp(150);
+						$('#adminmenu a[href*="wpat-' + moduleId + '"], #adminmenu a[href*="mod=' + moduleId + '"]').closest('li').hide();
 						showToast('Módulo desactivado', 'deactivate');
 					}
 					filterModules();
@@ -230,6 +234,150 @@ jQuery(document).ready(function($) {
 				showToast('Error de conexión al cambiar el módulo.', true);
 			}
 		});
+	});
+
+	// 1.2 Navegación Asíncrona (AJAX / SPA) para Módulos y Hub
+	function adminUrl(path) {
+		var baseUrl = (typeof wpat_object !== 'undefined' && wpat_object.ajax_url) ? wpat_object.ajax_url.replace('/admin-ajax.php', '/') : '/wp-admin/';
+		return baseUrl + path;
+	}
+
+	function initModuleComponents($scope) {
+		if ($.fn.wpColorPicker) {
+			$scope.find('.wpat-color-picker').wpColorPicker();
+		}
+	}
+
+	function loadModuleView(modId, cat, pushState) {
+		if (!modId) return;
+		var $container = $('#wpat_spa_tabs_content');
+		if (!$container.length) {
+			$container = $('.wpat-tabs-content');
+		}
+
+		var nonce = $('#wpat_settings_nonce').val() || (typeof wpat_object !== 'undefined' ? wpat_object.nonce : '');
+		cat = cat || window.wpatActiveCat || 'all';
+
+		$container.css('opacity', '0.5');
+
+		$.ajax({
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
+			type: 'POST',
+			data: {
+				action: 'wpat_load_module_view',
+				security: nonce,
+				mod_id: modId,
+				cat: cat
+			},
+			success: function(response) {
+				$container.css('opacity', '1');
+				if (response.success && response.data && response.data.html) {
+					$container.html(response.data.html);
+
+					var newUrl = adminUrl('admin.php?page=wp-agency-toolkit&mod=' + encodeURIComponent(modId) + '&cat=' + encodeURIComponent(cat));
+					if (pushState !== false) {
+						history.pushState({ wpatView: 'module', mod: modId, cat: cat }, '', newUrl);
+					}
+
+					initModuleComponents($container);
+					window.scrollTo(0, 0);
+				} else {
+					window.location.href = adminUrl('admin.php?page=wp-agency-toolkit&mod=' + encodeURIComponent(modId) + '&cat=' + encodeURIComponent(cat));
+				}
+			},
+			error: function() {
+				window.location.href = adminUrl('admin.php?page=wp-agency-toolkit&mod=' + encodeURIComponent(modId) + '&cat=' + encodeURIComponent(cat));
+			}
+		});
+	}
+
+	function loadHubView(cat, pushState) {
+		var $container = $('#wpat_spa_tabs_content');
+		if (!$container.length) {
+			$container = $('.wpat-tabs-content');
+		}
+
+		var nonce = $('#wpat_settings_nonce').val() || (typeof wpat_object !== 'undefined' ? wpat_object.nonce : '');
+		cat = cat || window.wpatActiveCat || 'all';
+
+		$container.css('opacity', '0.5');
+
+		$.ajax({
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
+			type: 'POST',
+			data: {
+				action: 'wpat_load_hub_view',
+				security: nonce,
+				cat: cat
+			},
+			success: function(response) {
+				$container.css('opacity', '1');
+				if (response.success && response.data && response.data.html) {
+					$container.html(response.data.html);
+
+					var newUrl = adminUrl('admin.php?page=wp-agency-toolkit' + (cat !== 'all' ? '&cat=' + encodeURIComponent(cat) : ''));
+					if (pushState !== false) {
+						history.pushState({ wpatView: 'hub', cat: cat }, '', newUrl);
+					}
+
+					window.wpatActiveCat = cat;
+					window.scrollTo(0, 0);
+				} else {
+					window.location.href = adminUrl('admin.php?page=wp-agency-toolkit' + (cat !== 'all' ? '&cat=' + encodeURIComponent(cat) : ''));
+				}
+			},
+			error: function() {
+				window.location.href = adminUrl('admin.php?page=wp-agency-toolkit' + (cat !== 'all' ? '&cat=' + encodeURIComponent(cat) : ''));
+			}
+		});
+	}
+
+	// Interceptar clics en Ajustes de tarjetas para navegación fluida SPA
+	$(document).on('click', '.wpat-module-grid-card .wpat-card-action-btn.primary:not(.disabled)', function(e) {
+		var href = $(this).attr('href');
+		var modId = $(this).data('mod');
+		if (!modId && href) {
+			var match = href.match(/[?&]mod=([^&]+)/);
+			if (match) modId = match[1];
+		}
+
+		if (modId) {
+			e.preventDefault();
+			var cat = $(this).data('cat') || window.wpatActiveCat || 'all';
+			loadModuleView(modId, cat, true);
+		}
+	});
+
+	// Interceptar clics en Accesos Directos de la barra lateral
+	$(document).on('click', '.wpat-cat-direct-link', function(e) {
+		var href = $(this).attr('href');
+		var modId = $(this).data('direct-link');
+		if (!modId && href) {
+			var match = href.match(/[?&]mod=([^&]+)/);
+			if (match) modId = match[1];
+		}
+
+		if (modId) {
+			e.preventDefault();
+			var cat = window.wpatActiveCat || 'all';
+			loadModuleView(modId, cat, true);
+		}
+	});
+
+	// Interceptar clics en Volver al Centro de Módulos
+	$(document).on('click', '.wpat-ajax-back-btn, .wpat-back-bar a', function(e) {
+		e.preventDefault();
+		var cat = $(this).data('cat') || window.wpatActiveCat || 'all';
+		loadHubView(cat, true);
+	});
+
+	// Manejar botón Atrás / Adelante del navegador
+	window.addEventListener('popstate', function(e) {
+		if (e.state && e.state.wpatView === 'module' && e.state.mod) {
+			loadModuleView(e.state.mod, e.state.cat || 'all', false);
+		} else if (e.state && e.state.wpatView === 'hub') {
+			loadHubView(e.state.cat || 'all', false);
+		}
 	});
 
 	// 1.1 Centro de Módulos (Buscador, Categorías y AJAX Toggle)

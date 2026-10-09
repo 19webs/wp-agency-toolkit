@@ -1520,6 +1520,7 @@ class WPAT_Admin {
 			$new_settings['cookie-consent']                    = isset( $input_settings['cookie-consent'] ) && '1' === $input_settings['cookie-consent'] ? '1' : '0';
 			$new_settings['cookie_consent_gcm']                = isset( $input_settings['cookie_consent_gcm'] ) && '1' === $input_settings['cookie_consent_gcm'] ? '1' : '0';
 			$new_settings['cookie_consent_layout']             = isset( $input_settings['cookie_consent_layout'] ) && in_array( $input_settings['cookie_consent_layout'], array( 'layout-bar', 'layout-floating', 'layout-modal' ), true ) ? $input_settings['cookie_consent_layout'] : 'layout-bar';
+			$new_settings['cookie_consent_floating_pos']       = isset( $input_settings['cookie_consent_floating_pos'] ) && in_array( $input_settings['cookie_consent_floating_pos'], array( 'bottom-left', 'bottom-right' ), true ) ? $input_settings['cookie_consent_floating_pos'] : 'bottom-left';
 			$new_settings['cookie_consent_revoke_badge']       = isset( $input_settings['cookie_consent_revoke_badge'] ) && '1' === $input_settings['cookie_consent_revoke_badge'] ? '1' : '0';
 			$new_settings['cookie_consent_revoke_badge_pos']   = isset( $input_settings['cookie_consent_revoke_badge_pos'] ) && in_array( $input_settings['cookie_consent_revoke_badge_pos'], array( 'bottom-left', 'bottom-right' ), true ) ? $input_settings['cookie_consent_revoke_badge_pos'] : 'bottom-left';
 			$new_settings['cookie_consent_version']            = isset( $input_settings['cookie_consent_version'] ) ? sanitize_text_field( $input_settings['cookie_consent_version'] ) : '1.0';
@@ -12721,6 +12722,7 @@ class WPAT_Admin {
 		$is_active          = isset( $settings['cookie-consent'] ) && '1' === (string) $settings['cookie-consent'];
 		$gcm_enabled        = ! isset( $settings['cookie_consent_gcm'] ) || '1' === (string) $settings['cookie_consent_gcm'];
 		$layout             = isset( $settings['cookie_consent_layout'] ) ? $settings['cookie_consent_layout'] : 'layout-bar';
+		$floating_pos       = isset( $settings['cookie_consent_floating_pos'] ) && 'bottom-right' === $settings['cookie_consent_floating_pos'] ? 'bottom-right' : 'bottom-left';
 		$revoke_badge       = ! isset( $settings['cookie_consent_revoke_badge'] ) || '1' === (string) $settings['cookie_consent_revoke_badge'];
 		$badge_pos          = isset( $settings['cookie_consent_revoke_badge_pos'] ) && 'bottom-right' === $settings['cookie_consent_revoke_badge_pos'] ? 'bottom-right' : 'bottom-left';
 		$policy_version     = isset( $settings['cookie_consent_version'] ) && ! empty( $settings['cookie_consent_version'] ) ? $settings['cookie_consent_version'] : '1.0';
@@ -12828,10 +12830,18 @@ class WPAT_Admin {
 						</div>
 						<div class="wpat-field-group" style="margin-bottom: 16px;">
 							<label for="wpat_cookie_consent_layout" style="font-size: 13px; font-weight: 600; color: #334155; display: block; margin-bottom: 6px;">Posición y Estilo del Banner</label>
-							<select name="wpat_settings[cookie_consent_layout]" id="wpat_cookie_consent_layout" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600;">
+							<select name="wpat_settings[cookie_consent_layout]" id="wpat_cookie_consent_layout" class="regular-text" style="width: 100%; height: 38px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 600;" onchange="var fw = document.getElementById('wpat_cookie_floating_pos_wrap'); if(fw) fw.style.display = (this.value === 'layout-floating') ? 'block' : 'none';">
 								<option value="layout-bar" <?php selected( $layout, 'layout-bar' ); ?>>Barra Inferior Fija (Ancho Completo)</option>
 								<option value="layout-floating" <?php selected( $layout, 'layout-floating' ); ?>>Ventana Flotante en la Esquina Inferior</option>
 								<option value="layout-modal" <?php selected( $layout, 'layout-modal' ); ?>>Modal Centrado con Fondo Bloqueante (Backdrop)</option>
+							</select>
+						</div>
+
+						<div class="wpat-field-group" id="wpat_cookie_floating_pos_wrap" style="margin-bottom: 16px; <?php echo ( 'layout-floating' === $layout ) ? '' : 'display: none;'; ?>">
+							<label for="wpat_cookie_consent_floating_pos" style="font-size: 12.5px; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Lado de la Ventana Flotante</label>
+							<select name="wpat_settings[cookie_consent_floating_pos]" id="wpat_cookie_consent_floating_pos" style="width: 100%; height: 34px; border-radius: 6px; border: 1px solid #cbd5e1;">
+								<option value="bottom-left" <?php selected( $floating_pos, 'bottom-left' ); ?>>Esquina Inferior Izquierda (Predeterminado)</option>
+								<option value="bottom-right" <?php selected( $floating_pos, 'bottom-right' ); ?>>Esquina Inferior Derecha</option>
 							</select>
 						</div>
 

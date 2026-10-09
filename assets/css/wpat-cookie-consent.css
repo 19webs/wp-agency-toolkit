@@ -148,6 +148,7 @@
 
 /* 2. Formato: Tarjeta Flotante (Layout Floating / Box Bottom-Left / Box Bottom-Right) */
 #wpat_cookie_banner.layout-floating,
+#wpat_cookie_banner.layout-floating.bottom-left,
 #wpat_cookie_banner.layout-box-bottom-left {
 	position: fixed !important;
 	bottom: 24px !important;
@@ -165,6 +166,7 @@
 	transform: translateY(30px) !important;
 }
 
+#wpat_cookie_banner.layout-floating.bottom-right,
 #wpat_cookie_banner.layout-box-bottom-right {
 	position: fixed !important;
 	bottom: 24px !important;
@@ -183,6 +185,8 @@
 }
 
 #wpat_cookie_banner.layout-floating.wpat-visible,
+#wpat_cookie_banner.layout-floating.bottom-left.wpat-visible,
+#wpat_cookie_banner.layout-floating.bottom-right.wpat-visible,
 #wpat_cookie_banner.layout-box-bottom-left.wpat-visible,
 #wpat_cookie_banner.layout-box-bottom-right.wpat-visible {
 	transform: translateY(0) !important;

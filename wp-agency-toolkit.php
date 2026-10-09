@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.122
+ * Version:     4.3.123
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.122' );
+define( 'WPAT_VERSION', '4.3.123' );
 define( 'WPAT_FILE', __FILE__ );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_DIR', WPAT_PATH );
@@ -725,6 +725,7 @@ class WPAT_Main {
 				// Opciones de Banner de Cookies y RGPD
 				'cookie_consent_gcm'                 => '1',
 				'cookie_consent_layout'              => 'layout-bar',
+				'cookie_consent_floating_pos'        => 'bottom-left',
 				'cookie_consent_title'               => 'Gestionar Consentimiento de Cookies',
 				'cookie_consent_text'                => 'Utilizamos cookies propias y de terceros para fines analíticos y para mostrarle publicidad personalizada según su navegación. Puede aceptar todas las cookies, rechazarlas o configurar sus preferencias.',
 				'cookie_consent_btn_accept'          => 'Aceptar Todas',

@@ -332,6 +332,11 @@ gtag('consent', 'default', {
 
 		// Configuración de Textos y Estilos
 		$layout        = isset( $settings['cookie_consent_layout'] ) ? $settings['cookie_consent_layout'] : 'layout-bar';
+		$floating_pos  = isset( $settings['cookie_consent_floating_pos'] ) && in_array( $settings['cookie_consent_floating_pos'], array( 'bottom-left', 'bottom-right' ), true ) ? $settings['cookie_consent_floating_pos'] : 'bottom-left';
+		$layout_class  = $layout;
+		if ( 'layout-floating' === $layout ) {
+			$layout_class .= ' ' . $floating_pos;
+		}
 		$title         = isset( $settings['cookie_consent_title'] ) && ! empty( $settings['cookie_consent_title'] ) ? $settings['cookie_consent_title'] : 'Gestionar Consentimiento de Cookies';
 		$text          = isset( $settings['cookie_consent_text'] ) && ! empty( $settings['cookie_consent_text'] ) ? $settings['cookie_consent_text'] : 'Utilizamos cookies propias y de terceros para fines analíticos y para mostrarle publicidad personalizada según su navegación. Puede aceptar todas las cookies, rechazarlas o configurar sus preferencias.';
 		$btn_accept    = isset( $settings['cookie_consent_btn_accept'] ) && ! empty( $settings['cookie_consent_btn_accept'] ) ? $settings['cookie_consent_btn_accept'] : 'Aceptar Todas';
@@ -377,7 +382,7 @@ gtag('consent', 'default', {
 		</style>
 
 		<!-- BANNER PRINCIPAL DE COOKIES -->
-		<div id="wpat_cookie_banner" class="<?php echo esc_attr( $layout ); ?>" role="dialog" aria-labelledby="wpat_cookie_title" aria-describedby="wpat_cookie_desc">
+		<div id="wpat_cookie_banner" class="<?php echo esc_attr( $layout_class ); ?>" role="dialog" aria-labelledby="wpat_cookie_title" aria-describedby="wpat_cookie_desc">
 			<button type="button" class="wpat-cookie-banner-close" aria-label="Cerrar">
 				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
 			</button>

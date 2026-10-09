@@ -207,11 +207,18 @@
 			});
 		});
 
-		// 4. Cerrar Modal
+		// 4. Cerrar Modal y Cerrar Banner
 		document.querySelectorAll('.wpat-cookie-modal-close, .wpat-close-cookie-modal').forEach(function(el) {
 			el.addEventListener('click', function(e) {
 				e.preventDefault();
 				hideModal();
+			});
+		});
+
+		document.querySelectorAll('.wpat-cookie-banner-close').forEach(function(el) {
+			el.addEventListener('click', function(e) {
+				e.preventDefault();
+				hideBanner();
 			});
 		});
 

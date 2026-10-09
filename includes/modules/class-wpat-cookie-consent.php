@@ -378,24 +378,28 @@ gtag('consent', 'default', {
 
 		<!-- BANNER PRINCIPAL DE COOKIES -->
 		<div id="wpat_cookie_banner" class="<?php echo esc_attr( $layout ); ?>" role="dialog" aria-labelledby="wpat_cookie_title" aria-describedby="wpat_cookie_desc">
+			<button type="button" class="wpat-cookie-banner-close" aria-label="Cerrar">
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+			</button>
 			<div class="wpat-cookie-inner">
 				<div class="wpat-cookie-content">
 					<div id="wpat_cookie_title" class="wpat-cookie-title"><?php echo esc_html( $title ); ?></div>
 					<div id="wpat_cookie_desc" class="wpat-cookie-text">
 						<?php echo wp_kses_post( $text ); ?>
-						<?php if ( ! empty( $legal_links ) ) : ?>
-							<div class="wpat-cookie-legal-links-wrap" style="margin-top: 8px;">
-								<?php echo implode( '<span class="wpat-cookie-links-sep"> • </span>', $legal_links ); ?>
-							</div>
-						<?php endif; ?>
 					</div>
 				</div>
 
 				<div class="wpat-cookie-actions">
-					<button type="button" class="wpat-cookie-btn wpat-cookie-btn-settings"><?php echo esc_html( $btn_settings ); ?></button>
-					<button type="button" class="wpat-cookie-btn wpat-cookie-btn-reject"><?php echo esc_html( $btn_reject ); ?></button>
 					<button type="button" class="wpat-cookie-btn wpat-cookie-btn-accept"><?php echo esc_html( $btn_accept ); ?></button>
+					<button type="button" class="wpat-cookie-btn wpat-cookie-btn-reject"><?php echo esc_html( $btn_reject ); ?></button>
+					<button type="button" class="wpat-cookie-btn wpat-cookie-btn-settings"><?php echo esc_html( $btn_settings ); ?></button>
 				</div>
+
+				<?php if ( ! empty( $legal_links ) ) : ?>
+					<div class="wpat-cookie-legal-links-wrap">
+						<?php echo implode( '<span class="wpat-cookie-links-sep"> </span>', $legal_links ); ?>
+					</div>
+				<?php endif; ?>
 			</div>
 		</div>
 

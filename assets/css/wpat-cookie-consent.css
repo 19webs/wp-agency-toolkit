@@ -34,8 +34,30 @@
 	pointer-events: auto;
 }
 
-/* Formatos de Banner */
-/* 1. Barra Inferior */
+/* Botón de cierre en el Banner Principal */
+.wpat-cookie-banner-close {
+	position: absolute;
+	top: 14px;
+	right: 14px;
+	background: transparent;
+	border: none;
+	color: #94a3b8;
+	cursor: pointer;
+	padding: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 6px;
+	transition: all 0.15s ease;
+	z-index: 5;
+}
+
+.wpat-cookie-banner-close:hover {
+	color: #0f172a;
+	background: #f1f5f9;
+}
+
+/* 1. Formato: Barra Inferior (Layout Bar) */
 #wpat_cookie_banner.layout-bar {
 	bottom: 0;
 	left: 0;
@@ -43,7 +65,7 @@
 	width: 100%;
 	background: var(--wpat-cookie-bg);
 	color: var(--wpat-cookie-text);
-	padding: 18px 24px;
+	padding: 16px 24px;
 	box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
 	transform: translateY(100%);
 }
@@ -58,30 +80,72 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 24px;
+	gap: 20px;
 	flex-wrap: wrap;
 }
 
-/* 2. Tarjeta Flotante (Box Esquina) */
+#wpat_cookie_banner.layout-bar .wpat-cookie-banner-close {
+	display: none;
+}
+
+#wpat_cookie_banner.layout-bar .wpat-cookie-content {
+	flex: 1;
+	min-width: 260px;
+}
+
+#wpat_cookie_banner.layout-bar .wpat-cookie-title {
+	font-size: 15px;
+	font-weight: 700;
+	margin: 0 0 4px 0;
+	line-height: 1.3;
+}
+
+#wpat_cookie_banner.layout-bar .wpat-cookie-text {
+	font-size: 12.5px;
+	line-height: 1.45;
+	margin: 0;
+	opacity: 0.95;
+}
+
+#wpat_cookie_banner.layout-bar .wpat-cookie-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+#wpat_cookie_banner.layout-bar .wpat-cookie-legal-links-wrap {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 4px;
+	font-size: 11.5px;
+}
+
+/* 2. Formato: Tarjeta Flotante Esquinas (Box Bottom-Left / Box Bottom-Right) */
 #wpat_cookie_banner.layout-box-bottom-left,
 #wpat_cookie_banner.layout-box-bottom-right {
+	position: fixed;
 	bottom: 24px;
-	max-width: 440px;
 	width: calc(100% - 32px);
-	background: var(--wpat-cookie-bg);
-	color: var(--wpat-cookie-text);
-	padding: 24px;
+	max-width: 460px;
+	background: #ffffff;
+	color: #1e293b;
+	padding: 24px 20px 16px;
 	border-radius: 12px;
-	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+	box-shadow: 0 15px 35px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.04);
+	border: 1px solid #e2e8f0;
 	transform: translateY(30px);
 }
 
 #wpat_cookie_banner.layout-box-bottom-left {
 	left: 20px;
+	right: auto;
 }
 
 #wpat_cookie_banner.layout-box-bottom-right {
 	right: 20px;
+	left: auto;
 }
 
 #wpat_cookie_banner.layout-box-bottom-left.wpat-visible,
@@ -89,18 +153,20 @@
 	transform: translateY(0);
 }
 
-/* 3. Modal Centrado */
+/* 3. Formato: Modal Centrado (Layout Modal) */
 #wpat_cookie_banner.layout-modal {
+	position: fixed;
 	top: 50%;
 	left: 50%;
-	transform: translate(-50%, -40%);
-	max-width: 540px;
+	transform: translate(-50%, -45%);
 	width: calc(100% - 32px);
-	background: var(--wpat-cookie-bg);
-	color: var(--wpat-cookie-text);
-	padding: 28px;
-	border-radius: 16px;
-	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+	max-width: 480px;
+	background: #ffffff;
+	color: #1e293b;
+	padding: 24px 22px 18px;
+	border-radius: 12px;
+	box-shadow: 0 20px 45px rgba(0, 0, 0, 0.28);
+	border: 1px solid #e2e8f0;
 }
 
 #wpat_cookie_banner.layout-modal.wpat-visible {
@@ -113,8 +179,8 @@
 	left: 0;
 	right: 0;
 	bottom: 0;
-	background: rgba(15, 23, 42, 0.6);
-	backdrop-filter: blur(3px);
+	background: rgba(15, 23, 42, 0.65);
+	backdrop-filter: blur(4px);
 	z-index: 9999998;
 	opacity: 0;
 	pointer-events: none;
@@ -126,84 +192,102 @@
 	pointer-events: auto;
 }
 
-/* Contenido del Texto del Banner */
-.wpat-cookie-content {
-	flex: 1;
-	min-width: 260px;
-}
-
-.wpat-cookie-title {
+/* Estilos de Contenido para Tarjeta Flotante y Modal Centrado */
+#wpat_cookie_banner.layout-box-bottom-left .wpat-cookie-title,
+#wpat_cookie_banner.layout-box-bottom-right .wpat-cookie-title,
+#wpat_cookie_banner.layout-modal .wpat-cookie-title {
 	font-size: 16px;
 	font-weight: 700;
-	margin: 0 0 8px 0;
-	color: inherit;
+	margin: 0 0 12px 0;
+	color: #0f172a;
 	line-height: 1.3;
+	text-align: center;
 }
 
-.wpat-cookie-text {
-	font-size: 13.5px;
-	line-height: 1.5;
-	margin: 0;
-	opacity: 0.9;
+#wpat_cookie_banner.layout-box-bottom-left .wpat-cookie-text,
+#wpat_cookie_banner.layout-box-bottom-right .wpat-cookie-text,
+#wpat_cookie_banner.layout-modal .wpat-cookie-text {
+	font-size: 12px;
+	line-height: 1.55;
+	margin: 0 0 14px 0;
+	color: #475569;
+	text-align: left;
 }
 
-.wpat-cookie-text a {
-	color: var(--wpat-cookie-btn-accept-bg);
-	text-decoration: underline;
+#wpat_cookie_banner.layout-box-bottom-left .wpat-cookie-actions,
+#wpat_cookie_banner.layout-box-bottom-right .wpat-cookie-actions,
+#wpat_cookie_banner.layout-modal .wpat-cookie-actions {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	gap: 8px;
+	margin-bottom: 12px;
 }
 
-/* Botones de Acción del Banner */
-.wpat-cookie-actions {
+#wpat_cookie_banner.layout-box-bottom-left .wpat-cookie-legal-links-wrap,
+#wpat_cookie_banner.layout-box-bottom-right .wpat-cookie-legal-links-wrap,
+#wpat_cookie_banner.layout-modal .wpat-cookie-legal-links-wrap {
 	display: flex;
+	justify-content: center;
 	align-items: center;
-	gap: 10px;
-	flex-wrap: wrap;
+	gap: 14px;
+	margin-top: 4px;
+	font-size: 11.5px;
 }
 
+#wpat_cookie_banner.layout-box-bottom-left .wpat-cookie-legal-link,
+#wpat_cookie_banner.layout-box-bottom-right .wpat-cookie-legal-link,
+#wpat_cookie_banner.layout-modal .wpat-cookie-legal-link {
+	color: #2563eb !important;
+	text-decoration: underline !important;
+	font-size: 11.5px;
+	transition: opacity 0.15s ease;
+}
+
+#wpat_cookie_banner.layout-box-bottom-left .wpat-cookie-legal-link:hover,
+#wpat_cookie_banner.layout-box-bottom-right .wpat-cookie-legal-link:hover,
+#wpat_cookie_banner.layout-modal .wpat-cookie-legal-link:hover {
+	opacity: 0.75;
+}
+
+/* Botones Comunes de Acción */
 .wpat-cookie-btn {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 13px;
+	font-size: 12.5px;
 	font-weight: 700;
-	padding: 10px 18px;
+	padding: 9px 8px;
 	border-radius: 6px;
 	border: 1px solid transparent;
 	cursor: pointer;
 	text-decoration: none;
 	transition: all 0.15s ease-in-out;
 	line-height: 1.2;
+	white-space: nowrap;
 }
 
 .wpat-cookie-btn-accept {
-	background: var(--wpat-cookie-btn-accept-bg);
-	color: var(--wpat-cookie-btn-accept-text);
-	border-color: var(--wpat-cookie-btn-accept-bg);
+	background: var(--wpat-cookie-btn-accept-bg, #2563eb);
+	color: var(--wpat-cookie-btn-accept-text, #ffffff);
+	border-color: var(--wpat-cookie-btn-accept-bg, #2563eb);
 }
 
 .wpat-cookie-btn-accept:hover {
-	filter: brightness(1.1);
+	filter: brightness(1.08);
 }
 
-.wpat-cookie-btn-reject {
-	background: var(--wpat-cookie-btn-reject-bg);
-	color: var(--wpat-cookie-btn-reject-text);
-	border-color: var(--wpat-cookie-btn-reject-bg);
-}
-
-.wpat-cookie-btn-reject:hover {
-	filter: brightness(1.1);
-}
-
+.wpat-cookie-btn-reject,
 .wpat-cookie-btn-settings {
-	background: var(--wpat-cookie-btn-settings-bg);
-	color: var(--wpat-cookie-btn-settings-text);
-	border: 1px solid var(--wpat-cookie-btn-settings-border);
+	background: #f8fafc;
+	color: #1e293b;
+	border: 1px solid #e2e8f0;
 }
 
+.wpat-cookie-btn-reject:hover,
 .wpat-cookie-btn-settings:hover {
-	color: #ffffff;
-	border-color: #ffffff;
+	background: #f1f5f9;
+	border-color: #cbd5e1;
+	color: #0f172a;
 }
 
 /* Modal de Preferencias y Categorías */

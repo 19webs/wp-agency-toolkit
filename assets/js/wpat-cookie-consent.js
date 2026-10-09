@@ -250,6 +250,36 @@
 				showModal();
 			});
 		}
+
+		// 7. Acordeón de Categorías de Cookies en el Modal
+		document.querySelectorAll('.wpat-cookie-cat-header').forEach(function(header) {
+			function toggleAccordion(e) {
+				if (e.target.closest('.wpat-cookie-switch')) {
+					return;
+				}
+				var item = header.closest('.wpat-cookie-cat-item');
+				if (item) {
+					var isOpen = item.classList.contains('open');
+					if (isOpen) {
+						item.classList.remove('open');
+						header.setAttribute('aria-expanded', 'false');
+					} else {
+						item.classList.add('open');
+						header.setAttribute('aria-expanded', 'true');
+					}
+				}
+			}
+
+			header.addEventListener('click', toggleAccordion);
+			header.addEventListener('keydown', function(e) {
+				if (e.key === 'Enter' || e.key === ' ') {
+					if (!e.target.closest('.wpat-cookie-switch')) {
+						e.preventDefault();
+						toggleAccordion(e);
+					}
+				}
+			});
+		});
 	});
 
 })();

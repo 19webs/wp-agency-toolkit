@@ -403,83 +403,114 @@ gtag('consent', 'default', {
 			<div id="wpat_cookie_backdrop"></div>
 		<?php endif; ?>
 
-		<!-- MODAL DE PREFERENCIAS Y CATEGORÍAS -->
+		<!-- MODAL DE PREFERENCIAS Y CATEGORÍAS (ACORDEÓN MODERNO) -->
 		<div id="wpat_cookie_modal" role="dialog" aria-modal="true" aria-labelledby="wpat_modal_title">
 			<div class="wpat-cookie-modal-dialog">
+				<button type="button" class="wpat-cookie-modal-close" aria-label="Cerrar">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+				</button>
+				
 				<div class="wpat-cookie-modal-header">
 					<h3 id="wpat_modal_title">Preferencias de Consentimiento</h3>
-					<button type="button" class="wpat-cookie-modal-close" aria-label="Cerrar">&times;</button>
+					<p class="wpat-cookie-modal-intro">
+						Para ofrecer las mejores experiencias, utilizamos tecnologías como las cookies para almacenar y/o acceder a la información del dispositivo. El consentimiento para estas tecnologías nos permitirá procesar datos como el comportamiento de navegación o las identificaciones únicas en este sitio. No consentir o retirar el consentimiento puede afectar negativamente a ciertas características y funciones.
+					</p>
 				</div>
 
 				<div class="wpat-cookie-modal-body">
-					<!-- Categoría 1: Necesarias -->
+					<!-- Categoría 1: Funcionales / Necesarias -->
 					<div class="wpat-cookie-cat-item">
-						<div class="wpat-cookie-cat-header">
+						<div class="wpat-cookie-cat-header" tabindex="0" role="button" aria-expanded="false">
 							<div class="wpat-cookie-cat-title">
-								<span>🔒 Cookies Técnicas / Necesarias</span>
-								<span style="font-size: 11px; font-weight: 700; color: #16a34a; background: #dcfce7; padding: 2px 8px; border-radius: 10px;">Siempre Activas</span>
+								<span>Funcionales</span>
 							</div>
-							<label class="wpat-cookie-switch">
-								<input type="checkbox" checked disabled>
-								<span class="wpat-cookie-slider"></span>
-							</label>
+							<div class="wpat-cookie-cat-controls">
+								<span class="wpat-cookie-badge-always">Siempre activas</span>
+								<span class="wpat-cookie-chevron">
+									<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+								</span>
+							</div>
 						</div>
-						<p class="wpat-cookie-cat-desc">Son imprescindibles para el funcionamiento técnico de la web (inicio de sesión, cesta de compra, prevención de fraude y seguridad). No almacenan información personal identificable.</p>
+						<div class="wpat-cookie-cat-content">
+							<p class="wpat-cookie-cat-desc">El almacenamiento o acceso técnico es estrictamente necesario para el propósito legítimo de permitir el uso de un servicio específico solicitado explícitamente por el abonado o usuario, o con el único propósito de llevar a cabo la transmisión de una comunicación a través de una red de comunicaciones electrónicas.</p>
+						</div>
 					</div>
 
-					<!-- Categoría 2: Analíticas -->
+					<!-- Categoría 2: Preferencias -->
 					<div class="wpat-cookie-cat-item">
-						<div class="wpat-cookie-cat-header">
+						<div class="wpat-cookie-cat-header" tabindex="0" role="button" aria-expanded="false">
 							<div class="wpat-cookie-cat-title">
-								<span>📊 Cookies Analíticas / Estadísticas</span>
+								<span>Preferencias</span>
 							</div>
-							<label class="wpat-cookie-switch">
-								<input type="checkbox" id="wpat_cookie_cat_analytics">
-								<span class="wpat-cookie-slider"></span>
-							</label>
+							<div class="wpat-cookie-cat-controls">
+								<label class="wpat-cookie-switch" onclick="event.stopPropagation();">
+									<input type="checkbox" id="wpat_cookie_cat_preferences">
+									<span class="wpat-cookie-slider"></span>
+								</label>
+								<span class="wpat-cookie-chevron">
+									<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+								</span>
+							</div>
 						</div>
-						<p class="wpat-cookie-cat-desc">Permiten cuantificar el número de usuarios y realizar la medición y análisis estadístico de la utilización del sitio para mejorar la oferta de productos y servicios.</p>
+						<div class="wpat-cookie-cat-content">
+							<p class="wpat-cookie-cat-desc">El almacenamiento o acceso técnico es necesario para el propósito legítimo de almacenar preferencias no solicitadas por el abonado o usuario (como idioma, visualización o moneda).</p>
+						</div>
 					</div>
 
-					<!-- Categoría 3: Marketing -->
+					<!-- Categoría 3: Estadísticas / Analíticas -->
 					<div class="wpat-cookie-cat-item">
-						<div class="wpat-cookie-cat-header">
+						<div class="wpat-cookie-cat-header" tabindex="0" role="button" aria-expanded="false">
 							<div class="wpat-cookie-cat-title">
-								<span>🎯 Cookies de Marketing y Publicidad</span>
+								<span>Estadísticas</span>
 							</div>
-							<label class="wpat-cookie-switch">
-								<input type="checkbox" id="wpat_cookie_cat_marketing">
-								<span class="wpat-cookie-slider"></span>
-							</label>
+							<div class="wpat-cookie-cat-controls">
+								<label class="wpat-cookie-switch" onclick="event.stopPropagation();">
+									<input type="checkbox" id="wpat_cookie_cat_analytics">
+									<span class="wpat-cookie-slider"></span>
+								</label>
+								<span class="wpat-cookie-chevron">
+									<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+								</span>
+							</div>
 						</div>
-						<p class="wpat-cookie-cat-desc">Almacenan información del comportamiento de los usuarios obtenida a través de la observación continuada de sus hábitos de navegación para mostrar publicidad personalizada.</p>
+						<div class="wpat-cookie-cat-content">
+							<p class="wpat-cookie-cat-desc">El almacenamiento o acceso técnico que se utiliza exclusivamente con fines estadísticos anónimos para cuantificar visitantes y entender cómo interactúan con el sitio.</p>
+						</div>
 					</div>
 
-					<!-- Categoría 4: Preferencias -->
+					<!-- Categoría 4: Marketing -->
 					<div class="wpat-cookie-cat-item">
-						<div class="wpat-cookie-cat-header">
+						<div class="wpat-cookie-cat-header" tabindex="0" role="button" aria-expanded="false">
 							<div class="wpat-cookie-cat-title">
-								<span>⚙️ Cookies de Personalización / Preferencias</span>
+								<span>Marketing</span>
 							</div>
-							<label class="wpat-cookie-switch">
-								<input type="checkbox" id="wpat_cookie_cat_preferences">
-								<span class="wpat-cookie-slider"></span>
-							</label>
+							<div class="wpat-cookie-cat-controls">
+								<label class="wpat-cookie-switch" onclick="event.stopPropagation();">
+									<input type="checkbox" id="wpat_cookie_cat_marketing">
+									<span class="wpat-cookie-slider"></span>
+								</label>
+								<span class="wpat-cookie-chevron">
+									<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+								</span>
+							</div>
 						</div>
-						<p class="wpat-cookie-cat-desc">Permiten recordar información para que el usuario acceda al servicio con determinadas características personalizadas (idioma, aspecto visual o región).</p>
+						<div class="wpat-cookie-cat-content">
+							<p class="wpat-cookie-cat-desc">El almacenamiento o acceso técnico es necesario para crear perfiles de usuario para enviar publicidad personalizada o rastrear al usuario en una web o varias webs con fines de marketing similares.</p>
+						</div>
 					</div>
-
-					<?php if ( ! empty( $legal_links ) ) : ?>
-						<div class="wpat-cookie-modal-links" style="margin-top: 15px; padding-top: 12px; border-top: 1px solid #e2e8f0; font-size: 12px; text-align: center; color: #64748b;">
-							Consulta más detalles en nuestra <?php echo implode( ', ', $legal_links ); ?>.
-						</div>
-					<?php endif; ?>
 				</div>
 
 				<div class="wpat-cookie-modal-footer">
-					<button type="button" class="wpat-cookie-btn wpat-cookie-btn-reject">Rechazar Todas</button>
-					<button type="button" class="wpat-cookie-btn wpat-cookie-btn-settings" id="wpat_cookie_save_selection_btn">Guardar Preferencias</button>
-					<button type="button" class="wpat-cookie-btn wpat-cookie-btn-accept">Aceptar Todas</button>
+					<div class="wpat-cookie-modal-actions">
+						<button type="button" class="wpat-cookie-btn wpat-cookie-btn-accept"><?php echo esc_html( $btn_accept ); ?></button>
+						<button type="button" class="wpat-cookie-btn wpat-cookie-btn-reject"><?php echo esc_html( $btn_reject ); ?></button>
+						<button type="button" class="wpat-cookie-btn wpat-cookie-btn-save" id="wpat_cookie_save_selection_btn">Guardar Preferencias</button>
+					</div>
+					<?php if ( ! empty( $legal_links ) ) : ?>
+						<div class="wpat-cookie-modal-links">
+							<?php echo implode( '<span class="wpat-cookie-links-sep"> • </span>', $legal_links ); ?>
+						</div>
+					<?php endif; ?>
 				</div>
 			</div>
 		</div>

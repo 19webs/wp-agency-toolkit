@@ -6801,6 +6801,93 @@ jQuery(document).ready(function($) {
 		});
 	});
 
+	// =========================================================================
+	// EDITOR DE CAMPOS DE CHECKOUT (WooCommerce) - Event Delegation Global
+	// =========================================================================
+	function reindexCheckoutCustomFields() {
+		var $container = $('#wpat_checkout_fields_container');
+		if (!$container.length) return;
+		$container.find('.wpat-custom-field-row').each(function(idx) {
+			$(this).find('input, select, textarea').each(function() {
+				var name = $(this).attr('name');
+				if (name) {
+					$(this).attr('name', name.replace(/\[checkout_custom_fields\]\[\d+\]/, '[checkout_custom_fields][' + idx + ']'));
+				}
+			});
+		});
+	}
+
+	$(document).on('click', '#wpat_add_checkout_field_btn', function(e) {
+		if (e.wpatHandled) return;
+		e.wpatHandled = true;
+		e.preventDefault();
+
+		var $container = $('#wpat_checkout_fields_container');
+		if (!$container.length) return;
+		$('#wpat_no_custom_fields_msg').hide();
+
+		var index = $container.find('.wpat-custom-field-row').length;
+		var html = '<div class="wpat-custom-field-row" style="background: #ffffff; border: 1px solid var(--wpat-border); padding: 12px 15px; border-radius: 6px; margin-bottom: 10px;">' +
+			'<div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr 1.2fr auto; gap: 10px; align-items: center;">' +
+				'<div><label style="font-size: 11px; display: block; font-weight: 600;">Nombre del Campo (Etiqueta)</label><input type="text" name="wpat_settings[checkout_custom_fields][' + index + '][label]" value="" class="regular-text" placeholder="Ej. Horario de Preferencia" required style="width: 100%;" /></div>' +
+				'<div><label style="font-size: 11px; display: block; font-weight: 600;">Identificador Único (Key)</label><input type="text" name="wpat_settings[checkout_custom_fields][' + index + '][key]" value="" class="regular-text" placeholder="ej. horario_entrega" style="width: 100%;" /></div>' +
+				'<div><label style="font-size: 11px; display: block; font-weight: 600;">Tipo de Campo</label><select name="wpat_settings[checkout_custom_fields][' + index + '][type]" class="wpat-field-type-select" style="width: 100%;"><option value="text">Texto Corto</option><option value="select">Desplegable (Select)</option><option value="radio">Radio (Botones de Opción)</option><option value="textarea">Área de Texto</option><option value="checkbox">Casilla (Checkbox)</option><option value="date">Fecha (Calendario)</option></select></div>' +
+				'<div><label style="font-size: 11px; display: block; font-weight: 600;">Sección</label><select name="wpat_settings[checkout_custom_fields][' + index + '][section]" style="width: 100%;"><option value="billing">Facturación</option><option value="shipping">Envío</option><option value="order">Notas Adicionales</option></select></div>' +
+				'<div><label style="font-size: 11px; display: block; font-weight: 600;">Posición</label><select name="wpat_settings[checkout_custom_fields][' + index + '][position]" style="width: 100%;"><option value="end_of_section">Al final de Sección (Línea 7+)</option><option value="after_email">Después de Email (Línea 1)</option><option value="after_names">Después de Nombre/Apellidos (Línea 2)</option><option value="after_country_state">Después de País/Provincia (Línea 3)</option><option value="after_city_postcode">Después de Población/CP (Línea 4)</option><option value="after_address">Después de Dirección (Línea 5)</option><option value="after_phone">Después de Teléfono (Línea 6)</option><option value="after_company">Después de Empresa</option></select></div>' +
+				'<div><label style="font-size: 11px; display: block; font-weight: 600;">Ancho (Distribución)</label><select name="wpat_settings[checkout_custom_fields][' + index + '][width]" style="width: 100%;"><option value="full">100% (Línea sola)</option><option value="half">50% (Al lado)</option></select></div>' +
+				'<div style="text-align: right; padding-top: 15px; display: flex; gap: 4px; justify-content: flex-end;"><button type="button" class="button button-small wpat-move-up-btn" title="Subir posición">▲</button><button type="button" class="button button-small wpat-move-down-btn" title="Bajar posición">▼</button><button type="button" class="button button-link-delete wpat-remove-field-btn" style="color: #ef4444;" title="Eliminar campo">Eliminar</button></div>' +
+			'</div>' +
+			'<div style="display: flex; gap: 15px; margin-top: 10px; align-items: center;">' +
+				'<label style="font-weight: normal; font-size: 12px;"><input type="checkbox" name="wpat_settings[checkout_custom_fields][' + index + '][required]" value="1" /> Campo Obligatorio</label>' +
+				'<input type="text" name="wpat_settings[checkout_custom_fields][' + index + '][placeholder]" value="" placeholder="Placeholder o texto de ayuda..." style="font-size: 12px; flex-grow: 1;" />' +
+			'</div>' +
+			'<div class="wpat-options-field-wrap" style="margin-top: 10px; display:none;">' +
+				'<label style="font-size: 11px; display: block; font-weight: 600;">Opciones (Una opción por línea):</label>' +
+				'<textarea name="wpat_settings[checkout_custom_fields][' + index + '][options]" rows="2" style="width: 100%; font-size: 12px;" placeholder="Mañana (09:00 - 14:00)\nTarde (16:00 - 20:00)"></textarea>' +
+			'</div>' +
+		'</div>';
+
+		$container.append(html);
+		reindexCheckoutCustomFields();
+	});
+
+	$(document).on('change', '#wpat_checkout_fields_container .wpat-field-type-select', function() {
+		var $row = $(this).closest('.wpat-custom-field-row');
+		var val = $(this).val();
+		$row.find('.wpat-options-field-wrap').toggle(val === 'select' || val === 'radio');
+	});
+
+	$(document).on('click', '#wpat_checkout_fields_container .wpat-move-up-btn', function(e) {
+		e.preventDefault();
+		var $row = $(this).closest('.wpat-custom-field-row');
+		var $prev = $row.prev('.wpat-custom-field-row');
+		if ($prev.length) {
+			$row.insertBefore($prev);
+			reindexCheckoutCustomFields();
+		}
+	});
+
+	$(document).on('click', '#wpat_checkout_fields_container .wpat-move-down-btn', function(e) {
+		e.preventDefault();
+		var $row = $(this).closest('.wpat-custom-field-row');
+		var $next = $row.next('.wpat-custom-field-row');
+		if ($next.length) {
+			$row.insertAfter($next);
+			reindexCheckoutCustomFields();
+		}
+	});
+
+	$(document).on('click', '#wpat_checkout_fields_container .wpat-remove-field-btn', function(e) {
+		e.preventDefault();
+		var $row = $(this).closest('.wpat-custom-field-row');
+		var $container = $('#wpat_checkout_fields_container');
+		$row.remove();
+		reindexCheckoutCustomFields();
+		if ($container.find('.wpat-custom-field-row').length === 0) {
+			$('#wpat_no_custom_fields_msg').show();
+		}
+	});
+
 });
 
 

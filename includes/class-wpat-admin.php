@@ -6671,11 +6671,14 @@ class WPAT_Admin {
 									</div>
 
 									<script>
-									document.addEventListener('DOMContentLoaded', function() {
-										var addBtn = document.getElementById('wpat_add_checkout_field_btn');
-										var container = document.getElementById('wpat_checkout_fields_container');
-										var noMsg = document.getElementById('wpat_no_custom_fields_msg');
-										if (!addBtn || !container) return;
+									(function() {
+										function initCheckoutEditor() {
+											var addBtn = document.getElementById('wpat_add_checkout_field_btn');
+											var container = document.getElementById('wpat_checkout_fields_container');
+											var noMsg = document.getElementById('wpat_no_custom_fields_msg');
+											if (!addBtn || !container) return;
+											if (addBtn.dataset.initialized === 'true') return;
+											addBtn.dataset.initialized = 'true';
 
 										function reindexFields() {
 											var rows = container.querySelectorAll('.wpat-custom-field-row');
@@ -6689,7 +6692,9 @@ class WPAT_Admin {
 											});
 										}
 
-										addBtn.addEventListener('click', function() {
+										addBtn.addEventListener('click', function(e) {
+											if (e.wpatHandled) return;
+											e.wpatHandled = true;
 											if (noMsg) noMsg.style.display = 'none';
 											var index = container.querySelectorAll('.wpat-custom-field-row').length;
 											var html = '<div class="wpat-custom-field-row" style="background: #ffffff; border: 1px solid var(--wpat-border); padding: 12px 15px; border-radius: 6px; margin-bottom: 10px;">' +
@@ -6743,11 +6748,21 @@ class WPAT_Admin {
 												if (row) {
 													row.remove();
 													reindexFields();
+													if (container.querySelectorAll('.wpat-custom-field-row').length === 0 && noMsg) {
+														noMsg.style.display = 'block';
+													}
 												}
 											}
 										});
-									});
-									</script>
+									}
+
+									if (document.readyState === 'loading') {
+										document.addEventListener('DOMContentLoaded', initCheckoutEditor);
+									} else {
+										initCheckoutEditor();
+									}
+								})();
+								</script>
 
 									
 								</div>
@@ -6975,16 +6990,19 @@ class WPAT_Admin {
 									</div>
 
 									<script>
-									document.addEventListener('DOMContentLoaded', function() {
-										var addRuleBtn = document.getElementById('wpat_add_extra_rule_btn');
-										var rulesContainer = document.getElementById('wpat_extra_rules_container');
-										var noRulesMsg = document.getElementById('wpat_no_extra_rules_msg');
-										var searchInput = document.getElementById('wpat_rule_search_input');
-										var expandAllBtn = document.getElementById('wpat_expand_all_rules_btn');
-										var collapseAllBtn = document.getElementById('wpat_collapse_all_rules_btn');
-										var catOptionsHtml = '<?php echo $cat_options_js; ?>';
+									(function() {
+										function initExtraOptionsRules() {
+											var addRuleBtn = document.getElementById('wpat_add_extra_rule_btn');
+											var rulesContainer = document.getElementById('wpat_extra_rules_container');
+											var noRulesMsg = document.getElementById('wpat_no_extra_rules_msg');
+											var searchInput = document.getElementById('wpat_rule_search_input');
+											var expandAllBtn = document.getElementById('wpat_expand_all_rules_btn');
+											var collapseAllBtn = document.getElementById('wpat_collapse_all_rules_btn');
+											var catOptionsHtml = '<?php echo $cat_options_js; ?>';
 
-										if (!rulesContainer) return;
+											if (!rulesContainer) return;
+											if (rulesContainer.dataset.initialized === 'true') return;
+											rulesContainer.dataset.initialized = 'true';
 
 										// 1. Añadir nuevo grupo de reglas (Se abre desplegado para editar)
 										if (addRuleBtn) {
@@ -7224,8 +7242,15 @@ class WPAT_Admin {
 												}
 											}
 										});
-									});
-									</script>
+									}
+
+									if (document.readyState === 'loading') {
+										document.addEventListener('DOMContentLoaded', initExtraOptionsRules);
+									} else {
+										initExtraOptionsRules();
+									}
+								})();
+								</script>
 
 									
 								</div>

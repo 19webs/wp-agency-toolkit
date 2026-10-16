@@ -664,10 +664,19 @@ jQuery(document).ready(function($) {
 		$('#wpat_fm_editor_modal').hide();
 	});
 
-	// Si el explorador ya está desbloqueado en la carga inicial, cargar directorio raíz
-	if ($('#wpat_fm_main_view').is(':visible')) {
-		showFileManager(1200);
-	}
+	// Función global de inicialización (usable tanto en carga normal como vía AJAX/SPA)
+	window.wpatInitFileManager = function() {
+		if ($('#wpat_fm_main_view').is(':visible')) {
+			showFileManager(1200);
+		} else if ($('#wpat_fm_setup_screen').is(':visible')) {
+			if ($('#wpat_fm_qrcode_box').is(':empty')) {
+				$('#wpat_fm_reconfig_btn').trigger('click');
+			}
+		}
+	};
+
+	window.wpatInitFileManager();
 
 });
+
 

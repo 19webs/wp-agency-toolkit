@@ -71,6 +71,24 @@ class WPAT_File_Manager {
 	}
 
 	/**
+	 * Comprueba si un usuario tiene configurado el 2FA en su perfil.
+	 *
+	 * @param int|null $user_id ID del usuario.
+	 * @return bool
+	 */
+	public static function is_user_setup( $user_id = null ) {
+		if ( ! $user_id ) {
+			$user_id = get_current_user_id();
+		}
+		if ( ! $user_id ) {
+			return false;
+		}
+
+		$secret = get_user_meta( $user_id, 'wpat_fm_totp_secret', true );
+		return ! empty( $secret );
+	}
+
+	/**
 	 * Comprueba si la sesión 2FA está actualmente desbloqueada y vigente.
 	 *
 	 * @param int|null $user_id ID del usuario.

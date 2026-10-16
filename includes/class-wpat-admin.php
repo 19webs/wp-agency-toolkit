@@ -15865,6 +15865,11 @@ class WPAT_Admin {
 
 			</div>
 		</div>
+		<script>
+		if (typeof window.wpatInitFileManager === 'function') {
+			window.wpatInitFileManager();
+		}
+		</script>
 		<?php
 	}
 }

@@ -52,9 +52,13 @@ class WPAT_File_Manager {
 		add_action( 'wp_ajax_wpat_fm_delete_item', array( $this, 'ajax_delete_item' ) );
 		add_action( 'wp_ajax_wpat_fm_upload_file', array( $this, 'ajax_upload_file' ) );
 		add_action( 'wp_ajax_wpat_fm_download_item', array( $this, 'ajax_download_item' ) );
+		add_action( 'wp_ajax_wpat_fm_chmod_item', array( $this, 'ajax_chmod_item' ) );
+		add_action( 'wp_ajax_wpat_fm_download_batch', array( $this, 'ajax_download_batch' ) );
+		add_action( 'wp_ajax_wpat_fm_delete_batch', array( $this, 'ajax_delete_batch' ) );
 
 		// Manejar descarga directa binaria si se solicita por GET
 		add_action( 'admin_init', array( $this, 'maybe_handle_direct_download' ) );
+		add_action( 'admin_post_wpat_fm_direct_download', array( $this, 'maybe_handle_direct_download' ) );
 	}
 
 	/* =========================================================================
@@ -475,48 +479,113 @@ class WPAT_File_Manager {
 	 * ========================================================================= */
 
 	/**
+	 * Obtiene las rutas base permitidas para la instalación (ABSPATH y su realpath si difiere por symlinks o junctions).
+	 *
+	 * @return array Lista de rutas absolutas normalizadas sin barra final.
+	 */
+	public static function get_safe_base_paths() {
+		$raw_abspath = wp_normalize_path( untrailingslashit( ABSPATH ) );
+		$bases       = array( $raw_abspath );
+
+		$real = realpath( $raw_abspath );
+		if ( false !== $real ) {
+			$norm_real = wp_normalize_path( untrailingslashit( $real ) );
+			if ( ! in_array( $norm_real, $bases, true ) ) {
+				$bases[] = $norm_real;
+			}
+		}
+
+		return $bases;
+	}
+
+	/**
+	 * Comprueba si una ruta determinada reside estrictamente dentro de un directorio base.
+	 *
+	 * @param string $path Ruta a comprobar.
+	 * @param string $base Ruta base permitida.
+	 * @return bool
+	 */
+	public static function is_path_inside_base( $path, $base ) {
+		$p = wp_normalize_path( untrailingslashit( $path ) );
+		$b = wp_normalize_path( untrailingslashit( $base ) );
+
+		if ( strtolower( $p ) === strtolower( $b ) ) {
+			return true;
+		}
+
+		$b_slash = $b . '/';
+		return 0 === stripos( $p . '/', $b_slash );
+	}
+
+	/**
 	 * Normaliza y valida que una ruta relativa permanezca estrictamente dentro de ABSPATH.
+	 * Soporta de forma transparente symlinks, junctions de Windows y estructuras de hosting cPanel.
 	 *
 	 * @param string $relative_path Ruta relativa proporcionada por el usuario.
 	 * @param bool   $must_exist Si true, verifica que el archivo o carpeta exista actualmente.
 	 * @return string|false Ruta absoluta canónica, o false si intenta escapar de ABSPATH.
 	 */
 	public static function get_safe_path( $relative_path = '', $must_exist = true ) {
-		$base_dir = wp_normalize_path( untrailingslashit( ABSPATH ) );
+		$bases        = self::get_safe_base_paths();
+		$primary_base = $bases[0];
 
 		// Sanitizar ruta relativa limpiando caracteres de control y nulos
 		$clean_rel = str_replace( array( "\0", "\r", "\n" ), '', (string) $relative_path );
 		$clean_rel = ltrim( wp_normalize_path( $clean_rel ), '/' );
 
-		// Construir ruta candidata
-		$candidate = empty( $clean_rel ) ? $base_dir : $base_dir . '/' . $clean_rel;
+		// Prevenir traversal explícito tipo ../ o ..
+		$parts = explode( '/', $clean_rel );
+		foreach ( $parts as $part ) {
+			if ( '..' === $part ) {
+				return false;
+			}
+		}
+
+		$candidate = empty( $clean_rel ) ? $primary_base : $primary_base . '/' . $clean_rel;
 		$candidate = wp_normalize_path( $candidate );
 
 		if ( $must_exist ) {
 			$real = realpath( $candidate );
+			if ( false === $real && count( $bases ) > 1 ) {
+				$alt_candidate = empty( $clean_rel ) ? $bases[1] : $bases[1] . '/' . $clean_rel;
+				$real          = realpath( $alt_candidate );
+			}
+
 			if ( false === $real ) {
 				return false;
 			}
+
 			$real = wp_normalize_path( $real );
-			// Asegurar que la ruta comience con ABSPATH
-			if ( 0 !== strpos( $real, $base_dir ) ) {
-				return false;
+
+			foreach ( $bases as $base ) {
+				if ( self::is_path_inside_base( $real, $base ) ) {
+					return $real;
+				}
 			}
-			return $real;
+
+			return false;
 		}
 
 		// Para archivos a crear que aún no existen, validar el directorio padre
-		$parent = dirname( $candidate );
+		$parent      = dirname( $candidate );
 		$real_parent = realpath( $parent );
+		if ( false === $real_parent && count( $bases ) > 1 ) {
+			$alt_parent  = dirname( $bases[1] . '/' . $clean_rel );
+			$real_parent = realpath( $alt_parent );
+		}
+
 		if ( false === $real_parent ) {
 			return false;
 		}
+
 		$real_parent = wp_normalize_path( $real_parent );
-		if ( 0 !== strpos( $real_parent, $base_dir ) ) {
-			return false;
+		foreach ( $bases as $base ) {
+			if ( self::is_path_inside_base( $real_parent, $base ) ) {
+				return $candidate;
+			}
 		}
 
-		return $candidate;
+		return false;
 	}
 
 	/**
@@ -526,15 +595,17 @@ class WPAT_File_Manager {
 	 * @return string Ruta relativa (ej: "wp-content/themes").
 	 */
 	public static function get_relative_path( $absolute_path ) {
-		$base_dir = wp_normalize_path( untrailingslashit( ABSPATH ) );
-		$norm_abs = wp_normalize_path( $absolute_path );
+		$bases    = self::get_safe_base_paths();
+		$norm_abs = wp_normalize_path( untrailingslashit( $absolute_path ) );
 
-		if ( $norm_abs === $base_dir ) {
-			return '';
-		}
-
-		if ( 0 === strpos( $norm_abs, $base_dir . '/' ) ) {
-			return substr( $norm_abs, strlen( $base_dir ) + 1 );
+		foreach ( $bases as $base ) {
+			if ( strtolower( $norm_abs ) === strtolower( $base ) ) {
+				return '';
+			}
+			$base_slash = $base . '/';
+			if ( 0 === stripos( $norm_abs . '/', $base_slash ) ) {
+				return substr( $norm_abs, strlen( $base ) + 1 );
+			}
 		}
 
 		return '';
@@ -657,7 +728,7 @@ class WPAT_File_Manager {
 	}
 
 	/**
-	 * Determina si la extensión de un archivo admite edición de código.
+	 * Determina si la extensión o nombre de un archivo admite edición y visualización de código.
 	 *
 	 * @param string $filename Nombre del archivo.
 	 * @return bool
@@ -667,9 +738,36 @@ class WPAT_File_Manager {
 		$editable_extensions = array(
 			'php', 'js', 'css', 'html', 'htm', 'json', 'txt', 'md',
 			'xml', 'svg', 'htaccess', 'user.ini', 'env', 'sql', 'log',
-			'yml', 'yaml', 'scss', 'less', 'ini', 'conf'
+			'yml', 'yaml', 'scss', 'less', 'ini', 'conf', 'sh', 'bash',
+			'cfg', 'properties', 'dist'
 		);
-		return in_array( $ext, $editable_extensions, true ) || '.htaccess' === $filename || 'robots.txt' === $filename;
+
+		if ( in_array( $ext, $editable_extensions, true ) ) {
+			return true;
+		}
+
+		$special_filenames = array(
+			'error_log',
+			'.htaccess',
+			'.user.ini',
+			'robots.txt',
+			'php.ini',
+			'license.txt',
+			'readme.html',
+			'wp-config.php',
+		);
+
+		$base = strtolower( basename( $filename ) );
+		if ( in_array( $base, $special_filenames, true ) ) {
+			return true;
+		}
+
+		// Coincidencia para cualquier log del servidor (ej: error_log, debug.log, access_log)
+		if ( substr( $base, -4 ) === '.log' || substr( $base, -4 ) === '_log' || false !== strpos( $base, 'error_log' ) ) {
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
@@ -982,17 +1080,249 @@ class WPAT_File_Manager {
 		$safe_path = self::get_safe_path( $rel_path, true );
 
 		if ( ! $safe_path || ! file_exists( $safe_path ) ) {
-			wp_send_json_error( array( 'message' => __( 'Elemento no encontrado.', 'wp-agency-toolkit' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Elemento no encontrado para descargar.', 'wp-agency-toolkit' ) ) );
 		}
 
 		$nonce = wp_create_nonce( 'wpat_fm_download_' . get_current_user_id() );
 		$download_url = add_query_arg( array(
-			'action'   => 'wpat_fm_direct_download',
-			'path'     => rawurlencode( $rel_path ),
+			'action'         => 'wpat_fm_direct_download',
+			'path'           => rawurlencode( $rel_path ),
 			'download_nonce' => $nonce,
-		), admin_url( 'admin.php' ) );
+		), admin_url( 'admin-post.php' ) );
 
 		wp_send_json_success( array( 'download_url' => $download_url ) );
+	}
+
+	/**
+	 * AJAX: Modifica los permisos (CHMOD) de uno o varios elementos.
+	 */
+	public function ajax_chmod_item() {
+		$this->verify_ajax_access();
+
+		$paths_raw = isset( $_POST['paths'] ) ? (array) $_POST['paths'] : array();
+		if ( empty( $paths_raw ) && isset( $_POST['path'] ) ) {
+			$paths_raw = array( $_POST['path'] );
+		}
+
+		$mode_str  = isset( $_POST['mode'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['mode'] ) ) ) : '';
+		$recursive = isset( $_POST['recursive'] ) && '1' === (string) $_POST['recursive'];
+
+		if ( empty( $paths_raw ) ) {
+			wp_send_json_error( array( 'message' => __( 'No se ha indicado ningún elemento para modificar permisos.', 'wp-agency-toolkit' ) ) );
+		}
+
+		// Validar formato octal (ej: 0644, 0755, 644, 755)
+		if ( ! preg_match( '/^0?[0-7]{3}$/', $mode_str ) ) {
+			wp_send_json_error( array( 'message' => __( 'Formato de permisos inválido. Debe ser un valor octal (ej: 0644 o 0755).', 'wp-agency-toolkit' ) ) );
+		}
+
+		$octal         = octdec( $mode_str );
+		$updated_count = 0;
+		$errors        = array();
+
+		foreach ( $paths_raw as $rel_p ) {
+			$rel_p = sanitize_text_field( wp_unslash( $rel_p ) );
+			$safe  = self::get_safe_path( $rel_p, true );
+			if ( ! $safe || ! file_exists( $safe ) ) {
+				$errors[] = sprintf( __( 'Elemento no encontrado: %s', 'wp-agency-toolkit' ), esc_html( $rel_p ) );
+				continue;
+			}
+
+			if ( is_dir( $safe ) && $recursive ) {
+				$res = self::chmod_recursive( $safe, $octal );
+				if ( $res ) {
+					$updated_count++;
+				} else {
+					$errors[] = sprintf( __( 'Fallo parcial al aplicar permisos recursivos en: %s', 'wp-agency-toolkit' ), esc_html( $rel_p ) );
+				}
+			} else {
+				if ( @chmod( $safe, $octal ) ) {
+					$updated_count++;
+				} else {
+					$errors[] = sprintf( __( 'No se pudieron cambiar los permisos en: %s', 'wp-agency-toolkit' ), esc_html( $rel_p ) );
+				}
+			}
+		}
+
+		if ( $updated_count === 0 && ! empty( $errors ) ) {
+			wp_send_json_error( array( 'message' => implode( '<br>', $errors ) ) );
+		}
+
+		wp_send_json_success( array(
+			'message'       => sprintf( __( 'Permisos actualizados con éxito (%d elementos modificados).', 'wp-agency-toolkit' ), $updated_count ),
+			'updated_count' => $updated_count,
+			'errors'        => $errors,
+		) );
+	}
+
+	/**
+	 * Aplica permisos CHMOD de forma recursiva a un directorio y sus hijos.
+	 *
+	 * @param string $dir Ruta absoluta del directorio.
+	 * @param int    $mode Valor octal en entero (octdec).
+	 * @return bool
+	 */
+	private static function chmod_recursive( $dir, $mode ) {
+		if ( ! is_dir( $dir ) ) {
+			return @chmod( $dir, $mode );
+		}
+
+		$success = @chmod( $dir, $mode );
+		$items   = @scandir( $dir );
+		if ( false !== $items ) {
+			foreach ( $items as $item ) {
+				if ( '.' === $item || '..' === $item ) {
+					continue;
+				}
+				$path = $dir . '/' . $item;
+				if ( is_dir( $path ) ) {
+					self::chmod_recursive( $path, $mode );
+				} else {
+					@chmod( $path, $mode );
+				}
+			}
+		}
+		return $success;
+	}
+
+	/**
+	 * AJAX: Prepara un archivo ZIP con los elementos seleccionados para descarga en lote.
+	 */
+	public function ajax_download_batch() {
+		$this->verify_ajax_access();
+
+		$paths_raw = isset( $_POST['paths'] ) ? (array) $_POST['paths'] : array();
+		if ( empty( $paths_raw ) ) {
+			wp_send_json_error( array( 'message' => __( 'Selecciona al menos un archivo o carpeta para descargar.', 'wp-agency-toolkit' ) ) );
+		}
+
+		if ( ! class_exists( 'ZipArchive' ) ) {
+			wp_send_json_error( array( 'message' => __( 'La extensión PHP ZipArchive no está disponible en este servidor.', 'wp-agency-toolkit' ) ) );
+		}
+
+		$valid_items = array();
+		foreach ( $paths_raw as $rel_p ) {
+			$rel_p = sanitize_text_field( wp_unslash( $rel_p ) );
+			$safe  = self::get_safe_path( $rel_p, true );
+			if ( $safe && file_exists( $safe ) ) {
+				$valid_items[] = array(
+					'rel'  => $rel_p,
+					'safe' => $safe,
+					'name' => basename( $safe ),
+				);
+			}
+		}
+
+		if ( empty( $valid_items ) ) {
+			wp_send_json_error( array( 'message' => __( 'Ninguno de los elementos seleccionados es accesible o existe.', 'wp-agency-toolkit' ) ) );
+		}
+
+		$backup_dir = self::get_backup_directory();
+		$zip_id     = 'batch_' . get_current_user_id() . '_' . wp_generate_password( 12, false );
+		$zip_file   = $backup_dir . '/' . $zip_id . '.zip';
+
+		$zip = new ZipArchive();
+		if ( true !== $zip->open( $zip_file, ZipArchive::CREATE | ZipArchive::OVERWRITE ) ) {
+			wp_send_json_error( array( 'message' => __( 'No se pudo crear el archivo comprimido temporal.', 'wp-agency-toolkit' ) ) );
+		}
+
+		foreach ( $valid_items as $item ) {
+			$safe = $item['safe'];
+			if ( is_file( $safe ) ) {
+				$zip->addFile( $safe, $item['name'] );
+			} elseif ( is_dir( $safe ) ) {
+				$files = new RecursiveIteratorIterator(
+					new RecursiveDirectoryIterator( $safe, RecursiveDirectoryIterator::SKIP_DOTS ),
+					RecursiveIteratorIterator::LEAVES_ONLY
+				);
+				foreach ( $files as $file ) {
+					if ( ! $file->isDir() ) {
+						$file_path = $file->getRealPath();
+						$rel_sub   = $item['name'] . '/' . substr( $file_path, strlen( $safe ) + 1 );
+						$zip->addFile( $file_path, $rel_sub );
+					}
+				}
+			}
+		}
+
+		$zip->close();
+
+		if ( ! file_exists( $zip_file ) || filesize( $zip_file ) === 0 ) {
+			wp_send_json_error( array( 'message' => __( 'Error al empaquetar los elementos seleccionados.', 'wp-agency-toolkit' ) ) );
+		}
+
+		// Guardar token temporal de descarga por 5 minutos
+		set_transient( 'wpat_fm_batch_' . $zip_id, $zip_file, 300 );
+
+		$nonce = wp_create_nonce( 'wpat_fm_download_' . get_current_user_id() );
+		$download_url = add_query_arg( array(
+			'action'         => 'wpat_fm_direct_download',
+			'batch_id'       => $zip_id,
+			'download_nonce' => $nonce,
+		), admin_url( 'admin-post.php' ) );
+
+		wp_send_json_success( array(
+			'download_url' => $download_url,
+			'count'        => count( $valid_items ),
+		) );
+	}
+
+	/**
+	 * AJAX: Elimina en lote los elementos seleccionados con respaldo automático.
+	 */
+	public function ajax_delete_batch() {
+		$this->verify_ajax_access();
+
+		$paths_raw = isset( $_POST['paths'] ) ? (array) $_POST['paths'] : array();
+		if ( empty( $paths_raw ) ) {
+			wp_send_json_error( array( 'message' => __( 'Selecciona al menos un elemento para eliminar.', 'wp-agency-toolkit' ) ) );
+		}
+
+		$backup_dir = self::get_backup_directory();
+		$bases      = self::get_safe_base_paths();
+		$deleted    = 0;
+		$errors     = array();
+
+		foreach ( $paths_raw as $rel_p ) {
+			$rel_p = sanitize_text_field( wp_unslash( $rel_p ) );
+			$safe  = self::get_safe_path( $rel_p, true );
+			if ( ! $safe || ! file_exists( $safe ) ) {
+				$errors[] = sprintf( __( 'No encontrado: %s', 'wp-agency-toolkit' ), esc_html( $rel_p ) );
+				continue;
+			}
+
+			// Prohibir borrar cualquiera de las raíces base
+			foreach ( $bases as $b ) {
+				if ( untrailingslashit( wp_normalize_path( $safe ) ) === $b ) {
+					$errors[] = __( 'Acción denegada: no se puede eliminar la raíz de WordPress.', 'wp-agency-toolkit' );
+					continue 2;
+				}
+			}
+
+			if ( is_file( $safe ) ) {
+				@copy( $safe, $backup_dir . '/deleted_' . date( 'Ymd_His' ) . '_' . basename( $safe ) );
+				if ( @unlink( $safe ) ) {
+					$deleted++;
+				} else {
+					$errors[] = sprintf( __( 'No se pudo eliminar el archivo: %s', 'wp-agency-toolkit' ), esc_html( $rel_p ) );
+				}
+			} else {
+				if ( self::delete_directory_recursive( $safe ) ) {
+					$deleted++;
+				} else {
+					$errors[] = sprintf( __( 'No se pudo eliminar la carpeta: %s', 'wp-agency-toolkit' ), esc_html( $rel_p ) );
+				}
+			}
+		}
+
+		if ( $deleted === 0 && ! empty( $errors ) ) {
+			wp_send_json_error( array( 'message' => implode( '<br>', $errors ) ) );
+		}
+
+		wp_send_json_success( array(
+			'message' => sprintf( __( '%d elemento(s) eliminado(s) correctamente.', 'wp-agency-toolkit' ), $deleted ),
+			'deleted' => $deleted,
+		) );
 	}
 
 	/**
@@ -1004,23 +1334,46 @@ class WPAT_File_Manager {
 		}
 
 		if ( ! self::current_user_can_access() ) {
-			wp_die( 'Acceso denegado.' );
+			wp_die( esc_html__( 'Acceso denegado.', 'wp-agency-toolkit' ) );
 		}
 
 		$nonce = isset( $_GET['download_nonce'] ) ? sanitize_text_field( $_GET['download_nonce'] ) : '';
 		if ( ! wp_verify_nonce( $nonce, 'wpat_fm_download_' . get_current_user_id() ) ) {
-			wp_die( 'Nonce de descarga inválido o caducado.' );
+			wp_die( esc_html__( 'Nonce de descarga inválido o caducado. Vuelve a intentarlo.', 'wp-agency-toolkit' ) );
 		}
 
 		if ( ! self::is_session_unlocked() ) {
-			wp_die( 'Sesión bloqueada. Autentícate con 2FA en el panel primero.' );
+			wp_die( esc_html__( 'Sesión bloqueada por seguridad. Introduce tu código 2FA en el panel primero.', 'wp-agency-toolkit' ) );
 		}
 
+		// 1. Descarga por lote (ZIP temporal generado previamente)
+		if ( ! empty( $_GET['batch_id'] ) ) {
+			$batch_id = sanitize_key( $_GET['batch_id'] );
+			$zip_file = get_transient( 'wpat_fm_batch_' . $batch_id );
+			if ( empty( $zip_file ) || ! file_exists( $zip_file ) ) {
+				wp_die( esc_html__( 'El enlace de descarga temporal ha expirado o no es válido.', 'wp-agency-toolkit' ) );
+			}
+
+			delete_transient( 'wpat_fm_batch_' . $batch_id );
+
+			header( 'Content-Description: File Transfer' );
+			header( 'Content-Type: application/zip' );
+			header( 'Content-Disposition: attachment; filename="descarga_seleccion_' . date( 'Ymd_His' ) . '.zip"' );
+			header( 'Expires: 0' );
+			header( 'Cache-Control: must-revalidate' );
+			header( 'Pragma: public' );
+			header( 'Content-Length: ' . filesize( $zip_file ) );
+			readfile( $zip_file );
+			@unlink( $zip_file );
+			exit;
+		}
+
+		// 2. Descarga individual o de carpeta completa
 		$rel_path  = isset( $_GET['path'] ) ? sanitize_text_field( rawurldecode( $_GET['path'] ) ) : '';
 		$safe_path = self::get_safe_path( $rel_path, true );
 
 		if ( ! $safe_path || ! file_exists( $safe_path ) ) {
-			wp_die( 'Elemento no encontrado.' );
+			wp_die( esc_html__( 'Elemento no encontrado.', 'wp-agency-toolkit' ) );
 		}
 
 		if ( is_file( $safe_path ) ) {
@@ -1065,6 +1418,6 @@ class WPAT_File_Manager {
 			}
 		}
 
-		wp_die( 'No se pudo generar la descarga.' );
+		wp_die( esc_html__( 'No se pudo generar la descarga.', 'wp-agency-toolkit' ) );
 	}
 }

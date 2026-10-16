@@ -15794,21 +15794,44 @@ class WPAT_Admin {
 							<a class="wpat-fm-breadcrumb-item" data-path="">🏠 Raíz (ABSPATH)</a>
 						</div>
 
+						<!-- Barra de Acciones en Lote (Multi-selección) -->
+						<div id="wpat_fm_bulk_actions_bar" class="wpat-fm-bulk-bar" style="display:none;">
+							<div class="wpat-fm-bulk-info">
+								<span class="dashicons dashicons-yes-alt" style="color: #22c55e;"></span>
+								<span id="wpat_fm_bulk_count">0 elementos seleccionados</span>
+							</div>
+							<div class="wpat-fm-bulk-buttons">
+								<button type="button" id="wpat_fm_bulk_download_btn" class="wpat-fm-btn wpat-fm-btn-small" style="background: #0284c7; color: #ffffff;">
+									<span class="dashicons dashicons-download"></span> Descargar ZIP
+								</button>
+								<button type="button" id="wpat_fm_bulk_chmod_btn" class="wpat-fm-btn wpat-fm-btn-small" style="background: #4f46e5; color: #ffffff;">
+									<span class="dashicons dashicons-admin-network"></span> Cambiar Permisos
+								</button>
+								<button type="button" id="wpat_fm_bulk_delete_btn" class="wpat-fm-btn wpat-fm-btn-small" style="background: #dc2626; color: #ffffff;">
+									<span class="dashicons dashicons-trash"></span> Eliminar
+								</button>
+								<button type="button" id="wpat_fm_bulk_clear_btn" class="wpat-fm-btn wpat-fm-btn-small wpat-fm-btn-secondary">
+									Deseleccionar
+								</button>
+							</div>
+						</div>
+
 						<!-- Tabla de Archivos -->
 						<div class="wpat-fm-table-wrap">
 							<table class="wpat-fm-table">
 								<thead>
 									<tr>
+										<th style="width: 38px; text-align: center;"><input type="checkbox" id="wpat_fm_select_all" title="Seleccionar todos" /></th>
 										<th>Nombre</th>
 										<th style="width: 100px;">Tamaño</th>
 										<th style="width: 90px;">Permisos</th>
 										<th style="width: 160px;">Modificado</th>
-										<th style="width: 140px; text-align: right;">Acciones</th>
+										<th style="width: 175px; text-align: right;">Acciones</th>
 									</tr>
 								</thead>
 								<tbody id="wpat_fm_tbody">
 									<tr>
-										<td colspan="5" style="text-align: center; padding: 30px; color: #64748b;">
+										<td colspan="6" style="text-align: center; padding: 30px; color: #64748b;">
 											Cargando archivos del directorio...
 										</td>
 									</tr>
@@ -15831,6 +15854,7 @@ class WPAT_Admin {
 									<span class="dashicons dashicons-editor-code" style="color:#38bdf8;"></span>
 									<span id="wpat_fm_editor_filename">archivo.php</span>
 									<span id="wpat_fm_critical_badge" class="wpat-fm-badge-critical" style="display:none;">Crítico</span>
+									<span id="wpat_fm_viewonly_badge" class="wpat-fm-badge-critical" style="background:#0284c7; display:none;">👁️ Solo Lectura</span>
 								</div>
 								<div>
 									<button type="button" id="wpat_fm_close_editor_btn" class="wpat-fm-btn wpat-fm-btn-secondary wpat-fm-btn-small" style="background:rgba(255,255,255,0.1); border:none; color:#f8fafc;">
@@ -15851,11 +15875,78 @@ class WPAT_Admin {
 								</div>
 								<div style="display: flex; gap: 8px;">
 									<button type="button" id="wpat_fm_cancel_editor_btn" class="wpat-fm-btn wpat-fm-btn-secondary wpat-fm-btn-small">
-										Cancelar
+										Cerrar
 									</button>
 									<button type="button" id="wpat_fm_save_file_btn" class="wpat-fm-btn wpat-fm-btn-primary wpat-fm-btn-small">
 										<span class="dashicons dashicons-saved"></span> Guardar con Auto-Backup
 									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- 6. MODAL DE CAMBIO DE PERMISOS (CHMOD) -->
+					<div id="wpat_fm_chmod_modal" class="wpat-fm-modal-overlay" style="display:none;">
+						<div class="wpat-fm-modal-dialog" style="max-width: 480px; height: auto;">
+							<div class="wpat-fm-editor-header" style="background:#1e293b;">
+								<div class="wpat-fm-editor-title" style="color:#ffffff;">
+									<span class="dashicons dashicons-admin-network" style="color:#38bdf8;"></span>
+									<span id="wpat_fm_chmod_title">Cambiar Permisos (CHMOD)</span>
+								</div>
+								<button type="button" id="wpat_fm_close_chmod_btn" class="wpat-fm-btn wpat-fm-btn-secondary wpat-fm-btn-small" style="background:rgba(255,255,255,0.1); border:none; color:#f8fafc;">✕</button>
+							</div>
+							<div style="padding: 24px; background: #ffffff;">
+								<p id="wpat_fm_chmod_target_desc" style="font-size: 13px; color: #475569; margin-top: 0; margin-bottom: 16px; word-break: break-all;"></p>
+								
+								<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 8px;">
+									<span style="font-weight: 600; color: #1e293b; font-size: 13.5px;">Valor Octal de Permisos:</span>
+									<input type="text" id="wpat_fm_chmod_octal" maxlength="4" style="width: 90px; text-align: center; font-family: monospace; font-size: 16px; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px;" value="0644" />
+								</div>
+
+								<!-- Matriz de permisos interactiva -->
+								<div class="wpat-fm-chmod-table-wrap" style="margin-bottom: 18px;">
+									<table class="wpat-fm-chmod-grid" style="width: 100%; text-align: center; border-collapse: collapse; font-size: 13px;">
+										<thead>
+											<tr style="background: #f1f5f9; color: #475569;">
+												<th style="padding: 8px; text-align: left;">Ámbito</th>
+												<th style="padding: 8px;">Lectura (r)</th>
+												<th style="padding: 8px;">Escritura (w)</th>
+												<th style="padding: 8px;">Ejecutar (x)</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr>
+												<td style="padding: 8px; font-weight: 600; text-align: left;">Propietario</td>
+												<td style="padding: 8px;"><input type="checkbox" class="wpat-fm-perm-check" data-scope="u" data-bit="4" /></td>
+												<td style="padding: 8px;"><input type="checkbox" class="wpat-fm-perm-check" data-scope="u" data-bit="2" /></td>
+												<td style="padding: 8px;"><input type="checkbox" class="wpat-fm-perm-check" data-scope="u" data-bit="1" /></td>
+											</tr>
+											<tr>
+												<td style="padding: 8px; font-weight: 600; text-align: left;">Grupo</td>
+												<td style="padding: 8px;"><input type="checkbox" class="wpat-fm-perm-check" data-scope="g" data-bit="4" /></td>
+												<td style="padding: 8px;"><input type="checkbox" class="wpat-fm-perm-check" data-scope="g" data-bit="2" /></td>
+												<td style="padding: 8px;"><input type="checkbox" class="wpat-fm-perm-check" data-scope="g" data-bit="1" /></td>
+											</tr>
+											<tr>
+												<td style="padding: 8px; font-weight: 600; text-align: left;">Público</td>
+												<td style="padding: 8px;"><input type="checkbox" class="wpat-fm-perm-check" data-scope="o" data-bit="4" /></td>
+												<td style="padding: 8px;"><input type="checkbox" class="wpat-fm-perm-check" data-scope="o" data-bit="2" /></td>
+												<td style="padding: 8px;"><input type="checkbox" class="wpat-fm-perm-check" data-scope="o" data-bit="1" /></td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+
+								<div id="wpat_fm_chmod_recursive_wrap" style="margin-bottom: 20px; display: none;">
+									<label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #334155; cursor: pointer;">
+										<input type="checkbox" id="wpat_fm_chmod_recursive" value="1" />
+										<span>Aplicar recursivamente a todas las subcarpetas y archivos contenidos</span>
+									</label>
+								</div>
+
+								<div style="display: flex; justify-content: flex-end; gap: 10px;">
+									<button type="button" id="wpat_fm_cancel_chmod_btn" class="wpat-fm-btn wpat-fm-btn-secondary">Cancelar</button>
+									<button type="button" id="wpat_fm_save_chmod_btn" class="wpat-fm-btn wpat-fm-btn-primary">Guardar Permisos</button>
 								</div>
 							</div>
 						</div>

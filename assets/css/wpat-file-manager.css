@@ -416,10 +416,104 @@
 	border-color: #cbd5e1;
 }
 
+.wpat-fm-action-btn.view:hover {
+	background: #e0f2fe;
+	color: #0284c7;
+	border-color: #bae6fd;
+}
+
+.wpat-fm-action-btn.edit:hover {
+	background: #dbeafe;
+	color: #2563eb;
+	border-color: #bfdbfe;
+}
+
+.wpat-fm-action-btn.chmod:hover {
+	background: #ede9fe;
+	color: #7c3aed;
+	border-color: #ddd6fe;
+}
+
+.wpat-fm-action-btn.download:hover {
+	background: #e0f2fe;
+	color: #0369a1;
+	border-color: #bae6fd;
+}
+
+.wpat-fm-action-btn.rename:hover {
+	background: #fef3c7;
+	color: #d97706;
+	border-color: #fde68a;
+}
+
 .wpat-fm-action-btn.delete:hover {
 	background: #fee2e2;
 	color: #ef4444;
 	border-color: #fca5a5;
+}
+
+/* Barra de Acciones en Lote (Multi-selección) */
+.wpat-fm-bulk-bar {
+	background: #0f172a;
+	color: #f8fafc;
+	padding: 10px 16px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+	font-size: 13px;
+	border-bottom: 2px solid #38bdf8;
+	animation: wpatFmSlideDown 0.2s ease-out;
+}
+
+@keyframes wpatFmSlideDown {
+	from { opacity: 0; transform: translateY(-8px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+
+.wpat-fm-bulk-info {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-weight: 600;
+}
+
+.wpat-fm-bulk-buttons {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+/* Matriz de Permisos CHMOD */
+.wpat-fm-chmod-table-wrap {
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+.wpat-fm-chmod-grid th,
+.wpat-fm-chmod-grid td {
+	border-bottom: 1px solid #f1f5f9;
+}
+
+.wpat-fm-chmod-grid tr:last-child td {
+	border-bottom: none;
+}
+
+.wpat-fm-perm-check {
+	cursor: pointer;
+	transform: scale(1.15);
+	margin: 0;
+}
+
+.wpat-fm-row-checkbox {
+	cursor: pointer;
+	transform: scale(1.1);
+	margin: 0 auto;
+	display: block;
 }
 
 /* Barra Inferior del Explorador (Info) */
@@ -601,4 +695,35 @@
 	background: #0f172a !important;
 	border-color: #475569 !important;
 	color: #f8fafc !important;
+}
+
+.wpat-dark-mode #wpat_fm_chmod_modal .wpat-fm-modal-dialog > div:nth-child(2) {
+	background: #1e293b !important;
+	color: #f8fafc !important;
+}
+
+.wpat-dark-mode #wpat_fm_chmod_target_desc {
+	color: #94a3b8 !important;
+}
+
+.wpat-dark-mode .wpat-fm-chmod-table-wrap {
+	background: #0f172a !important;
+	border-color: #334155 !important;
+}
+
+.wpat-dark-mode .wpat-fm-chmod-grid thead tr {
+	background: #0f172a !important;
+	color: #94a3b8 !important;
+}
+
+.wpat-dark-mode .wpat-fm-chmod-grid th,
+.wpat-dark-mode .wpat-fm-chmod-grid td {
+	border-color: #334155 !important;
+	color: #f8fafc !important;
+}
+
+.wpat-dark-mode #wpat_fm_chmod_octal {
+	background: #0f172a !important;
+	color: #38bdf8 !important;
+	border-color: #475569 !important;
 }

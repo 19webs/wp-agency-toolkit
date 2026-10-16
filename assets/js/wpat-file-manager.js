@@ -288,7 +288,9 @@ jQuery(document).ready(function($) {
 	var loadDirectory = function(path) {
 		currentPath = path || '';
 		var $tbody = $('#wpat_fm_tbody');
-		$tbody.html('<tr><td colspan="5" style="text-align:center; padding:30px; color:#64748b;">Cargando archivos del directorio...</td></tr>');
+		$tbody.html('<tr><td colspan="6" style="text-align:center; padding:30px; color:#64748b;">Cargando archivos del directorio...</td></tr>');
+		$('#wpat_fm_select_all').prop('checked', false);
+		$('#wpat_fm_bulk_actions_bar').hide();
 
 		$.ajax({
 			url: getAjaxUrl(),
@@ -305,11 +307,13 @@ jQuery(document).ready(function($) {
 					if (resp.data && resp.data.locked) {
 						lockSession(false);
 					}
-					toast(resp.data ? resp.data.message : 'Error al listar directorio.', true);
+					var err = (resp.data && resp.data.message) ? resp.data.message : 'Error al listar directorio.';
+					toast(err, true);
 				}
 			},
-			error: function() {
-				toast('Error de conexión al cargar directorio.', true);
+			error: function(xhr) {
+				var err = xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message ? xhr.responseJSON.data.message : 'Error de conexión al cargar directorio.';
+				toast(err, true);
 			}
 		});
 	};
@@ -335,6 +339,7 @@ jQuery(document).ready(function($) {
 		if (currentPath !== '') {
 			var parentPath = currentPath.indexOf('/') !== -1 ? currentPath.substring(0, currentPath.lastIndexOf('/')) : '';
 			$tbody.append('<tr class="wpat-fm-row" data-name="..">' +
+				'<td></td>' +
 				'<td><a class="wpat-fm-item-name is-dir" data-path="' + parentPath + '"><span class="wpat-fm-icon">⤴️</span> .. (Subir un nivel)</a></td>' +
 				'<td>—</td><td>—</td><td>—</td><td></td>' +
 			'</tr>');
@@ -343,23 +348,36 @@ jQuery(document).ready(function($) {
 		var allItems = (data.directories || []).concat(data.files || []);
 
 		if (allItems.length === 0) {
-			$tbody.append('<tr><td colspan="5" style="text-align:center; padding:30px; color:#94a3b8;">Carpeta vacía</td></tr>');
+			$tbody.append('<tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">Carpeta vacía</td></tr>');
 		} else {
 			allItems.forEach(function(item) {
 				var icon = getFileIcon(item);
 				var actionsHtml = '<div class="wpat-fm-actions-cell">';
 
+				// 1. Ver código (solo lectura) con icono de ojo
 				if (!item.is_dir && item.is_editable) {
+					actionsHtml += '<button type="button" class="wpat-fm-action-btn view" data-path="' + item.rel_path + '" title="Ver código (Solo Lectura)"><span class="dashicons dashicons-visibility"></span></button>';
 					actionsHtml += '<button type="button" class="wpat-fm-action-btn edit" data-path="' + item.rel_path + '" title="Editar archivo"><span class="dashicons dashicons-edit"></span></button>';
 				}
+
+				// 2. Cambiar permisos (CHMOD)
+				actionsHtml += '<button type="button" class="wpat-fm-action-btn chmod" data-path="' + item.rel_path + '" data-name="' + item.name + '" data-perms="' + item.perms + '" data-is-dir="' + (item.is_dir ? '1' : '0') + '" title="Cambiar permisos (CHMOD)"><span class="dashicons dashicons-admin-network"></span></button>';
+
+				// 3. Descargar
 				actionsHtml += '<button type="button" class="wpat-fm-action-btn download" data-path="' + item.rel_path + '" data-is-dir="' + (item.is_dir ? '1' : '0') + '" title="Descargar"><span class="dashicons dashicons-download"></span></button>';
+
+				// 4. Renombrar
 				actionsHtml += '<button type="button" class="wpat-fm-action-btn rename" data-path="' + item.rel_path + '" data-name="' + item.name + '" title="Renombrar"><span class="dashicons dashicons-tag"></span></button>';
+
+				// 5. Eliminar
 				actionsHtml += '<button type="button" class="wpat-fm-action-btn delete" data-path="' + item.rel_path + '" data-name="' + item.name + '" title="Eliminar"><span class="dashicons dashicons-trash"></span></button>';
+
 				actionsHtml += '</div>';
 
 				var clickClass = item.is_dir ? 'is-dir' : (item.is_editable ? 'is-editable' : '');
 
 				var rowHtml = '<tr class="wpat-fm-row" data-name="' + item.name.toLowerCase() + '">' +
+					'<td style="text-align:center;"><input type="checkbox" class="wpat-fm-row-checkbox" data-path="' + item.rel_path + '" data-name="' + item.name + '" data-perms="' + item.perms + '" data-is-dir="' + (item.is_dir ? '1' : '0') + '" /></td>' +
 					'<td><a class="wpat-fm-item-name ' + clickClass + '" data-path="' + item.rel_path + '">' +
 						'<span class="wpat-fm-icon">' + icon + '</span> <span>' + item.name + '</span>' +
 					'</a></td>' +
@@ -412,7 +430,273 @@ jQuery(document).ready(function($) {
 	});
 
 	// =========================================================================
-	// 3. OPERACIONES DE ARCHIVOS (CREAR, RENOMBRAR, ELIMINAR, SUBIR, DESCARGAR)
+	// 3. SELECCIÓN MÚLTIPLE Y ACCIONES EN LOTE (BULK ACTIONS)
+	// =========================================================================
+
+	var getSelectedPaths = function() {
+		var paths = [];
+		$('.wpat-fm-row-checkbox:checked').each(function() {
+			var p = $(this).attr('data-path');
+			if (typeof p !== 'undefined') {
+				paths.push(p);
+			}
+		});
+		return paths;
+	};
+
+	var updateBulkActionsBar = function() {
+		var selected = getSelectedPaths();
+		if (selected.length > 0) {
+			$('#wpat_fm_bulk_count').text(selected.length + (selected.length === 1 ? ' elemento seleccionado' : ' elementos seleccionados'));
+			$('#wpat_fm_bulk_actions_bar').slideDown(150);
+		} else {
+			$('#wpat_fm_bulk_actions_bar').slideUp(150);
+		}
+	};
+
+	$(document).on('change', '#wpat_fm_select_all', function() {
+		var checked = $(this).is(':checked');
+		$('.wpat-fm-row-checkbox').prop('checked', checked);
+		updateBulkActionsBar();
+	});
+
+	$(document).on('change', '.wpat-fm-row-checkbox', function() {
+		var total = $('.wpat-fm-row-checkbox').length;
+		var checkedCount = $('.wpat-fm-row-checkbox:checked').length;
+		$('#wpat_fm_select_all').prop('checked', total > 0 && total === checkedCount);
+		updateBulkActionsBar();
+	});
+
+	$(document).on('click', '#wpat_fm_bulk_clear_btn', function(e) {
+		e.preventDefault();
+		$('.wpat-fm-row-checkbox, #wpat_fm_select_all').prop('checked', false);
+		updateBulkActionsBar();
+	});
+
+	// Descarga en lote de selección
+	$(document).on('click', '#wpat_fm_bulk_download_btn', function(e) {
+		e.preventDefault();
+		var paths = getSelectedPaths();
+		if (paths.length === 0) return;
+
+		var $btn = $(this);
+		$btn.prop('disabled', true).text('Empaquetando ZIP...');
+
+		$.ajax({
+			url: getAjaxUrl(),
+			type: 'POST',
+			data: {
+				action: 'wpat_fm_download_batch',
+				paths: paths,
+				nonce: getNonce()
+			},
+			success: function(resp) {
+				$btn.prop('disabled', false).html('<span class="dashicons dashicons-download"></span> Descargar ZIP');
+				if (resp.success && resp.data && resp.data.download_url) {
+					window.location.href = resp.data.download_url;
+					toast('Descarga de ' + resp.data.count + ' elemento(s) iniciada.');
+				} else {
+					var err = (resp.data && resp.data.message) ? resp.data.message : 'Error al generar descarga en lote.';
+					toast(err, true);
+				}
+			},
+			error: function(xhr) {
+				$btn.prop('disabled', false).html('<span class="dashicons dashicons-download"></span> Descargar ZIP');
+				var err = xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message ? xhr.responseJSON.data.message : 'Error al procesar descarga en lote.';
+				toast(err, true);
+			}
+		});
+	});
+
+	// Eliminación en lote de selección
+	$(document).on('click', '#wpat_fm_bulk_delete_btn', function(e) {
+		e.preventDefault();
+		var paths = getSelectedPaths();
+		if (paths.length === 0) return;
+
+		if (!confirm('¿Seguro que deseas eliminar los ' + paths.length + ' elementos seleccionados?\nEsta acción no se puede deshacer.')) {
+			return;
+		}
+
+		var $btn = $(this);
+		$btn.prop('disabled', true).text('Eliminando...');
+
+		$.ajax({
+			url: getAjaxUrl(),
+			type: 'POST',
+			data: {
+				action: 'wpat_fm_delete_batch',
+				paths: paths,
+				nonce: getNonce()
+			},
+			success: function(resp) {
+				$btn.prop('disabled', false).html('<span class="dashicons dashicons-trash"></span> Eliminar');
+				if (resp.success) {
+					toast(resp.data ? resp.data.message : 'Elementos eliminados con éxito.');
+					loadDirectory(currentPath);
+				} else {
+					var err = (resp.data && resp.data.message) ? resp.data.message : 'Error al eliminar selección.';
+					toast(err, true);
+				}
+			},
+			error: function(xhr) {
+				$btn.prop('disabled', false).html('<span class="dashicons dashicons-trash"></span> Eliminar');
+				var err = xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message ? xhr.responseJSON.data.message : 'Error al eliminar selección.';
+				toast(err, true);
+			}
+		});
+	});
+
+	// =========================================================================
+	// 4. GESTIÓN DE PERMISOS (CHMOD INDIVIDUAL Y EN LOTE)
+	// =========================================================================
+
+	var currentChmodTargets = [];
+
+	var syncCheckboxesFromOctal = function(octalStr) {
+		var clean = (octalStr || '').replace(/^0+/, '');
+		while (clean.length < 3) clean = '0' + clean;
+		if (clean.length > 3) clean = clean.substring(clean.length - 3);
+
+		var u = parseInt(clean.charAt(0), 10) || 0;
+		var g = parseInt(clean.charAt(1), 10) || 0;
+		var o = parseInt(clean.charAt(2), 10) || 0;
+
+		$('.wpat-fm-perm-check[data-scope="u"]').each(function() {
+			var bit = parseInt($(this).attr('data-bit'), 10);
+			$(this).prop('checked', (u & bit) !== 0);
+		});
+		$('.wpat-fm-perm-check[data-scope="g"]').each(function() {
+			var bit = parseInt($(this).attr('data-bit'), 10);
+			$(this).prop('checked', (g & bit) !== 0);
+		});
+		$('.wpat-fm-perm-check[data-scope="o"]').each(function() {
+			var bit = parseInt($(this).attr('data-bit'), 10);
+			$(this).prop('checked', (o & bit) !== 0);
+		});
+	};
+
+	var syncOctalFromCheckboxes = function() {
+		var calcScope = function(scope) {
+			var val = 0;
+			$('.wpat-fm-perm-check[data-scope="' + scope + '"]:checked').each(function() {
+				val += parseInt($(this).attr('data-bit'), 10);
+			});
+			return val;
+		};
+
+		var oct = '0' + calcScope('u') + calcScope('g') + calcScope('o');
+		$('#wpat_fm_chmod_octal').val(oct);
+	};
+
+	$(document).on('change', '.wpat-fm-perm-check', function() {
+		syncOctalFromCheckboxes();
+	});
+
+	$(document).on('input keyup', '#wpat_fm_chmod_octal', function() {
+		syncCheckboxesFromOctal($(this).val().trim());
+	});
+
+	// Abrir modal CHMOD para un solo elemento
+	$(document).on('click', '.wpat-fm-action-btn.chmod', function(e) {
+		e.preventDefault();
+		var path = $(this).attr('data-path');
+		var name = $(this).attr('data-name');
+		var perms = $(this).attr('data-perms') || '0644';
+		var isDir = $(this).attr('data-is-dir') === '1';
+
+		currentChmodTargets = [path];
+		$('#wpat_fm_chmod_title').text('Cambiar Permisos (CHMOD)');
+		$('#wpat_fm_chmod_target_desc').html('Modificando: <strong>' + name + '</strong>');
+
+		if (isDir) {
+			$('#wpat_fm_chmod_recursive_wrap').show();
+			$('#wpat_fm_chmod_recursive').prop('checked', false);
+		} else {
+			$('#wpat_fm_chmod_recursive_wrap').hide();
+		}
+
+		$('#wpat_fm_chmod_octal').val(perms);
+		syncCheckboxesFromOctal(perms);
+		$('#wpat_fm_chmod_modal').show();
+	});
+
+	// Abrir modal CHMOD para selección múltiple
+	$(document).on('click', '#wpat_fm_bulk_chmod_btn', function(e) {
+		e.preventDefault();
+		var paths = getSelectedPaths();
+		if (paths.length === 0) return;
+
+		currentChmodTargets = paths;
+		$('#wpat_fm_chmod_title').text('Cambiar Permisos en Lote');
+		$('#wpat_fm_chmod_target_desc').html('Aplicando permisos a <strong>' + paths.length + ' elementos seleccionados</strong>');
+
+		var hasDir = false;
+		$('.wpat-fm-row-checkbox:checked').each(function() {
+			if ($(this).attr('data-is-dir') === '1') {
+				hasDir = true;
+			}
+		});
+
+		if (hasDir) {
+			$('#wpat_fm_chmod_recursive_wrap').show();
+			$('#wpat_fm_chmod_recursive').prop('checked', false);
+		} else {
+			$('#wpat_fm_chmod_recursive_wrap').hide();
+		}
+
+		$('#wpat_fm_chmod_octal').val('0755');
+		syncCheckboxesFromOctal('0755');
+		$('#wpat_fm_chmod_modal').show();
+	});
+
+	// Guardar permisos CHMOD
+	$(document).on('click', '#wpat_fm_save_chmod_btn', function(e) {
+		e.preventDefault();
+		if (currentChmodTargets.length === 0) return;
+
+		var mode = $('#wpat_fm_chmod_octal').val().trim();
+		var recursive = $('#wpat_fm_chmod_recursive').is(':checked') ? '1' : '0';
+
+		var $btn = $(this);
+		$btn.prop('disabled', true).text('Guardando...');
+
+		$.ajax({
+			url: getAjaxUrl(),
+			type: 'POST',
+			data: {
+				action: 'wpat_fm_chmod_item',
+				paths: currentChmodTargets,
+				mode: mode,
+				recursive: recursive,
+				nonce: getNonce()
+			},
+			success: function(resp) {
+				$btn.prop('disabled', false).text('Guardar Permisos');
+				if (resp.success) {
+					toast(resp.data ? resp.data.message : 'Permisos actualizados con éxito.');
+					$('#wpat_fm_chmod_modal').hide();
+					loadDirectory(currentPath);
+				} else {
+					var err = (resp.data && resp.data.message) ? resp.data.message : 'Error al modificar permisos.';
+					toast(err, true);
+				}
+			},
+			error: function(xhr) {
+				$btn.prop('disabled', false).text('Guardar Permisos');
+				var err = xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message ? xhr.responseJSON.data.message : 'Error al modificar permisos.';
+				toast(err, true);
+			}
+		});
+	});
+
+	$(document).on('click', '#wpat_fm_close_chmod_btn, #wpat_fm_cancel_chmod_btn', function(e) {
+		e.preventDefault();
+		$('#wpat_fm_chmod_modal').hide();
+	});
+
+	// =========================================================================
+	// 5. OPERACIONES DE ARCHIVOS (CREAR, RENOMBRAR, ELIMINAR, SUBIR, DESCARGAR)
 	// =========================================================================
 
 	// Nuevo Archivo o Nueva Carpeta
@@ -438,11 +722,13 @@ jQuery(document).ready(function($) {
 					toast(resp.data ? resp.data.message : 'Elemento creado con éxito.');
 					loadDirectory(currentPath);
 				} else {
-					toast(resp.data ? resp.data.message : 'Error al crear elemento.', true);
+					var err = (resp.data && resp.data.message) ? resp.data.message : 'Error al crear elemento.';
+					toast(err, true);
 				}
 			},
-			error: function() {
-				toast('Error de conexión al crear.', true);
+			error: function(xhr) {
+				var err = xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message ? xhr.responseJSON.data.message : 'Error de conexión al crear.';
+				toast(err, true);
 			}
 		});
 	});
@@ -469,11 +755,13 @@ jQuery(document).ready(function($) {
 					toast(resp.data ? resp.data.message : 'Renombrado con éxito.');
 					loadDirectory(currentPath);
 				} else {
-					toast(resp.data ? resp.data.message : 'Error al renombrar.', true);
+					var err = (resp.data && resp.data.message) ? resp.data.message : 'Error al renombrar.';
+					toast(err, true);
 				}
 			},
-			error: function() {
-				toast('Error de conexión al renombrar.', true);
+			error: function(xhr) {
+				var err = xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message ? xhr.responseJSON.data.message : 'Error de conexión al renombrar.';
+				toast(err, true);
 			}
 		});
 	});
@@ -498,11 +786,13 @@ jQuery(document).ready(function($) {
 					toast(resp.data ? resp.data.message : 'Eliminado correctamente.');
 					loadDirectory(currentPath);
 				} else {
-					toast(resp.data ? resp.data.message : 'Error al eliminar.', true);
+					var err = (resp.data && resp.data.message) ? resp.data.message : 'Error al eliminar.';
+					toast(err, true);
 				}
 			},
-			error: function() {
-				toast('Error de conexión al eliminar.', true);
+			error: function(xhr) {
+				var err = xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message ? xhr.responseJSON.data.message : 'Error de conexión al eliminar.';
+				toast(err, true);
 			}
 		});
 	});
@@ -539,24 +829,29 @@ jQuery(document).ready(function($) {
 					toast(resp.data ? resp.data.message : 'Archivo subido.');
 					loadDirectory(currentPath);
 				} else {
-					toast(resp.data ? resp.data.message : 'Error al subir archivo.', true);
+					var err = (resp.data && resp.data.message) ? resp.data.message : 'Error al subir archivo.';
+					toast(err, true);
 				}
 			},
-			error: function() {
+			error: function(xhr) {
 				$uploadBtn.html('<span class="dashicons dashicons-upload"></span> Subir Archivo').prop('disabled', false);
 				$('#wpat_fm_file_input').val('');
-				toast('Error de conexión durante la subida.', true);
+				var err = xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message ? xhr.responseJSON.data.message : 'Error de conexión durante la subida.';
+				toast(err, true);
 			}
 		});
 	});
 
-	// Descargar elemento
+	// Descargar elemento individual o carpeta actual
 	$(document).on('click', '.wpat-fm-action-btn.download, #wpat_fm_download_zip_btn', function(e) {
 		e.preventDefault();
 		var path = $(this).attr('data-path');
 		if (typeof path === 'undefined') {
 			path = currentPath; // Descargar carpeta actual si se usa el botón de toolbar
 		}
+
+		var $btn = $(this);
+		$btn.prop('disabled', true);
 
 		$.ajax({
 			url: getAjaxUrl(),
@@ -567,29 +862,44 @@ jQuery(document).ready(function($) {
 				nonce: getNonce()
 			},
 			success: function(resp) {
+				$btn.prop('disabled', false);
 				if (resp.success && resp.data && resp.data.download_url) {
 					window.location.href = resp.data.download_url;
 				} else {
-					toast(resp.data ? resp.data.message : 'No se pudo preparar la descarga.', true);
+					var err = (resp.data && resp.data.message) ? resp.data.message : 'No se pudo preparar la descarga.';
+					toast(err, true);
 				}
 			},
-			error: function() {
-				toast('Error al descargar elemento.', true);
+			error: function(xhr) {
+				$btn.prop('disabled', false);
+				var err = xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message ? xhr.responseJSON.data.message : 'Error al descargar elemento.';
+				toast(err, true);
 			}
 		});
 	});
 
 	// =========================================================================
-	// 4. EDITOR DE CÓDIGO EMBEBIDO (CON COMPROBACIÓN DE SINTAXIS PHP)
+	// 6. EDITOR Y VISUALIZADOR DE CÓDIGO (CON COMPROBACIÓN DE SINTAXIS PHP)
 	// =========================================================================
 
 	var currentEditingPath = '';
 
-	var openCodeEditor = function(path) {
+	var openCodeEditor = function(path, isReadOnly) {
 		currentEditingPath = path;
 		$('#wpat_fm_syntax_alert').hide();
 		$('#wpat_fm_editor_filename').text('Cargando...');
 		$('#wpat_fm_editor_textarea').val('Cargando contenido...');
+
+		if (isReadOnly) {
+			$('#wpat_fm_viewonly_badge').show();
+			$('#wpat_fm_editor_textarea').prop('readonly', true).css('background', '#0b1120');
+			$('#wpat_fm_save_file_btn').hide();
+		} else {
+			$('#wpat_fm_viewonly_badge').hide();
+			$('#wpat_fm_editor_textarea').prop('readonly', false).css('background', '');
+			$('#wpat_fm_save_file_btn').show();
+		}
+
 		$('#wpat_fm_editor_modal').show();
 
 		$.ajax({
@@ -612,28 +922,46 @@ jQuery(document).ready(function($) {
 						$('#wpat_fm_critical_badge').hide();
 					}
 
-					if (!resp.data.is_writable) {
-						$('#wpat_fm_save_file_btn').prop('disabled', true).text('Solo Lectura');
-					} else {
-						$('#wpat_fm_save_file_btn').prop('disabled', false).html('<span class="dashicons dashicons-saved"></span> Guardar con Auto-Backup');
+					if (!isReadOnly) {
+						if (!resp.data.is_writable) {
+							$('#wpat_fm_save_file_btn').prop('disabled', true).text('Solo Lectura');
+						} else {
+							$('#wpat_fm_save_file_btn').prop('disabled', false).html('<span class="dashicons dashicons-saved"></span> Guardar con Auto-Backup');
+						}
 					}
 				} else {
-					toast(resp.data ? resp.data.message : 'Error al abrir archivo.', true);
+					var err = (resp.data && resp.data.message) ? resp.data.message : 'Error al abrir archivo.';
+					toast(err, true);
 					$('#wpat_fm_editor_modal').hide();
 				}
 			},
-			error: function() {
-				toast('Error de conexión al abrir archivo.', true);
+			error: function(xhr) {
+				var err = xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message ? xhr.responseJSON.data.message : 'Error al abrir archivo.';
+				toast(err, true);
 				$('#wpat_fm_editor_modal').hide();
 			}
 		});
 	};
 
-	// Clic en archivo editable o botón editar
-	$(document).on('click', '.wpat-fm-item-name.is-editable, .wpat-fm-action-btn.edit', function(e) {
+	// Clic en ver código (solo lectura con icono de ojo)
+	$(document).on('click', '.wpat-fm-action-btn.view', function(e) {
 		e.preventDefault();
 		var path = $(this).attr('data-path');
-		openCodeEditor(path);
+		openCodeEditor(path, true);
+	});
+
+	// Clic en editar
+	$(document).on('click', '.wpat-fm-action-btn.edit', function(e) {
+		e.preventDefault();
+		var path = $(this).attr('data-path');
+		openCodeEditor(path, false);
+	});
+
+	// Clic en nombre de archivo editable (abre editor)
+	$(document).on('click', '.wpat-fm-item-name.is-editable', function(e) {
+		e.preventDefault();
+		var path = $(this).attr('data-path');
+		openCodeEditor(path, false);
 	});
 
 	// Soporte de tabulación en textarea
@@ -677,13 +1005,14 @@ jQuery(document).ready(function($) {
 					if (resp.data && resp.data.syntax_error) {
 						$('#wpat_fm_syntax_alert').text('⚠️ ' + resp.data.message).show();
 					} else {
-						toast(resp.data ? resp.data.message : 'Error al guardar.', true);
+						var err = (resp.data && resp.data.message) ? resp.data.message : 'Error al guardar.';
+						toast(err, true);
 					}
 				}
 			},
 			error: function(xhr) {
 				$btn.prop('disabled', false).html('<span class="dashicons dashicons-saved"></span> Guardar con Auto-Backup');
-				var err = xhr.responseJSON && xhr.responseJSON.data ? xhr.responseJSON.data.message : 'Error al guardar archivo.';
+				var err = xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message ? xhr.responseJSON.data.message : 'Error al guardar archivo.';
 				toast(err, true);
 			}
 		});

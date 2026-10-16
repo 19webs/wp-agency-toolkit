@@ -2143,6 +2143,7 @@ class WPAT_Admin {
 			'media-renamer',
 			'qr-generator',
 			'client-studio',
+			'file-manager',
 			'tools',
 		);
 
@@ -2283,6 +2284,9 @@ class WPAT_Admin {
 						</a>
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=role-manager' ) ); ?>" class="wpat-cat-direct-link" data-direct-link="role-manager" style="<?php echo ( isset( $settings['role-manager'] ) && '1' === (string) $settings['role-manager'] ) ? '' : 'display:none;'; ?>">
 							<span class="wpat-cat-label">👥 Gestor de Roles</span>
+						</a>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=file-manager' ) ); ?>" class="wpat-cat-direct-link" data-direct-link="file-manager" style="<?php echo ( isset( $settings['file-manager'] ) && '1' === (string) $settings['file-manager'] ) ? '' : 'display:none;'; ?>">
+							<span class="wpat-cat-label">📁 Explorador de Archivos (2FA)</span>
 						</a>
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=snippets' ) ); ?>" class="wpat-cat-direct-link" data-direct-link="snippets" style="<?php echo ( isset( $settings['snippets'] ) && '1' === (string) $settings['snippets'] ) ? '' : 'display:none;'; ?>">
 							<span class="wpat-cat-label">💻 Snippets de Código</span>
@@ -3411,6 +3415,9 @@ class WPAT_Admin {
 											</a>
 											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=role-manager' ) ); ?>" class="wpat-cat-direct-link" data-direct-link="role-manager" style="<?php echo ( isset( $settings['role-manager'] ) && '1' === (string) $settings['role-manager'] ) ? '' : 'display:none;'; ?>">
 												<span class="wpat-cat-label">👥 Gestor de Roles</span>
+											</a>
+											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=file-manager' ) ); ?>" class="wpat-cat-direct-link" data-direct-link="file-manager" style="<?php echo ( isset( $settings['file-manager'] ) && '1' === (string) $settings['file-manager'] ) ? '' : 'display:none;'; ?>">
+												<span class="wpat-cat-label">📁 Explorador de Archivos (2FA)</span>
 											</a>
 											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=snippets' ) ); ?>" class="wpat-cat-direct-link" data-direct-link="snippets" style="<?php echo ( isset( $settings['snippets'] ) && '1' === (string) $settings['snippets'] ) ? '' : 'display:none;'; ?>">
 												<span class="wpat-cat-label">💻 Snippets de Código</span>

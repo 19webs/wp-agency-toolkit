@@ -172,6 +172,17 @@ class WPAT_Admin {
 				array( $this, 'render_admin_page' )
 			);
 		}
+
+		if ( isset( $settings['file-manager'] ) && '1' === (string) $settings['file-manager'] ) {
+			add_submenu_page(
+				'wp-agency-toolkit',
+				'Explorador de Archivos (2FA)',
+				'Explorador de Archivos',
+				'manage_options',
+				'wpat-file-manager',
+				array( $this, 'render_admin_page' )
+			);
+		}
 	}
 
 	/**
@@ -201,6 +212,10 @@ class WPAT_Admin {
 			'nonce' => wp_create_nonce( 'wpat_client_studio_nonce' ),
 		) );
 
+		// File Manager assets
+		wp_enqueue_style( 'wpat-file-manager-css', WPAT_URL . 'assets/css/wpat-file-manager.css', array(), time() );
+		wp_enqueue_script( 'wpat-file-manager-js', WPAT_URL . 'assets/js/wpat-file-manager.js', array( 'jquery', 'wpat-qrcode-js' ), time(), true );
+
 		wp_localize_script( 'wpat-admin-js', 'wpat_object', array(
 			'ajax_url'             => admin_url( 'admin-ajax.php' ),
 			'nonce'                => wp_create_nonce( 'wpat_save_settings_action' ),
@@ -211,6 +226,7 @@ class WPAT_Admin {
 			'snippet_nonce'        => wp_create_nonce( 'wpat_snippet_nonce_action' ),
 			'qr_nonce'             => wp_create_nonce( 'wpat_qr_nonce_action' ),
 			'studio_nonce'         => wp_create_nonce( 'wpat_client_studio_nonce' ),
+			'file_manager_nonce'   => wp_create_nonce( 'wpat_file_manager_nonce' ),
 		) );
 
 		// Localizar kits instalados para el JS de administración
@@ -729,6 +745,7 @@ class WPAT_Admin {
 				'wpat-media-renamer'         => 'media-renamer',
 				'wpat-qr-generator'          => 'qr-generator',
 				'wpat-client-studio'         => 'client-studio',
+				'wpat-file-manager'          => 'file-manager',
 				'wpat-tools'                 => 'tools',
 			);
 			if ( isset( $page_map[ $_GET['page'] ] ) ) {
@@ -792,6 +809,7 @@ class WPAT_Admin {
 			'media-renamer',
 			'qr-generator',
 			'client-studio',
+			'file-manager',
 			'tools',
 		);
 
@@ -3193,6 +3211,7 @@ class WPAT_Admin {
 				'wpat-qr-generator'      => 'qr-generator',
 				'wpat-client-studio'     => 'client-studio',
 				'wpat-envato-importer'   => 'envato-importer',
+				'wpat-file-manager'      => 'file-manager',
 				'wpat-tools'             => 'tools',
 			);
 			if ( isset( $map[ $page_slug ] ) ) {
@@ -4084,6 +4103,18 @@ class WPAT_Admin {
 				'icon'        => '👥',
 				'icon_bg'     => 'admin',
 				'keywords'    => 'roles permisos capabilities usuarios roles perfil editor administrador permisos capacidades clonar reset'
+			),
+			array(
+				'id'          => 'file-manager',
+				'is_new'      => true,
+				'title'       => 'Explorador de Archivos Web (2FA)',
+				'badge'       => 'Subpágina',
+				'badge_class' => 'subpage',
+				'desc'        => 'Explorador y editor de archivos seguro protegido con Doble Factor (2FA / TOTP) para editar wp-config, temas y plugins sin FTP.',
+				'cat_class'   => 'cat-system',
+				'icon'        => '📁',
+				'icon_bg'     => 'admin',
+				'keywords'    => 'explorador archivos file manager ftp cpanel 2fa totp wp-config editor codigo php'
 			),
 			array(
 				'id'          => 'client-studio',
@@ -11801,6 +11832,9 @@ class WPAT_Admin {
 			case 'client-studio':
 				$this->render_client_studio_content( $settings );
 				break;
+			case 'file-manager':
+				$this->render_file_manager_content( $settings );
+				break;
 			case 'tools':
 				echo '<div id="wpat_health_content_wrapper">';
 				$this->render_health_tab_content();
@@ -15584,6 +15618,244 @@ class WPAT_Admin {
 						</p>
 					</div>
 				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Renderiza la interfaz del Explorador de Archivos Web con 2FA.
+	 *
+	 * @param array $settings Ajustes del plugin.
+	 */
+	public function render_file_manager_content( $settings ) {
+		if ( ! class_exists( 'WPAT_File_Manager' ) ) {
+			require_once WPAT_PATH . 'includes/modules/class-wpat-file-manager.php';
+		}
+
+		$is_setup    = WPAT_File_Manager::is_user_setup();
+		$is_unlocked = WPAT_File_Manager::is_session_unlocked();
+		$nonce       = wp_create_nonce( 'wpat_file_manager_nonce' );
+		$is_active   = isset( $settings['file-manager'] ) && '1' === (string) $settings['file-manager'];
+		?>
+		<div class="wpat-module-card wpat-file-manager-wrapper">
+			<div class="wpat-module-header">
+				<div class="wpat-module-info">
+					<h3>Explorador de Archivos Web (Protegido con 2FA)</h3>
+					<p>Explorador y editor de código nativo ultra-ligero para archivos del servidor (<code>wp-config.php</code>, <code>.htaccess</code>, temas y plugins) protegido mediante Autenticación en Dos Pasos (TOTP).</p>
+				</div>
+				<?php $this->render_module_toggle( 'file-manager', $settings, true ); ?>
+			</div>
+
+			<div class="wpat-module-body" style="display: block; padding: 22px;">
+				<input type="hidden" id="wpat_fm_nonce" value="<?php echo esc_attr( $nonce ); ?>" />
+
+				<?php if ( ! $is_active ) : ?>
+					<div class="wpat-notice wpat-notice-warning" style="display:flex; align-items:center; gap:12px; padding:16px 20px; border-radius:8px; margin-bottom:20px; background:#fffbeb; border:1px solid #fef3c7; color:#92400e;">
+						<span class="dashicons dashicons-warning" style="font-size:24px; width:24px; height:24px;"></span>
+						<div>
+							<strong style="display:block; font-size:14px; margin-bottom:4px;">El módulo está desactivado</strong>
+							<span style="font-size:13px;">Activa el interruptor en la esquina superior derecha para habilitar el explorador de archivos seguro.</span>
+						</div>
+					</div>
+				<?php else : ?>
+
+					<!-- 1. PANTALLA DE BLOQUEO 2FA -->
+					<div id="wpat_fm_lock_screen" class="wpat-fm-lock-screen" <?php echo ( ! $is_setup || $is_unlocked ) ? 'style="display:none;"' : ''; ?>>
+						<div class="wpat-fm-lock-icon">🔒</div>
+						<h2 class="wpat-fm-lock-title">Acceso Protegido por 2FA</h2>
+						<p class="wpat-fm-lock-desc">Introduce el código de 6 dígitos de tu aplicación autenticadora (Google Authenticator, Authy o Microsoft Authenticator) o un código de rescate para desbloquear el explorador.</p>
+
+						<form id="wpat_fm_unlock_form" style="max-width: 320px; margin: 0 auto;">
+							<div class="wpat-fm-otp-input-wrap">
+								<input type="text" id="wpat_fm_unlock_code" class="wpat-fm-otp-input" placeholder="000000" maxlength="9" autocomplete="one-time-code" autofocus />
+							</div>
+							<div style="margin-bottom: 16px;">
+								<button type="submit" class="wpat-fm-btn wpat-fm-btn-primary" style="width: 100%; height: 44px; font-size: 14px;">
+									<span class="dashicons dashicons-unlock"></span> Desbloquear Explorador
+								</button>
+							</div>
+							<div style="font-size: 12px; color: #64748b; margin-top: 14px;">
+								<a href="#" id="wpat_fm_start_setup_btn" style="color: #64748b; text-decoration: underline;">Volver a configurar / Escanear nuevo QR</a>
+							</div>
+						</form>
+					</div>
+
+					<!-- 2. ASISTENTE DE CONFIGURACIÓN 2FA -->
+					<div id="wpat_fm_setup_screen" class="wpat-fm-lock-screen" <?php echo ( $is_setup || $is_unlocked ) ? 'style="display:none;"' : ''; ?>>
+						<div class="wpat-fm-lock-icon" style="background: #eff6ff; border-color: #dbeafe; color: #2563eb;">🛡️</div>
+						<h2 class="wpat-fm-lock-title">Configuración de Verificación 2FA</h2>
+						<p class="wpat-fm-lock-desc">Para garantizar que nadie pueda manipular archivos críticos del servidor sin tu permiso, vincula tu app de autenticación móvil.</p>
+
+						<div style="margin: 15px 0;">
+							<button type="button" id="wpat_fm_reconfig_btn" class="wpat-fm-btn wpat-fm-btn-primary">
+								<span class="dashicons dashicons-smartphone"></span> Generar Código QR de Configuración
+							</button>
+						</div>
+
+						<div id="wpat_fm_qrcode_box" class="wpat-fm-qr-box" style="margin: 15px auto;"></div>
+						<input type="hidden" id="wpat_fm_otp_uri" value="" />
+
+						<div class="wpat-fm-secret-key-wrap">
+							<span style="font-size: 12px; color: #64748b;">Clave manual:</span>
+							<code id="wpat_fm_secret_display" class="wpat-fm-secret-code">--------</code>
+							<button type="button" id="wpat_fm_copy_secret_btn" class="wpat-fm-btn wpat-fm-btn-secondary wpat-fm-btn-small" title="Copiar clave">
+								<span class="dashicons dashicons-clipboard"></span>
+							</button>
+						</div>
+
+						<form id="wpat_fm_setup_form" style="max-width: 320px; margin: 20px auto 0;">
+							<p style="font-size: 12.5px; color: #475569; margin-bottom: 10px;">Introduce el código de 6 dígitos que muestra tu app:</p>
+							<div class="wpat-fm-otp-input-wrap">
+								<input type="text" id="wpat_fm_setup_code" class="wpat-fm-otp-input" placeholder="000000" maxlength="6" autocomplete="off" />
+							</div>
+							<button type="submit" class="wpat-fm-btn wpat-fm-btn-primary" style="width: 100%; height: 44px; font-size: 14px;">
+								<span class="dashicons dashicons-yes-alt"></span> Confirmar y Desbloquear
+							</button>
+						</form>
+					</div>
+
+					<!-- 3. MODAL DE CÓDIGOS DE RESCATE -->
+					<div id="wpat_fm_recovery_modal" class="wpat-fm-modal-overlay" style="display:none;">
+						<div class="wpat-fm-modal-dialog" style="max-width: 520px; height: auto;">
+							<div class="wpat-fm-editor-header" style="background:#b45309;">
+								<div class="wpat-fm-editor-title" style="color:#ffffff;">
+									<span>🔑</span> Códigos de Recuperación de Emergencia
+								</div>
+							</div>
+							<div style="padding: 24px; background: #ffffff;">
+								<p style="font-size: 13.5px; color: #1e293b; margin-top: 0;">
+									Guarda estos códigos de recuperación en un lugar seguro. Si pierdes el móvil o el acceso a tu app 2FA, cada código te permitirá acceder una vez.
+								</p>
+								<div class="wpat-fm-recovery-card">
+									<div id="wpat_fm_recovery_codes_list" class="wpat-fm-recovery-list"></div>
+								</div>
+								<div style="margin-top: 24px; text-align: right;">
+									<button type="button" id="wpat_fm_confirm_recovery_btn" class="wpat-fm-btn wpat-fm-btn-primary" style="width: 100%; height: 40px;">
+										He guardado mis códigos de recuperación
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- 4. CONTENEDOR PRINCIPAL DEL EXPLORADOR -->
+					<div id="wpat_fm_main_view" class="wpat-fm-container" <?php echo ( ! $is_unlocked ) ? 'style="display:none;"' : ''; ?>>
+						<!-- Barra de Estado Superior -->
+						<div class="wpat-fm-status-bar">
+							<div class="wpat-fm-status-info">
+								<span class="wpat-fm-badge-2fa">🛡️ 2FA Activo</span>
+								<span>Sesión:</span>
+								<span id="wpat_fm_timer" class="wpat-fm-timer-badge">20:00</span>
+							</div>
+							<div style="display: flex; gap: 8px;">
+								<button type="button" id="wpat_fm_lock_btn" class="wpat-fm-btn wpat-fm-btn-secondary wpat-fm-btn-small" style="background: rgba(255,255,255,0.15); border: none; color: #ffffff;">
+									<span class="dashicons dashicons-lock"></span> Bloquear Sesión
+								</button>
+							</div>
+						</div>
+
+						<!-- Barra de Herramientas -->
+						<div class="wpat-fm-toolbar">
+							<div class="wpat-fm-toolbar-actions">
+								<button type="button" id="wpat_fm_refresh_btn" class="wpat-fm-btn wpat-fm-btn-secondary wpat-fm-btn-small" title="Recargar">
+									<span class="dashicons dashicons-update"></span>
+								</button>
+								<button type="button" id="wpat_fm_new_file_btn" class="wpat-fm-btn wpat-fm-btn-secondary wpat-fm-btn-small">
+									<span class="dashicons dashicons-media-text"></span> Nuevo Archivo
+								</button>
+								<button type="button" id="wpat_fm_new_dir_btn" class="wpat-fm-btn wpat-fm-btn-secondary wpat-fm-btn-small">
+									<span class="dashicons dashicons-category"></span> Nueva Carpeta
+								</button>
+								<button type="button" id="wpat_fm_upload_btn" class="wpat-fm-btn wpat-fm-btn-primary wpat-fm-btn-small">
+									<span class="dashicons dashicons-upload"></span> Subir Archivo
+								</button>
+								<input type="file" id="wpat_fm_file_input" style="display:none;" />
+								<button type="button" id="wpat_fm_download_zip_btn" class="wpat-fm-btn wpat-fm-btn-secondary wpat-fm-btn-small" title="Descargar carpeta actual como ZIP">
+									<span class="dashicons dashicons-download"></span> Descargar ZIP
+								</button>
+							</div>
+
+							<div class="wpat-fm-search-wrap">
+								<span class="dashicons dashicons-search wpat-fm-search-icon"></span>
+								<input type="text" id="wpat_fm_search" class="wpat-fm-search-input" placeholder="Buscar en carpeta actual..." />
+							</div>
+						</div>
+
+						<!-- Barra de Migas de Pan (Breadcrumbs) -->
+						<div id="wpat_fm_breadcrumbs" class="wpat-fm-breadcrumbs-bar">
+							<a class="wpat-fm-breadcrumb-item" data-path="">🏠 Raíz (ABSPATH)</a>
+						</div>
+
+						<!-- Tabla de Archivos -->
+						<div class="wpat-fm-table-wrap">
+							<table class="wpat-fm-table">
+								<thead>
+									<tr>
+										<th>Nombre</th>
+										<th style="width: 100px;">Tamaño</th>
+										<th style="width: 90px;">Permisos</th>
+										<th style="width: 160px;">Modificado</th>
+										<th style="width: 140px; text-align: right;">Acciones</th>
+									</tr>
+								</thead>
+								<tbody id="wpat_fm_tbody">
+									<tr>
+										<td colspan="5" style="text-align: center; padding: 30px; color: #64748b;">
+											Cargando archivos del directorio...
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+
+						<!-- Barra Inferior de Info -->
+						<div class="wpat-fm-footer-bar">
+							<span id="wpat_fm_footer_count">0 elementos</span>
+							<span id="wpat_fm_footer_path">Ruta: /</span>
+						</div>
+					</div>
+
+					<!-- 5. MODAL DE EDITOR DE CÓDIGO EMBEBIDO -->
+					<div id="wpat_fm_editor_modal" class="wpat-fm-modal-overlay" style="display:none;">
+						<div class="wpat-fm-modal-dialog">
+							<div class="wpat-fm-editor-header">
+								<div class="wpat-fm-editor-title">
+									<span class="dashicons dashicons-editor-code" style="color:#38bdf8;"></span>
+									<span id="wpat_fm_editor_filename">archivo.php</span>
+									<span id="wpat_fm_critical_badge" class="wpat-fm-badge-critical" style="display:none;">Crítico</span>
+								</div>
+								<div>
+									<button type="button" id="wpat_fm_close_editor_btn" class="wpat-fm-btn wpat-fm-btn-secondary wpat-fm-btn-small" style="background:rgba(255,255,255,0.1); border:none; color:#f8fafc;">
+										✕
+									</button>
+								</div>
+							</div>
+
+							<div id="wpat_fm_syntax_alert" class="wpat-fm-syntax-alert"></div>
+
+							<div class="wpat-fm-editor-body">
+								<textarea id="wpat_fm_editor_textarea" class="wpat-fm-editor-textarea" spellcheck="false" placeholder="Contenido del archivo..."></textarea>
+							</div>
+
+							<div class="wpat-fm-editor-footer">
+								<div>
+									<span id="wpat_fm_editor_path_info">Ruta: /</span>
+								</div>
+								<div style="display: flex; gap: 8px;">
+									<button type="button" id="wpat_fm_cancel_editor_btn" class="wpat-fm-btn wpat-fm-btn-secondary wpat-fm-btn-small">
+										Cancelar
+									</button>
+									<button type="button" id="wpat_fm_save_file_btn" class="wpat-fm-btn wpat-fm-btn-primary wpat-fm-btn-small">
+										<span class="dashicons dashicons-saved"></span> Guardar con Auto-Backup
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+
+				<?php endif; ?>
+
 			</div>
 		</div>
 		<?php

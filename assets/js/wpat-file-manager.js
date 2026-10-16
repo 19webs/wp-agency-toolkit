@@ -122,12 +122,11 @@ jQuery(document).ready(function($) {
 	});
 
 	// Confirmar y Activar 2FA
-	$(document).on('submit', '#wpat_fm_setup_form', function(e) {
-		e.preventDefault();
+	var submitSetupCode = function() {
 		var code = $('#wpat_fm_setup_code').val().trim();
 		if (!code) return;
 
-		var $btn = $(this).find('button[type="submit"]');
+		var $btn = $('#wpat_fm_setup_submit_btn');
 		$btn.prop('disabled', true).text('Verificando...');
 
 		$.ajax({
@@ -140,7 +139,7 @@ jQuery(document).ready(function($) {
 				nonce: getNonce()
 			},
 			success: function(resp) {
-				$btn.prop('disabled', false).text('Confirmar y Desbloquear');
+				$btn.prop('disabled', false).html('<span class="dashicons dashicons-yes-alt"></span> Confirmar y Desbloquear');
 				if (resp.success && resp.data) {
 					toast('¡2FA configurado y activado con éxito!');
 					$('#wpat_fm_setup_screen').hide();
@@ -160,11 +159,25 @@ jQuery(document).ready(function($) {
 					toast(resp.data ? resp.data.message : 'Código incorrecto.', true);
 				}
 			},
-			error: function() {
-				$btn.prop('disabled', false).text('Confirmar y Desbloquear');
-				toast('Error al verificar el código.', true);
+			error: function(xhr) {
+				$btn.prop('disabled', false).html('<span class="dashicons dashicons-yes-alt"></span> Confirmar y Desbloquear');
+				var err = xhr.responseJSON && xhr.responseJSON.data ? xhr.responseJSON.data.message : 'Error al verificar el código.';
+				toast(err, true);
 			}
 		});
+	};
+
+	$(document).on('click', '#wpat_fm_setup_submit_btn', function(e) {
+		e.preventDefault();
+		submitSetupCode();
+	});
+
+	$(document).on('keydown', '#wpat_fm_setup_code', function(e) {
+		if (e.which === 13 || e.keyCode === 13) {
+			e.preventDefault();
+			e.stopPropagation();
+			submitSetupCode();
+		}
 	});
 
 	// Aceptar y cerrar modal de códigos de rescate
@@ -175,12 +188,11 @@ jQuery(document).ready(function($) {
 	});
 
 	// Desbloquear sesión existente con 2FA
-	$(document).on('submit', '#wpat_fm_unlock_form', function(e) {
-		e.preventDefault();
+	var submitUnlockCode = function() {
 		var code = $('#wpat_fm_unlock_code').val().trim();
 		if (!code) return;
 
-		var $btn = $(this).find('button[type="submit"]');
+		var $btn = $('#wpat_fm_unlock_submit_btn');
 		$btn.prop('disabled', true).text('Comprobando...');
 
 		$.ajax({
@@ -192,7 +204,7 @@ jQuery(document).ready(function($) {
 				nonce: getNonce()
 			},
 			success: function(resp) {
-				$btn.prop('disabled', false).text('Desbloquear Explorador');
+				$btn.prop('disabled', false).html('<span class="dashicons dashicons-unlock"></span> Desbloquear Explorador');
 				if (resp.success && resp.data) {
 					toast(resp.data.message || 'Sesión desbloqueada con éxito.');
 					showFileManager(resp.data.timeout_secs);
@@ -202,11 +214,24 @@ jQuery(document).ready(function($) {
 				}
 			},
 			error: function(xhr) {
-				$btn.prop('disabled', false).text('Desbloquear Explorador');
+				$btn.prop('disabled', false).html('<span class="dashicons dashicons-unlock"></span> Desbloquear Explorador');
 				var err = xhr.responseJSON && xhr.responseJSON.data ? xhr.responseJSON.data.message : 'Error al verificar.';
 				toast(err, true);
 			}
 		});
+	};
+
+	$(document).on('click', '#wpat_fm_unlock_submit_btn', function(e) {
+		e.preventDefault();
+		submitUnlockCode();
+	});
+
+	$(document).on('keydown', '#wpat_fm_unlock_code', function(e) {
+		if (e.which === 13 || e.keyCode === 13) {
+			e.preventDefault();
+			e.stopPropagation();
+			submitUnlockCode();
+		}
 	});
 
 	// Bloquear sesión activa

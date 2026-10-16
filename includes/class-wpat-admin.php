@@ -214,7 +214,7 @@ class WPAT_Admin {
 
 		// File Manager assets
 		wp_enqueue_style( 'wpat-file-manager-css', WPAT_URL . 'assets/css/wpat-file-manager.css', array(), time() );
-		wp_enqueue_script( 'wpat-file-manager-js', WPAT_URL . 'assets/js/wpat-file-manager.js', array( 'jquery', 'wpat-qrcode-js' ), time(), true );
+		wp_enqueue_script( 'wpat-file-manager-js', WPAT_URL . 'assets/js/wpat-file-manager.js', array( 'jquery', 'wpat-qrcode-js', 'wpat-admin-js' ), time(), true );
 
 		wp_localize_script( 'wpat-admin-js', 'wpat_object', array(
 			'ajax_url'             => admin_url( 'admin-ajax.php' ),
@@ -15673,19 +15673,19 @@ class WPAT_Admin {
 						<h2 class="wpat-fm-lock-title">Acceso Protegido por 2FA</h2>
 						<p class="wpat-fm-lock-desc">Introduce el código de 6 dígitos de tu aplicación autenticadora (Google Authenticator, Authy o Microsoft Authenticator) o un código de rescate para desbloquear el explorador.</p>
 
-						<form id="wpat_fm_unlock_form" style="max-width: 320px; margin: 0 auto;">
+						<div id="wpat_fm_unlock_form" style="max-width: 320px; margin: 0 auto;">
 							<div class="wpat-fm-otp-input-wrap">
 								<input type="text" id="wpat_fm_unlock_code" class="wpat-fm-otp-input" placeholder="000000" maxlength="9" autocomplete="one-time-code" autofocus />
 							</div>
 							<div style="margin-bottom: 16px;">
-								<button type="submit" class="wpat-fm-btn wpat-fm-btn-primary" style="width: 100%; height: 44px; font-size: 14px;">
+								<button type="button" id="wpat_fm_unlock_submit_btn" class="wpat-fm-btn wpat-fm-btn-primary" style="width: 100%; height: 44px; font-size: 14px;">
 									<span class="dashicons dashicons-unlock"></span> Desbloquear Explorador
 								</button>
 							</div>
 							<div style="font-size: 12px; color: #64748b; margin-top: 14px;">
 								<a href="#" id="wpat_fm_start_setup_btn" style="color: #64748b; text-decoration: underline;">Volver a configurar / Escanear nuevo QR</a>
 							</div>
-						</form>
+						</div>
 					</div>
 
 					<!-- 2. ASISTENTE DE CONFIGURACIÓN 2FA -->
@@ -15711,15 +15711,15 @@ class WPAT_Admin {
 							</button>
 						</div>
 
-						<form id="wpat_fm_setup_form" style="max-width: 320px; margin: 20px auto 0;">
+						<div id="wpat_fm_setup_form" style="max-width: 320px; margin: 20px auto 0;">
 							<p style="font-size: 12.5px; color: #475569; margin-bottom: 10px;">Introduce el código de 6 dígitos que muestra tu app:</p>
 							<div class="wpat-fm-otp-input-wrap">
 								<input type="text" id="wpat_fm_setup_code" class="wpat-fm-otp-input" placeholder="000000" maxlength="6" autocomplete="off" />
 							</div>
-							<button type="submit" class="wpat-fm-btn wpat-fm-btn-primary" style="width: 100%; height: 44px; font-size: 14px;">
+							<button type="button" id="wpat_fm_setup_submit_btn" class="wpat-fm-btn wpat-fm-btn-primary" style="width: 100%; height: 44px; font-size: 14px;">
 								<span class="dashicons dashicons-yes-alt"></span> Confirmar y Desbloquear
 							</button>
-						</form>
+						</div>
 					</div>
 
 					<!-- 3. MODAL DE CÓDIGOS DE RESCATE -->

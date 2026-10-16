@@ -82,14 +82,20 @@ jQuery(document).ready(function($) {
 					if (qrContainer) {
 						qrContainer.innerHTML = '';
 						if (typeof QRCode !== 'undefined') {
-							new QRCode(qrContainer, {
-								text: resp.data.otp_uri,
-								width: 180,
-								height: 180,
-								colorDark: '#0f172a',
-								colorLight: '#ffffff',
-								correctLevel: QRCode.CorrectLevel.M
-							});
+							try {
+								new QRCode(qrContainer, {
+									text: resp.data.otp_uri,
+									width: 180,
+									height: 180,
+									colorDark: '#0f172a',
+									colorLight: '#ffffff',
+									correctLevel: QRCode.CorrectLevel.M
+								});
+							} catch (qrErr) {
+								console.warn('Fallo render local de QR, usando fallback:', qrErr);
+								var safeUri = encodeURIComponent(resp.data.otp_uri);
+								qrContainer.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + safeUri + '" alt="QR 2FA" style="width:180px;height:180px;display:block;margin:0 auto;" />';
+							}
 						}
 					}
 					$('#wpat_fm_setup_code').focus();

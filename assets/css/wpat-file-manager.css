@@ -136,12 +136,17 @@
 
 /* Modal de Asistente de Configuración 2FA */
 .wpat-fm-qr-box {
-	background: #f8fafc;
+	background: #ffffff;
 	border: 1px dashed #cbd5e1;
 	border-radius: 8px;
 	padding: 16px;
-	margin: 16px 0;
-	display: inline-block;
+	margin: 16px auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 212px;
+	min-height: 212px;
+	box-sizing: border-box;
 }
 
 .wpat-fm-qr-box canvas,

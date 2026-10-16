@@ -349,16 +349,17 @@ class WPAT_File_Manager {
 		// Guardar temporalmente el secreto pendiente de confirmación
 		set_transient( 'wpat_fm_pending_secret_' . $user_id, $secret, 15 * MINUTE_IN_SECONDS );
 
-		$blog_name = get_bloginfo( 'name' );
-		$user      = wp_get_current_user();
-		$account   = rawurlencode( $user->user_login );
-		$issuer    = rawurlencode( 'WP Agency Toolkit (' . $blog_name . ')' );
-		$otp_uri   = "otpauth://totp/{$issuer}:{$account}?secret={$secret}&issuer={$issuer}&algorithm=SHA1&digits=6&period=30";
+		$clean_site = sanitize_text_field( get_bloginfo( 'name' ) );
+		$issuer_str = ! empty( $clean_site ) ? 'WPAT (' . mb_substr( $clean_site, 0, 15 ) . ')' : 'WP Agency Toolkit';
+		$user       = wp_get_current_user();
+		$account    = rawurlencode( $user->user_login );
+		$issuer     = rawurlencode( $issuer_str );
+		$otp_uri    = "otpauth://totp/{$issuer}:{$account}?secret={$secret}&issuer={$issuer}";
 
 		wp_send_json_success( array(
 			'secret'    => $secret,
 			'otp_uri'   => $otp_uri,
-			'blog_name' => $blog_name,
+			'blog_name' => $clean_site,
 		) );
 	}
 

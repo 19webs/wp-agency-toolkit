@@ -349,3 +349,68 @@
 	border-color: #93c5fd;
 	color: #1d4ed8;
 }
+
+/* Modal de añadir nuevo campo */
+.wpat-reg-modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	z-index: 100000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.wpat-reg-modal-backdrop {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(15, 23, 42, 0.6);
+	backdrop-filter: blur(2px);
+}
+
+.wpat-reg-modal-content {
+	position: relative;
+	background: #ffffff;
+	border-radius: 12px;
+	width: 90%;
+	max-width: 520px;
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+	border: 1px solid #cbd5e1;
+	z-index: 2;
+	overflow: hidden;
+}
+
+.wpat-reg-modal-header {
+	padding: 16px 20px;
+	background: #f8fafc;
+	border-bottom: 1px solid #e2e8f0;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.wpat-reg-modal-header h4 {
+	margin: 0;
+	font-size: 15px;
+	font-weight: 700;
+	color: #0f172a;
+}
+
+.wpat-reg-modal-body {
+	padding: 20px;
+}
+
+.wpat-reg-modal-footer {
+	padding: 14px 20px;
+	background: #f8fafc;
+	border-top: 1px solid #e2e8f0;
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+}
+

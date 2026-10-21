@@ -1863,6 +1863,10 @@ class WPAT_Admin {
 			if ( 'role-manager' === $saving_module && ! empty( $target_role ) ) {
 				$args['role'] = $target_role;
 			}
+			if ( 'woo-registration-forms' === $saving_module && ! empty( $f_id ) ) {
+				$args['form_action'] = 'edit';
+				$args['form_id']     = $f_id;
+			}
 			$redirect_url = add_query_arg( $args, menu_page_url( 'wp-agency-toolkit', false ) );
 		} else {
 			$active_tab = isset( $_POST['wpat_active_tab'] ) ? sanitize_key( $_POST['wpat_active_tab'] ) : '';
@@ -16064,67 +16068,106 @@ class WPAT_Admin {
 
 		$is_active = isset( $settings['woo-registration-forms'] ) && '1' === (string) $settings['woo-registration-forms'];
 		$forms     = WPAT_Woo_Registration_Forms::get_forms();
+		$base_url  = admin_url( 'admin.php?page=wp-agency-toolkit&mod=woo-registration-forms' );
 
-		// Procesar guardado de formulario si se envió POST
-		$can_save_local = false;
-		if ( isset( $_POST['wpat_save_reg_form'] ) ) {
-			if ( isset( $_POST['wpat_settings_nonce'] ) && wp_verify_nonce( $_POST['wpat_settings_nonce'], 'wpat_save_settings_action' ) ) {
-				$can_save_local = true;
-			} elseif ( isset( $_POST['wpat_reg_form_nonce'] ) && wp_verify_nonce( $_POST['wpat_reg_form_nonce'], 'wpat_save_reg_form_action' ) ) {
-				$can_save_local = true;
-			}
-		}
-
-		if ( $can_save_local ) {
-			$f_id = sanitize_key( $_POST['form_id'] );
-			if ( ! empty( $f_id ) ) {
-				$forms[ $f_id ] = array(
-					'id'                   => $f_id,
-					'title'                => sanitize_text_field( wp_unslash( $_POST['form_title'] ) ),
-					'desc'                 => sanitize_textarea_field( wp_unslash( $_POST['form_desc'] ) ),
-					'button_text'          => sanitize_text_field( wp_unslash( $_POST['form_button_text'] ) ),
-					'role_assignment'      => sanitize_key( $_POST['form_role_assignment'] ),
-					'default_role'         => sanitize_key( $_POST['form_default_role'] ),
-					'allowed_roles'        => isset( $_POST['form_allowed_roles'] ) && is_array( $_POST['form_allowed_roles'] ) ? array_map( 'sanitize_key', $_POST['form_allowed_roles'] ) : array( 'customer' ),
-					'approval_required'    => isset( $_POST['form_approval_required'] ) ? '1' : '0',
-					'redirect_type'        => sanitize_key( $_POST['form_redirect_type'] ),
-					'redirect_url'         => esc_url_raw( wp_unslash( $_POST['form_redirect_url'] ) ),
-					'success_msg'          => sanitize_textarea_field( wp_unslash( $_POST['form_success_msg'] ) ),
-					'attach_to_my_account' => isset( $_POST['form_attach_to_my_account'] ) ? '1' : '0',
-					'fields'               => isset( $forms[ $f_id ]['fields'] ) ? $forms[ $f_id ]['fields'] : array(),
-				);
-
-				// Actualizar campos si se enviaron
-				if ( isset( $_POST['fields_data'] ) && is_array( $_POST['fields_data'] ) ) {
-					$updated_fields = array();
-					foreach ( $_POST['fields_data'] as $f_data ) {
-						if ( ! empty( $f_data['id'] ) ) {
-							$updated_fields[] = array(
-								'id'          => sanitize_key( $f_data['id'] ),
-								'type'        => sanitize_key( $f_data['type'] ),
-								'label'       => sanitize_text_field( wp_unslash( $f_data['label'] ) ),
-								'placeholder' => sanitize_text_field( wp_unslash( $f_data['placeholder'] ) ),
-								'required'    => ! empty( $f_data['required'] ) ? '1' : '0',
-								'width'       => ( isset( $f_data['width'] ) && 'half' === $f_data['width'] ) ? 'half' : 'full',
-								'is_native'   => ! empty( $f_data['is_native'] ) ? '1' : '0',
-							);
-						}
-					}
-					$forms[ $f_id ]['fields'] = $updated_fields;
+		// 1. Procesar clonado de formulario
+		if ( isset( $_GET['form_action'] ) && 'clone' === $_GET['form_action'] && ! empty( $_GET['form_id'] ) ) {
+			$src_id = sanitize_key( $_GET['form_id'] );
+			if ( check_admin_referer( 'wpat_clone_form_' . $src_id ) && isset( $forms[ $src_id ] ) ) {
+				$new_id = $src_id . '-copia';
+				$suffix = 1;
+				while ( isset( $forms[ $new_id ] ) ) {
+					$new_id = $src_id . '-copia-' . $suffix;
+					$suffix++;
 				}
-
+				$cloned          = $forms[ $src_id ];
+				$cloned['id']    = $new_id;
+				$cloned['title'] = $cloned['title'] . ' (Copia)';
+				$forms[ $new_id ] = $cloned;
 				update_option( WPAT_Woo_Registration_Forms::OPTION_FORMS, $forms );
-				echo '<div class="notice notice-success is-dismissible" style="margin: 15px 0;"><p>' . esc_html__( 'Formulario de registro guardado correctamente.', 'wp-agency-toolkit' ) . '</p></div>';
+				wp_safe_redirect( add_query_arg( array( 'wpat_msg' => 'cloned' ), $base_url ) );
+				exit;
 			}
 		}
 
-		// Formulario activo en edición
-		$active_form_id = isset( $_GET['form_id'] ) ? sanitize_key( $_GET['form_id'] ) : '';
-		if ( empty( $active_form_id ) || ! isset( $forms[ $active_form_id ] ) ) {
-			$active_form_keys = array_keys( $forms );
-			$active_form_id   = ! empty( $active_form_keys ) ? $active_form_keys[0] : 'b2b-registration';
+		// 2. Procesar eliminación de formulario
+		if ( isset( $_GET['form_action'] ) && 'delete' === $_GET['form_action'] && ! empty( $_GET['form_id'] ) ) {
+			$del_id = sanitize_key( $_GET['form_id'] );
+			if ( check_admin_referer( 'wpat_delete_form_' . $del_id ) && isset( $forms[ $del_id ] ) ) {
+				if ( count( $forms ) > 1 ) {
+					unset( $forms[ $del_id ] );
+					update_option( WPAT_Woo_Registration_Forms::OPTION_FORMS, $forms );
+					wp_safe_redirect( add_query_arg( array( 'wpat_msg' => 'deleted' ), $base_url ) );
+					exit;
+				}
+			}
 		}
-		$active_form = isset( $forms[ $active_form_id ] ) ? $forms[ $active_form_id ] : WPAT_Woo_Registration_Forms::get_form( $active_form_id );
+
+		// 3. Determinar modo actual: 'list' (por defecto) o 'editor' (crear nuevo o editar)
+		$form_action = isset( $_GET['form_action'] ) ? sanitize_key( $_GET['form_action'] ) : 'list';
+		$target_id   = isset( $_GET['form_id'] ) ? sanitize_key( $_GET['form_id'] ) : '';
+
+		$is_editor_mode = ( 'new' === $form_action || ( 'edit' === $form_action && ! empty( $target_id ) && isset( $forms[ $target_id ] ) ) );
+
+		if ( 'new' === $form_action ) {
+			$new_form_id = 'form-' . substr( md5( uniqid( (string) wp_rand(), true ) ), 0, 6 );
+			$active_form = array(
+				'id'                   => $new_form_id,
+				'title'                => 'Nuevo Formulario de Registro',
+				'desc'                 => 'Rellena tus datos para registrar una nueva cuenta.',
+				'button_text'          => 'Registrarse',
+				'role_assignment'      => 'fixed',
+				'default_role'         => 'customer',
+				'allowed_roles'        => array( 'customer' ),
+				'approval_required'    => '0',
+				'redirect_type'        => 'default',
+				'redirect_url'         => '',
+				'success_msg'          => '¡Gracias por registrarte! Tu cuenta ha sido creada con éxito.',
+				'attach_to_my_account' => '0',
+				'fields'               => array(
+					array(
+						'id'          => 'billing_first_name',
+						'type'        => 'text',
+						'label'       => 'Nombre',
+						'placeholder' => 'Tu nombre',
+						'required'    => '1',
+						'width'       => 'half',
+						'is_native'   => '1',
+					),
+					array(
+						'id'          => 'billing_last_name',
+						'type'        => 'text',
+						'label'       => 'Apellidos',
+						'placeholder' => 'Tus apellidos',
+						'required'    => '1',
+						'width'       => 'half',
+						'is_native'   => '1',
+					),
+					array(
+						'id'          => 'billing_phone',
+						'type'        => 'tel',
+						'label'       => 'Teléfono de Contacto',
+						'placeholder' => '+34 600 000 000',
+						'required'    => '1',
+						'width'       => 'half',
+						'is_native'   => '1',
+					),
+					array(
+						'id'          => 'terms_privacy',
+						'type'        => 'checkbox',
+						'label'       => 'He leído y acepto la política de privacidad y condiciones',
+						'placeholder' => '',
+						'required'    => '1',
+						'width'       => 'full',
+						'is_native'   => '0',
+					),
+				),
+			);
+		} elseif ( 'edit' === $form_action && ! empty( $target_id ) && isset( $forms[ $target_id ] ) ) {
+			$active_form = $forms[ $target_id ];
+		} else {
+			$active_form = null;
+		}
 
 		// Obtener usuarios pendientes de aprobación
 		$pending_users = get_users( array(
@@ -16136,7 +16179,6 @@ class WPAT_Admin {
 		) );
 		$pending_count = count( $pending_users );
 		$wp_roles      = wp_roles()->roles;
-		$initial_tab   = ( isset( $_GET['form_id'] ) || isset( $_POST['wpat_save_reg_form'] ) ) ? 'wpat_tab_form_editor' : 'wpat_tab_forms_list';
 		?>
 		<div class="wpat-module-card wpat-reg-admin-wrapper">
 			<div class="wpat-module-header">
@@ -16157,15 +16199,248 @@ class WPAT_Admin {
 							<?php esc_html_e( 'Activa el interruptor superior para habilitar los shortcodes de registro, el constructor de campos y el flujo de aprobación de usuarios.', 'wp-agency-toolkit' ); ?>
 						</div>
 					</div>
+				<?php elseif ( $is_editor_mode && $active_form ) : ?>
+
+					<!-- ============================================================== -->
+					<!-- PANTALLA: EDITOR DE FORMULARIO (CREAR O EDITAR)              -->
+					<!-- ============================================================== -->
+					<div class="wpat-reg-editor-screen">
+						<!-- Barra Superior de Navegación del Editor -->
+						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; gap: 12px;">
+							<div style="display: flex; align-items: center; gap: 12px;">
+								<a href="<?php echo esc_url( $base_url ); ?>" class="button button-secondary" style="height: 36px; line-height: 34px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+									<span class="dashicons dashicons-arrow-left-alt" style="font-size: 16px; width: 16px; height: 16px; line-height: 1;"></span>
+									<?php esc_html_e( 'Volver a Todos los Formularios', 'wp-agency-toolkit' ); ?>
+								</a>
+								<div>
+									<h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">
+										<?php echo 'new' === $form_action ? esc_html__( 'Crear Nuevo Formulario de Registro', 'wp-agency-toolkit' ) : sprintf( esc_html__( 'Editar Formulario: %s', 'wp-agency-toolkit' ), esc_html( $active_form['title'] ) ); ?>
+									</h4>
+									<span style="font-size: 12px; color: #64748b; font-family: monospace;">ID: <?php echo esc_html( $active_form['id'] ); ?></span>
+								</div>
+							</div>
+
+							<div style="display: flex; align-items: center; gap: 10px;">
+								<span style="font-size: 12px; color: #64748b;">Shortcode:</span>
+								<code class="wpat-reg-shortcode-code wpat-copy-shortcode" title="Clic para copiar">[wpat_registration_form id="<?php echo esc_attr( $active_form['id'] ); ?>"]</code>
+								<button type="submit" name="wpat_save_settings" value="1" class="button button-primary" style="height: 36px; line-height: 34px; padding: 0 20px; font-weight: 700;">
+									<?php esc_html_e( 'Guardar Formulario', 'wp-agency-toolkit' ); ?>
+								</button>
+							</div>
+						</div>
+
+						<input type="hidden" name="wpat_save_reg_form" value="1" />
+						<input type="hidden" name="wpat_saving_module" value="woo-registration-forms" />
+						<input type="hidden" name="form_id" value="<?php echo esc_attr( $active_form['id'] ); ?>" />
+
+						<!-- Bloque 1: Información Básica -->
+						<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 22px;">
+							<h4 style="margin: 0 0 16px 0; font-size: 14.5px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+								<span class="dashicons dashicons-admin-generic" style="color: #2563eb;"></span> 1. Información General del Formulario
+							</h4>
+
+							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 16px;">
+								<div class="wpat-field-group">
+									<label for="form_title" style="font-weight: 600; display: block; margin-bottom: 6px;">Nombre / Título del Formulario *</label>
+									<input type="text" name="form_title" id="form_title" value="<?php echo esc_attr( $active_form['title'] ); ?>" class="regular-text" style="width: 100%;" required />
+									<p class="description">Nombre identificativo visible para los usuarios y en el listado de formularios.</p>
+								</div>
+								<div class="wpat-field-group">
+									<label for="form_button_text" style="font-weight: 600; display: block; margin-bottom: 6px;">Texto del Botón de Registro</label>
+									<input type="text" name="form_button_text" id="form_button_text" value="<?php echo esc_attr( ! empty( $active_form['button_text'] ) ? $active_form['button_text'] : 'Completar Registro' ); ?>" class="regular-text" style="width: 100%;" />
+									<p class="description">Texto que lucirá en el botón de envío del formulario.</p>
+								</div>
+							</div>
+
+							<div class="wpat-field-group">
+								<label for="form_desc" style="font-weight: 600; display: block; margin-bottom: 6px;">Descripción / Subtítulo explicativo</label>
+								<textarea name="form_desc" id="form_desc" rows="2" class="large-text" style="width: 100%;"><?php echo esc_textarea( $active_form['desc'] ); ?></textarea>
+								<p class="description">Texto explicativo opcional mostrado en la cabecera del formulario.</p>
+							</div>
+						</div>
+
+						<!-- Bloque 2: Roles y Flujo de Aprobación -->
+						<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 22px;">
+							<h4 style="margin: 0 0 16px 0; font-size: 14.5px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+								<span class="dashicons dashicons-admin-users" style="color: #2563eb;"></span> 2. Roles de Usuario y Modo de Aprobación
+							</h4>
+
+							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 16px;">
+								<div>
+									<label for="form_default_role" style="font-weight: 600; display: block; margin-bottom: 6px;">Rol de Usuario Asignado:</label>
+									<select name="form_default_role" id="form_default_role" style="width: 100%;">
+										<?php
+										foreach ( $wp_roles as $r_key => $r_data ) {
+											if ( 'administrator' === $r_key ) continue;
+											$r_name = translate_user_role( $r_data['name'] );
+											echo '<option value="' . esc_attr( $r_key ) . '" ' . selected( isset( $active_form['default_role'] ) ? $active_form['default_role'] : 'customer', $r_key, false ) . '>' . esc_html( $r_name ) . ' (' . esc_html( $r_key ) . ')</option>';
+										}
+										?>
+									</select>
+									<p class="description" style="margin-top: 4px;">Compatible con roles nativos y roles personalizados del Gestor de Roles.</p>
+								</div>
+
+								<div>
+									<label style="font-weight: 600; display: block; margin-bottom: 8px;">Flujo de Aprobación:</label>
+									<label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13.5px; color: #1e293b;">
+										<input type="checkbox" name="form_approval_required" value="1" <?php checked( ! empty( $active_form['approval_required'] ) && '1' === (string) $active_form['approval_required'] ); ?> />
+										<span><strong>Requerir aprobación manual por un administrador</strong></span>
+									</label>
+									<p class="description" style="margin-top: 4px;">Si está activo, el usuario quedará pendiente y no podrá iniciar sesión hasta que lo apruebes.</p>
+								</div>
+
+								<div>
+									<label for="form_redirect_type" style="font-weight: 600; display: block; margin-bottom: 6px;">Redirección tras el registro:</label>
+									<select name="form_redirect_type" id="form_redirect_type" style="width: 100%;">
+										<option value="default" <?php selected( isset( $active_form['redirect_type'] ) ? $active_form['redirect_type'] : 'default', 'default' ); ?>>Mostrar mensaje en la misma página</option>
+										<option value="myaccount" <?php selected( isset( $active_form['redirect_type'] ) ? $active_form['redirect_type'] : 'default', 'myaccount' ); ?>>Ir al panel de Mi Cuenta (/mi-cuenta/)</option>
+										<option value="custom" <?php selected( isset( $active_form['redirect_type'] ) ? $active_form['redirect_type'] : 'default', 'custom' ); ?>>Redirigir a URL personalizada</option>
+									</select>
+									<input type="url" name="form_redirect_url" id="form_redirect_url" value="<?php echo esc_attr( isset( $active_form['redirect_url'] ) ? $active_form['redirect_url'] : '' ); ?>" placeholder="https://tutienda.com/gracias" style="width: 100%; margin-top: 6px; <?php echo ( isset( $active_form['redirect_type'] ) && 'custom' === $active_form['redirect_type'] ) ? '' : 'display:none;'; ?>" />
+								</div>
+							</div>
+
+							<div style="border-top: 1px dashed #cbd5e1; padding-top: 14px;">
+								<label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13.5px; color: #1e293b;">
+									<input type="checkbox" name="form_attach_to_my_account" value="1" <?php checked( ! empty( $active_form['attach_to_my_account'] ) && '1' === (string) $active_form['attach_to_my_account'] ); ?> />
+									<span>Inyectar también estos campos extra en el formulario de registro estándar de WooCommerce en <code>/mi-cuenta/</code></span>
+								</label>
+							</div>
+						</div>
+
+						<!-- Bloque 3: Constructor de Campos -->
+						<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 22px;">
+							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+								<div>
+									<h4 style="margin: 0; font-size: 14.5px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+										<span class="dashicons dashicons-forms" style="color: #2563eb;"></span> 3. Campos del Formulario (<span id="wpat_fields_count"><?php echo count( $active_form['fields'] ); ?></span>)
+									</h4>
+									<p style="margin: 4px 0 0 0; font-size: 12.5px; color: #64748b;">
+										Los campos con prefijo <code>billing_*</code> sincronizan automáticamente los datos con el proceso de compra (Checkout) de WooCommerce.
+									</p>
+								</div>
+
+								<button type="button" class="button button-primary" id="wpat_reg_open_add_field_btn" style="height: 34px; line-height: 32px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+									<span class="dashicons dashicons-plus-alt2" style="font-size: 16px; width: 16px; height: 16px; line-height: 1;"></span>
+									<?php esc_html_e( 'Añadir Nuevo Campo', 'wp-agency-toolkit' ); ?>
+								</button>
+							</div>
+
+							<div class="wpat-reg-fields-list">
+								<?php foreach ( $active_form['fields'] as $f_idx => $field ) : ?>
+									<div class="wpat-reg-field-row">
+										<div class="wpat-reg-field-row-info">
+											<span class="dashicons dashicons-menu wpat-reg-field-drag-handle"></span>
+											<div>
+												<strong style="font-size: 13.5px; color: #1e293b;" class="wpat-row-title-lbl"><?php echo esc_html( $field['label'] ); ?></strong>
+												<div style="font-size: 11px; color: #64748b; font-family: monospace;">ID: <?php echo esc_html( $field['id'] ); ?></div>
+											</div>
+											<span class="wpat-reg-field-badge-type"><?php echo esc_html( strtoupper( $field['type'] ) ); ?></span>
+											<?php if ( ! empty( $field['required'] ) && '1' === (string) $field['required'] ) : ?>
+												<span style="color: #ef4444; font-size: 11px; font-weight: 700;" class="wpat-row-req-lbl">Obligatorio</span>
+											<?php else : ?>
+												<span style="color: #94a3b8; font-size: 11px;" class="wpat-row-req-lbl">Opcional</span>
+											<?php endif; ?>
+											<span style="font-size: 11px; color: #64748b;" class="wpat-row-width-lbl"><?php echo ( isset( $field['width'] ) && 'half' === $field['width'] ) ? '50% (Media col)' : '100% (Ancho completo)'; ?></span>
+										</div>
+
+										<div style="display: flex; align-items: center; gap: 8px;">
+											<button type="button" class="button button-small wpat-reg-toggle-field-btn">Editar</button>
+											<button type="button" class="button button-small button-link-delete wpat-reg-remove-field-btn" style="color: #dc2626;">Eliminar</button>
+										</div>
+
+										<!-- Opciones expandibles del campo -->
+										<div class="wpat-reg-field-options" style="display: none; width: 100%; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9;">
+											<div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">
+												<div>
+													<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Etiqueta (Label):</label>
+													<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][label]" value="<?php echo esc_attr( $field['label'] ); ?>" class="wpat-input-field-label" style="width: 100%;" />
+												</div>
+												<div>
+													<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Placeholder:</label>
+													<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][placeholder]" value="<?php echo esc_attr( $field['placeholder'] ); ?>" style="width: 100%;" />
+												</div>
+												<div>
+													<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Ancho en formulario:</label>
+													<select name="fields_data[<?php echo esc_attr( $f_idx ); ?>][width]" class="wpat-select-field-width" style="width: 100%;">
+														<option value="full" <?php selected( isset( $field['width'] ) ? $field['width'] : 'full', 'full' ); ?>>100% (Ancho completo)</option>
+														<option value="half" <?php selected( isset( $field['width'] ) ? $field['width'] : 'full', 'half' ); ?>>50% (Media columna)</option>
+													</select>
+												</div>
+												<div style="display: flex; align-items: center; padding-top: 18px;">
+													<label style="font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+														<input type="checkbox" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][required]" value="1" class="wpat-check-field-req" <?php checked( ! empty( $field['required'] ) && '1' === (string) $field['required'] ); ?> />
+														<span>Campo obligatorio</span>
+													</label>
+												</div>
+											</div>
+											<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][id]" value="<?php echo esc_attr( $field['id'] ); ?>" />
+											<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][type]" value="<?php echo esc_attr( $field['type'] ); ?>" />
+											<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][is_native]" value="<?php echo esc_attr( isset( $field['is_native'] ) ? $field['is_native'] : '0' ); ?>" />
+										</div>
+									</div>
+								<?php endforeach; ?>
+							</div>
+						</div>
+
+						<!-- Barra Inferior de Guardado -->
+						<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px;">
+							<a href="<?php echo esc_url( $base_url ); ?>" class="button button-secondary" style="height: 38px; line-height: 36px; padding: 0 18px; font-weight: 600;">
+								<?php esc_html_e( '← Cancelar y Volver', 'wp-agency-toolkit' ); ?>
+							</a>
+							<button type="submit" name="wpat_save_settings" value="1" class="button button-primary button-large" style="height: 38px; line-height: 36px; padding: 0 28px; font-weight: 700; font-size: 14px;">
+								<?php esc_html_e( 'Guardar Formulario de Registro', 'wp-agency-toolkit' ); ?>
+							</button>
+						</div>
+
+						<!-- MODAL PARA AÑADIR NUEVO CAMPO -->
+						<div id="wpat_reg_add_field_modal" class="wpat-reg-modal" style="display: none;">
+							<div class="wpat-reg-modal-backdrop"></div>
+							<div class="wpat-reg-modal-content">
+								<div class="wpat-reg-modal-header">
+									<h4><?php esc_html_e( 'Seleccionar Tipo de Campo a Añadir', 'wp-agency-toolkit' ); ?></h4>
+									<button type="button" id="wpat_reg_close_field_modal" style="background: none; border: none; font-size: 20px; line-height: 1; cursor: pointer; color: #64748b;">&times;</button>
+								</div>
+								<div class="wpat-reg-modal-body">
+									<label for="wpat_reg_new_field_type" style="font-weight: 600; font-size: 13.5px; display: block; margin-bottom: 8px;">
+										<?php esc_html_e( 'Elige un campo nativo de WooCommerce o crea uno personalizado:', 'wp-agency-toolkit' ); ?>
+									</label>
+									<select id="wpat_reg_new_field_type" style="width: 100%; height: 40px; font-size: 13.5px;">
+										<optgroup label="🛒 Campos Nativos de WooCommerce (Checkout Sync)">
+											<option value="billing_company" data-id="billing_company" data-label="Nombre de Empresa / Razón Social" data-input-type="text" data-native="1">Empresa / Razón Social (billing_company)</option>
+											<option value="billing_vat" data-id="billing_vat" data-label="NIF / CIF / DNI" data-input-type="text" data-native="1">NIF / CIF / DNI (billing_vat)</option>
+											<option value="billing_phone" data-id="billing_phone" data-label="Teléfono de Contacto" data-input-type="tel" data-native="1">Teléfono (billing_phone)</option>
+											<option value="billing_address_1" data-id="billing_address_1" data-label="Dirección de Facturación" data-input-type="text" data-native="1">Dirección (billing_address_1)</option>
+											<option value="billing_city" data-id="billing_city" data-label="Población / Ciudad" data-input-type="text" data-native="1">Población / Ciudad (billing_city)</option>
+											<option value="billing_postcode" data-id="billing_postcode" data-label="Código Postal" data-input-type="text" data-native="1">Código Postal (billing_postcode)</option>
+											<option value="billing_state" data-id="billing_state" data-label="Provincia / Estado" data-input-type="text" data-native="1">Provincia (billing_state)</option>
+											<option value="billing_country" data-id="billing_country" data-label="País" data-input-type="text" data-native="1">País (billing_country)</option>
+										</optgroup>
+										<optgroup label="📝 Campos Personalizados Adicionales">
+											<option value="custom_text" data-label="Texto Libre" data-input-type="text" data-native="0">Texto Corto (Línea simple)</option>
+											<option value="custom_textarea" data-label="Comentarios / Observaciones" data-input-type="textarea" data-native="0">Área de Texto (Múltiples líneas)</option>
+											<option value="custom_file" data-label="Subida de Documento (Modelo 036 / CIF)" data-input-type="file" data-native="0">Subida de Archivo (PDF, JPG, PNG)</option>
+											<option value="custom_number" data-label="Número" data-input-type="number" data-native="0">Campo Numérico</option>
+											<option value="custom_checkbox" data-label="Acepto los términos y condiciones" data-input-type="checkbox" data-native="0">Casilla de Verificación (Checkbox / RGPD)</option>
+										</optgroup>
+									</select>
+								</div>
+								<div class="wpat-reg-modal-footer">
+									<button type="button" class="button button-secondary" id="wpat_reg_cancel_modal_btn" onclick="jQuery('#wpat_reg_add_field_modal').fadeOut(200);"><?php esc_html_e( 'Cancelar', 'wp-agency-toolkit' ); ?></button>
+									<button type="button" class="button button-primary" id="wpat_reg_confirm_add_field_btn"><?php esc_html_e( 'Añadir Campo', 'wp-agency-toolkit' ); ?></button>
+								</div>
+							</div>
+						</div>
+					</div>
+
 				<?php else : ?>
 
-					<!-- PESTAÑAS DE NAVEGACIÓN -->
+					<!-- ============================================================== -->
+					<!-- PANTALLA: LISTADO DE FORMULARIOS Y SOLICITUDES PENDIENTES    -->
+					<!-- ============================================================== -->
 					<div class="wpat-reg-admin-nav-tabs">
-						<button type="button" class="wpat-reg-admin-tab-btn <?php echo ( 'wpat_tab_forms_list' === $initial_tab ) ? 'active' : ''; ?>" data-tab="wpat_tab_forms_list">
+						<button type="button" class="wpat-reg-admin-tab-btn active" data-tab="wpat_tab_forms_list">
 							<span class="dashicons dashicons-list-view"></span> Mis Formularios (<?php echo count( $forms ); ?>)
-						</button>
-						<button type="button" class="wpat-reg-admin-tab-btn <?php echo ( 'wpat_tab_form_editor' === $initial_tab ) ? 'active' : ''; ?>" data-tab="wpat_tab_form_editor">
-							<span class="dashicons dashicons-edit"></span> Editor de Formulario: <strong><?php echo esc_html( $active_form['title'] ); ?></strong>
 						</button>
 						<button type="button" class="wpat-reg-admin-tab-btn" data-tab="wpat_tab_pending_requests">
 							<span class="dashicons dashicons-clock"></span> Solicitudes Pendientes
@@ -16175,36 +16450,48 @@ class WPAT_Admin {
 						</button>
 					</div>
 
-					<!-- 1. PESTAÑA: MIS FORMULARIOS -->
-					<div class="wpat-reg-tab-panel <?php echo ( 'wpat_tab_forms_list' === $initial_tab ) ? 'active' : ''; ?>" id="wpat_tab_forms_list">
-						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-							<h4 style="margin: 0; font-size: 15px; font-weight: 600; color: #1e293b;">
-								Formularios de Registro Disponibles
-							</h4>
-							<span style="font-size: 12.5px; color: #64748b;">
-								Copia el shortcode de cualquier formulario y pégalo en cualquier página o entrada para mostrar el registro.
-							</span>
+					<!-- TAB 1: LISTADO DE TODOS LOS FORMULARIOS -->
+					<div class="wpat-reg-tab-panel active" id="wpat_tab_forms_list">
+						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px;">
+							<div>
+								<h4 style="margin: 0 0 4px 0; font-size: 15px; font-weight: 700; color: #0f172a;">
+									<?php esc_html_e( 'Formularios de Registro Disponibles', 'wp-agency-toolkit' ); ?>
+								</h4>
+								<span style="font-size: 13px; color: #64748b;">
+									<?php esc_html_e( 'Crea formularios específicos para cada perfil de cliente y cópialos en tus páginas mediante su shortcode.', 'wp-agency-toolkit' ); ?>
+								</span>
+							</div>
+
+							<a href="<?php echo esc_url( add_query_arg( array( 'form_action' => 'new' ), $base_url ) ); ?>" class="button button-primary" style="height: 36px; line-height: 34px; font-weight: 700; padding: 0 18px; display: inline-flex; align-items: center; gap: 6px;">
+								<span class="dashicons dashicons-plus-alt2" style="font-size: 16px; width: 16px; height: 16px; line-height: 1;"></span>
+								<?php esc_html_e( '+ Crear Nuevo Formulario', 'wp-agency-toolkit' ); ?>
+							</a>
 						</div>
 
 						<table class="wp-list-table widefat fixed striped" style="border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
 							<thead>
 								<tr>
-									<th style="font-weight: 700; width: 25%;">Nombre del Formulario</th>
-									<th style="font-weight: 700; width: 25%;">Shortcode</th>
-									<th style="font-weight: 700; width: 15%;">Rol Asignado</th>
-									<th style="font-weight: 700; width: 15%;">Aprobación</th>
-									<th style="font-weight: 700; width: 20%; text-align: right;">Acciones</th>
+									<th style="font-weight: 700; width: 28%;">Nombre del Formulario</th>
+									<th style="font-weight: 700; width: 26%;">Shortcode</th>
+									<th style="font-weight: 700; width: 14%;">Rol Asignado</th>
+									<th style="font-weight: 700; width: 14%;">Aprobación</th>
+									<th style="font-weight: 700; width: 18%; text-align: right;">Acciones</th>
 								</tr>
 							</thead>
 							<tbody>
 								<?php foreach ( $forms as $f_key => $f_item ) : ?>
 									<tr>
 										<td style="vertical-align: middle;">
-											<strong style="font-size: 13.5px; color: #0f172a;"><?php echo esc_html( $f_item['title'] ); ?></strong>
-											<div style="font-size: 11.5px; color: #64748b; margin-top: 2px;"><?php echo esc_html( count( $f_item['fields'] ) ); ?> campos configurados</div>
+											<a href="<?php echo esc_url( add_query_arg( array( 'form_action' => 'edit', 'form_id' => $f_key ), $base_url ) ); ?>" style="font-size: 13.5px; font-weight: 700; color: #0f172a; text-decoration: none;">
+												<?php echo esc_html( $f_item['title'] ); ?>
+											</a>
+											<div style="font-size: 11.5px; color: #64748b; margin-top: 3px;">
+												<span>ID: <code><?php echo esc_html( $f_key ); ?></code></span> &bull; 
+												<span><?php echo esc_html( count( $f_item['fields'] ) ); ?> campos</span>
+											</div>
 										</td>
 										<td style="vertical-align: middle;">
-											<code class="wpat-reg-shortcode-code wpat-copy-shortcode" title="Clic para copiar">[wpat_registration_form id="<?php echo esc_attr( $f_key ); ?>"]</code>
+											<code class="wpat-reg-shortcode-code wpat-copy-shortcode" title="Clic para copiar al portapapeles">[wpat_registration_form id="<?php echo esc_attr( $f_key ); ?>"]</code>
 										</td>
 										<td style="vertical-align: middle;">
 											<span class="wpat-reg-field-badge-type">
@@ -16222,9 +16509,19 @@ class WPAT_Admin {
 											<?php endif; ?>
 										</td>
 										<td style="vertical-align: middle; text-align: right;">
-											<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=woo-registration-forms&form_id=' . esc_attr( $f_key ) ) ); ?>" class="button button-small button-primary" style="display: inline-flex; align-items: center; gap: 4px;">
-												<span class="dashicons dashicons-edit" style="font-size: 14px; width: 14px; height: 14px; line-height: 1;"></span> Configurar
-											</a>
+											<div style="display: inline-flex; align-items: center; gap: 4px;">
+												<a href="<?php echo esc_url( add_query_arg( array( 'form_action' => 'edit', 'form_id' => $f_key ), $base_url ) ); ?>" class="button button-small button-primary" title="Editar campos y opciones">
+													Editar ✏️
+												</a>
+												<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'form_action' => 'clone', 'form_id' => $f_key ), $base_url ), 'wpat_clone_form_' . $f_key ) ); ?>" class="button button-small" title="Clonar formulario">
+													Clonar 📋
+												</a>
+												<?php if ( count( $forms ) > 1 ) : ?>
+													<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'form_action' => 'delete', 'form_id' => $f_key ), $base_url ), 'wpat_delete_form_' . $f_key ) ); ?>" class="button button-small button-link-delete" style="color: #dc2626;" onclick="return confirm('¿Estás seguro de que deseas eliminar este formulario de registro?');" title="Eliminar">
+														Eliminar 🗑️
+													</a>
+												<?php endif; ?>
+											</div>
 										</td>
 									</tr>
 								<?php endforeach; ?>
@@ -16232,160 +16529,14 @@ class WPAT_Admin {
 						</table>
 					</div>
 
-					<!-- 2. PESTAÑA: EDITOR DEL FORMULARIO ACTIVO -->
-					<div class="wpat-reg-tab-panel <?php echo ( 'wpat_tab_form_editor' === $initial_tab ) ? 'active' : ''; ?>" id="wpat_tab_form_editor">
-						<input type="hidden" name="wpat_save_reg_form" value="1" />
-						<input type="hidden" name="wpat_saving_module" value="woo-registration-forms" />
-						<input type="hidden" name="form_id" value="<?php echo esc_attr( $active_form['id'] ); ?>" />
-
-							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-								<div class="wpat-field-group">
-									<label for="form_title" style="font-weight: 600; display: block; margin-bottom: 6px;">Título del Formulario</label>
-									<input type="text" name="form_title" id="form_title" value="<?php echo esc_attr( $active_form['title'] ); ?>" class="regular-text" style="width: 100%;" required />
-								</div>
-								<div class="wpat-field-group">
-									<label for="form_button_text" style="font-weight: 600; display: block; margin-bottom: 6px;">Texto del Botón de Envío</label>
-									<input type="text" name="form_button_text" id="form_button_text" value="<?php echo esc_attr( ! empty( $active_form['button_text'] ) ? $active_form['button_text'] : 'Completar Registro' ); ?>" class="regular-text" style="width: 100%;" />
-								</div>
-							</div>
-
-							<div class="wpat-field-group" style="margin-bottom: 20px;">
-								<label for="form_desc" style="font-weight: 600; display: block; margin-bottom: 6px;">Descripción / Subtítulo explicativo</label>
-								<textarea name="form_desc" id="form_desc" rows="2" class="large-text" style="width: 100%;"><?php echo esc_textarea( $active_form['desc'] ); ?></textarea>
-							</div>
-
-							<!-- Grid de Ajustes de Rol y Aprobación -->
-							<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 20px; margin-bottom: 22px;">
-								<h4 style="margin: 0 0 14px 0; font-size: 14.5px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-									<span class="dashicons dashicons-admin-users" style="color: #2563eb;"></span> Roles y Flujo de Aprobación
-								</h4>
-
-								<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px;">
-									<div>
-										<label for="form_default_role" style="font-weight: 600; display: block; margin-bottom: 6px;">Rol de Usuario asignado tras el registro:</label>
-										<select name="form_default_role" id="form_default_role" style="width: 100%;">
-											<?php
-											foreach ( $wp_roles as $r_key => $r_data ) {
-												if ( 'administrator' === $r_key ) continue;
-												$r_name = translate_user_role( $r_data['name'] );
-												echo '<option value="' . esc_attr( $r_key ) . '" ' . selected( isset( $active_form['default_role'] ) ? $active_form['default_role'] : 'customer', $r_key, false ) . '>' . esc_html( $r_name ) . ' (' . esc_html( $r_key ) . ')</option>';
-											}
-											?>
-										</select>
-										<p class="description" style="margin-top: 4px;">Compatible con roles de WooCommerce y roles creados con el Gestor de Roles.</p>
-									</div>
-
-									<div>
-										<label style="font-weight: 600; display: block; margin-bottom: 8px;">Aprobación Manual de Cuentas:</label>
-										<label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13.5px; color: #1e293b;">
-											<input type="checkbox" name="form_approval_required" value="1" <?php checked( ! empty( $active_form['approval_required'] ) && '1' === (string) $active_form['approval_required'] ); ?> />
-											<span><strong>Requerir aprobación manual por un administrador</strong></span>
-										</label>
-										<p class="description" style="margin-top: 4px;">Los usuarios no podrán iniciar sesión hasta que sean aprobados en la lista de solicitudes.</p>
-									</div>
-
-									<div>
-										<label for="form_redirect_type" style="font-weight: 600; display: block; margin-bottom: 6px;">Redirección tras registro completado:</label>
-										<select name="form_redirect_type" id="form_redirect_type" style="width: 100%;">
-											<option value="default" <?php selected( isset( $active_form['redirect_type'] ) ? $active_form['redirect_type'] : 'default', 'default' ); ?>>Mostrar mensaje en la misma página</option>
-											<option value="myaccount" <?php selected( isset( $active_form['redirect_type'] ) ? $active_form['redirect_type'] : 'default', 'myaccount' ); ?>>Ir al panel de Mi Cuenta (/mi-cuenta/)</option>
-											<option value="custom" <?php selected( isset( $active_form['redirect_type'] ) ? $active_form['redirect_type'] : 'default', 'custom' ); ?>>Redirigir a URL personalizada</option>
-										</select>
-										<input type="url" name="form_redirect_url" id="form_redirect_url" value="<?php echo esc_attr( isset( $active_form['redirect_url'] ) ? $active_form['redirect_url'] : '' ); ?>" placeholder="https://tutienda.com/gracias" style="width: 100%; margin-top: 6px; <?php echo ( isset( $active_form['redirect_type'] ) && 'custom' === $active_form['redirect_type'] ) ? '' : 'display:none;'; ?>" />
-									</div>
-								</div>
-
-								<div style="margin-top: 14px; border-top: 1px dashed #cbd5e1; padding-top: 14px;">
-									<label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13.5px; color: #1e293b;">
-										<input type="checkbox" name="form_attach_to_my_account" value="1" <?php checked( ! empty( $active_form['attach_to_my_account'] ) && '1' === (string) $active_form['attach_to_my_account'] ); ?> />
-										<span>Añadir estos campos adicionales al formulario de registro nativo de WooCommerce en <code>/mi-cuenta/</code></span>
-									</label>
-								</div>
-							</div>
-
-							<!-- CONSTRUCTOR DE CAMPOS -->
-							<div style="margin-bottom: 25px;">
-								<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-									<h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #0f172a;">
-										Campos del Formulario (<?php echo count( $active_form['fields'] ); ?>)
-									</h4>
-									<span style="font-size: 12px; color: #64748b;">
-										* Los campos con ID <code>billing_*</code> sincronizan automáticamente los datos con el Checkout de WooCommerce.
-									</span>
-								</div>
-
-								<div class="wpat-reg-fields-list">
-									<?php foreach ( $active_form['fields'] as $f_idx => $field ) : ?>
-										<div class="wpat-reg-field-row">
-											<div class="wpat-reg-field-row-info">
-												<span class="dashicons dashicons-menu wpat-reg-field-drag-handle"></span>
-												<div>
-													<strong style="font-size: 13.5px; color: #1e293b;"><?php echo esc_html( $field['label'] ); ?></strong>
-													<div style="font-size: 11px; color: #64748b; font-family: monospace;">ID: <?php echo esc_html( $field['id'] ); ?></div>
-												</div>
-												<span class="wpat-reg-field-badge-type"><?php echo esc_html( strtoupper( $field['type'] ) ); ?></span>
-												<?php if ( ! empty( $field['required'] ) && '1' === (string) $field['required'] ) : ?>
-													<span style="color: #ef4444; font-size: 11px; font-weight: 700;">Obligatorio</span>
-												<?php else : ?>
-													<span style="color: #94a3b8; font-size: 11px;">Opcional</span>
-												<?php endif; ?>
-												<span style="font-size: 11px; color: #64748b;"><?php echo ( isset( $field['width'] ) && 'half' === $field['width'] ) ? '50% (Media col)' : '100% (Ancho completo)'; ?></span>
-											</div>
-
-											<div style="display: flex; align-items: center; gap: 8px;">
-												<button type="button" class="button button-small wpat-reg-toggle-field-btn">Editar</button>
-												<button type="button" class="button button-small button-link-delete wpat-reg-remove-field-btn" style="color: #dc2626;">Eliminar</button>
-											</div>
-
-											<!-- Opciones expandibles del campo -->
-											<div class="wpat-reg-field-options" style="display: none; width: 100%; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9;">
-												<div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">
-													<div>
-														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Etiqueta (Label):</label>
-														<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][label]" value="<?php echo esc_attr( $field['label'] ); ?>" style="width: 100%;" />
-													</div>
-													<div>
-														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Placeholder:</label>
-														<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][placeholder]" value="<?php echo esc_attr( $field['placeholder'] ); ?>" style="width: 100%;" />
-													</div>
-													<div>
-														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Ancho:</label>
-														<select name="fields_data[<?php echo esc_attr( $f_idx ); ?>][width]" style="width: 100%;">
-															<option value="full" <?php selected( isset( $field['width'] ) ? $field['width'] : 'full', 'full' ); ?>>100% (Ancho completo)</option>
-															<option value="half" <?php selected( isset( $field['width'] ) ? $field['width'] : 'full', 'half' ); ?>>50% (Media columna)</option>
-														</select>
-													</div>
-													<div style="display: flex; align-items: center; padding-top: 18px;">
-														<label style="font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-															<input type="checkbox" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][required]" value="1" <?php checked( ! empty( $field['required'] ) && '1' === (string) $field['required'] ); ?> />
-															<span>Campo obligatorio</span>
-														</label>
-													</div>
-												</div>
-												<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][id]" value="<?php echo esc_attr( $field['id'] ); ?>" />
-												<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][type]" value="<?php echo esc_attr( $field['type'] ); ?>" />
-												<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][is_native]" value="<?php echo esc_attr( isset( $field['is_native'] ) ? $field['is_native'] : '0' ); ?>" />
-											</div>
-										</div>
-									<?php endforeach; ?>
-								</div>
-							</div>
-
-							<div style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 18px; display: flex; justify-content: flex-end;">
-								<button type="submit" name="wpat_save_settings" value="1" class="button button-primary button-large" style="padding: 4px 24px; font-weight: 600;">
-									Guardar Cambios del Formulario
-								</button>
-							</div>
-					</div>
-
-					<!-- 3. PESTAÑA: SOLICITUDES PENDIENTES -->
+					<!-- TAB 2: SOLICITUDES PENDIENTES DE APROBACIÓN -->
 					<div class="wpat-reg-tab-panel" id="wpat_tab_pending_requests">
 						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
 							<h4 style="margin: 0; font-size: 15px; font-weight: 600; color: #1e293b;">
 								Solicitudes de Registro Pendientes de Moderación
 							</h4>
 							<span style="font-size: 12.5px; color: #64748b;">
-								Al aprobar a un usuario, su cuenta se activará inmediatamente y recibirá un email de bienvenida con enlace de acceso.
+								Al aprobar a un usuario, su cuenta se activará inmediatamente y recibirá un email con enlace de acceso directo.
 							</span>
 						</div>
 

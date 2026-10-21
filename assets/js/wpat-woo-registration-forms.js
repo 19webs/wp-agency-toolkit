@@ -151,6 +151,109 @@
 			$row.find('.wpat-reg-field-options').slideToggle(200);
 		});
 
+		// Modal para Añadir Nuevo Campo
+		$(document).on('click', '#wpat_reg_open_add_field_btn', function(e) {
+			e.preventDefault();
+			$('#wpat_reg_add_field_modal').fadeIn(200);
+		});
+
+		$(document).on('click', '#wpat_reg_close_field_modal, .wpat-reg-modal-backdrop', function(e) {
+			e.preventDefault();
+			$('#wpat_reg_add_field_modal').fadeOut(200);
+		});
+
+		// Confirmar añadir campo seleccionado
+		$(document).on('click', '#wpat_reg_confirm_add_field_btn', function(e) {
+			e.preventDefault();
+			var fieldType = $('#wpat_reg_new_field_type').val();
+			if (!fieldType) return;
+
+			var $opt = $('#wpat_reg_new_field_type option:selected');
+			var fieldLabel = $opt.data('label') || 'Nuevo Campo';
+			var isNative   = $opt.data('native') ? '1' : '0';
+			var inputType  = $opt.data('input-type') || 'text';
+			var fieldId    = $opt.data('id') || ('custom_' + Date.now().toString(36));
+
+			var newIdx = $('.wpat-reg-field-row').length + Math.floor(Math.random() * 1000);
+
+			var rowHtml = '<div class="wpat-reg-field-row" style="background:#f0fdf4; border-color:#86efac;">' +
+				'<div class="wpat-reg-field-row-info">' +
+					'<span class="dashicons dashicons-menu wpat-reg-field-drag-handle"></span>' +
+					'<div>' +
+						'<strong style="font-size: 13.5px; color: #1e293b;" class="wpat-row-title-lbl">' + $('<div>').text(fieldLabel).html() + '</strong>' +
+						'<div style="font-size: 11px; color: #64748b; font-family: monospace;">ID: ' + fieldId + '</div>' +
+					'</div>' +
+					'<span class="wpat-reg-field-badge-type">' + inputType.toUpperCase() + '</span>' +
+					'<span style="color: #94a3b8; font-size: 11px;" class="wpat-row-req-lbl">Opcional</span>' +
+					'<span style="font-size: 11px; color: #64748b;" class="wpat-row-width-lbl">100% (Ancho completo)</span>' +
+				'</div>' +
+				'<div style="display: flex; align-items: center; gap: 8px;">' +
+					'<button type="button" class="button button-small wpat-reg-toggle-field-btn">Editar</button>' +
+					'<button type="button" class="button button-small button-link-delete wpat-reg-remove-field-btn" style="color: #dc2626;">Eliminar</button>' +
+				'</div>' +
+				'<div class="wpat-reg-field-options" style="display: block; width: 100%; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">' +
+					'<div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">' +
+						'<div>' +
+							'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Etiqueta (Label):</label>' +
+							'<input type="text" name="fields_data[' + newIdx + '][label]" value="' + $('<div>').text(fieldLabel).html() + '" class="wpat-input-field-label" style="width: 100%;" />' +
+						'</div>' +
+						'<div>' +
+							'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Placeholder:</label>' +
+							'<input type="text" name="fields_data[' + newIdx + '][placeholder]" value="" style="width: 100%;" />' +
+						'</div>' +
+						'<div>' +
+							'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Ancho:</label>' +
+							'<select name="fields_data[' + newIdx + '][width]" class="wpat-select-field-width" style="width: 100%;">' +
+								'<option value="full" selected>100% (Ancho completo)</option>' +
+								'<option value="half">50% (Media columna)</option>' +
+							'</select>' +
+						'</div>' +
+						'<div style="display: flex; align-items: center; padding-top: 18px;">' +
+							'<label style="font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">' +
+								'<input type="checkbox" name="fields_data[' + newIdx + '][required]" value="1" class="wpat-check-field-req" />' +
+								'<span>Campo obligatorio</span>' +
+							'</label>' +
+						'</div>' +
+					'</div>' +
+					'<input type="hidden" name="fields_data[' + newIdx + '][id]" value="' + fieldId + '" />' +
+					'<input type="hidden" name="fields_data[' + newIdx + '][type]" value="' + inputType + '" />' +
+					'<input type="hidden" name="fields_data[' + newIdx + '][is_native]" value="' + isNative + '" />' +
+				'</div>' +
+			'</div>';
+
+			$('.wpat-reg-fields-list').append(rowHtml);
+			$('#wpat_reg_add_field_modal').fadeOut(200);
+
+			// Notificar cambio
+			if (window.showToast) {
+				window.showToast('Campo "' + fieldLabel + '" añadido al formulario', false);
+			}
+		});
+
+		// Actualizar títulos en vivo al cambiar etiqueta
+		$(document).on('input', '.wpat-input-field-label', function() {
+			var val = $(this).val();
+			$(this).closest('.wpat-reg-field-row').find('.wpat-row-title-lbl').text(val || 'Sin etiqueta');
+		});
+
+		// Actualizar badge de obligatorio en vivo
+		$(document).on('change', '.wpat-check-field-req', function() {
+			var isReq = $(this).is(':checked');
+			var $lbl  = $(this).closest('.wpat-reg-field-row').find('.wpat-row-req-lbl');
+			if (isReq) {
+				$lbl.css({ color: '#ef4444', fontWeight: '700' }).text('Obligatorio');
+			} else {
+				$lbl.css({ color: '#94a3b8', fontWeight: 'normal' }).text('Opcional');
+			}
+		});
+
+		// Actualizar indicador de ancho en vivo
+		$(document).on('change', '.wpat-select-field-width', function() {
+			var w = $(this).val();
+			var $lbl = $(this).closest('.wpat-reg-field-row').find('.wpat-row-width-lbl');
+			$lbl.text(w === 'half' ? '50% (Media col)' : '100% (Ancho completo)');
+		});
+
 	});
 
 })(jQuery);

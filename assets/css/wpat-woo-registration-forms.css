@@ -1,0 +1,351 @@
+/**
+ * Estilos para Formularios de Registro Personalizados WooCommerce - WP Agency Toolkit
+ */
+
+/* ==========================================================================
+   1. FRONTEND STYLES (Formularios embebidos vía Shortcode o Mi Cuenta)
+   ========================================================================== */
+
+.wpat-reg-form-wrap {
+	max-width: 760px;
+	margin: 20px auto;
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	padding: 28px 32px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+	box-sizing: border-box;
+	font-family: inherit;
+}
+
+.wpat-reg-form-title {
+	margin: 0 0 8px 0;
+	font-size: 22px;
+	font-weight: 700;
+	color: #0f172a;
+}
+
+.wpat-reg-form-desc {
+	margin: 0 0 24px 0;
+	font-size: 14px;
+	color: #64748b;
+	line-height: 1.5;
+}
+
+.wpat-reg-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px 20px;
+	margin-bottom: 20px;
+}
+
+.wpat-reg-field-group {
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+}
+
+.wpat-reg-field-group.col-full {
+	width: 100%;
+	flex-basis: 100%;
+}
+
+.wpat-reg-field-group.col-half {
+	width: calc(50% - 10px);
+	flex-basis: calc(50% - 10px);
+}
+
+@media (max-width: 640px) {
+	.wpat-reg-field-group.col-half {
+		width: 100%;
+		flex-basis: 100%;
+	}
+}
+
+.wpat-reg-label {
+	font-size: 13.5px;
+	font-weight: 600;
+	color: #1e293b;
+	margin-bottom: 6px;
+	display: block;
+}
+
+.wpat-reg-required {
+	color: #ef4444;
+	font-weight: 700;
+	margin-left: 3px;
+}
+
+.wpat-reg-input,
+.wpat-reg-select,
+.wpat-reg-textarea {
+	width: 100% !important;
+	border: 1px solid #cbd5e1 !important;
+	border-radius: 8px !important;
+	padding: 10px 14px !important;
+	font-size: 14px !important;
+	background: #ffffff !important;
+	color: #1e293b !important;
+	box-sizing: border-box !important;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.wpat-reg-input:focus,
+.wpat-reg-select:focus,
+.wpat-reg-textarea:focus {
+	border-color: #2563eb !important;
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+	outline: none !important;
+}
+
+.wpat-reg-file-input {
+	padding: 8px 0;
+	font-size: 13px;
+	color: #475569;
+}
+
+.wpat-reg-checkbox-label,
+.wpat-reg-radio-label {
+	display: inline-flex;
+	align-items: flex-start;
+	gap: 8px;
+	font-size: 13.5px;
+	color: #334155;
+	font-weight: 400;
+	cursor: pointer;
+	margin-bottom: 6px;
+	line-height: 1.4;
+}
+
+.wpat-reg-checkbox-label input[type="checkbox"],
+.wpat-reg-radio-label input[type="radio"] {
+	margin-top: 3px;
+	accent-color: #2563eb;
+}
+
+.wpat-reg-hint {
+	font-size: 12px;
+	color: #94a3b8;
+	margin-top: 4px;
+	line-height: 1.4;
+}
+
+/* Honeypot invisible anti-spam */
+.wpat-reg-hp-field {
+	display: none !important;
+	position: absolute !important;
+	left: -9999px !important;
+}
+
+.wpat-reg-submit-wrap {
+	margin-top: 24px;
+	padding-top: 16px;
+	border-top: 1px solid #f1f5f9;
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	gap: 16px;
+}
+
+.wpat-reg-submit-btn {
+	background: #2563eb;
+	color: #ffffff;
+	border: none;
+	border-radius: 8px;
+	padding: 12px 28px;
+	font-size: 15px;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.wpat-reg-submit-btn:hover {
+	background: #1d4ed8;
+}
+
+.wpat-reg-submit-btn:disabled {
+	opacity: 0.65;
+	cursor: not-allowed;
+}
+
+/* Avisos frontend */
+.wpat-reg-notice {
+	padding: 14px 18px;
+	border-radius: 8px;
+	font-size: 14px;
+	margin-bottom: 20px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	line-height: 1.5;
+}
+
+.wpat-reg-notice-success {
+	background: #f0fdf4;
+	border: 1px solid #bbf7d0;
+	border-left: 4px solid #16a34a;
+	color: #14532d;
+}
+
+.wpat-reg-notice-pending {
+	background: #fffbeb;
+	border: 1px solid #fde68a;
+	border-left: 4px solid #f59e0b;
+	color: #92400e;
+}
+
+.wpat-reg-notice-error {
+	background: #fef2f2;
+	border: 1px solid #fecaca;
+	border-left: 4px solid #ef4444;
+	color: #991b1b;
+}
+
+/* ==========================================================================
+   2. ADMIN STYLES (Panel de Control y Constructor de Formularios)
+   ========================================================================== */
+
+.wpat-reg-admin-wrap {
+	margin-top: 15px;
+}
+
+.wpat-reg-admin-nav-tabs {
+	display: flex;
+	gap: 6px;
+	border-bottom: 1px solid #cbd5e1;
+	margin-bottom: 20px;
+}
+
+.wpat-reg-admin-tab-btn {
+	background: transparent;
+	border: none;
+	border-bottom: 3px solid transparent;
+	padding: 10px 18px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #64748b;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: -1px;
+	transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.wpat-reg-admin-tab-btn:hover {
+	color: #1e293b;
+}
+
+.wpat-reg-admin-tab-btn.active {
+	color: #2563eb;
+	border-bottom-color: #2563eb;
+}
+
+.wpat-reg-tab-panel {
+	display: none;
+}
+
+.wpat-reg-tab-panel.active {
+	display: block;
+}
+
+/* Insignias de Estado de Usuarios */
+.wpat-reg-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 3px 8px;
+	border-radius: 9999px;
+	font-size: 11.5px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
+}
+
+.wpat-reg-badge.active {
+	background: #dcfce7;
+	color: #15803d;
+	border: 1px solid #86efac;
+}
+
+.wpat-reg-badge.pending {
+	background: #fef3c7;
+	color: #b45309;
+	border: 1px solid #fcd34d;
+}
+
+.wpat-reg-badge.rejected {
+	background: #fee2e2;
+	color: #b91c1c;
+	border: 1px solid #fca5a5;
+}
+
+/* Lista de campos en el constructor */
+.wpat-reg-fields-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-top: 15px;
+}
+
+.wpat-reg-field-row {
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	padding: 12px 16px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wpat-reg-field-row:hover {
+	border-color: #cbd5e1;
+	box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.wpat-reg-field-row-info {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex: 1;
+}
+
+.wpat-reg-field-drag-handle {
+	cursor: grab;
+	color: #94a3b8;
+}
+
+.wpat-reg-field-badge-type {
+	font-size: 11px;
+	font-family: monospace;
+	background: #f1f5f9;
+	color: #475569;
+	padding: 2px 6px;
+	border-radius: 4px;
+	border: 1px solid #e2e8f0;
+}
+
+.wpat-reg-shortcode-code {
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-family: monospace;
+	font-size: 12px;
+	color: #0f172a;
+	cursor: pointer;
+	user-select: all;
+}
+
+.wpat-reg-shortcode-code:hover {
+	background: #eff6ff;
+	border-color: #93c5fd;
+	color: #1d4ed8;
+}

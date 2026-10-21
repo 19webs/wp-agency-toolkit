@@ -254,6 +254,111 @@
 			$lbl.text(w === 'half' ? '50% (Media col)' : '100% (Ancho completo)');
 		});
 
+		/* ==========================================================================
+		   5. ADMIN: Modal de Vista Previa Interactiva del Formulario
+		   ========================================================================== */
+
+		// Abrir Modal de Vista Previa
+		$(document).on('click', '.wpat-open-preview-btn', function(e) {
+			e.preventDefault();
+			var $btn      = $(this);
+			var formId    = $btn.data('form-id') || '';
+			var isEditor  = $btn.data('is-editor') ? 1 : 0;
+			var nonce     = (window.wpatRegForms ? window.wpatRegForms.nonce : '');
+			var ajaxEndpoint = (window.wpatRegForms ? window.wpatRegForms.ajaxUrl : (window.ajaxurl || ''));
+
+			// Resetear vista del modal
+			$('#wpat_preview_loading').show();
+			$('#wpat_preview_body_rendered').hide().empty();
+			$('.wpat-reg-device-btn').removeClass('active');
+			$('.wpat-reg-device-btn[data-width="100%"]').addClass('active');
+			$('#wpat_preview_container').css('max-width', '100%');
+			$('#wpat_reg_preview_modal').fadeIn(200);
+
+			var payload = {
+				action: 'wpat_preview_registration_form',
+				form_id: formId,
+				security: nonce
+			};
+
+			// Si estamos en el editor de formulario, recopilar datos en vivo para previsualizar cambios sin guardar
+			if (isEditor) {
+				var allowedRoles = [];
+				$('input[name="form_allowed_roles[]"]:checked').each(function() {
+					allowedRoles.push($(this).val());
+				});
+
+				var fields = [];
+				$('.wpat-reg-field-row').each(function() {
+					var $row = $(this);
+					fields.push({
+						id: $row.find('input[name*="[id]"]').val() || '',
+						type: $row.find('input[name*="[type]"]').val() || 'text',
+						label: $row.find('.wpat-input-field-label').val() || '',
+						placeholder: $row.find('input[name*="[placeholder]"]').val() || '',
+						width: $row.find('.wpat-select-field-width').val() || 'full',
+						required: $row.find('.wpat-check-field-req').is(':checked') ? '1' : '0',
+						is_native: $row.find('input[name*="[is_native]"]').val() || '0'
+					});
+				});
+
+				payload.live_data = {
+					title: $('#form_title').val() || 'Formulario de Registro',
+					desc: $('#form_desc').val() || '',
+					button_text: $('#form_button_text').val() || 'Completar Registro',
+					role_assignment: $('input[name="form_role_assignment"]:checked').val() || 'fixed',
+					default_role: $('#form_default_role').val() || 'customer',
+					allowed_roles: allowedRoles,
+					approval_required: $('#form_approval_required').is(':checked') ? '1' : '0',
+					fields: fields
+				};
+			}
+
+			$.ajax({
+				url: ajaxEndpoint,
+				type: 'POST',
+				data: payload,
+				success: function(response) {
+					if (response.success && response.data) {
+						$('#wpat_preview_modal_title').text('Vista Previa: ' + (response.data.title || 'Formulario'));
+						$('#wpat_preview_shortcode_tag').text(response.data.shortcode || ('[wpat_registration_form id="' + formId + '"]'));
+						$('#wpat_preview_body_rendered').html(response.data.html);
+						$('#wpat_preview_loading').hide();
+						$('#wpat_preview_body_rendered').fadeIn(150);
+					} else {
+						$('#wpat_preview_loading').hide();
+						$('#wpat_preview_body_rendered').html('<div class="wpat-reg-notice wpat-reg-notice-error">' + (response.data && response.data.message ? response.data.message : 'Error al cargar la vista previa.') + '</div>').show();
+					}
+				},
+				error: function() {
+					$('#wpat_preview_loading').hide();
+					$('#wpat_preview_body_rendered').html('<div class="wpat-reg-notice wpat-reg-notice-error">Error de comunicación con el servidor al generar la vista previa.</div>').show();
+				}
+			});
+		});
+
+		// Selector de dispositivos (Escritorio, Tablet, Móvil)
+		$(document).on('click', '.wpat-reg-device-btn', function(e) {
+			e.preventDefault();
+			var width = $(this).data('width') || '100%';
+			$('.wpat-reg-device-btn').removeClass('active');
+			$(this).addClass('active');
+			$('#wpat_preview_container').css('max-width', width);
+		});
+
+		// Cerrar Modal de Vista Previa
+		$(document).on('click', '#wpat_reg_close_preview_btn, #wpat_reg_close_preview_backdrop, #wpat_reg_close_preview_bottom_btn', function(e) {
+			e.preventDefault();
+			$('#wpat_reg_preview_modal').fadeOut(200);
+		});
+
+		// Cerrar con tecla Escape
+		$(document).on('keydown', function(e) {
+			if (e.key === 'Escape' && $('#wpat_reg_preview_modal').is(':visible')) {
+				$('#wpat_reg_preview_modal').fadeOut(200);
+			}
+		});
+
 	});
 
 })(jQuery);

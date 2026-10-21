@@ -414,3 +414,83 @@
 	gap: 10px;
 }
 
+/* ==========================================================================
+   5. MODAL DE VISTA PREVIA INTERACTIVA (Preview & Responsive Switcher)
+   ========================================================================== */
+
+.wpat-reg-preview-modal-content {
+	max-width: 980px !important;
+	width: 94% !important;
+	height: 88vh;
+	display: flex;
+	flex-direction: column;
+}
+
+.wpat-reg-preview-canvas {
+	background: #f1f5f9;
+	padding: 30px 20px;
+	overflow-y: auto;
+	flex: 1;
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+}
+
+.wpat-reg-preview-frame-wrap {
+	width: 100%;
+	max-width: 100%;
+	transition: max-width 0.28s ease-in-out;
+	margin: 0 auto;
+}
+
+.wpat-reg-device-switcher {
+	display: inline-flex;
+	align-items: center;
+	background: #e2e8f0;
+	border-radius: 8px;
+	padding: 3px;
+	gap: 3px;
+}
+
+.wpat-reg-device-btn {
+	background: transparent;
+	border: none;
+	border-radius: 6px;
+	padding: 5px 10px;
+	color: #64748b;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.15s ease;
+}
+
+.wpat-reg-device-btn:hover {
+	color: #0f172a;
+	background: rgba(255, 255, 255, 0.6);
+}
+
+.wpat-reg-device-btn.active {
+	background: #2563eb;
+	color: #ffffff;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.wpat-reg-preview-notice {
+	background: #eff6ff;
+	border: 1px solid #bfdbfe;
+	border-radius: 8px;
+	padding: 10px 14px;
+	margin-bottom: 20px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 13px;
+	color: #1e3a8a;
+	line-height: 1.4;
+}
+
+.wpat-reg-form-wrap.wpat-reg-preview-mode {
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+}
+

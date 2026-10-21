@@ -68,6 +68,9 @@ class WPAT_Woo_Registration_Forms {
 		// Endpoint AJAX para aprobar o rechazar usuarios
 		add_action( 'wp_ajax_wpat_update_user_reg_status', array( $this, 'ajax_update_user_reg_status' ) );
 
+		// Endpoint AJAX para vista previa interactiva del formulario
+		add_action( 'wp_ajax_wpat_preview_registration_form', array( $this, 'ajax_preview_registration_form' ) );
+
 		// Encolar assets en admin si estamos en páginas relevantes
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 
@@ -295,53 +298,68 @@ class WPAT_Woo_Registration_Forms {
 	 * Genera el marcado HTML para el formulario dado.
 	 *
 	 * @param array $form Configuración del formulario.
+	 * @param bool  $is_preview Si se está renderizando en modo vista previa interactiva.
 	 * @return string
 	 */
-	public function generate_form_markup( $form ) {
+	public function generate_form_markup( $form, $is_preview = false ) {
 		ob_start();
 
 		$form_id = esc_attr( $form['id'] );
 
-		// Mensajes de estado en URL
-		if ( isset( $_GET['wpat_reg_success'] ) && $form_id === sanitize_text_field( $_GET['wpat_form_id'] ) ) {
-			$is_pending = isset( $_GET['wpat_pending'] ) && '1' === $_GET['wpat_pending'];
-			if ( $is_pending ) {
-				?>
-				<div class="wpat-reg-notice wpat-reg-notice-pending">
-					<span class="dashicons dashicons-clock" style="font-size:24px; width:24px; height:24px; color:#f59e0b;"></span>
-					<div>
-						<strong><?php esc_html_e( 'Solicitud de registro enviada con éxito.', 'wp-agency-toolkit' ); ?></strong><br>
-						<?php echo esc_html( ! empty( $form['success_msg'] ) ? $form['success_msg'] : __( 'Tu cuenta está pendiente de aprobación por un administrador. Te notificaremos por correo electrónico una vez validada.', 'wp-agency-toolkit' ) ); ?>
+		// Mensajes de estado en URL (solo en frontend real)
+		if ( ! $is_preview ) {
+			if ( isset( $_GET['wpat_reg_success'] ) && $form_id === sanitize_text_field( $_GET['wpat_form_id'] ) ) {
+				$is_pending = isset( $_GET['wpat_pending'] ) && '1' === $_GET['wpat_pending'];
+				if ( $is_pending ) {
+					?>
+					<div class="wpat-reg-notice wpat-reg-notice-pending">
+						<span class="dashicons dashicons-clock" style="font-size:24px; width:24px; height:24px; color:#f59e0b;"></span>
+						<div>
+							<strong><?php esc_html_e( 'Solicitud de registro enviada con éxito.', 'wp-agency-toolkit' ); ?></strong><br>
+							<?php echo esc_html( ! empty( $form['success_msg'] ) ? $form['success_msg'] : __( 'Tu cuenta está pendiente de aprobación por un administrador. Te notificaremos por correo electrónico una vez validada.', 'wp-agency-toolkit' ) ); ?>
+						</div>
 					</div>
-				</div>
-				<?php
-			} else {
+					<?php
+				} else {
+					?>
+					<div class="wpat-reg-notice wpat-reg-notice-success">
+						<span class="dashicons dashicons-yes-alt" style="font-size:24px; width:24px; height:24px; color:#16a34a;"></span>
+						<div>
+							<strong><?php esc_html_e( '¡Registro completado!', 'wp-agency-toolkit' ); ?></strong><br>
+							<?php esc_html_e( 'Tu cuenta ha sido creada y ya has iniciado sesión.', 'wp-agency-toolkit' ); ?>
+						</div>
+					</div>
+					<?php
+				}
+				return ob_get_clean();
+			}
+
+			if ( isset( $_GET['wpat_reg_error'] ) && ! empty( $_GET['wpat_reg_error'] ) ) {
 				?>
-				<div class="wpat-reg-notice wpat-reg-notice-success">
-					<span class="dashicons dashicons-yes-alt" style="font-size:24px; width:24px; height:24px; color:#16a34a;"></span>
+				<div class="wpat-reg-notice wpat-reg-notice-error">
+					<span class="dashicons dashicons-warning" style="font-size:24px; width:24px; height:24px; color:#ef4444;"></span>
 					<div>
-						<strong><?php esc_html_e( '¡Registro completado!', 'wp-agency-toolkit' ); ?></strong><br>
-						<?php esc_html_e( 'Tu cuenta ha sido creada y ya has iniciado sesión.', 'wp-agency-toolkit' ); ?>
+						<strong><?php esc_html_e( 'Error en el registro:', 'wp-agency-toolkit' ); ?></strong><br>
+						<?php echo esc_html( sanitize_text_field( wp_unslash( $_GET['wpat_reg_error'] ) ) ); ?>
 					</div>
 				</div>
 				<?php
 			}
-			return ob_get_clean();
-		}
-
-		if ( isset( $_GET['wpat_reg_error'] ) && ! empty( $_GET['wpat_reg_error'] ) ) {
-			?>
-			<div class="wpat-reg-notice wpat-reg-notice-error">
-				<span class="dashicons dashicons-warning" style="font-size:24px; width:24px; height:24px; color:#ef4444;"></span>
-				<div>
-					<strong><?php esc_html_e( 'Error en el registro:', 'wp-agency-toolkit' ); ?></strong><br>
-					<?php echo esc_html( sanitize_text_field( wp_unslash( $_GET['wpat_reg_error'] ) ) ); ?>
-				</div>
-			</div>
-			<?php
 		}
 		?>
-		<div class="wpat-reg-form-wrap" id="wpat-form-wrap-<?php echo esc_attr( $form_id ); ?>">
+		<div class="wpat-reg-form-wrap <?php echo $is_preview ? 'wpat-reg-preview-mode' : ''; ?>" id="wpat-form-wrap-<?php echo esc_attr( $form_id ); ?>">
+			<?php if ( $is_preview ) : ?>
+				<div class="wpat-reg-preview-notice">
+					<span class="dashicons dashicons-visibility" style="font-size: 18px; width: 18px; height: 18px; color: #2563eb;"></span>
+					<div>
+						<strong><?php esc_html_e( 'Vista Previa en Vivo', 'wp-agency-toolkit' ); ?></strong>
+						<span style="display: block; font-size: 12px; color: #475569; margin-top: 2px;">
+							<?php esc_html_e( 'Así es como verán este formulario los usuarios en tu web. Los envíos de prueba están desactivados.', 'wp-agency-toolkit' ); ?>
+						</span>
+					</div>
+				</div>
+			<?php endif; ?>
+
 			<?php if ( ! empty( $form['title'] ) ) : ?>
 				<h3 class="wpat-reg-form-title"><?php echo esc_html( $form['title'] ); ?></h3>
 			<?php endif; ?>
@@ -350,68 +368,77 @@ class WPAT_Woo_Registration_Forms {
 				<p class="wpat-reg-form-desc"><?php echo esc_html( $form['desc'] ); ?></p>
 			<?php endif; ?>
 
-			<form method="post" action="" enctype="multipart/form-data" class="wpat-reg-form" id="wpat-form-<?php echo esc_attr( $form_id ); ?>">
-				<?php wp_nonce_field( 'wpat_submit_registration_action', 'wpat_reg_nonce' ); ?>
-				<input type="hidden" name="wpat_reg_action" value="submit_registration" />
-				<input type="hidden" name="wpat_form_id" value="<?php echo esc_attr( $form_id ); ?>" />
+			<?php if ( $is_preview ) : ?>
+				<div class="wpat-reg-form wpat-reg-form-preview-inner" id="wpat-form-<?php echo esc_attr( $form_id ); ?>">
+			<?php else : ?>
+				<form method="post" action="" enctype="multipart/form-data" class="wpat-reg-form" id="wpat-form-<?php echo esc_attr( $form_id ); ?>">
+					<?php wp_nonce_field( 'wpat_submit_registration_action', 'wpat_reg_nonce' ); ?>
+					<input type="hidden" name="wpat_reg_action" value="submit_registration" />
+					<input type="hidden" name="wpat_form_id" value="<?php echo esc_attr( $form_id ); ?>" />
 
-				<!-- Campo Honeypot invisible para atrapar bots sin molestar usuarios -->
-				<div class="wpat-reg-hp-field">
-					<label for="wpat_reg_hp_<?php echo esc_attr( $form_id ); ?>">Dejar en blanco:</label>
-					<input type="text" name="wpat_reg_hp" id="wpat_reg_hp_<?php echo esc_attr( $form_id ); ?>" value="" tabindex="-1" autocomplete="off" />
-				</div>
-
-				<div class="wpat-reg-grid">
-					<!-- Campos estándar obligatorios de WordPress / WooCommerce: Email y Contraseña -->
-					<div class="wpat-reg-field-group col-half">
-						<label class="wpat-reg-label" for="wpat_user_email_<?php echo esc_attr( $form_id ); ?>">
-							<?php esc_html_e( 'Correo electrónico', 'wp-agency-toolkit' ); ?> <span class="wpat-reg-required">*</span>
-						</label>
-						<input type="email" name="user_email" id="wpat_user_email_<?php echo esc_attr( $form_id ); ?>" class="wpat-reg-input" required autocomplete="email" placeholder="ejemplo@empresa.com" />
+					<!-- Campo Honeypot invisible para atrapar bots sin molestar usuarios -->
+					<div class="wpat-reg-hp-field">
+						<label for="wpat_reg_hp_<?php echo esc_attr( $form_id ); ?>">Dejar en blanco:</label>
+						<input type="text" name="wpat_reg_hp" id="wpat_reg_hp_<?php echo esc_attr( $form_id ); ?>" value="" tabindex="-1" autocomplete="off" />
 					</div>
+			<?php endif; ?>
 
-					<div class="wpat-reg-field-group col-half">
-						<label class="wpat-reg-label" for="wpat_user_pass_<?php echo esc_attr( $form_id ); ?>">
-							<?php esc_html_e( 'Contraseña de acceso', 'wp-agency-toolkit' ); ?> <span class="wpat-reg-required">*</span>
-						</label>
-						<input type="password" name="user_pass" id="wpat_user_pass_<?php echo esc_attr( $form_id ); ?>" class="wpat-reg-input" required autocomplete="new-password" placeholder="Mínimo 8 caracteres" />
-					</div>
-
-					<!-- Si está configurado selección de rol en desplegable -->
-					<?php if ( isset( $form['role_assignment'] ) && 'dropdown' === $form['role_assignment'] && ! empty( $form['allowed_roles'] ) ) : ?>
-						<div class="wpat-reg-field-group col-full">
-							<label class="wpat-reg-label" for="wpat_user_role_<?php echo esc_attr( $form_id ); ?>">
-								<?php esc_html_e( 'Tipo de Cuenta / Perfil', 'wp-agency-toolkit' ); ?> <span class="wpat-reg-required">*</span>
+					<div class="wpat-reg-grid">
+						<!-- Campos estándar obligatorios de WordPress / WooCommerce: Email y Contraseña -->
+						<div class="wpat-reg-field-group col-half">
+							<label class="wpat-reg-label" for="wpat_user_email_<?php echo esc_attr( $form_id ); ?>">
+								<?php esc_html_e( 'Correo electrónico', 'wp-agency-toolkit' ); ?> <span class="wpat-reg-required">*</span>
 							</label>
-							<select name="user_role" id="wpat_user_role_<?php echo esc_attr( $form_id ); ?>" class="wpat-reg-select" required>
-								<?php
-								$wp_roles = wp_roles()->roles;
-								foreach ( $form['allowed_roles'] as $r_slug ) {
-									$role_name = isset( $wp_roles[ $r_slug ]['name'] ) ? translate_user_role( $wp_roles[ $r_slug ]['name'] ) : ucfirst( $r_slug );
-									echo '<option value="' . esc_attr( $r_slug ) . '">' . esc_html( $role_name ) . '</option>';
-								}
-								?>
-							</select>
+							<input type="email" name="user_email" id="wpat_user_email_<?php echo esc_attr( $form_id ); ?>" class="wpat-reg-input" required autocomplete="email" placeholder="ejemplo@empresa.com" />
 						</div>
-					<?php endif; ?>
 
-					<!-- Campos dinámicos del formulario -->
-					<?php
-					if ( ! empty( $form['fields'] ) && is_array( $form['fields'] ) ) {
-						foreach ( $form['fields'] as $field ) {
-							$this->render_field_input( $field, $form_id );
+						<div class="wpat-reg-field-group col-half">
+							<label class="wpat-reg-label" for="wpat_user_pass_<?php echo esc_attr( $form_id ); ?>">
+								<?php esc_html_e( 'Contraseña de acceso', 'wp-agency-toolkit' ); ?> <span class="wpat-reg-required">*</span>
+							</label>
+							<input type="password" name="user_pass" id="wpat_user_pass_<?php echo esc_attr( $form_id ); ?>" class="wpat-reg-input" required autocomplete="new-password" placeholder="Mínimo 8 caracteres" />
+						</div>
+
+						<!-- Si está configurado selección de rol en desplegable -->
+						<?php if ( isset( $form['role_assignment'] ) && 'dropdown' === $form['role_assignment'] && ! empty( $form['allowed_roles'] ) ) : ?>
+							<div class="wpat-reg-field-group col-full">
+								<label class="wpat-reg-label" for="wpat_user_role_<?php echo esc_attr( $form_id ); ?>">
+									<?php esc_html_e( 'Tipo de Cuenta / Perfil', 'wp-agency-toolkit' ); ?> <span class="wpat-reg-required">*</span>
+								</label>
+								<select name="user_role" id="wpat_user_role_<?php echo esc_attr( $form_id ); ?>" class="wpat-reg-select" required>
+									<?php
+									$wp_roles = wp_roles()->roles;
+									foreach ( $form['allowed_roles'] as $r_slug ) {
+										$role_name = isset( $wp_roles[ $r_slug ]['name'] ) ? translate_user_role( $wp_roles[ $r_slug ]['name'] ) : ucfirst( $r_slug );
+										echo '<option value="' . esc_attr( $r_slug ) . '">' . esc_html( $role_name ) . '</option>';
+									}
+									?>
+								</select>
+							</div>
+						<?php endif; ?>
+
+						<!-- Campos dinámicos del formulario -->
+						<?php
+						if ( ! empty( $form['fields'] ) && is_array( $form['fields'] ) ) {
+							foreach ( $form['fields'] as $field ) {
+								$this->render_field_input( $field, $form_id );
+							}
 						}
-					}
-					?>
-				</div>
+						?>
+					</div>
 
-				<div class="wpat-reg-submit-wrap">
-					<button type="submit" class="wpat-reg-submit-btn">
-						<span class="dashicons dashicons-admin-users" style="font-size:18px; width:18px; height:18px; line-height:1;"></span>
-						<?php echo esc_html( ! empty( $form['button_text'] ) ? $form['button_text'] : __( 'Completar Registro', 'wp-agency-toolkit' ) ); ?>
-					</button>
+					<div class="wpat-reg-submit-wrap">
+						<button type="<?php echo $is_preview ? 'button' : 'submit'; ?>" class="wpat-reg-submit-btn" <?php echo $is_preview ? 'onclick="alert(\'' . esc_js( __( 'Esta es una vista previa de demostración. Los envíos de formulario están deshabilitados.', 'wp-agency-toolkit' ) ) . '\');"' : ''; ?>>
+							<span class="dashicons dashicons-admin-users" style="font-size:18px; width:18px; height:18px; line-height:1;"></span>
+							<?php echo esc_html( ! empty( $form['button_text'] ) ? $form['button_text'] : __( 'Completar Registro', 'wp-agency-toolkit' ) ); ?>
+						</button>
+					</div>
+
+			<?php if ( $is_preview ) : ?>
 				</div>
-			</form>
+			<?php else : ?>
+				</form>
+			<?php endif; ?>
 		</div>
 		<?php
 		return ob_get_clean();
@@ -838,6 +865,64 @@ class WPAT_Woo_Registration_Forms {
 			'user_id'    => $user_id,
 			'status'     => $new_status,
 			'status_lbl' => ucfirst( $new_status ),
+		) );
+	}
+
+	/**
+	 * Endpoint AJAX para generar la vista previa interactiva de un formulario.
+	 */
+	public function ajax_preview_registration_form() {
+		check_ajax_referer( 'wpat_reg_forms_nonce', 'security' );
+
+		if ( ! current_user_can( 'manage_woocommerce' ) && ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permisos insuficientes.', 'wp-agency-toolkit' ) ) );
+		}
+
+		$form_id = isset( $_POST['form_id'] ) ? sanitize_key( $_POST['form_id'] ) : '';
+		$forms   = self::get_forms();
+
+		// Si se envían datos en vivo desde el editor
+		if ( isset( $_POST['live_data'] ) && is_array( $_POST['live_data'] ) ) {
+			$live = wp_unslash( $_POST['live_data'] );
+			$form = array(
+				'id'                => ! empty( $form_id ) ? $form_id : 'form-preview',
+				'title'             => ! empty( $live['title'] ) ? sanitize_text_field( $live['title'] ) : __( 'Formulario de Registro', 'wp-agency-toolkit' ),
+				'desc'              => isset( $live['desc'] ) ? sanitize_textarea_field( $live['desc'] ) : '',
+				'button_text'       => ! empty( $live['button_text'] ) ? sanitize_text_field( $live['button_text'] ) : __( 'Completar Registro', 'wp-agency-toolkit' ),
+				'role_assignment'   => isset( $live['role_assignment'] ) ? sanitize_key( $live['role_assignment'] ) : 'fixed',
+				'default_role'      => isset( $live['default_role'] ) ? sanitize_key( $live['default_role'] ) : 'customer',
+				'allowed_roles'     => isset( $live['allowed_roles'] ) && is_array( $live['allowed_roles'] ) ? array_map( 'sanitize_key', $live['allowed_roles'] ) : array( 'customer' ),
+				'approval_required' => isset( $live['approval_required'] ) ? sanitize_key( $live['approval_required'] ) : '0',
+				'fields'            => array(),
+			);
+
+			if ( isset( $live['fields'] ) && is_array( $live['fields'] ) ) {
+				foreach ( $live['fields'] as $f ) {
+					if ( ! empty( $f['id'] ) ) {
+						$form['fields'][] = array(
+							'id'          => sanitize_key( $f['id'] ),
+							'type'        => sanitize_key( $f['type'] ),
+							'label'       => sanitize_text_field( $f['label'] ),
+							'placeholder' => isset( $f['placeholder'] ) ? sanitize_text_field( $f['placeholder'] ) : '',
+							'required'    => ! empty( $f['required'] ) ? '1' : '0',
+							'width'       => ( isset( $f['width'] ) && 'half' === $f['width'] ) ? 'half' : 'full',
+							'is_native'   => ! empty( $f['is_native'] ) ? '1' : '0',
+						);
+					}
+				}
+			}
+		} elseif ( ! empty( $form_id ) && isset( $forms[ $form_id ] ) ) {
+			$form = $forms[ $form_id ];
+		} else {
+			wp_send_json_error( array( 'message' => __( 'Formulario no encontrado.', 'wp-agency-toolkit' ) ) );
+		}
+
+		$html = $this->generate_form_markup( $form, true );
+
+		wp_send_json_success( array(
+			'title'     => $form['title'],
+			'shortcode' => '[wpat_registration_form id="' . esc_attr( $form['id'] ) . '"]',
+			'html'      => $html,
 		) );
 	}
 

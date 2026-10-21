@@ -16221,6 +16221,10 @@ class WPAT_Admin {
 							</div>
 
 							<div style="display: flex; align-items: center; gap: 10px;">
+								<button type="button" class="button button-secondary wpat-open-preview-btn" data-form-id="<?php echo esc_attr( $active_form['id'] ); ?>" data-is-editor="1" style="height: 36px; line-height: 34px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+									<span class="dashicons dashicons-visibility" style="font-size: 16px; width: 16px; height: 16px; line-height: 1;"></span>
+									<?php esc_html_e( 'Vista Previa', 'wp-agency-toolkit' ); ?>
+								</button>
 								<span style="font-size: 12px; color: #64748b;">Shortcode:</span>
 								<code class="wpat-reg-shortcode-code wpat-copy-shortcode" title="Clic para copiar">[wpat_registration_form id="<?php echo esc_attr( $active_form['id'] ); ?>"]</code>
 								<button type="submit" name="wpat_save_settings" value="1" class="button button-primary" style="height: 36px; line-height: 34px; padding: 0 20px; font-weight: 700;">
@@ -16510,6 +16514,10 @@ class WPAT_Admin {
 										</td>
 										<td style="vertical-align: middle; text-align: right;">
 											<div style="display: inline-flex; align-items: center; gap: 4px;">
+												<button type="button" class="button button-small wpat-open-preview-btn" data-form-id="<?php echo esc_attr( $f_key ); ?>" title="Ver cómo queda este formulario" style="display: inline-flex; align-items: center; gap: 3px;">
+													<span class="dashicons dashicons-visibility" style="font-size: 14px; width: 14px; height: 14px; line-height: 1;"></span>
+													<?php esc_html_e( 'Vista Previa', 'wp-agency-toolkit' ); ?>
+												</button>
 												<a href="<?php echo esc_url( add_query_arg( array( 'form_action' => 'edit', 'form_id' => $f_key ), $base_url ) ); ?>" class="button button-small button-primary" title="Editar campos y opciones">
 													Editar ✏️
 												</a>
@@ -16607,6 +16615,51 @@ class WPAT_Admin {
 					</div>
 
 				<?php endif; ?>
+
+				<!-- MODAL DE VISTA PREVIA DEL FORMULARIO -->
+				<div id="wpat_reg_preview_modal" class="wpat-reg-modal" style="display: none; z-index: 100050;">
+					<div class="wpat-reg-modal-backdrop" id="wpat_reg_close_preview_backdrop"></div>
+					<div class="wpat-reg-modal-content wpat-reg-preview-modal-content">
+						<div class="wpat-reg-modal-header">
+							<div style="display: flex; align-items: center; gap: 10px;">
+								<span class="dashicons dashicons-visibility" style="color: #2563eb; font-size: 20px; width: 20px; height: 20px;"></span>
+								<div>
+									<h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #0f172a;" id="wpat_preview_modal_title"><?php esc_html_e( 'Vista Previa del Formulario', 'wp-agency-toolkit' ); ?></h4>
+								</div>
+							</div>
+
+							<!-- Selector de Dispositivos Responsivos -->
+							<div class="wpat-reg-device-switcher">
+								<button type="button" class="wpat-reg-device-btn active" data-width="100%" title="Pantalla de Escritorio (100%)">
+									<span class="dashicons dashicons-desktop" style="font-size: 16px; width: 16px; height: 16px;"></span>
+								</button>
+								<button type="button" class="wpat-reg-device-btn" data-width="720px" title="Pantalla de Tablet (720px)">
+									<span class="dashicons dashicons-tablet" style="font-size: 16px; width: 16px; height: 16px;"></span>
+								</button>
+								<button type="button" class="wpat-reg-device-btn" data-width="390px" title="Pantalla de Móvil (390px)">
+									<span class="dashicons dashicons-smartphone" style="font-size: 16px; width: 16px; height: 16px;"></span>
+								</button>
+							</div>
+
+							<button type="button" id="wpat_reg_close_preview_btn" style="background: none; border: none; font-size: 24px; line-height: 1; cursor: pointer; color: #64748b; padding: 0 4px;" title="Cerrar">&times;</button>
+						</div>
+
+						<div class="wpat-reg-preview-canvas">
+							<div id="wpat_preview_container" class="wpat-reg-preview-frame-wrap">
+								<div id="wpat_preview_loading" style="text-align: center; padding: 40px; color: #64748b;">
+									<span class="spinner is-active" style="float: none; margin: 0 auto 10px; display: block;"></span>
+									<p style="margin: 0; font-weight: 500; font-size: 13.5px;"><?php esc_html_e( 'Cargando vista previa del formulario...', 'wp-agency-toolkit' ); ?></p>
+								</div>
+								<div id="wpat_preview_body_rendered" style="display: none;"></div>
+							</div>
+						</div>
+
+						<div class="wpat-reg-modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+							<span style="font-size: 12px; color: #64748b;">Shortcode: <code id="wpat_preview_shortcode_tag" style="background: #ffffff; padding: 2px 7px; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: 600;"></code></span>
+							<button type="button" class="button button-secondary" id="wpat_reg_close_preview_bottom_btn"><?php esc_html_e( 'Cerrar Vista Previa', 'wp-agency-toolkit' ); ?></button>
+						</div>
+					</div>
+				</div>
 
 			</div>
 		</div>

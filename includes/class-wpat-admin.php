@@ -828,6 +828,7 @@ class WPAT_Admin {
 			'client-studio',
 			'file-manager',
 			'woo-registration-forms',
+			'html-aria-fixer',
 			'tools',
 		);
 
@@ -1103,6 +1104,8 @@ class WPAT_Admin {
 			$new_settings['image_optimizer_max_height']    = isset( $input_settings['image_optimizer_max_height'] ) ? max( 0, intval( $input_settings['image_optimizer_max_height'] ) ) : 1920;
 			$new_settings['image_optimizer_auto_convert']   = isset( $input_settings['image_optimizer_auto_convert'] ) && '1' === $input_settings['image_optimizer_auto_convert'] ? '1' : '0';
 			$new_settings['image_optimizer_keep_original']  = isset( $input_settings['image_optimizer_keep_original'] ) && '1' === $input_settings['image_optimizer_keep_original'] ? '1' : '0';
+			$new_settings['image_optimizer_auto_alt']       = isset( $input_settings['image_optimizer_auto_alt'] ) && '1' === $input_settings['image_optimizer_auto_alt'] ? '1' : '0';
+			$new_settings['image_optimizer_alt_source']     = isset( $input_settings['image_optimizer_alt_source'] ) && in_array( $input_settings['image_optimizer_alt_source'], array( 'filename', 'post_title' ), true ) ? $input_settings['image_optimizer_alt_source'] : 'filename';
 		}
 
 		// 8. Sanitizar SMTP
@@ -1263,6 +1266,17 @@ class WPAT_Admin {
 			$new_settings['accessibility_light_bg']          = isset( $input_settings['accessibility_light_bg'] ) && '1' === $input_settings['accessibility_light_bg'] ? '1' : '0';
 			$new_settings['accessibility_underline_links']   = isset( $input_settings['accessibility_underline_links'] ) && '1' === $input_settings['accessibility_underline_links'] ? '1' : '0';
 			$new_settings['accessibility_readable_font']     = isset( $input_settings['accessibility_readable_font'] ) && '1' === $input_settings['accessibility_readable_font'] ? '1' : '0';
+		}
+
+		// 13.b. Sanitizar Corrector Técnico HTML & ARIA (WCAG / Lighthouse)
+		if ( empty( $saving_module ) || 'html-aria-fixer' === $saving_module ) {
+			$new_settings['html-aria-fixer']          = isset( $input_settings['html-aria-fixer'] ) && '1' === $input_settings['html-aria-fixer'] ? '1' : '0';
+			$new_settings['aria_fix_roles']           = isset( $input_settings['aria_fix_roles'] ) && '1' === $input_settings['aria_fix_roles'] ? '1' : '0';
+			$new_settings['aria_fix_hidden']          = isset( $input_settings['aria_fix_hidden'] ) && '1' === $input_settings['aria_fix_hidden'] ? '1' : '0';
+			$new_settings['aria_fix_empty_buttons']   = isset( $input_settings['aria_fix_empty_buttons'] ) && '1' === $input_settings['aria_fix_empty_buttons'] ? '1' : '0';
+			$new_settings['aria_fix_empty_links']     = isset( $input_settings['aria_fix_empty_links'] ) && '1' === $input_settings['aria_fix_empty_links'] ? '1' : '0';
+			$new_settings['aria_fix_inputs']          = isset( $input_settings['aria_fix_inputs'] ) && '1' === $input_settings['aria_fix_inputs'] ? '1' : '0';
+			$new_settings['aria_fix_decorative_imgs'] = isset( $input_settings['aria_fix_decorative_imgs'] ) && '1' === $input_settings['aria_fix_decorative_imgs'] ? '1' : '0';
 		}
 
 		// 14. Sanitizar Editor de Campos de Checkout (WooCommerce)
@@ -2214,6 +2228,7 @@ class WPAT_Admin {
 			'client-studio',
 			'file-manager',
 			'woo-registration-forms',
+			'html-aria-fixer',
 			'tools',
 		);
 
@@ -4087,6 +4102,18 @@ class WPAT_Admin {
 				'icon'        => '♿',
 				'icon_bg'     => 'perf',
 				'keywords'    => 'accesibilidad fuente contraste lectura boton flotante'
+			),
+			array(
+				'id'          => 'html-aria-fixer',
+				'is_new'      => true,
+				'title'       => 'Corrector HTML & ARIA',
+				'badge'       => 'Silencioso',
+				'badge_class' => 'security',
+				'desc'        => 'Corrector técnico de accesibilidad W3C y ARIA. Corrige roles no permitidos, trampas de teclado y botones/enlaces sin etiqueta para alcanzar 95-100 en Google Lighthouse.',
+				'cat_class'   => 'cat-tools',
+				'icon'        => '🛡️',
+				'icon_bg'     => 'security',
+				'keywords'    => 'aria html accesibilidad lighthouse auditoria w3c roles screen readers screenreader kit digital seo'
 			),
 
 			// 8. SISTEMA & ADMIN (9)
@@ -9414,6 +9441,118 @@ class WPAT_Admin {
 				</div>
 				<?php
 				break;
+			case 'html-aria-fixer':
+				$fix_roles       = ! isset( $settings['aria_fix_roles'] ) || '1' === $settings['aria_fix_roles'];
+				$fix_hidden      = ! isset( $settings['aria_fix_hidden'] ) || '1' === $settings['aria_fix_hidden'];
+				$fix_buttons     = ! isset( $settings['aria_fix_empty_buttons'] ) || '1' === $settings['aria_fix_empty_buttons'];
+				$fix_links       = ! isset( $settings['aria_fix_empty_links'] ) || '1' === $settings['aria_fix_empty_links'];
+				$fix_inputs      = ! isset( $settings['aria_fix_inputs'] ) || '1' === $settings['aria_fix_inputs'];
+				$fix_decor_imgs  = ! isset( $settings['aria_fix_decorative_imgs'] ) || '1' === $settings['aria_fix_decorative_imgs'];
+				?>
+				<div class="wpat-module-card">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>Corrector Técnico HTML & Atributos ARIA (Auditoría W3C / Lighthouse)</h3>
+							<p>Saneamiento de DOM dinámico e invisible. Corrige roles no permitidos, trampas de teclado en elementos ocultos, botones de iconos sin etiqueta y campos sin accesibilidad para obtener 95-100 en Google Lighthouse sin modificar el diseño visual.</p>
+						</div>
+						<?php $this->render_module_toggle( 'html-aria-fixer', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block; padding: 22px;">
+						<form method="post" action="">
+							<?php wp_nonce_field( 'wpat_save_settings_action', 'wpat_save_settings_nonce' ); ?>
+							<input type="hidden" name="wpat_saving_module" value="html-aria-fixer" />
+
+							<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px 18px; margin-bottom: 22px; display: flex; gap: 14px; align-items: flex-start;">
+								<span style="font-size: 24px; line-height: 1;">🛡️</span>
+								<div style="font-size: 13px; color: #166534; line-height: 1.5;">
+									<strong>100% Silencioso e Invisible para el Usuario:</strong> A diferencia de los módulos que muestran botones o barras flotantes en pantalla, este módulo opera exclusivamente en el código DOM. Limpia incompatibilidades técnicas de accesibilidad en segundo plano para cumplir con los estándares W3C ARIA in HTML y los requerimientos de auditorías técnicas (Google Lighthouse, WAVE, Kit Digital).
+								</div>
+							</div>
+
+							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 24px;">
+								<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+									<label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+										<input type="checkbox" name="wpat_settings[aria_fix_roles]" value="1" <?php checked( $fix_roles ); ?> style="margin-top: 3px;" />
+										<div>
+											<strong style="display: block; font-size: 13.5px; color: #1e293b; margin-bottom: 4px;">Corregir Roles de ARIA No Permitidos</strong>
+											<p style="font-size: 12px; color: #64748b; margin: 0; line-height: 1.45;">
+												Elimina atributos <code>role</code> asignados a elementos HTML semánticos donde no están permitidos (por ejemplo, <code>role="button"</code> en enlaces nativos o <code>role="navigation"</code> redundantes/conflictivos en etiquetas &lt;header&gt; o listas), solucionando el fallo estricto de auditoría de Lighthouse.
+											</p>
+										</div>
+									</label>
+								</div>
+
+								<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+									<label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+										<input type="checkbox" name="wpat_settings[aria_fix_hidden]" value="1" <?php checked( $fix_hidden ); ?> style="margin-top: 3px;" />
+										<div>
+											<strong style="display: block; font-size: 13.5px; color: #1e293b; margin-bottom: 4px;">Prevenir Trampas de Foco en Elementos Ocultos</strong>
+											<p style="font-size: 12px; color: #64748b; margin: 0; line-height: 1.45;">
+												Detecta elementos interactivos (enlaces, botones, inputs) dentro de contenedores con <code>aria-hidden="true"</code> (como menús móviles colapsados o modales cerrados) y ajusta su <code>tabindex="-1"</code> para evitar la advertencia crítica de trampas de teclado para usuarios invidentes.
+											</p>
+										</div>
+									</label>
+								</div>
+
+								<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+									<label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+										<input type="checkbox" name="wpat_settings[aria_fix_empty_buttons]" value="1" <?php checked( $fix_buttons ); ?> style="margin-top: 3px;" />
+										<div>
+											<strong style="display: block; font-size: 13.5px; color: #1e293b; margin-bottom: 4px;">Nombre Accesible para Botones de Solo Icono</strong>
+											<p style="font-size: 12px; color: #64748b; margin: 0; line-height: 1.45;">
+												Asigna automáticamente un <code>aria-label</code> contextual a botones que únicamente contienen iconos (como el botón hamburguesa del menú, carritos de compra o lupas de búsqueda) resolviendo el fallo "Los botones no tienen un nombre accesible".
+											</p>
+										</div>
+									</label>
+								</div>
+
+								<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+									<label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+										<input type="checkbox" name="wpat_settings[aria_fix_empty_links]" value="1" <?php checked( $fix_links ); ?> style="margin-top: 3px;" />
+										<div>
+											<strong style="display: block; font-size: 13.5px; color: #1e293b; margin-bottom: 4px;">Nombre Accesible para Enlaces y Redes Sociales</strong>
+											<p style="font-size: 12px; color: #64748b; margin: 0; line-height: 1.45;">
+												Identifica enlaces sin texto legible (iconos de Instagram, Facebook, WhatsApp, teléfono, correo) y les inyecta un <code>aria-label</code> preciso basado en su destino para que los lectores de pantalla puedan anunciarlos correctamente.
+											</p>
+										</div>
+									</label>
+								</div>
+
+								<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+									<label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+										<input type="checkbox" name="wpat_settings[aria_fix_inputs]" value="1" <?php checked( $fix_inputs ); ?> style="margin-top: 3px;" />
+										<div>
+											<strong style="display: block; font-size: 13.5px; color: #1e293b; margin-bottom: 4px;">Etiquetas en Campos de Formulario</strong>
+											<p style="font-size: 12px; color: #64748b; margin: 0; line-height: 1.45;">
+												Añade <code>aria-label</code> a campos de texto, inputs de búsqueda y suscripciones que carezcan de una etiqueta <code>&lt;label for="..."&gt;</code> explícita vinculada por el tema o maquetador.
+											</p>
+										</div>
+									</label>
+								</div>
+
+								<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+									<label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+										<input type="checkbox" name="wpat_settings[aria_fix_decorative_imgs]" value="1" <?php checked( $fix_decor_imgs ); ?> style="margin-top: 3px;" />
+										<div>
+											<strong style="display: block; font-size: 13.5px; color: #1e293b; margin-bottom: 4px;">Marcar Imágenes Decorativas Faltantes</strong>
+											<p style="font-size: 12px; color: #64748b; margin: 0; line-height: 1.45;">
+												Asigna en tiempo real <code>alt=""</code> y <code>role="presentation"</code> en el DOM del navegador a imágenes puramente gráficas que no dispongan de atributo alt, evitando advertencias de imágenes mudas.
+											</p>
+										</div>
+									</label>
+								</div>
+							</div>
+
+							<div style="display: flex; justify-content: flex-end;">
+								<button type="submit" class="button button-primary" style="height: 36px; padding: 0 20px; font-weight: 600;">
+									Guardar Ajustes de Accesibilidad ARIA
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+				<?php
+				break;
 			case 'svg-support':
 				$xml_available = extension_loaded( 'xml' ) || class_exists( 'SimpleXMLElement' );
 				?>
@@ -9625,6 +9764,58 @@ class WPAT_Admin {
 								<input type="checkbox" name="wpat_settings[image_optimizer_keep_original]" value="1" <?php checked( isset( $settings['image_optimizer_keep_original'] ) ? $settings['image_optimizer_keep_original'] : '0', '1' ); ?>>
 								<span><strong>Conservar copia del archivo original (JPG/PNG) en el servidor</strong> (Desactivado por defecto para ahorrar hasta un 70% de espacio en disco).</span>
 							</label>
+						</div>
+
+						<hr style="border:none; border-top: 1px solid #e2e8f0; margin: 25px 0;" />
+
+						<!-- Generador y Reparador de Textos ALT -->
+						<div class="wpat-alt-generator-section" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+							<h4 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+								<span class="dashicons dashicons-text-page" style="color: #2563eb;"></span>
+								Generador y Reparador de Textos ALT (Accesibilidad y SEO)
+							</h4>
+							<p class="description" style="margin: 0 0 16px 0;">Auto-rellena el texto alternativo (ALT) para optimizar el posicionamiento en buscadores y el cumplimiento de accesibilidad, respetando siempre las imágenes que ya tengan un ALT asignado.</p>
+
+							<div class="wpat-field-group" style="margin-bottom: 14px;">
+								<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+									<input type="checkbox" name="wpat_settings[image_optimizer_auto_alt]" value="1" <?php checked( ! isset( $settings['image_optimizer_auto_alt'] ) || '1' === $settings['image_optimizer_auto_alt'] ); ?>>
+									<span><strong>Generar automáticamente texto ALT al subir nuevas imágenes a la biblioteca</strong></span>
+								</label>
+							</div>
+
+							<div class="wpat-field-group" style="margin-bottom: 18px; max-width: 520px;">
+								<label for="wpat_image_optimizer_alt_source" style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">Origen del texto ALT automático:</label>
+								<select name="wpat_settings[image_optimizer_alt_source]" id="wpat_image_optimizer_alt_source" style="width: 100%;">
+									<option value="filename" <?php selected( isset( $settings['image_optimizer_alt_source'] ) ? $settings['image_optimizer_alt_source'] : 'filename', 'filename' ); ?>>Nombre del archivo limpio (Ej: 'zapatillas-running.jpg' → 'Zapatillas Running')</option>
+									<option value="post_title" <?php selected( isset( $settings['image_optimizer_alt_source'] ) ? $settings['image_optimizer_alt_source'] : '', 'post_title' ); ?>>Título de la entrada o producto contenedor (con fallback al nombre de archivo)</option>
+								</select>
+							</div>
+
+							<div style="border-top: 1px dashed #cbd5e1; padding-top: 16px; margin-top: 10px;">
+								<h5 style="margin: 0 0 6px 0; font-size: 13px; font-weight: 600; color: #334155;">Reparador de Biblioteca Existente (Imágenes sin ALT)</h5>
+								<p class="description" style="margin: 0 0 14px 0;">Escanea toda tu biblioteca de medios en busca de imágenes con el atributo ALT vacío y las completa por lotes de forma segura.</p>
+
+								<div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+									<button type="button" class="button" id="wpat_scan_empty_alt_btn">Escanear imágenes sin ALT</button>
+									<button type="button" class="button button-primary" id="wpat_start_bulk_alt_btn" style="display:none;">Reparador masivo</button>
+								</div>
+
+								<div id="wpat_alt_bulk_status" style="display:none; margin-top: 16px;">
+									<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+										<div style="flex: 1; height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; border: 1px solid #cbd5e1;">
+											<div id="wpat_alt_bulk_progress_fill" style="width: 0%; height: 100%; background: #2563eb; transition: width 0.3s ease;"></div>
+										</div>
+										<span id="wpat_alt_bulk_progress_percent" style="font-weight: 700; font-size: 14px; min-width: 40px; text-align: right; color: #1e293b;">0%</span>
+									</div>
+									<div style="margin-bottom: 12px; font-size: 13px; color: #475569;">
+										<span>Detectadas sin ALT: <strong id="wpat_alt_stat_pending" style="color: #1e293b;">0</strong></span> | 
+										<span>Reparadas: <strong id="wpat_alt_stat_processed" style="color: #16a34a;">0</strong></span>
+									</div>
+									<div id="wpat_alt_bulk_log" style="max-height: 140px; overflow-y: auto; background: #0f172a; color: #f8fafc; padding: 12px; font-family: monospace; font-size: 11px; border-radius: 6px; line-height: 1.5; border: 1px solid #1e293b;">
+										[Consola lista...]
+									</div>
+								</div>
+							</div>
 						</div>
 
 						<hr style="border:none; border-top: 1px solid #e2e8f0; margin: 25px 0;" />

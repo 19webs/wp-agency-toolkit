@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.139
+ * Version:     4.3.140
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.139' );
+define( 'WPAT_VERSION', '4.3.140' );
 define( 'WPAT_FILE', __FILE__ );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_DIR', WPAT_PATH );
@@ -248,6 +248,10 @@ class WPAT_Main {
 			'file'  => 'includes/modules/class-wpat-woo-registration-forms.php',
 			'class' => 'WPAT_Woo_Registration_Forms',
 		),
+		'html-aria-fixer' => array(
+			'file'  => 'includes/modules/class-wpat-html-aria-fixer.php',
+			'class' => 'WPAT_HTML_ARIA_Fixer',
+		),
 	);
 
 	/**
@@ -382,6 +386,15 @@ class WPAT_Main {
 				'media-renamer'             => '0',
 				'file-manager'              => '0',
 				'woo-registration-forms'    => '0',
+				'html-aria-fixer'           => '0',
+
+				// Sub-opciones de Corrector Técnico ARIA & HTML (WCAG 2.1)
+				'aria_fix_roles'            => '1',
+				'aria_fix_hidden'           => '1',
+				'aria_fix_empty_buttons'    => '1',
+				'aria_fix_empty_links'      => '1',
+				'aria_fix_inputs'           => '1',
+				'aria_fix_decorative_imgs'  => '1',
 
 				// Sub-opciones de Modo Mantenimiento & Próximamente
 				'wpat_maintenance_mode_type'    => 'maintenance',
@@ -400,6 +413,15 @@ class WPAT_Main {
 				'wpat_maintenance_social_ig'    => '',
 				'wpat_maintenance_social_fb'    => '',
 				'wpat_maintenance_social_wa'    => '',
+
+				// Sub-opciones de Optimizador de Imágenes y Textos ALT
+				'image_optimizer_auto_convert'  => '1',
+				'image_optimizer_quality'       => '82',
+				'image_optimizer_max_width'     => '1920',
+				'image_optimizer_max_height'    => '1920',
+				'image_optimizer_keep_original' => '0',
+				'image_optimizer_auto_alt'      => '1',
+				'image_optimizer_alt_source'    => 'filename',
 
 				// Sub-opciones de Renombrador de Archivos de Medios
 				'wpat_media_auto_sanitize'      => '1',

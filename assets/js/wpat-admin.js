@@ -911,6 +911,141 @@ jQuery(document).ready(function($) {
 		});
 	}
 
+	// --- GENERADOR Y REPARADOR DE TEXTOS ALT EN MASA ---
+	var emptyAltImagesIds = [];
+	var totalEmptyAltCount = 0;
+	var currentAltIndex = 0;
+	var altBatchSize = 25;
+	var altRepairedCount = 0;
+
+	// Acción: Escanear imágenes sin ALT
+	$(document).on('click', '#wpat_scan_empty_alt_btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		$btn.prop('disabled', true).text('Escaneando...');
+		$('#wpat_start_bulk_alt_btn').hide();
+		$('#wpat_alt_bulk_status').hide();
+
+		$.ajax({
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
+			type: 'POST',
+			data: {
+				action: 'wpat_scan_empty_alt_images'
+			},
+			success: function(response) {
+				$btn.prop('disabled', false).text('Escanear imágenes sin ALT');
+				if (response.success) {
+					emptyAltImagesIds = response.data.ids || [];
+					totalEmptyAltCount = response.data.count || 0;
+					currentAltIndex = 0;
+					altRepairedCount = 0;
+
+					$('#wpat_alt_stat_pending').text(totalEmptyAltCount);
+					$('#wpat_alt_stat_processed').text(0);
+					$('#wpat_alt_bulk_progress_fill').css('width', '0%');
+					$('#wpat_alt_bulk_progress_percent').text('0%');
+
+					if (totalEmptyAltCount > 0) {
+						$('#wpat_alt_bulk_log').html('<div style="color:#38bdf8;">[Escaneo completado: Se han detectado ' + totalEmptyAltCount + ' imágenes sin texto alternativo (ALT).]</div>');
+						$('#wpat_start_bulk_alt_btn').show().text('Reparar ' + totalEmptyAltCount + ' imágenes ahora');
+					} else {
+						$('#wpat_alt_bulk_log').html('<div style="color:#4ade80;">[¡Enhorabuena! Todas las imágenes de tu biblioteca ya tienen asignado un texto ALT.]</div>');
+					}
+					$('#wpat_alt_bulk_status').slideDown(200);
+				} else {
+					alert('Error al escanear: ' + (response.data ? response.data.message : 'Error desconocido'));
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).text('Escanear imágenes sin ALT');
+				alert('Fallo de conexión al escanear la biblioteca de medios.');
+			}
+		});
+	});
+
+	// Acción: Iniciar reparación masiva
+	$(document).on('click', '#wpat_start_bulk_alt_btn', function(e) {
+		e.preventDefault();
+		if (emptyAltImagesIds.length === 0) {
+			alert('No hay imágenes pendientes de reparar.');
+			return;
+		}
+
+		var $btn = $(this);
+		$btn.prop('disabled', true).text('Reparando...');
+		$('#wpat_scan_empty_alt_btn').prop('disabled', true);
+		$('#wpat_alt_bulk_log').append('<div style="color:#fbbf24;">[Iniciando reparación masiva de textos ALT...]</div>');
+
+		runAltBatch($btn);
+	});
+
+	function runAltBatch($startBtn) {
+		if (currentAltIndex >= emptyAltImagesIds.length) {
+			$('#wpat_alt_bulk_log').append('<div style="color:#4ade80; font-weight:700;">[✓ Proceso completado con éxito: ' + altRepairedCount + ' imágenes reparadas.]</div>');
+			$startBtn.hide();
+			$('#wpat_scan_empty_alt_btn').prop('disabled', false);
+			$('#wpat_alt_bulk_progress_fill').css('width', '100%');
+			$('#wpat_alt_bulk_progress_percent').text('100%');
+			$('#wpat_alt_stat_pending').text(0);
+			$('#wpat_alt_stat_processed').text(altRepairedCount);
+			return;
+		}
+
+		var batchIds = emptyAltImagesIds.slice(currentAltIndex, currentAltIndex + altBatchSize);
+
+		$.ajax({
+			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
+			type: 'POST',
+			data: {
+				action: 'wpat_fill_empty_alt_batch',
+				ids: batchIds
+			},
+			success: function(response) {
+				if (response.success) {
+					var processedInBatch = response.data.processed || 0;
+					altRepairedCount += processedInBatch;
+					currentAltIndex += batchIds.length;
+
+					if (response.data.log && response.data.log.length > 0) {
+						response.data.log.forEach(function(msg) {
+							$('#wpat_alt_bulk_log').append('<div>' + msg + '</div>');
+						});
+					}
+
+					var remaining = Math.max(0, totalEmptyAltCount - currentAltIndex);
+					var percent = Math.round((currentAltIndex / totalEmptyAltCount) * 100);
+					percent = Math.min(100, Math.max(0, percent));
+
+					$('#wpat_alt_stat_pending').text(remaining);
+					$('#wpat_alt_stat_processed').text(altRepairedCount);
+					$('#wpat_alt_bulk_progress_fill').css('width', percent + '%');
+					$('#wpat_alt_bulk_progress_percent').text(percent + '%');
+
+					var $log = $('#wpat_alt_bulk_log');
+					if ($log.length) {
+						$log.scrollTop($log[0].scrollHeight);
+					}
+
+					setTimeout(function() {
+						runAltBatch($startBtn);
+					}, 200);
+				} else {
+					$('#wpat_alt_bulk_log').append('<div style="color:#ea580c;">[Error en lote: ' + (response.data ? response.data.message : 'Error desconocido') + ']</div>');
+					currentAltIndex += batchIds.length;
+					setTimeout(function() {
+						runAltBatch($startBtn);
+					}, 200);
+				}
+			},
+			error: function() {
+				$('#wpat_alt_bulk_log').append('<div style="color:#ea580c;">[Error de conexión. Reintentando lote...]</div>');
+				setTimeout(function() {
+					runAltBatch($startBtn);
+				}, 1000);
+			}
+		});
+	}
+
 	// --- LIMPIADOR DE IMÁGENES HUÉRFANAS (NO USADAS) ---
 	var orphanCandidateIds = [];
 	var totalOrphansScanned = 0;

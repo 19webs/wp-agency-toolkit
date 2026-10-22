@@ -49,6 +49,16 @@ class WPAT_Image_Optimizer {
 		add_action( 'wp_ajax_wpat_scan_unused_images', array( $this, 'ajax_scan_unused_images' ) );
 		add_action( 'wp_ajax_wpat_check_unused_images_batch', array( $this, 'ajax_check_unused_images_batch' ) );
 		add_action( 'wp_ajax_wpat_delete_unused_images', array( $this, 'ajax_delete_unused_images' ) );
+
+		// Hook para generación automática de textos ALT en subida
+		$auto_alt = ! isset( $settings['image_optimizer_auto_alt'] ) || '1' === $settings['image_optimizer_auto_alt'];
+		if ( $auto_alt ) {
+			add_action( 'add_attachment', array( $this, 'maybe_auto_generate_alt' ) );
+		}
+
+		// Endpoints AJAX para escáner y reparación masiva de textos ALT
+		add_action( 'wp_ajax_wpat_scan_empty_alt_images', array( $this, 'ajax_scan_empty_alt_images' ) );
+		add_action( 'wp_ajax_wpat_fill_empty_alt_batch', array( $this, 'ajax_fill_empty_alt_batch' ) );
 	}
 
 	/**
@@ -702,6 +712,179 @@ class WPAT_Image_Optimizer {
 		}
 
 		return false;
+	}
+
+	/* =========================================================================
+	 * GENERADOR Y REPARADOR DE TEXTOS ALT (ACCESIBILIDAD & SEO)
+	 * ========================================================================= */
+
+	/**
+	 * Genera un texto ALT limpio y accesible a partir del nombre del archivo o del post contenedor.
+	 *
+	 * @param int    $attachment_id ID del adjunto.
+	 * @param string $source        Fuente: 'filename' o 'post_title'.
+	 * @return string Texto ALT limpio y formateado.
+	 */
+	public static function generate_clean_alt_text( $attachment_id, $source = 'filename' ) {
+		$alt = '';
+
+		// Si se solicita prioritariamente usar el título del post contenedor
+		if ( 'post_title' === $source ) {
+			$post_parent = wp_get_post_parent_id( $attachment_id );
+			if ( $post_parent ) {
+				$parent_title = get_the_title( $post_parent );
+				if ( ! empty( $parent_title ) && ! preg_match( '/^Sin título/i', $parent_title ) ) {
+					$alt = $parent_title;
+				}
+			}
+		}
+
+		// Si la fuente es 'filename' o no había título en el post contenedor
+		if ( empty( $alt ) ) {
+			$file_path = get_attached_file( $attachment_id );
+			if ( ! empty( $file_path ) ) {
+				$base = pathinfo( $file_path, PATHINFO_FILENAME );
+			} else {
+				$post = get_post( $attachment_id );
+				$base = $post ? $post->post_name : '';
+			}
+
+			if ( ! empty( $base ) ) {
+				// 1. Quitar sufijos de medidas de WordPress (ej: -150x150, -scaled, -rotated, -300x200)
+				$base = preg_replace( '/-\d+x\d+$/i', '', $base );
+				$base = preg_replace( '/-(scaled|rotated)$/i', '', $base );
+
+				// 2. Quitar patrones comunes de cámaras/móviles o números secuenciales tipo IMG_20241023_...
+				$base = preg_replace( '/^(img|dsc|photo|foto|captura|screenshot|pexels|unsplash)[-_]?\d*[-_]?/i', '', $base );
+
+				// 3. Reemplazar guiones, guiones bajos y puntos por espacios
+				$base = str_replace( array( '-', '_', '.' ), ' ', $base );
+
+				// 4. Limpiar múltiples espacios
+				$base = trim( preg_replace( '/\s+/', ' ', $base ) );
+
+				// 5. Capitalizar de forma legible tipo frase (primera letra de cada palabra)
+				if ( ! empty( $base ) ) {
+					$alt = mb_convert_case( $base, MB_CASE_TITLE, 'UTF-8' );
+				}
+			}
+		}
+
+		// Fallback: Si el nombre quedó vacío (ej: si era solo números), usar el título del propio attachment si existe
+		if ( empty( $alt ) ) {
+			$attachment_post = get_post( $attachment_id );
+			if ( $attachment_post && ! empty( $attachment_post->post_title ) ) {
+				$clean_title = sanitize_text_field( $attachment_post->post_title );
+				if ( ! preg_match( '/^Sin título/i', $clean_title ) ) {
+					$alt = $clean_title;
+				}
+			}
+		}
+
+		return trim( $alt );
+	}
+
+	/**
+	 * Hook al subir una nueva imagen para auto-generar su texto ALT si está vacío.
+	 *
+	 * @param int $attachment_id ID del adjunto recién subido.
+	 */
+	public function maybe_auto_generate_alt( $attachment_id ) {
+		if ( ! wp_attachment_is_image( $attachment_id ) ) {
+			return;
+		}
+
+		// Solo asignar si el ALT actual está vacío (regla de oro: nunca sobrescribir ALT existente)
+		$current_alt = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
+		if ( ! empty( $current_alt ) ) {
+			return;
+		}
+
+		$settings   = WPAT_Main::get_instance()->get_settings();
+		$alt_source = isset( $settings['image_optimizer_alt_source'] ) ? $settings['image_optimizer_alt_source'] : 'filename';
+
+		$new_alt = self::generate_clean_alt_text( $attachment_id, $alt_source );
+		if ( ! empty( $new_alt ) ) {
+			update_post_meta( $attachment_id, '_wp_attachment_image_alt', $new_alt );
+		}
+	}
+
+	/**
+	 * AJAX: Escanea imágenes de la biblioteca con texto ALT vacío o no asignado.
+	 */
+	public function ajax_scan_empty_alt_images() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permisos insuficientes.', 'wp-agency-toolkit' ) ) );
+		}
+
+		global $wpdb;
+
+		// Buscar adjuntos de tipo imagen donde _wp_attachment_image_alt no existe o está en blanco
+		$query = "
+			SELECT p.ID
+			FROM {$wpdb->posts} p
+			LEFT JOIN {$wpdb->postmeta} pm ON (p.ID = pm.post_id AND pm.meta_key = '_wp_attachment_image_alt')
+			WHERE p.post_type = 'attachment'
+			  AND p.post_mime_type LIKE 'image/%'
+			  AND (pm.meta_value IS NULL OR TRIM(pm.meta_value) = '')
+			ORDER BY p.ID DESC
+		";
+
+		$ids = $wpdb->get_col( $query );
+		$ids = array_map( 'intval', (array) $ids );
+
+		wp_send_json_success( array(
+			'ids'   => $ids,
+			'count' => count( $ids ),
+		) );
+	}
+
+	/**
+	 * AJAX: Procesa un lote de IDs generando y guardando su texto ALT.
+	 */
+	public function ajax_fill_empty_alt_batch() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permisos insuficientes.', 'wp-agency-toolkit' ) ) );
+		}
+
+		$ids = isset( $_POST['ids'] ) ? array_map( 'intval', (array) $_POST['ids'] ) : array();
+
+		if ( empty( $ids ) ) {
+			wp_send_json_success( array(
+				'processed' => 0,
+				'log'       => array( __( 'No hay más imágenes pendientes.', 'wp-agency-toolkit' ) ),
+			) );
+		}
+
+		$settings   = WPAT_Main::get_instance()->get_settings();
+		$alt_source = isset( $settings['image_optimizer_alt_source'] ) ? $settings['image_optimizer_alt_source'] : 'filename';
+
+		$processed = 0;
+		$logs      = array();
+
+		foreach ( $ids as $id ) {
+			// Doble comprobación de seguridad: jamás sobrescribir si ya tiene un ALT
+			$existing_alt = get_post_meta( $id, '_wp_attachment_image_alt', true );
+			if ( ! empty( $existing_alt ) ) {
+				continue;
+			}
+
+			$generated_alt = self::generate_clean_alt_text( $id, $alt_source );
+			if ( ! empty( $generated_alt ) ) {
+				update_post_meta( $id, '_wp_attachment_image_alt', $generated_alt );
+				$file_name = basename( (string) get_attached_file( $id ) );
+				if ( empty( $file_name ) ) {
+					$file_name = 'adjunto #' . $id;
+				}
+				$logs[]    = sprintf( __( 'ID #%d (%s) → ALT: "%s"', 'wp-agency-toolkit' ), $id, $file_name, $generated_alt );
+				$processed++;
+			}
+		}
+
+		wp_send_json_success( array(
+			'processed' => $processed,
+			'log'       => $logs,
+		) );
 	}
 }
 

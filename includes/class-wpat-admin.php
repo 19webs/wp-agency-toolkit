@@ -15745,16 +15745,76 @@ class WPAT_Admin {
 	 * @param array $settings Ajustes del plugin.
 	 */
 	public function render_file_manager_content( $settings ) {
-		$fm_file = WPAT_PATH . 'includes/modules/class-wpat-file-manager.php';
-		if ( ! class_exists( 'WPAT_File_Manager' ) && file_exists( $fm_file ) ) {
-			require_once $fm_file;
+		$candidate_paths = array(
+			WPAT_PATH . 'includes/modules/class-wpat-file-manager.php',
+			dirname( __DIR__ ) . '/includes/modules/class-wpat-file-manager.php',
+			plugin_dir_path( dirname( __FILE__ ) ) . 'includes/modules/class-wpat-file-manager.php',
+		);
+
+		$resolved_file = '';
+		foreach ( $candidate_paths as $path ) {
+			if ( file_exists( $path ) ) {
+				$resolved_file = $path;
+				break;
+			}
+		}
+
+		// Si no se encuentra con la ruta estándar, buscar de forma insensible a mayúsculas
+		if ( empty( $resolved_file ) ) {
+			$modules_dir = WPAT_PATH . 'includes/modules/';
+			if ( ! is_dir( $modules_dir ) ) {
+				$modules_dir = dirname( __DIR__ ) . '/includes/modules/';
+			}
+			if ( is_dir( $modules_dir ) ) {
+				$files = scandir( $modules_dir );
+				if ( false !== $files ) {
+					foreach ( $files as $f ) {
+						if ( strtolower( $f ) === 'class-wpat-file-manager.php' ) {
+							$resolved_file = rtrim( $modules_dir, '/\\' ) . '/' . $f;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		$load_error = '';
+		if ( ! empty( $resolved_file ) && ! class_exists( 'WPAT_File_Manager' ) ) {
+			try {
+				require_once $resolved_file;
+			} catch ( \Throwable $t ) {
+				$load_error = $t->getMessage() . ' (' . $t->getFile() . ':' . $t->getLine() . ')';
+			}
 		}
 
 		if ( ! class_exists( 'WPAT_File_Manager' ) ) {
+			$searched_path = ! empty( $resolved_file ) ? $resolved_file : $candidate_paths[0];
+			$file_exists   = file_exists( $searched_path );
+			$is_readable   = $file_exists ? is_readable( $searched_path ) : false;
+			$modules_dir   = dirname( $searched_path );
+			$dir_exists    = is_dir( $modules_dir );
+			$modules_files = $dir_exists ? scandir( $modules_dir ) : array();
 			?>
 			<div class="wpat-module-card wpat-file-manager-wrapper" style="padding: 24px;">
 				<div class="notice notice-error" style="margin: 0;">
-					<p><?php esc_html_e( 'Error: No se pudo cargar el archivo del módulo Explorador de Archivos (includes/modules/class-wpat-file-manager.php). Por favor, asegúrate de que el archivo existe en el servidor y tiene los permisos adecuados.', 'wp-agency-toolkit' ); ?></p>
+					<p style="font-weight: 700; font-size: 15px; margin: 0 0 10px 0; color: #b91c1c;">
+						<?php esc_html_e( 'No se pudo inicializar el Explorador de Archivos (la clase WPAT_File_Manager no está disponible).', 'wp-agency-toolkit' ); ?>
+					</p>
+					<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 16px; font-size: 13px; color: #334155; line-height: 1.6;">
+						<div><strong>Ruta esperada:</strong> <code><?php echo esc_html( $searched_path ); ?></code></div>
+						<div><strong>¿Existe el archivo en el servidor?:</strong> <?php echo $file_exists ? '<span style="color:#16a34a; font-weight:700;">SÍ (' . filesize( $searched_path ) . ' bytes)</span>' : '<span style="color:#dc2626; font-weight:700;">NO (el archivo no fue encontrado en el servidor)</span>'; ?></div>
+						<div><strong>¿Tiene permisos de lectura?:</strong> <?php echo $is_readable ? '<span style="color:#16a34a; font-weight:700;">SÍ</span>' : '<span style="color:#dc2626; font-weight:700;">NO</span>'; ?></div>
+						<div><strong>Versión PHP del servidor:</strong> <code><?php echo esc_html( PHP_VERSION ); ?></code></div>
+						<?php if ( ! empty( $load_error ) ) : ?>
+							<div style="margin-top: 6px; color: #dc2626;"><strong>Error al ejecutar require:</strong> <code><?php echo esc_html( $load_error ); ?></code></div>
+						<?php endif; ?>
+						<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #cbd5e1; font-size: 12px; color: #64748b;">
+							<strong>Estado de la carpeta <code>includes/modules/</code>:</strong> <?php echo $dir_exists ? 'Existe (' . count( (array) $modules_files ) . ' elementos detectados)' : '<span style="color:#dc2626;">No existe</span>'; ?>
+							<?php if ( $dir_exists && ! $file_exists ) : ?>
+								<br><em>Aviso: Si el archivo no existe en el servidor, comprueba si el antivirus o firewall del hosting (como Imunify360 o ModSecurity) lo ha puesto en cuarentena al contener la palabra "file-manager".</em>
+							<?php endif; ?>
+						</div>
+					</div>
 				</div>
 			</div>
 			<?php

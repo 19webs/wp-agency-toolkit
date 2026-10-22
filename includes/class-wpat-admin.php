@@ -12499,8 +12499,9 @@ class WPAT_Admin {
 
 		$posts = get_posts( array(
 			'post_type'      => $scan_post_types,
-			'post_status'    => 'publish',
+			'post_status'    => array( 'publish', 'draft', 'pending', 'private' ),
 			'posts_per_page' => -1,
+			'numberposts'    => -1,
 			'fields'         => 'ids',
 		) );
 
@@ -12515,7 +12516,8 @@ class WPAT_Admin {
 			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
 		}
 
-		$post_ids = isset( $_POST['post_ids'] ) ? map_deep( $_POST['post_ids'], 'intval' ) : array();
+		$raw_ids  = isset( $_POST['post_ids'] ) ? (array) $_POST['post_ids'] : array();
+		$post_ids = map_deep( $raw_ids, 'intval' );
 
 		if ( empty( $post_ids ) ) {
 			wp_send_json_error( array( 'message' => 'No se han especificado IDs.' ) );
@@ -12561,14 +12563,20 @@ class WPAT_Admin {
 			}
 
 			// Indexable
-			$noindex = get_post_meta( $id, '_wpat_seo_noindex', true );
+			$noindex   = get_post_meta( $id, '_wpat_seo_noindex', true );
 			$indexable = ( '1' === $noindex ) ? 'noindex' : 'index';
+
+			$post_type_slug = get_post_type( $id );
+			$pt_obj         = get_post_type_object( $post_type_slug );
+			$pt_label       = ( $pt_obj && isset( $pt_obj->labels->singular_name ) ) ? $pt_obj->labels->singular_name : ( $pt_obj ? $pt_obj->label : ucfirst( (string) $post_type_slug ) );
+			$post_title     = get_the_title( $id );
+			$edit_url       = get_edit_post_link( $id, 'raw' );
 
 			$results[] = array(
 				'id'           => $id,
-				'title'        => get_the_title( $id ),
-				'edit_url'     => get_edit_post_link( $id, 'raw' ),
-				'type'         => get_post_type_object( get_post_type( $id ) )->labels->singular_name,
+				'title'        => ! empty( $post_title ) ? $post_title : sprintf( __( '(Sin título #%d)', 'wp-agency-toolkit' ), $id ),
+				'edit_url'     => ! empty( $edit_url ) ? $edit_url : '',
+				'type'         => $pt_label,
 				'title_status' => $title_status,
 				'title_length' => $title_length,
 				'desc_status'  => $desc_status,
@@ -12602,11 +12610,12 @@ class WPAT_Admin {
 			$scan_post_types = array_values( $post_types );
 		}
 
-		// Obtener todos los IDs publicados
+		// Obtener todos los IDs de publicaciones
 		$posts = get_posts( array(
 			'post_type'      => $scan_post_types,
-			'post_status'    => 'publish',
+			'post_status'    => array( 'publish', 'draft', 'pending', 'private' ),
 			'posts_per_page' => -1,
+			'numberposts'    => -1,
 			'fields'         => 'ids',
 		) );
 
@@ -12633,7 +12642,8 @@ class WPAT_Admin {
 			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
 		}
 
-		$post_ids = isset( $_POST['post_ids'] ) ? map_deep( $_POST['post_ids'], 'intval' ) : array();
+		$raw_ids  = isset( $_POST['post_ids'] ) ? (array) $_POST['post_ids'] : array();
+		$post_ids = map_deep( $raw_ids, 'intval' );
 
 		if ( empty( $post_ids ) ) {
 			wp_send_json_error( array( 'message' => 'No se han especificado IDs.' ) );
@@ -15735,9 +15745,23 @@ class WPAT_Admin {
 	 * @param array $settings Ajustes del plugin.
 	 */
 	public function render_file_manager_content( $settings ) {
-		if ( ! class_exists( 'WPAT_File_Manager' ) ) {
-			require_once WPAT_PATH . 'includes/modules/class-wpat-file-manager.php';
+		$fm_file = WPAT_PATH . 'includes/modules/class-wpat-file-manager.php';
+		if ( ! class_exists( 'WPAT_File_Manager' ) && file_exists( $fm_file ) ) {
+			require_once $fm_file;
 		}
+
+		if ( ! class_exists( 'WPAT_File_Manager' ) ) {
+			?>
+			<div class="wpat-module-card wpat-file-manager-wrapper" style="padding: 24px;">
+				<div class="notice notice-error" style="margin: 0;">
+					<p><?php esc_html_e( 'Error: No se pudo cargar el archivo del módulo Explorador de Archivos (includes/modules/class-wpat-file-manager.php). Por favor, asegúrate de que el archivo existe en el servidor y tiene los permisos adecuados.', 'wp-agency-toolkit' ); ?></p>
+				</div>
+			</div>
+			<?php
+			return;
+		}
+
+		WPAT_File_Manager::get_instance();
 
 		$is_setup    = WPAT_File_Manager::is_user_setup();
 		$is_unlocked = WPAT_File_Manager::is_session_unlocked();

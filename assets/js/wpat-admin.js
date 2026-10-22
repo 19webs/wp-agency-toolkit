@@ -3171,7 +3171,7 @@ jQuery(document).ready(function($) {
 	});
 
 	// 6. Auditoría SEO del Sitio (AJAX Secuencial con Filtros e Historial)
-	$('#wpat_seo_scan_btn').on('click', function(e) {
+	$(document).on('click', '#wpat_seo_scan_btn', function(e) {
 		e.preventDefault();
 		var $btn = $(this);
 		var $status = $('#wpat_seo_scan_status');
@@ -3253,7 +3253,7 @@ jQuery(document).ready(function($) {
 										
 										var keywordBadge = row.keyword 
 											? '<span style="color:#1e293b; background:#f1f5f9; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600; display:inline-block; border:1px solid #cbd5e1;">' + row.keyword + '</span>'
-											: '<span style="color:#b91c1c; font-weight:700; font-size:11px; background:#fee2fee; padding:2px 6px; border-radius:4px;">🔴 Vacío</span>';
+											: '<span style="color:#b91c1c; font-weight:700; font-size:11px; background:#fee2e2; padding:2px 6px; border-radius:4px;">🔴 Vacío</span>';
 
 										var titleBadge = '';
 										if (row.title_status === 'empty') {
@@ -3549,7 +3549,7 @@ jQuery(document).ready(function($) {
 	});
 
 	// 7. Generador SEO en Masa (Auto-rellenado)
-	$('#wpat_seo_bulk_fill_btn').on('click', function(e) {
+	$(document).on('click', '#wpat_seo_bulk_fill_btn', function(e) {
 		e.preventDefault();
 		var $btn = $(this);
 		var $status = $('#wpat_seo_bulk_status');

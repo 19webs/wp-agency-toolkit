@@ -15746,16 +15746,29 @@ class WPAT_Admin {
 	 */
 	public function render_file_manager_content( $settings ) {
 		$candidate_paths = array(
+			WPAT_PATH . 'includes/modules/class-wpat-storage-explorer.php',
+			dirname( __DIR__ ) . '/includes/modules/class-wpat-storage-explorer.php',
+			plugin_dir_path( dirname( __FILE__ ) ) . 'includes/modules/class-wpat-storage-explorer.php',
 			WPAT_PATH . 'includes/modules/class-wpat-file-manager.php',
 			dirname( __DIR__ ) . '/includes/modules/class-wpat-file-manager.php',
 			plugin_dir_path( dirname( __FILE__ ) ) . 'includes/modules/class-wpat-file-manager.php',
 		);
 
 		$resolved_file = '';
+		// Priorizar archivos existentes con contenido (> 0 bytes)
 		foreach ( $candidate_paths as $path ) {
-			if ( file_exists( $path ) ) {
+			if ( file_exists( $path ) && filesize( $path ) > 0 ) {
 				$resolved_file = $path;
 				break;
+			}
+		}
+
+		if ( empty( $resolved_file ) ) {
+			foreach ( $candidate_paths as $path ) {
+				if ( file_exists( $path ) ) {
+					$resolved_file = $path;
+					break;
+				}
 			}
 		}
 
@@ -15769,9 +15782,12 @@ class WPAT_Admin {
 				$files = scandir( $modules_dir );
 				if ( false !== $files ) {
 					foreach ( $files as $f ) {
-						if ( strtolower( $f ) === 'class-wpat-file-manager.php' ) {
+						$lf = strtolower( $f );
+						if ( $lf === 'class-wpat-storage-explorer.php' || $lf === 'class-wpat-file-manager.php' ) {
 							$resolved_file = rtrim( $modules_dir, '/\\' ) . '/' . $f;
-							break;
+							if ( filesize( $resolved_file ) > 0 ) {
+								break;
+							}
 						}
 					}
 				}

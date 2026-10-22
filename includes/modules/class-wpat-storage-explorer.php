@@ -633,7 +633,7 @@ class WPAT_File_Manager {
 		// Proteger con index.php silencioso
 		$index_file = $backup_dir . '/index.php';
 		if ( ! file_exists( $index_file ) ) {
-			@file_put_contents( $index_file, "<?php\n// Silencio de seguridad.\nexit;\n" );
+			@file_put_contents( $index_file, '' );
 		}
 
 		return $backup_dir;
@@ -1420,4 +1420,8 @@ class WPAT_File_Manager {
 
 		wp_die( esc_html__( 'No se pudo generar la descarga.', 'wp-agency-toolkit' ) );
 	}
+}
+
+if ( ! class_exists( 'WPAT_Storage_Explorer', false ) ) {
+	class_alias( 'WPAT_File_Manager', 'WPAT_Storage_Explorer' );
 }

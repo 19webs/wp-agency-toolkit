@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.138
+ * Version:     4.3.139
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.138' );
+define( 'WPAT_VERSION', '4.3.139' );
 define( 'WPAT_FILE', __FILE__ );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_DIR', WPAT_PATH );
@@ -241,7 +241,7 @@ class WPAT_Main {
 			'class' => 'WPAT_Media_Renamer',
 		),
 		'file-manager' => array(
-			'file'  => 'includes/modules/class-wpat-file-manager.php',
+			'file'  => 'includes/modules/class-wpat-storage-explorer.php',
 			'class' => 'WPAT_File_Manager',
 		),
 		'woo-registration-forms' => array(
@@ -281,6 +281,12 @@ class WPAT_Main {
 			$is_module_on = ( isset( $settings[ $id ] ) && '1' === (string) $settings[ $id ] );
 			if ( $is_module_on ) {
 				$file_path = WPAT_PATH . $module['file'];
+				if ( ! file_exists( $file_path ) && 'file-manager' === $id ) {
+					$alt_path = WPAT_PATH . 'includes/modules/class-wpat-file-manager.php';
+					if ( file_exists( $alt_path ) ) {
+						$file_path = $alt_path;
+					}
+				}
 				if ( file_exists( $file_path ) ) {
 					require_once $file_path;
 					if ( class_exists( $module['class'] ) ) {

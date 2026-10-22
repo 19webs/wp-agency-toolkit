@@ -4561,6 +4561,12 @@ class WPAT_Admin {
 										<option value="json">Archivo JSON (.json - Migraciones / API)</option>
 									</select>
 								</div>
+
+								<div>
+									<label for="wpat_csv_export_specific_ids" style="font-weight: 600; font-size: 12.5px; color: #475569; display: block; margin-bottom: 4px;">IDs Específicos a Exportar (Opcional)</label>
+									<input type="text" id="wpat_csv_export_specific_ids" placeholder="Ej: 14, 25, 102 (dejar vacío para exportar todo)" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; padding: 0 10px;" />
+									<p style="font-size: 11px; color: #64748b; margin: 3px 0 0 0;">Indica uno o varios IDs separados por comas para exportar solo entradas o páginas concretas.</p>
+								</div>
 							</div>
 						</div>
 
@@ -4609,6 +4615,7 @@ class WPAT_Admin {
 										<option value="update">Actualizar publicaciones existentes (Recomendado)</option>
 										<option value="skip">Omitir duplicados (solo crear las que no existan)</option>
 										<option value="create_new">Crear siempre como nuevas publicaciones</option>
+										<option value="create_draft">Crear siempre como Borradores (Revisión manual)</option>
 									</select>
 								</div>
 

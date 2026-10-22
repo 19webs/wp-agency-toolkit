@@ -3804,13 +3804,18 @@ jQuery(document).ready(function($) {
 	   ========================================================================== */
 	$(document).on('click', '#wpat_csv_export_btn', function(e) {
 		e.preventDefault();
-		var postType   = $('#wpat_csv_export_post_type').val() || 'post';
-		var status     = $('#wpat_csv_export_status').val() || 'any';
-		var formatType = $('#wpat_export_format_type').val() || 'csv';
-		var ajaxTarget = (typeof ajaxurl !== 'undefined' && ajaxurl) ? ajaxurl : ((typeof wpat_object !== 'undefined') ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php');
+		var postType    = $('#wpat_csv_export_post_type').val() || 'post';
+		var status      = $('#wpat_csv_export_status').val() || 'any';
+		var formatType  = $('#wpat_export_format_type').val() || 'csv';
+		var specificIds = $('#wpat_csv_export_specific_ids').val() ? $('#wpat_csv_export_specific_ids').val().trim() : '';
+		var ajaxTarget  = (typeof ajaxurl !== 'undefined' && ajaxurl) ? ajaxurl : ((typeof wpat_object !== 'undefined') ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php');
 		
 		var actionName = (formatType === 'json') ? 'wpat_json_export_posts' : 'wpat_csv_export_posts';
-		window.location.href = ajaxTarget + '?action=' + actionName + '&post_type=' + postType + '&post_status=' + status;
+		var exportUrl  = ajaxTarget + '?action=' + actionName + '&post_type=' + postType + '&post_status=' + status;
+		if (specificIds) {
+			exportUrl += '&post_ids=' + encodeURIComponent(specificIds);
+		}
+		window.location.href = exportUrl;
 	});
 
 	var csvParsedRows = [];

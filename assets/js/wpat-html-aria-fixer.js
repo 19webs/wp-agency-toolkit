@@ -46,6 +46,17 @@
 				} catch (e) {}
 			});
 
+			// 1.b. Contenedores con role="list" que contienen <article> (Fallo de Elementor: aria-required-children)
+			try {
+				var listContainers = document.querySelectorAll('[role="list"]');
+				for (var lc = 0; lc < listContainers.length; lc++) {
+					var cont = listContainers[lc];
+					if (cont.querySelector('article') || cont.classList.contains('elementor-posts-container') || cont.classList.contains('elementor-posts')) {
+						cont.removeAttribute('role');
+					}
+				}
+			} catch (e) {}
+
 			// Eliminar roles no estándar o en desuso
 			try {
 				var obsoleteRoleEls = document.querySelectorAll('[role="text"]');
@@ -108,36 +119,82 @@
 			} catch (e) {}
 		}
 
-		// 4. Enlaces de redes sociales o solo icono sin texto accesible
+		// 4. Enlaces de redes sociales o solo icono sin texto accesible (WCAG y Lighthouse)
 		if (config.fix_empty_links) {
+			// 4.a. Limpiar cualquier etiqueta genérica repetida previa que provoque el error "enlaces idénticos"
 			try {
-				var links = document.querySelectorAll('a[href]:not([aria-label]):not([aria-labelledby])');
+				var badNavLinks = document.querySelectorAll('a[aria-label="Enlace de navegación"]');
+				for (var bnl = 0; bnl < badNavLinks.length; bnl++) {
+					badNavLinks[bnl].removeAttribute('aria-label');
+				}
+			} catch (e) {}
+
+			// 4.b. Enlaces de miniaturas de posts con tabindex="-1": ocultar de lectores de pantalla para evitar duplicados del título
+			try {
+				var postThumbs = document.querySelectorAll('a.elementor-post__thumbnail__link');
+				for (var pt = 0; pt < postThumbs.length; pt++) {
+					var thumb = postThumbs[pt];
+					thumb.removeAttribute('aria-label');
+					if (thumb.getAttribute('tabindex') === '-1' || !thumb.hasAttribute('tabindex')) {
+						thumb.setAttribute('tabindex', '-1');
+						thumb.setAttribute('aria-hidden', 'true');
+					}
+				}
+			} catch (e) {}
+
+			try {
+				var links = document.querySelectorAll('a[href]:not([aria-label]):not([aria-labelledby]):not([aria-hidden="true"])');
 				for (var l = 0; l < links.length; l++) {
 					var a = links[l];
+
+					// Si contiene texto visible, no es un enlace vacío
 					var linkText = (a.textContent || '').trim();
-					if (linkText.length === 0) {
-						var linkLabel = a.getAttribute('title');
-						if (!linkLabel) {
-							var href = (a.getAttribute('href') || '').toLowerCase();
-							if (href.indexOf('facebook.com') !== -1) linkLabel = 'Facebook';
-							else if (href.indexOf('instagram.com') !== -1) linkLabel = 'Instagram';
-							else if (href.indexOf('twitter.com') !== -1 || href.indexOf('x.com') !== -1) linkLabel = 'X (Twitter)';
-							else if (href.indexOf('linkedin.com') !== -1) linkLabel = 'LinkedIn';
-							else if (href.indexOf('youtube.com') !== -1) linkLabel = 'YouTube';
-							else if (href.indexOf('tiktok.com') !== -1) linkLabel = 'TikTok';
-							else if (href.indexOf('wa.me') !== -1 || href.indexOf('whatsapp.com') !== -1) linkLabel = 'WhatsApp';
-							else if (href.indexOf('mailto:') !== -1) linkLabel = 'Enviar correo electrónico';
-							else if (href.indexOf('tel:') !== -1) linkLabel = 'Llamar por teléfono';
-							else {
-								var linkCls = (a.className || '').toLowerCase();
-								if (linkCls.indexOf('cart') !== -1) linkLabel = 'Ver carrito';
-								else if (linkCls.indexOf('search') !== -1) linkLabel = 'Buscar';
-								else linkLabel = 'Enlace de navegación';
-							}
+					if (linkText.length > 0) {
+						continue;
+					}
+
+					// Si contiene una imagen con atributo alt, ese alt ES el nombre accesible según el estándar W3C
+					var imgWithAlt = a.querySelector('img[alt]');
+					if (imgWithAlt && (imgWithAlt.getAttribute('alt') || '').trim().length > 0) {
+						continue;
+					}
+
+					// Si contiene SVG con <title>, ya tiene nombre accesible
+					var svgTitle = a.querySelector('svg title');
+					if (svgTitle && (svgTitle.textContent || '').trim().length > 0) {
+						continue;
+					}
+
+					// Si es un enlace de miniatura con tabindex="-1", ocultarlo para que el lector lea directamente el título del post
+					if (a.classList.contains('elementor-post__thumbnail__link') || a.getAttribute('tabindex') === '-1') {
+						a.setAttribute('aria-hidden', 'true');
+						continue;
+					}
+
+					var linkLabel = a.getAttribute('title');
+					if (!linkLabel) {
+						var href = (a.getAttribute('href') || '').toLowerCase();
+						if (href.indexOf('facebook.com') !== -1) linkLabel = 'Facebook';
+						else if (href.indexOf('instagram.com') !== -1) linkLabel = 'Instagram';
+						else if (href.indexOf('twitter.com') !== -1 || href.indexOf('x.com') !== -1) linkLabel = 'X (Twitter)';
+						else if (href.indexOf('linkedin.com') !== -1) linkLabel = 'LinkedIn';
+						else if (href.indexOf('youtube.com') !== -1) linkLabel = 'YouTube';
+						else if (href.indexOf('tiktok.com') !== -1) linkLabel = 'TikTok';
+						else if (href.indexOf('wa.me') !== -1 || href.indexOf('whatsapp.com') !== -1) linkLabel = 'WhatsApp';
+						else if (href.indexOf('mailto:') !== -1) linkLabel = 'Enviar correo electrónico';
+						else if (href.indexOf('tel:') !== -1) linkLabel = 'Llamar por teléfono';
+						else if (a.classList.contains('custom-logo-link') || a.classList.contains('navbar-brand')) {
+							linkLabel = 'Ir a la página de inicio';
+						} else {
+							var linkCls = (a.className || '').toLowerCase();
+							if (linkCls.indexOf('cart') !== -1) linkLabel = 'Ver carrito';
+							else if (linkCls.indexOf('search') !== -1) linkLabel = 'Buscar';
+							// NUNCA asignar un nombre genérico repetido como 'Enlace de navegación'
 						}
-						if (linkLabel) {
-							a.setAttribute('aria-label', linkLabel);
-						}
+					}
+
+					if (linkLabel) {
+						a.setAttribute('aria-label', linkLabel);
 					}
 				}
 			} catch (e) {}

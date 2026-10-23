@@ -84,7 +84,14 @@ class WPAT_HTML_ARIA_Fixer {
 				return '<article' . $attrs . '>';
 			}, $html );
 
-			// 2. Eliminar role="listitem" en <section>, <header>, <nav>, <footer>, <main>, <aside>
+			// 2. Eliminar role="list" en contenedores de posts de Elementor para evitar conflicto aria-required-children
+			$html = preg_replace_callback( '/<([a-z0-9_-]+)\b([^>]*?\bclass=["\'][^"\']*(?:elementor-posts-container|elementor-posts|elementor-grid)[^"\']*["\'][^>]*?)>/i', function( $matches ) {
+				$tag   = $matches[1];
+				$attrs = preg_replace( '/\srole=["\']list["\']/i', '', $matches[2] );
+				return '<' . $tag . $attrs . '>';
+			}, $html );
+
+			// 3. Eliminar role="listitem" en <section>, <header>, <nav>, <footer>, <main>, <aside>
 			$html = preg_replace_callback( '/<(section|header|nav|footer|main|aside)\b([^>]*?)>/i', function( $matches ) {
 				$tag   = $matches[1];
 				$attrs = preg_replace( '/\srole=["\'](?:listitem)["\']/i', '', $matches[2] );
@@ -97,7 +104,20 @@ class WPAT_HTML_ARIA_Fixer {
 				return '<' . $tag . $attrs . '>';
 			}, $html );
 
-			// 3. Eliminar role="presentation" o role="none" en <img> si tiene atributo alt no vacío
+			// 4. Enlaces de miniaturas con tabindex="-1": ocultar con aria-hidden="true" para que no dupliquen lectura del título
+			$html = preg_replace_callback( '/<a\b([^>]*?\bclass=["\'][^"\']*elementor-post__thumbnail__link[^"\']*["\'][^>]*?)>/i', function( $matches ) {
+				$attrs = $matches[1];
+				$attrs = preg_replace( '/\saria-label=["\'][^"\']*["\']/i', '', $attrs );
+				if ( stripos( $attrs, 'aria-hidden' ) === false ) {
+					$attrs .= ' aria-hidden="true"';
+				}
+				return '<a' . $attrs . '>';
+			}, $html );
+
+			// 5. Eliminar cualquier etiqueta genérica "Enlace de navegación"
+			$html = preg_replace( '/\saria-label=["\']Enlace de navegación["\']/i', '', $html );
+
+			// 6. Eliminar role="presentation" o role="none" en <img> si tiene atributo alt no vacío
 			$html = preg_replace_callback( '/<img\b([^>]*?)>/i', function( $matches ) {
 				$attrs = $matches[1];
 				if ( preg_match( '/\balt=["\']([^\'"]+)["\']/i', $attrs, $alt_m ) && trim( $alt_m[1] ) !== '' ) {
@@ -106,7 +126,7 @@ class WPAT_HTML_ARIA_Fixer {
 				return '<img' . $attrs . '>';
 			}, $html );
 
-			// 4. Eliminar role="text" (en desuso y penalizado por W3C)
+			// 7. Eliminar role="text" (en desuso y penalizado por W3C)
 			$html = preg_replace( '/\srole=["\']text["\']/i', '', $html );
 		}
 

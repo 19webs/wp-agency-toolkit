@@ -3993,14 +3993,14 @@ class WPAT_Admin {
 				'id'          => 'performance',
 				'is_updated'  => true,
 				'title'       => 'Optimización de Rendimiento',
-				'badge'       => 'Automático',
+				'badge'       => 'Configuración',
 				'badge_class' => 'tweak',
-				'desc'        => 'Limpieza de cabeceras WP, control de Heartbeat API, límites de revisiones y desactivación de emojis.',
+				'desc'        => 'Acelerador Core Web Vitals (Anti-CLS y LCP), diagnóstico en vivo del servidor, control de Heartbeat y limpieza de base de datos.',
 				'cat_class'   => 'cat-performance',
 				'icon'        => '⚡',
 				'icon_bg'     => 'perf',
-				'keywords'    => 'rendimiento performance heartbeat emojis cabeceras',
-				'has_settings'=> false
+				'keywords'    => 'rendimiento performance core web vitals cls lcp opcache servidor heartbeat emojis cabeceras',
+				'has_settings'=> true
 			),
 			array(
 				'id'          => 'image-optimizer',

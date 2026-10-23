@@ -144,6 +144,47 @@ class WPAT_HTML_ARIA_Fixer {
 			}, $html );
 		}
 
+		$fix_inputs = ! isset( $settings['aria_fix_inputs'] ) || '1' === (string) $settings['aria_fix_inputs'];
+		if ( $fix_inputs ) {
+			// Asignar aria-label a switches o inputs de cookies/toggles que carezcan de etiqueta accesible
+			$html = preg_replace_callback( '/<input\b([^>]*?\bid=["\']wpat_cookie_cat_([a-z0-9_-]+)["\'][^>]*?)>/i', function( $matches ) {
+				$attrs = $matches[1];
+				if ( false === strpos( $attrs, 'aria-label=' ) ) {
+					$cat_slug   = $matches[2];
+					$cat_labels = array(
+						'preferences' => 'Preferencias',
+						'analytics'   => 'Estadísticas y Analítica',
+						'marketing'   => 'Marketing y Publicidad',
+					);
+					$cat_name   = isset( $cat_labels[ $cat_slug ] ) ? $cat_labels[ $cat_slug ] : ucfirst( $cat_slug );
+					$attrs     .= ' aria-label="Cookies de ' . esc_attr( $cat_name ) . '"';
+				}
+				return '<input' . $attrs . '>';
+			}, $html );
+		}
+
+		// 9. Corregir enlaces idénticos con diferente destino (ej. enlaces residuales de plugins como Complianz que apuntan a wp-admin/post.php?post=X)
+		$html = preg_replace_callback( '/<a\b([^>]*?\bhref=["\']([^"\']*wp-admin\/post\.php\?post=([0-9]+)[^"\']*)["\'][^>]*?)>(.*?)<\/a>/is', function( $matches ) {
+			$attrs   = $matches[1];
+			$post_id = (int) $matches[3];
+			$text    = $matches[4];
+
+			if ( $post_id > 0 ) {
+				$permalink = get_permalink( $post_id );
+				if ( $permalink && ! is_wp_error( $permalink ) ) {
+					$attrs = preg_replace( '/\bhref=["\'][^"\']*["\']/i', 'href="' . esc_url( $permalink ) . '"', $attrs );
+					return '<a' . $attrs . '>' . $text . '</a>';
+				}
+			}
+
+			if ( false === strpos( $attrs, 'aria-label=' ) ) {
+				$clean_text = trim( wp_strip_all_tags( $text ) );
+				$label      = ! empty( $clean_text ) ? 'Editar ' . $clean_text : 'Editar documento';
+				$attrs     .= ' aria-label="' . esc_attr( $label ) . '"';
+			}
+			return '<a' . $attrs . '>' . $text . '</a>';
+		}, $html );
+
 		return $html;
 	}
 

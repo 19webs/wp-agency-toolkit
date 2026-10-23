@@ -211,23 +211,48 @@
 			} catch (e) {}
 		}
 
-		// 5. Inputs y buscadores sin <label>
+		// 5. Inputs y buscadores sin <label> accesible
 		if (config.fix_inputs) {
 			try {
-				var inputs = document.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="image"]):not([aria-label]):not([aria-labelledby])');
+				var inputs = document.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="image"]):not([aria-label]):not([aria-labelledby]), select:not([aria-label]):not([aria-labelledby]), textarea:not([aria-label]):not([aria-labelledby])');
 				for (var inp = 0; inp < inputs.length; inp++) {
 					var inputEl = inputs[inp];
 					var inputId = inputEl.getAttribute('id');
-					var hasLabel = false;
+					var labelEl = null;
+
 					if (inputId) {
-						hasLabel = document.querySelector('label[for="' + inputId + '"]') !== null;
+						labelEl = document.querySelector('label[for="' + inputId + '"]');
 					}
-					if (!hasLabel && !inputEl.closest('label')) {
+					if (!labelEl) {
+						labelEl = inputEl.closest('label');
+					}
+
+					var labelText = labelEl ? (labelEl.textContent || '').trim() : '';
+
+					// Si no tiene <label> o el <label> carece de texto visible (común en switches, toggles o iconos)
+					if (!labelEl || labelText.length === 0) {
+						var accessibleName = '';
+
 						var ph = inputEl.getAttribute('placeholder');
 						if (ph && ph.trim().length > 0) {
-							inputEl.setAttribute('aria-label', ph.trim());
+							accessibleName = ph.trim();
 						} else if (inputEl.getAttribute('type') === 'search' || (inputEl.getAttribute('name') || '').indexOf('s') === 0) {
-							inputEl.setAttribute('aria-label', 'Buscar');
+							accessibleName = 'Buscar';
+						} else {
+							var parentItem = inputEl.closest('.wpat-cookie-cat-item, .form-group, .form-row, .field-wrap, tr, li, div');
+							if (parentItem) {
+								var titleEl = parentItem.querySelector('h1, h2, h3, h4, h5, h6, .wpat-cookie-cat-title, .title, strong');
+								if (titleEl && (titleEl.textContent || '').trim().length > 0) {
+									accessibleName = titleEl.textContent.trim();
+								}
+							}
+							if (!accessibleName && inputId) {
+								accessibleName = inputId.replace(/[-_]/g, ' ');
+							}
+						}
+
+						if (accessibleName) {
+							inputEl.setAttribute('aria-label', accessibleName);
 						}
 					}
 				}
@@ -243,6 +268,30 @@
 				}
 			} catch (e) {}
 		}
+
+		// 7. Enlaces idénticos con diferente destino (Lighthouse: identical-links-same-purpose)
+		// Detecta enlaces residuales de plugins (como Complianz) que apuntan a wp-admin/post.php y sincroniza su URL pública
+		try {
+			var adminLinks = document.querySelectorAll('a[href*="wp-admin/post.php?post="]');
+			for (var al = 0; al < adminLinks.length; al++) {
+				var aEl = adminLinks[al];
+				var aText = (aEl.textContent || '').trim().toLowerCase();
+				var publicLinks = document.querySelectorAll('a[href]:not([href*="wp-admin"])');
+				var matchedHref = '';
+				for (var pl = 0; pl < publicLinks.length; pl++) {
+					var pEl = publicLinks[pl];
+					if ((pEl.textContent || '').trim().toLowerCase() === aText) {
+						matchedHref = pEl.getAttribute('href');
+						break;
+					}
+				}
+				if (matchedHref) {
+					aEl.setAttribute('href', matchedHref);
+				} else if (!aEl.hasAttribute('aria-label')) {
+					aEl.setAttribute('aria-label', 'Editar ' + (aEl.textContent || '').trim());
+				}
+			}
+		} catch (e) {}
 	}
 
 	function init() {

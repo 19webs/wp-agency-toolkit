@@ -449,20 +449,21 @@ gtag('consent', 'default', {
 					<div class="wpat-cookie-cat-item">
 						<div class="wpat-cookie-cat-header" tabindex="0" role="button" aria-expanded="false">
 							<div class="wpat-cookie-cat-title">
-								<span>Preferencias</span>
+								<span id="wpat_cookie_title_preferences"><?php esc_html_e( 'Preferencias', 'wp-agency-toolkit' ); ?></span>
 							</div>
 							<div class="wpat-cookie-cat-controls">
-								<label class="wpat-cookie-switch" onclick="event.stopPropagation();">
-									<input type="checkbox" id="wpat_cookie_cat_preferences">
-									<span class="wpat-cookie-slider"></span>
+								<label class="wpat-cookie-switch" for="wpat_cookie_cat_preferences" onclick="event.stopPropagation();">
+									<span class="screen-reader-text" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;"><?php esc_html_e( 'Activar o desactivar cookies de preferencias', 'wp-agency-toolkit' ); ?></span>
+									<input type="checkbox" id="wpat_cookie_cat_preferences" aria-label="<?php esc_attr_e( 'Cookies de preferencias', 'wp-agency-toolkit' ); ?>" aria-labelledby="wpat_cookie_title_preferences">
+									<span class="wpat-cookie-slider" aria-hidden="true"></span>
 								</label>
-								<span class="wpat-cookie-chevron">
+								<span class="wpat-cookie-chevron" aria-hidden="true">
 									<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
 								</span>
 							</div>
 						</div>
 						<div class="wpat-cookie-cat-content">
-							<p class="wpat-cookie-cat-desc">El almacenamiento o acceso técnico es necesario para el propósito legítimo de almacenar preferencias no solicitadas por el abonado o usuario (como idioma, visualización o moneda).</p>
+							<p class="wpat-cookie-cat-desc"><?php esc_html_e( 'El almacenamiento o acceso técnico es necesario para el propósito legítimo de almacenar preferencias no solicitadas por el abonado o usuario (como idioma, visualización o moneda).', 'wp-agency-toolkit' ); ?></p>
 						</div>
 					</div>
 
@@ -470,20 +471,21 @@ gtag('consent', 'default', {
 					<div class="wpat-cookie-cat-item">
 						<div class="wpat-cookie-cat-header" tabindex="0" role="button" aria-expanded="false">
 							<div class="wpat-cookie-cat-title">
-								<span>Estadísticas</span>
+								<span id="wpat_cookie_title_analytics"><?php esc_html_e( 'Estadísticas', 'wp-agency-toolkit' ); ?></span>
 							</div>
 							<div class="wpat-cookie-cat-controls">
-								<label class="wpat-cookie-switch" onclick="event.stopPropagation();">
-									<input type="checkbox" id="wpat_cookie_cat_analytics">
-									<span class="wpat-cookie-slider"></span>
+								<label class="wpat-cookie-switch" for="wpat_cookie_cat_analytics" onclick="event.stopPropagation();">
+									<span class="screen-reader-text" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;"><?php esc_html_e( 'Activar o desactivar cookies de estadísticas y analítica', 'wp-agency-toolkit' ); ?></span>
+									<input type="checkbox" id="wpat_cookie_cat_analytics" aria-label="<?php esc_attr_e( 'Cookies de estadísticas y analítica', 'wp-agency-toolkit' ); ?>" aria-labelledby="wpat_cookie_title_analytics">
+									<span class="wpat-cookie-slider" aria-hidden="true"></span>
 								</label>
-								<span class="wpat-cookie-chevron">
+								<span class="wpat-cookie-chevron" aria-hidden="true">
 									<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
 								</span>
 							</div>
 						</div>
 						<div class="wpat-cookie-cat-content">
-							<p class="wpat-cookie-cat-desc">El almacenamiento o acceso técnico que se utiliza exclusivamente con fines estadísticos anónimos para cuantificar visitantes y entender cómo interactúan con el sitio.</p>
+							<p class="wpat-cookie-cat-desc"><?php esc_html_e( 'El almacenamiento o acceso técnico que se utiliza exclusivamente con fines estadísticos anónimos para cuantificar visitantes y entender cómo interactúan con el sitio.', 'wp-agency-toolkit' ); ?></p>
 						</div>
 					</div>
 
@@ -491,20 +493,21 @@ gtag('consent', 'default', {
 					<div class="wpat-cookie-cat-item">
 						<div class="wpat-cookie-cat-header" tabindex="0" role="button" aria-expanded="false">
 							<div class="wpat-cookie-cat-title">
-								<span>Marketing</span>
+								<span id="wpat_cookie_title_marketing"><?php esc_html_e( 'Marketing', 'wp-agency-toolkit' ); ?></span>
 							</div>
 							<div class="wpat-cookie-cat-controls">
-								<label class="wpat-cookie-switch" onclick="event.stopPropagation();">
-									<input type="checkbox" id="wpat_cookie_cat_marketing">
-									<span class="wpat-cookie-slider"></span>
+								<label class="wpat-cookie-switch" for="wpat_cookie_cat_marketing" onclick="event.stopPropagation();">
+									<span class="screen-reader-text" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;"><?php esc_html_e( 'Activar o desactivar cookies de marketing y publicidad', 'wp-agency-toolkit' ); ?></span>
+									<input type="checkbox" id="wpat_cookie_cat_marketing" aria-label="<?php esc_attr_e( 'Cookies de marketing y publicidad', 'wp-agency-toolkit' ); ?>" aria-labelledby="wpat_cookie_title_marketing">
+									<span class="wpat-cookie-slider" aria-hidden="true"></span>
 								</label>
-								<span class="wpat-cookie-chevron">
+								<span class="wpat-cookie-chevron" aria-hidden="true">
 									<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
 								</span>
 							</div>
 						</div>
 						<div class="wpat-cookie-cat-content">
-							<p class="wpat-cookie-cat-desc">El almacenamiento o acceso técnico es necesario para crear perfiles de usuario para enviar publicidad personalizada o rastrear al usuario en una web o varias webs con fines de marketing similares.</p>
+							<p class="wpat-cookie-cat-desc"><?php esc_html_e( 'El almacenamiento o acceso técnico es necesario para crear perfiles de usuario para enviar publicidad personalizada o rastrear al usuario en una web o varias webs con fines de marketing similares.', 'wp-agency-toolkit' ); ?></p>
 						</div>
 					</div>
 				</div>

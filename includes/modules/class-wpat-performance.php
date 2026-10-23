@@ -85,6 +85,31 @@ class WPAT_Performance {
 			add_action( 'init', array( $this, 'disable_embeds_scripts' ), 9999 );
 		}
 
+		// 10. Acelerador Core Web Vitals: Estabilizador Tipografías Google Fonts (display=swap y preconnect)
+		$font_swap = ! isset( $settings['perf_font_swap'] ) || '1' === (string) $settings['perf_font_swap'];
+		if ( $font_swap ) {
+			add_filter( 'style_loader_src', array( $this, 'add_font_display_swap' ), 20 );
+			add_action( 'wp_head', array( $this, 'preconnect_google_fonts' ), 1 );
+			add_filter( 'wp_resource_hints', array( $this, 'add_font_resource_hints' ), 10, 2 );
+		}
+
+		// 11. Acelerador Core Web Vitals: Preload de Hero Image (LCP)
+		$lcp_priority = ! isset( $settings['perf_lcp_priority'] ) || '1' === (string) $settings['perf_lcp_priority'];
+		if ( $lcp_priority ) {
+			add_action( 'wp_head', array( $this, 'preload_hero_image' ), 2 );
+		}
+
+		// 12. Acelerador Core Web Vitals: Anti-CLS y LCP mediante Búfer y Filtros de Contenido
+		$anti_cls = ! isset( $settings['perf_anti_cls'] ) || '1' === (string) $settings['perf_anti_cls'];
+		if ( $anti_cls || $lcp_priority ) {
+			add_action( 'template_redirect', array( $this, 'start_cwv_buffer' ), 1 );
+
+			if ( $anti_cls ) {
+				add_filter( 'the_content', array( $this, 'filter_content_images_dimensions' ), 999 );
+				add_filter( 'post_thumbnail_html', array( $this, 'filter_content_images_dimensions' ), 999 );
+			}
+		}
+
 		// Endpoints AJAX para mantenimiento y limpieza de base de datos
 		add_action( 'wp_ajax_wpat_perf_get_db_stats', array( $this, 'ajax_get_db_stats' ) );
 		add_action( 'wp_ajax_wpat_perf_clean_revisions', array( $this, 'ajax_clean_revisions' ) );
@@ -429,5 +454,391 @@ class WPAT_Performance {
 		}
 
 		wp_send_json_success( array( 'optimized_count' => count( $tables ) ) );
+	}
+
+	/**
+	 * Fuerza el parámetro display=swap en las hojas de estilo de Google Fonts.
+	 *
+	 * @param string $src URL del recurso de estilo.
+	 * @return string
+	 */
+	public function add_font_display_swap( $src ) {
+		if ( false !== strpos( $src, 'fonts.googleapis.com' ) ) {
+			if ( false === strpos( $src, 'display=' ) ) {
+				$src = add_query_arg( 'display', 'swap', $src );
+			}
+		}
+		return $src;
+	}
+
+	/**
+	 * Inyecta pre-conexiones a Google Fonts en el <head> para reducir la latencia de DNS/TLS.
+	 */
+	public function preconnect_google_fonts() {
+		echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
+		echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
+	}
+
+	/**
+	 * Añade sugerencias de recursos nativas de WordPress para preconnect a Google Fonts.
+	 *
+	 * @param array  $urls          URLs a procesar.
+	 * @param string $relation_type Tipo de relación ('preconnect', 'dns-prefetch', etc.).
+	 * @return array
+	 */
+	public function add_font_resource_hints( $urls, $relation_type ) {
+		if ( 'preconnect' === $relation_type ) {
+			$urls[] = array(
+				'href' => 'https://fonts.googleapis.com',
+			);
+			$urls[] = array(
+				'href'        => 'https://fonts.gstatic.com',
+				'crossorigin' => 'anonymous',
+			);
+		}
+		return $urls;
+	}
+
+	/**
+	 * Pre-carga la imagen principal visible (Hero / Destacada) en el <head> para optimizar el LCP.
+	 */
+	public function preload_hero_image() {
+		if ( is_admin() || is_feed() || wp_doing_ajax() ) {
+			return;
+		}
+
+		$image_url = '';
+
+		if ( is_singular() && has_post_thumbnail() ) {
+			$image_url = get_the_post_thumbnail_url( get_the_ID(), 'full' );
+		} elseif ( is_front_page() ) {
+			$custom_logo_id = get_theme_mod( 'custom_logo' );
+			if ( $custom_logo_id ) {
+				$image_url = wp_get_attachment_image_url( $custom_logo_id, 'full' );
+			}
+		}
+
+		if ( ! empty( $image_url ) ) {
+			echo '<link rel="preload" as="image" href="' . esc_url( $image_url ) . '" fetchpriority="high">' . "\n";
+		}
+	}
+
+	/**
+	 * Inicia el búfer de salida para procesar optimizaciones de Core Web Vitals en el frontend.
+	 */
+	public function start_cwv_buffer() {
+		if ( is_admin() || wp_doing_ajax() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || ( defined( 'DOING_CRON' ) && DOING_CRON ) ) {
+			return;
+		}
+
+		// Evitar interferir en modo edición o previsualización de maquetadores
+		if ( isset( $_GET['elementor-preview'] ) || isset( $_GET['et_fb'] ) || isset( $_GET['fl_builder'] ) || isset( $_GET['preview'] ) ) {
+			return;
+		}
+
+		ob_start( array( $this, 'filter_cwv_buffer' ) );
+	}
+
+	/**
+	 * Búfer de salida para Core Web Vitals (Anti-CLS y LCP Priority).
+	 *
+	 * @param string $html Contenido HTML generado.
+	 * @return string
+	 */
+	public function filter_cwv_buffer( $html ) {
+		if ( empty( $html ) || ! is_string( $html ) ) {
+			return $html;
+		}
+
+		// Solo procesar si contiene documento HTML válido
+		if ( false === stripos( $html, '<html' ) && false === stripos( $html, '<body' ) ) {
+			return $html;
+		}
+
+		$settings     = WPAT_Main::get_instance()->get_settings();
+		$anti_cls     = ! isset( $settings['perf_anti_cls'] ) || '1' === (string) $settings['perf_anti_cls'];
+		$lcp_priority = ! isset( $settings['perf_lcp_priority'] ) || '1' === (string) $settings['perf_lcp_priority'];
+
+		if ( $lcp_priority ) {
+			$html = $this->optimize_lcp_first_image( $html );
+		}
+
+		if ( $anti_cls ) {
+			$html = $this->add_missing_image_dimensions( $html );
+		}
+
+		return $html;
+	}
+
+	/**
+	 * Optimiza la primera imagen de contenido visible (Above the Fold) para acelerar el LCP.
+	 * Remueve loading="lazy" e inyecta fetchpriority="high".
+	 *
+	 * @param string $html
+	 * @return string
+	 */
+	public function optimize_lcp_first_image( $html ) {
+		$body_pos = stripos( $html, '<body' );
+		if ( false === $body_pos ) {
+			return $html;
+		}
+
+		$head_part = substr( $html, 0, $body_pos );
+		$body_part = substr( $html, $body_pos );
+
+		if ( preg_match_all( '/<img\s+[^>]+>/i', $body_part, $matches, PREG_OFFSET_CAPTURE ) ) {
+			foreach ( $matches[0] as $match ) {
+				$img_tag = $match[0];
+				$offset  = $match[1];
+
+				// Ignorar píxeles de rastreo (1x1), elementos ocultos o avatares diminutos
+				if ( preg_match( '/(?:width|height)=["\']?(?:0|1|2|3|4|5|10|16|20)["\']?/i', $img_tag ) ) {
+					continue;
+				}
+				if ( false !== stripos( $img_tag, 'display:none' ) || false !== stripos( $img_tag, 'visibility:hidden' ) ) {
+					continue;
+				}
+				if ( false !== stripos( $img_tag, 'avatar' ) ) {
+					continue;
+				}
+
+				// Encontramos la primera imagen candidata LCP
+				$new_img_tag = $img_tag;
+
+				// 1. Quitar loading="lazy" o cambiarlo a "eager"
+				if ( preg_match( '/\s+loading=["\']?lazy["\']?/i', $new_img_tag ) ) {
+					$new_img_tag = preg_replace( '/\s+loading=["\']?lazy["\']?/i', ' loading="eager"', $new_img_tag );
+				} elseif ( false === stripos( $new_img_tag, 'loading=' ) ) {
+					$new_img_tag = preg_replace( '/<img\s+/i', '<img loading="eager" ', $new_img_tag, 1 );
+				}
+
+				// 2. Inyectar fetchpriority="high"
+				if ( false === stripos( $new_img_tag, 'fetchpriority=' ) ) {
+					$new_img_tag = preg_replace( '/<img\s+/i', '<img fetchpriority="high" ', $new_img_tag, 1 );
+				} else {
+					$new_img_tag = preg_replace( '/\s+fetchpriority=["\']?[^"\'>\s]+["\']?/i', ' fetchpriority="high"', $new_img_tag );
+				}
+
+				// 3. Reemplazar decoding="async" a "sync" para la primera imagen visible
+				$new_img_tag = preg_replace( '/\s+decoding=["\']?async["\']?/i', ' decoding="sync"', $new_img_tag );
+
+				$body_part = substr_replace( $body_part, $new_img_tag, $offset, strlen( $img_tag ) );
+				break;
+			}
+		}
+
+		return $head_part . $body_part;
+	}
+
+	/**
+	 * Caché en memoria de dimensiones calculadas para optimizar rendimiento.
+	 *
+	 * @var array
+	 */
+	private static $dimensions_cache = array();
+
+	/**
+	 * Añade atributos width y height a imágenes que carecen de ellos para prevenir CLS.
+	 *
+	 * @param string $html
+	 * @return string
+	 */
+	public function add_missing_image_dimensions( $html ) {
+		if ( empty( $html ) || ! is_string( $html ) ) {
+			return $html;
+		}
+
+		if ( ! preg_match_all( '/<img\s+[^>]+>/i', $html, $matches ) ) {
+			return $html;
+		}
+
+		$upload_dir = wp_upload_dir();
+		$base_url   = isset( $upload_dir['baseurl'] ) ? $upload_dir['baseurl'] : '';
+		$base_dir   = isset( $upload_dir['basedir'] ) ? $upload_dir['basedir'] : '';
+
+		$replaced = array();
+
+		foreach ( $matches[0] as $img_tag ) {
+			// Si ya tiene width Y height válidos, omitir
+			$has_width  = preg_match( '/\bwidth=["\']?[0-9]+%?["\']?/i', $img_tag );
+			$has_height = preg_match( '/\bheight=["\']?[0-9]+%?["\']?/i', $img_tag );
+
+			if ( $has_width && $has_height ) {
+				continue;
+			}
+
+			if ( isset( $replaced[ $img_tag ] ) ) {
+				continue;
+			}
+
+			// Extraer atributo src
+			if ( ! preg_match( '/\bsrc=["\']([^"\']+)["\']/i', $img_tag, $src_match ) ) {
+				continue;
+			}
+
+			$src = $src_match[1];
+
+			// Omitir SVG, base64 data URIs o urls vacías
+			if ( empty( $src ) || false !== stripos( $src, '.svg' ) || 0 === stripos( $src, 'data:image/' ) ) {
+				continue;
+			}
+
+			$width  = null;
+			$height = null;
+
+			// Verificar caché en memoria
+			if ( isset( self::$dimensions_cache[ $src ] ) ) {
+				$width  = self::$dimensions_cache[ $src ]['w'];
+				$height = self::$dimensions_cache[ $src ]['h'];
+			}
+
+			// 1. Intentar resolver mediante clase wp-image-{id}
+			if ( ! $width && preg_match( '/\bwp-image-([0-9]+)\b/i', $img_tag, $class_match ) ) {
+				$attachment_id = (int) $class_match[1];
+				if ( $attachment_id > 0 ) {
+					$meta = wp_get_attachment_metadata( $attachment_id );
+					if ( is_array( $meta ) && ! empty( $meta['width'] ) && ! empty( $meta['height'] ) ) {
+						$width  = (int) $meta['width'];
+						$height = (int) $meta['height'];
+
+						if ( ! empty( $meta['sizes'] ) && is_array( $meta['sizes'] ) ) {
+							$file_basename = wp_basename( $src );
+							foreach ( $meta['sizes'] as $size_data ) {
+								if ( isset( $size_data['file'] ) && $size_data['file'] === $file_basename ) {
+									$width  = (int) $size_data['width'];
+									$height = (int) $size_data['height'];
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+
+			// 2. Intentar deducir dimensiones del patrón del nombre del archivo: ejemplo-800x600.jpg
+			if ( ! $width && preg_match( '/-([0-9]{2,4})x([0-9]{2,4})\.(jpe?g|png|webp|avif|gif)(?:\?.*)?$/i', $src, $dim_match ) ) {
+				$width  = (int) $dim_match[1];
+				$height = (int) $dim_match[2];
+			}
+
+			// 3. Si es una imagen local en uploads pero no tiene wp-image-ID, obtener tamaño local
+			if ( ! $width && ! empty( $base_url ) && 0 === strpos( $src, $base_url ) ) {
+				$local_path = str_replace( $base_url, $base_dir, $src );
+				$local_path = preg_replace( '/\?.*$/', '', $local_path );
+
+				if ( file_exists( $local_path ) ) {
+					$img_info = @getimagesize( $local_path );
+					if ( is_array( $img_info ) && ! empty( $img_info[0] ) && ! empty( $img_info[1] ) ) {
+						$width  = (int) $img_info[0];
+						$height = (int) $img_info[1];
+					}
+				}
+			}
+
+			// Si obtuvimos dimensiones, inyectarlas
+			if ( $width && $height ) {
+				self::$dimensions_cache[ $src ] = array(
+					'w' => $width,
+					'h' => $height,
+				);
+
+				$new_tag = $img_tag;
+				if ( ! $has_width ) {
+					$new_tag = preg_replace( '/<img\s+/i', '<img width="' . $width . '" ', $new_tag, 1 );
+				}
+				if ( ! $has_height ) {
+					$new_tag = preg_replace( '/<img\s+/i', '<img height="' . $height . '" ', $new_tag, 1 );
+				}
+
+				if ( $new_tag !== $img_tag ) {
+					$html = str_replace( $img_tag, $new_tag, $html );
+					$replaced[ $img_tag ] = true;
+				}
+			}
+		}
+
+		return $html;
+	}
+
+	/**
+	 * Filtro directo para the_content y post_thumbnail_html.
+	 *
+	 * @param string $content
+	 * @return string
+	 */
+	public function filter_content_images_dimensions( $content ) {
+		return $this->add_missing_image_dimensions( $content );
+	}
+
+	/**
+	 * Diagnóstico y salud del servidor para la tarjeta de Rendimiento.
+	 *
+	 * @return array
+	 */
+	public static function get_server_performance_diagnostics() {
+		// 1. Versión de PHP
+		$php_version = PHP_VERSION;
+		$php_status  = version_compare( $php_version, '8.1', '>=' ) ? 'good' : ( version_compare( $php_version, '7.4', '<=' ) ? 'bad' : 'warning' );
+
+		// 2. OPcache
+		$opcache_enabled  = false;
+		$opcache_hit_rate = 0;
+		if ( function_exists( 'opcache_get_status' ) && ini_get( 'opcache.enable' ) ) {
+			$op_status = @opcache_get_status( false );
+			if ( is_array( $op_status ) && ! empty( $op_status['opcache_enabled'] ) ) {
+				$opcache_enabled = true;
+				if ( isset( $op_status['opcache_statistics']['opcache_hit_rate'] ) ) {
+					$opcache_hit_rate = round( (float) $op_status['opcache_statistics']['opcache_hit_rate'], 1 );
+				}
+			}
+		}
+
+		// 3. Memoria PHP
+		$memory_limit       = ini_get( 'memory_limit' );
+		$memory_limit_bytes = function_exists( 'wp_convert_hr_to_bytes' ) ? wp_convert_hr_to_bytes( $memory_limit ) : 0;
+		$wp_memory_limit    = defined( 'WP_MEMORY_LIMIT' ) ? WP_MEMORY_LIMIT : '40M';
+		$memory_status      = $memory_limit_bytes >= ( 256 * 1024 * 1024 ) ? 'good' : ( $memory_limit_bytes >= ( 128 * 1024 * 1024 ) ? 'warning' : 'bad' );
+
+		// 4. Compresión HTTP (Gzip / Brotli)
+		$has_gzip   = extension_loaded( 'zlib' ) || (bool) ini_get( 'zlib.output_compression' ) || in_array( 'ob_gzhandler', ob_list_handlers(), true );
+		$has_brotli = extension_loaded( 'brotli' ) || function_exists( 'brotli_compress' );
+
+		// 5. Soporte WebP / AVIF
+		$has_imagick    = extension_loaded( 'imagick' ) && class_exists( 'Imagick' );
+		$webp_supported = function_exists( 'imagewebp' ) || ( $has_imagick && in_array( 'WEBP', Imagick::queryFormats(), true ) );
+		$avif_supported = function_exists( 'imageavif' ) || ( $has_imagick && in_array( 'AVIF', Imagick::queryFormats(), true ) );
+
+		// 6. Micro-benchmark Base de Datos
+		global $wpdb;
+		$db_latency_ms     = 0.0;
+		$db_latency_status = 'good';
+		if ( isset( $wpdb ) && is_object( $wpdb ) ) {
+			$db_start = microtime( true );
+			$wpdb->get_var( 'SELECT 1' );
+			$db_latency_ms = round( ( microtime( true ) - $db_start ) * 1000, 2 );
+			if ( $db_latency_ms > 10.0 ) {
+				$db_latency_status = 'bad';
+			} elseif ( $db_latency_ms > 3.0 ) {
+				$db_latency_status = 'warning';
+			} else {
+				$db_latency_status = 'good';
+			}
+		}
+
+		return array(
+			'php_version'       => $php_version,
+			'php_status'        => $php_status,
+			'opcache_enabled'   => $opcache_enabled,
+			'opcache_hit_rate'  => $opcache_hit_rate,
+			'memory_limit'      => $memory_limit,
+			'wp_memory_limit'   => $wp_memory_limit,
+			'memory_status'     => $memory_status,
+			'has_gzip'          => $has_gzip,
+			'has_brotli'        => $has_brotli,
+			'webp_supported'    => $webp_supported,
+			'avif_supported'    => $avif_supported,
+			'db_latency_ms'     => $db_latency_ms,
+			'db_latency_status' => $db_latency_status,
+		);
 	}
 }

@@ -1077,6 +1077,9 @@ class WPAT_Admin {
 			$new_settings['perf_autosave_interval']         = isset( $input_settings['perf_autosave_interval'] ) && in_array( $input_settings['perf_autosave_interval'], array( '60', '180', '300' ), true ) ? $input_settings['perf_autosave_interval'] : '180';
 			$new_settings['perf_disable_dashicons']         = isset( $input_settings['perf_disable_dashicons'] ) && '1' === $input_settings['perf_disable_dashicons'] ? '1' : '0';
 			$new_settings['perf_disable_embeds']            = isset( $input_settings['perf_disable_embeds'] ) && '1' === $input_settings['perf_disable_embeds'] ? '1' : '0';
+			$new_settings['perf_anti_cls']                  = isset( $input_settings['perf_anti_cls'] ) && '1' === $input_settings['perf_anti_cls'] ? '1' : '0';
+			$new_settings['perf_lcp_priority']              = isset( $input_settings['perf_lcp_priority'] ) && '1' === $input_settings['perf_lcp_priority'] ? '1' : '0';
+			$new_settings['perf_font_swap']                 = isset( $input_settings['perf_font_swap'] ) && '1' === $input_settings['perf_font_swap'] ? '1' : '0';
 		}
 
 		// Sanitizar Soporte de Archivos SVG
@@ -8808,6 +8811,169 @@ class WPAT_Admin {
 						<?php $this->render_module_toggle( 'performance', $settings, true ); ?>
 					</div>
 					<div class="wpat-module-body" style="display: block; padding: 20px;">
+
+						<?php
+						$perf_diag    = class_exists( 'WPAT_Performance' ) ? WPAT_Performance::get_server_performance_diagnostics() : array();
+						$php_badge_bg = ( isset( $perf_diag['php_status'] ) && 'good' === $perf_diag['php_status'] ) ? '#10b981' : ( ( isset( $perf_diag['php_status'] ) && 'warning' === $perf_diag['php_status'] ) ? '#f59e0b' : '#ef4444' );
+						$opcache_bg   = ! empty( $perf_diag['opcache_enabled'] ) ? '#10b981' : '#f59e0b';
+						$mem_bg       = ( isset( $perf_diag['memory_status'] ) && 'good' === $perf_diag['memory_status'] ) ? '#10b981' : '#f59e0b';
+						$db_bg        = ( isset( $perf_diag['db_latency_status'] ) && 'good' === $perf_diag['db_latency_status'] ) ? '#10b981' : ( ( isset( $perf_diag['db_latency_status'] ) && 'warning' === $perf_diag['db_latency_status'] ) ? '#f59e0b' : '#ef4444' );
+						?>
+
+						<!-- Diagnóstico en Tiempo Real: Salud y Capacidad del Servidor -->
+						<div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 8px; padding: 18px 20px; color: #f8fafc; margin-bottom: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+							<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 12px;">
+								<div style="display: flex; align-items: center; gap: 8px;">
+									<span class="dashicons dashicons-admin-site-alt3" style="color: #38bdf8; font-size: 20px;"></span>
+									<span style="font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 0.3px;"><?php esc_html_e( 'Diagnóstico de Rendimiento & Capacidad del Servidor', 'wp-agency-toolkit' ); ?></span>
+								</div>
+								<div style="font-size: 11px; color: #94a3b8; font-family: monospace;">
+									<?php echo esc_html( sprintf( __( 'PHP %s | Micro-benchmark: %s ms', 'wp-agency-toolkit' ), isset( $perf_diag['php_version'] ) ? $perf_diag['php_version'] : PHP_VERSION, isset( $perf_diag['db_latency_ms'] ) ? $perf_diag['db_latency_ms'] : '0' ) ); ?>
+								</div>
+							</div>
+
+							<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+								<!-- PHP Version -->
+								<div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; padding: 10px 12px;">
+									<div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 600; margin-bottom: 4px;"><?php esc_html_e( 'Motor PHP', 'wp-agency-toolkit' ); ?></div>
+									<div style="display: flex; align-items: center; gap: 6px;">
+										<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: <?php echo esc_attr( $php_badge_bg ); ?>;"></span>
+										<strong style="font-size: 14px; color: #fff;"><?php echo esc_html( isset( $perf_diag['php_version'] ) ? 'PHP ' . $perf_diag['php_version'] : 'PHP ' . PHP_VERSION ); ?></strong>
+									</div>
+									<div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">
+										<?php
+										if ( isset( $perf_diag['php_status'] ) && 'good' === $perf_diag['php_status'] ) {
+											esc_html_e( 'Versión óptima y segura', 'wp-agency-toolkit' );
+										} elseif ( isset( $perf_diag['php_status'] ) && 'warning' === $perf_diag['php_status'] ) {
+											esc_html_e( 'Aceptable (Recomendado >= 8.1)', 'wp-agency-toolkit' );
+										} else {
+											esc_html_e( 'Antigua (Actualizar)', 'wp-agency-toolkit' );
+										}
+										?>
+									</div>
+								</div>
+
+								<!-- OPcache -->
+								<div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; padding: 10px 12px;">
+									<div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 600; margin-bottom: 4px;"><?php esc_html_e( 'Acelerador OPcache', 'wp-agency-toolkit' ); ?></div>
+									<div style="display: flex; align-items: center; gap: 6px;">
+										<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: <?php echo esc_attr( $opcache_bg ); ?>;"></span>
+										<strong style="font-size: 14px; color: #fff;">
+											<?php echo ! empty( $perf_diag['opcache_enabled'] ) ? esc_html__( 'Activo', 'wp-agency-toolkit' ) : esc_html__( 'Inactivo', 'wp-agency-toolkit' ); ?>
+										</strong>
+									</div>
+									<div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">
+										<?php
+										if ( ! empty( $perf_diag['opcache_enabled'] ) ) {
+											echo esc_html( sprintf( __( 'Tasa de acierto: %s%%', 'wp-agency-toolkit' ), isset( $perf_diag['opcache_hit_rate'] ) ? $perf_diag['opcache_hit_rate'] : 0 ) );
+										} else {
+											esc_html_e( 'Activar en hosting (x2 vel.)', 'wp-agency-toolkit' );
+										}
+										?>
+									</div>
+								</div>
+
+								<!-- Memory Limit -->
+								<div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; padding: 10px 12px;">
+									<div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 600; margin-bottom: 4px;"><?php esc_html_e( 'Memoria PHP / WP', 'wp-agency-toolkit' ); ?></div>
+									<div style="display: flex; align-items: center; gap: 6px;">
+										<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: <?php echo esc_attr( $mem_bg ); ?>;"></span>
+										<strong style="font-size: 14px; color: #fff;"><?php echo esc_html( isset( $perf_diag['memory_limit'] ) ? $perf_diag['memory_limit'] : ini_get( 'memory_limit' ) ); ?></strong>
+									</div>
+									<div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">
+										<?php echo esc_html( sprintf( __( 'Límite WP: %s', 'wp-agency-toolkit' ), isset( $perf_diag['wp_memory_limit'] ) ? $perf_diag['wp_memory_limit'] : '40M' ) ); ?>
+									</div>
+								</div>
+
+								<!-- HTTP Compression -->
+								<div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; padding: 10px 12px;">
+									<div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 600; margin-bottom: 4px;"><?php esc_html_e( 'Compresión HTTP', 'wp-agency-toolkit' ); ?></div>
+									<div style="display: flex; align-items: center; gap: 6px;">
+										<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: <?php echo ( ! empty( $perf_diag['has_gzip'] ) || ! empty( $perf_diag['has_brotli'] ) ) ? '#10b981' : '#f59e0b'; ?>;"></span>
+										<strong style="font-size: 14px; color: #fff;">
+											<?php
+											if ( ! empty( $perf_diag['has_brotli'] ) ) {
+												esc_html_e( 'Brotli / Gzip', 'wp-agency-toolkit' );
+											} elseif ( ! empty( $perf_diag['has_gzip'] ) ) {
+												esc_html_e( 'Gzip Activo', 'wp-agency-toolkit' );
+											} else {
+												esc_html_e( 'No detectada', 'wp-agency-toolkit' );
+											}
+											?>
+										</strong>
+									</div>
+									<div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">
+										<?php esc_html_e( 'Ahorro transferencia ~70%', 'wp-agency-toolkit' ); ?>
+									</div>
+								</div>
+
+								<!-- Database Latency -->
+								<div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; padding: 10px 12px;">
+									<div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 600; margin-bottom: 4px;"><?php esc_html_e( 'Latencia MySQL/MariaDB', 'wp-agency-toolkit' ); ?></div>
+									<div style="display: flex; align-items: center; gap: 6px;">
+										<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: <?php echo esc_attr( $db_bg ); ?>;"></span>
+										<strong style="font-size: 14px; color: #fff;"><?php echo esc_html( ( isset( $perf_diag['db_latency_ms'] ) ? $perf_diag['db_latency_ms'] : '0.0' ) . ' ms' ); ?></strong>
+									</div>
+									<div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">
+										<?php
+										if ( isset( $perf_diag['db_latency_status'] ) && 'good' === $perf_diag['db_latency_status'] ) {
+											esc_html_e( 'Tiempo de consulta excelente', 'wp-agency-toolkit' );
+										} elseif ( isset( $perf_diag['db_latency_status'] ) && 'warning' === $perf_diag['db_latency_status'] ) {
+											esc_html_e( 'Aceptable (< 10ms)', 'wp-agency-toolkit' );
+										} else {
+											esc_html_e( 'Lento (> 10ms)', 'wp-agency-toolkit' );
+										}
+										?>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Core Web Vitals: Anti-CLS, LCP & Google Fonts -->
+						<h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+							<span class="dashicons dashicons-performance" style="color: #10b981;"></span>
+							<?php esc_html_e( 'Acelerador de Core Web Vitals (Anti-CLS, LCP & Fuentes)', 'wp-agency-toolkit' ); ?>
+						</h4>
+
+						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 24px;">
+							<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px 14px;">
+								<label style="font-weight: 600; cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[perf_anti_cls]" value="1" <?php checked( ! isset( $settings['perf_anti_cls'] ) || '1' === (string) $settings['perf_anti_cls'] ); ?> style="margin-top: 2px;" />
+									<div>
+										<span style="color: #166534; font-weight: 700;"><?php esc_html_e( 'Estabilizador de Diseño Anti-CLS (Dimensiones en Imágenes)', 'wp-agency-toolkit' ); ?></span>
+										<p class="description" style="margin: 3px 0 0 0; font-weight: normal; color: #15803d;">
+											<?php esc_html_e( 'Calcula e inyecta dinámicamente width y height en imágenes que carecen de dimensiones fijas (común en Elementor y temas). Elimina los saltos de diseño (CLS de 0.47 a <0.05).', 'wp-agency-toolkit' ); ?>
+										</p>
+									</div>
+								</label>
+							</div>
+
+							<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px 14px;">
+								<label style="font-weight: 600; cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[perf_lcp_priority]" value="1" <?php checked( ! isset( $settings['perf_lcp_priority'] ) || '1' === (string) $settings['perf_lcp_priority'] ); ?> style="margin-top: 2px;" />
+									<div>
+										<span style="color: #166534; font-weight: 700;"><?php esc_html_e( 'Acelerador LCP (Prioridad Alta en Imagen Hero)', 'wp-agency-toolkit' ); ?></span>
+										<p class="description" style="margin: 3px 0 0 0; font-weight: normal; color: #15803d;">
+											<?php esc_html_e( 'Elimina la carga diferida (lazy load) en la primera imagen visible (Above the fold), inyecta fetchpriority="high" y pre-carga la imagen destacada en el <head>. Acelera el LCP a <2.0s.', 'wp-agency-toolkit' ); ?>
+										</p>
+									</div>
+								</label>
+							</div>
+
+							<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px 14px;">
+								<label style="font-weight: 600; cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+									<input type="checkbox" name="wpat_settings[perf_font_swap]" value="1" <?php checked( ! isset( $settings['perf_font_swap'] ) || '1' === (string) $settings['perf_font_swap'] ); ?> style="margin-top: 2px;" />
+									<div>
+										<span style="color: #166534; font-weight: 700;"><?php esc_html_e( 'Estabilizador de Fuentes Google Fonts (display=swap & preconnect)', 'wp-agency-toolkit' ); ?></span>
+										<p class="description" style="margin: 3px 0 0 0; font-weight: normal; color: #15803d;">
+											<?php esc_html_e( 'Fuerza display=swap en las fuentes de Google Fonts e inyecta pre-conexiones en el <head> (fonts.gstatic.com). Elimina el parpadeo de texto invisible (FOUT) y reduce la latencia.', 'wp-agency-toolkit' ); ?>
+										</p>
+									</div>
+								</label>
+							</div>
+						</div>
+
+						<hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 25px 0;">
 
 						<!-- 1. Limpieza de Assets y Frontend -->
 						<h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">

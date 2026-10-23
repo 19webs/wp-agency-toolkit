@@ -12240,8 +12240,11 @@ class WPAT_Admin {
 							<h4 style="margin: 0 0 4px 0; color: #92400e; font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
 								<span class="dashicons dashicons-info" style="color: #f59e0b;"></span> El registro de errores en archivo (<code>WP_DEBUG_LOG</code>) está desactivado
 							</h4>
-							<p style="margin: 0; color: #b45309; font-size: 12.5px;">
+							<p style="margin: 0 0 6px 0; color: #b45309; font-size: 12.5px;">
 								Para que WordPress guarde los errores en <code>wp-content/debug.log</code>, añade estas líneas en tu archivo <code>wp-config.php</code> justo antes de <em>/* That's all, stop editing! */</em>:
+							</p>
+							<p style="margin: 0; color: #9a3412; font-size: 11.5px; font-weight: 600;">
+								⚠️ <em>Nota importante:</em> Si tu <code>wp-config.php</code> ya contiene <code>define( 'WP_DEBUG', false );</code>, debes <u>sustituir esa línea</u> (no pegarla dos veces) para evitar el aviso de <em>"Constant WP_DEBUG already defined"</em>.
 							</p>
 						</div>
 						<div style="display: flex; align-items: center; gap: 8px;">

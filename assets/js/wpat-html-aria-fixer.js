@@ -57,6 +57,17 @@
 				}
 			} catch (e) {}
 
+			// 1.c. Eliminar role="listitem" huérfanos o en <span> (ej. iconos sociales de Elementor: aria-required-parent)
+			try {
+				var listitems = document.querySelectorAll('[role="listitem"]');
+				for (var li = 0; li < listitems.length; li++) {
+					var item = listitems[li];
+					if (item.tagName.toLowerCase() === 'span' || !item.closest('[role="list"], [role="group"], ul, ol')) {
+						item.removeAttribute('role');
+					}
+				}
+			} catch (e) {}
+
 			// Eliminar roles no estándar o en desuso
 			try {
 				var obsoleteRoleEls = document.querySelectorAll('[role="text"]');

@@ -128,6 +128,12 @@ class WPAT_HTML_ARIA_Fixer {
 
 			// 7. Eliminar role="text" (en desuso y penalizado por W3C)
 			$html = preg_replace( '/\srole=["\']text["\']/i', '', $html );
+
+			// 8. Eliminar role="listitem" en <span> (ej. iconos sociales de Elementor que carecen de contenedor role="list")
+			$html = preg_replace_callback( '/<span\b([^>]*?)>/i', function( $matches ) {
+				$attrs = preg_replace( '/\srole=["\']listitem["\']/i', '', $matches[1] );
+				return '<span' . $attrs . '>';
+			}, $html );
 		}
 
 		if ( $fix_decor ) {

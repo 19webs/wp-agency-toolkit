@@ -18,8 +18,12 @@
 		// 1. Saneamiento de Roles ARIA conflictivos según estándar W3C ARIA in HTML
 		if (config.fix_roles) {
 			var invalidRoleSelectors = [
-				'header[role="navigation"]', 'header[role="button"]',
-				'nav[role="banner"]', 'nav[role="button"]',
+				'article[role="listitem"]', 'article[role="button"]', 'article[role="link"]', 'article[role="navigation"]', 'article[role="banner"]',
+				'section[role="listitem"]',
+				'header[role="navigation"]', 'header[role="button"]', 'header[role="listitem"]',
+				'nav[role="banner"]', 'nav[role="button"]', 'nav[role="listitem"]',
+				'footer[role="navigation"]', 'footer[role="button"]', 'footer[role="listitem"]',
+				'main[role="listitem"]', 'aside[role="listitem"]',
 				'ul[role="navigation"]', 'ol[role="navigation"]',
 				'a[href][role="button"]',
 				'img[alt][role="presentation"]', 'img[alt][role="none"]'
@@ -173,9 +177,22 @@
 		}
 	}
 
-	if (document.readyState === 'loading') {
-		document.addEventListener('DOMContentLoaded', sanitizeARIA);
-	} else {
+	function init() {
 		sanitizeARIA();
+
+		if (window.MutationObserver && document.body) {
+			var debounceTimer = null;
+			var observer = new MutationObserver(function() {
+				if (debounceTimer) clearTimeout(debounceTimer);
+				debounceTimer = setTimeout(sanitizeARIA, 150);
+			});
+			observer.observe(document.body, { childList: true, subtree: true });
+		}
+	}
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', init);
+	} else {
+		init();
 	}
 })();

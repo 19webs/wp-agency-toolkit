@@ -40,6 +40,85 @@ class WPAT_HTML_ARIA_Fixer {
 	private function __construct() {
 		// Encolar script ultra-ligero de saneamiento en el frontend
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_scripts' ), 99 );
+
+		// Filtrado en servidor del buffer HTML para Google PageSpeed / Lighthouse y SEO
+		add_action( 'template_redirect', array( $this, 'start_output_buffer' ), 1 );
+	}
+
+	/**
+	 * Inicia el búfer de salida para sanear el HTML en servidor antes de enviarlo al cliente.
+	 */
+	public function start_output_buffer() {
+		if ( is_admin() || wp_doing_ajax() || wp_doing_cron() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+			return;
+		}
+
+		$settings = class_exists( 'WPAT_Main' ) ? WPAT_Main::get_instance()->get_settings() : get_option( 'wpat_settings', array() );
+		$is_active = isset( $settings['html-aria-fixer'] ) && '1' === (string) $settings['html-aria-fixer'];
+		if ( ! $is_active ) {
+			return;
+		}
+
+		ob_start( array( $this, 'filter_page_html' ) );
+	}
+
+	/**
+	 * Sanea atributos ARIA y roles incompatibles en el HTML renderizado por el servidor.
+	 *
+	 * @param string $html Contenido HTML de la página.
+	 * @return string HTML saneado.
+	 */
+	public function filter_page_html( $html ) {
+		if ( empty( $html ) || ! is_string( $html ) ) {
+			return $html;
+		}
+
+		$settings  = class_exists( 'WPAT_Main' ) ? WPAT_Main::get_instance()->get_settings() : get_option( 'wpat_settings', array() );
+		$fix_roles = ! isset( $settings['aria_fix_roles'] ) || '1' === (string) $settings['aria_fix_roles'];
+		$fix_decor = ! isset( $settings['aria_fix_decorative_imgs'] ) || '1' === (string) $settings['aria_fix_decorative_imgs'];
+
+		if ( $fix_roles ) {
+			// 1. Eliminar role="listitem" y roles incompatibles en <article> (Fallo crítico en Elementor)
+			$html = preg_replace_callback( '/<article\b([^>]*?)>/i', function( $matches ) {
+				$attrs = preg_replace( '/\srole=["\'](?:listitem|button|link|navigation|banner)["\']/i', '', $matches[1] );
+				return '<article' . $attrs . '>';
+			}, $html );
+
+			// 2. Eliminar role="listitem" en <section>, <header>, <nav>, <footer>, <main>, <aside>
+			$html = preg_replace_callback( '/<(section|header|nav|footer|main|aside)\b([^>]*?)>/i', function( $matches ) {
+				$tag   = $matches[1];
+				$attrs = preg_replace( '/\srole=["\'](?:listitem)["\']/i', '', $matches[2] );
+				$tag_l = strtolower( $tag );
+				if ( 'header' === $tag_l || 'footer' === $tag_l ) {
+					$attrs = preg_replace( '/\srole=["\'](?:navigation|button)["\']/i', '', $attrs );
+				} elseif ( 'nav' === $tag_l ) {
+					$attrs = preg_replace( '/\srole=["\'](?:banner|button)["\']/i', '', $attrs );
+				}
+				return '<' . $tag . $attrs . '>';
+			}, $html );
+
+			// 3. Eliminar role="presentation" o role="none" en <img> si tiene atributo alt no vacío
+			$html = preg_replace_callback( '/<img\b([^>]*?)>/i', function( $matches ) {
+				$attrs = $matches[1];
+				if ( preg_match( '/\balt=["\']([^\'"]+)["\']/i', $attrs, $alt_m ) && trim( $alt_m[1] ) !== '' ) {
+					$attrs = preg_replace( '/\srole=["\'](?:presentation|none)["\']/i', '', $attrs );
+				}
+				return '<img' . $attrs . '>';
+			}, $html );
+
+			// 4. Eliminar role="text" (en desuso y penalizado por W3C)
+			$html = preg_replace( '/\srole=["\']text["\']/i', '', $html );
+		}
+
+		if ( $fix_decor ) {
+			// Asignar alt="" en servidor a <img> que no tengan atributo alt
+			$html = preg_replace_callback( '/<img\b((?:(?!alt=)[^>])*)>/i', function( $matches ) {
+				$attrs = rtrim( $matches[1] );
+				return '<img' . $attrs . ' alt="">';
+			}, $html );
+		}
+
+		return $html;
 	}
 
 	/**

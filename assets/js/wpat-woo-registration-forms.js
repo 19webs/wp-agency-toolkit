@@ -131,15 +131,66 @@
 		});
 
 		/* ==========================================================================
-		   4. ADMIN: Constructor de Campos (Añadir / Eliminar Campos en Formulario)
+		   4. ADMIN: Constructor de Campos (Añadir / Eliminar / Reordenar con Drag & Drop)
 		   ========================================================================== */
+
+		// Reindexar campos para guardar siempre en el orden visual exacto
+		function reindexFields() {
+			$('.wpat-reg-fields-list .wpat-reg-field-row').each(function(idx) {
+				$(this).find('input, select, textarea').each(function() {
+					var name = $(this).attr('name');
+					if (name && name.indexOf('fields_data[') === 0) {
+						var updatedName = name.replace(/^fields_data\[[^\]]+\]/, 'fields_data[' + idx + ']');
+						$(this).attr('name', updatedName);
+					}
+				});
+			});
+			$('#wpat_fields_count').text($('.wpat-reg-fields-list .wpat-reg-field-row').length);
+		}
+
+		// Inicializar reordenación Drag & Drop con jQuery UI Sortable
+		function initFieldsSortable() {
+			var $list = $('.wpat-reg-fields-list');
+			if ($list.length && $.fn.sortable) {
+				$list.sortable({
+					handle: '.wpat-reg-field-drag-handle',
+					items: '> .wpat-reg-field-row',
+					placeholder: 'wpat-reg-field-placeholder',
+					axis: 'y',
+					opacity: 0.85,
+					cursor: 'grabbing',
+					tolerance: 'pointer',
+					forcePlaceholderSize: true,
+					start: function(e, ui) {
+						ui.placeholder.height(ui.item.outerHeight());
+					},
+					stop: function(e, ui) {
+						reindexFields();
+					}
+				});
+			}
+		}
+
+		initFieldsSortable();
+
+		// Asegurar reindexado correcto antes de enviar el formulario
+		$('form').on('submit', function() {
+			if ($('.wpat-reg-fields-list').length) {
+				reindexFields();
+			}
+		});
 
 		// Eliminar campo
 		$(document).on('click', '.wpat-reg-remove-field-btn', function(e) {
 			e.preventDefault();
 			if (confirm('¿Eliminar este campo del formulario?')) {
-				$(this).closest('.wpat-reg-field-row').slideUp(200, function() {
-					$(this).remove();
+				var $row = $(this).closest('.wpat-reg-field-row');
+				$row.slideUp(200, function() {
+					$row.remove();
+					reindexFields();
+					if ($('.wpat-reg-fields-list').data('ui-sortable')) {
+						$('.wpat-reg-fields-list').sortable('refresh');
+					}
 				});
 			}
 		});
@@ -222,6 +273,10 @@
 			'</div>';
 
 			$('.wpat-reg-fields-list').append(rowHtml);
+			reindexFields();
+			if ($('.wpat-reg-fields-list').data('ui-sortable')) {
+				$('.wpat-reg-fields-list').sortable('refresh');
+			}
 			$('#wpat_reg_add_field_modal').fadeOut(200);
 
 			// Notificar cambio

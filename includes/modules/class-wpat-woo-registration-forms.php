@@ -216,7 +216,7 @@ class WPAT_Woo_Registration_Forms {
 		wp_register_script(
 			'wpat-woo-registration-forms-js',
 			WPAT_URL . 'assets/js/wpat-woo-registration-forms.js',
-			array( 'jquery' ),
+			array( 'jquery', 'jquery-ui-sortable' ),
 			WPAT_VERSION,
 			true
 		);
@@ -239,7 +239,7 @@ class WPAT_Woo_Registration_Forms {
 	public function enqueue_admin_assets( $hook ) {
 		if ( 'users.php' === $hook || false !== strpos( $hook, 'wp-agency-toolkit' ) ) {
 			wp_enqueue_style( 'wpat-woo-registration-forms-css', WPAT_URL . 'assets/css/wpat-woo-registration-forms.css', array(), WPAT_VERSION );
-			wp_enqueue_script( 'wpat-woo-registration-forms-js', WPAT_URL . 'assets/js/wpat-woo-registration-forms.js', array( 'jquery' ), WPAT_VERSION, true );
+			wp_enqueue_script( 'wpat-woo-registration-forms-js', WPAT_URL . 'assets/js/wpat-woo-registration-forms.js', array( 'jquery', 'jquery-ui-sortable' ), WPAT_VERSION, true );
 			wp_localize_script(
 				'wpat-woo-registration-forms-js',
 				'wpatRegForms',

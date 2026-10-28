@@ -229,7 +229,7 @@ class WPAT_Admin {
 
 		// Woo Registration Forms assets
 		wp_enqueue_style( 'wpat-woo-registration-forms-css', WPAT_URL . 'assets/css/wpat-woo-registration-forms.css', array(), time() );
-		wp_enqueue_script( 'wpat-woo-registration-forms-js', WPAT_URL . 'assets/js/wpat-woo-registration-forms.js', array( 'jquery', 'wpat-admin-js' ), time(), true );
+		wp_enqueue_script( 'wpat-woo-registration-forms-js', WPAT_URL . 'assets/js/wpat-woo-registration-forms.js', array( 'jquery', 'jquery-ui-sortable', 'wpat-admin-js' ), time(), true );
 
 		wp_localize_script( 'wpat-admin-js', 'wpat_object', array(
 			'ajax_url'             => admin_url( 'admin-ajax.php' ),

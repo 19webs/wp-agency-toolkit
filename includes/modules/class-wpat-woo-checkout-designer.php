@@ -15,6 +15,20 @@ class WPAT_Woo_Checkout_Designer {
 	private static $instance = null;
 
 	/**
+	 * Indicador de si se está renderizando la tabla de revisión de pedido del checkout.
+	 *
+	 * @var bool
+	 */
+	protected $is_rendering_checkout_review = false;
+
+	/**
+	 * Indicador de si se está renderizando un mini-carrito o drawer cart.
+	 *
+	 * @var bool
+	 */
+	protected $is_rendering_mini_cart = false;
+
+	/**
 	 * Obtiene la instancia Singleton de la clase.
 	 *
 	 * @return WPAT_Woo_Checkout_Designer
@@ -50,6 +64,16 @@ class WPAT_Woo_Checkout_Designer {
 		// Carrito Deslizable (Drawer) y Fragmentos AJAX
 		add_action( 'wp_footer', array( $this, 'render_drawer_cart_footer' ) );
 		add_filter( 'woocommerce_add_to_cart_fragments', array( $this, 'add_to_cart_fragments' ) );
+
+		// Control del contexto de renderizado para evitar duplicación de miniaturas en mini-cart / drawer
+		add_action( 'woocommerce_review_order_before_cart_contents', array( $this, 'start_checkout_order_review' ), 1 );
+		add_action( 'woocommerce_review_order_after_cart_contents', array( $this, 'end_checkout_order_review' ), 9999 );
+		add_action( 'woocommerce_checkout_before_order_review', array( $this, 'start_checkout_order_review' ), 1 );
+		add_action( 'woocommerce_checkout_after_order_review', array( $this, 'end_checkout_order_review' ), 9999 );
+		add_action( 'woocommerce_before_mini_cart', array( $this, 'start_mini_cart_render' ), 1 );
+		add_action( 'woocommerce_after_mini_cart', array( $this, 'end_mini_cart_render' ), 9999 );
+		add_action( 'woocommerce_before_mini_cart_contents', array( $this, 'start_mini_cart_render' ), 1 );
+		add_action( 'woocommerce_mini_cart_contents', array( $this, 'end_mini_cart_render' ), 9999 );
 
 		// Filtros para las miniaturas, controles de cantidad y clases de body
 		add_filter( 'woocommerce_cart_item_name', array( $this, 'add_product_thumbnail_to_checkout' ), 10, 3 );
@@ -90,6 +114,34 @@ class WPAT_Woo_Checkout_Designer {
 
 		// Fragmento AJAX para actualización de métodos de envío en checkout (Shop-Style / Multi-Step)
 		add_filter( 'woocommerce_update_order_review_fragments', array( $this, 'update_shipping_methods_fragment' ), 9999 );
+	}
+
+	/**
+	 * Activa el flag de revisión de pedido en checkout.
+	 */
+	public function start_checkout_order_review() {
+		$this->is_rendering_checkout_review = true;
+	}
+
+	/**
+	 * Desactiva el flag de revisión de pedido en checkout.
+	 */
+	public function end_checkout_order_review() {
+		$this->is_rendering_checkout_review = false;
+	}
+
+	/**
+	 * Activa el flag de renderizado de mini-carrito o drawer cart.
+	 */
+	public function start_mini_cart_render() {
+		$this->is_rendering_mini_cart = true;
+	}
+
+	/**
+	 * Desactiva el flag de renderizado de mini-carrito o drawer cart.
+	 */
+	public function end_mini_cart_render() {
+		$this->is_rendering_mini_cart = false;
 	}
 
 	/**
@@ -354,10 +406,12 @@ class WPAT_Woo_Checkout_Designer {
 			return;
 		}
 
+		$this->start_mini_cart_render();
 		$drawer_template = WPAT_PATH . 'templates/cart/cart-drawer.php';
 		if ( file_exists( $drawer_template ) ) {
 			include $drawer_template;
 		}
+		$this->end_mini_cart_render();
 	}
 
 	/**
@@ -370,12 +424,14 @@ class WPAT_Woo_Checkout_Designer {
 		$drawer_auto_open      = ! isset( $settings['woo_cart_drawer_auto_open'] ) || '1' === $settings['woo_cart_drawer_auto_open'];
 
 		if ( $cart_designer_enabled && ( 'wpat-cart-drawer' === $cart_layout || $drawer_auto_open ) ) {
+			$this->start_mini_cart_render();
 			ob_start();
 			$drawer_content_template = WPAT_PATH . 'templates/cart/cart-drawer-content.php';
 			if ( file_exists( $drawer_content_template ) ) {
 				include $drawer_content_template;
 			}
 			$fragments['div.wpat-drawer-cart-body'] = ob_get_clean();
+			$this->end_mini_cart_render();
 
 			$cart_count = function_exists( 'WC' ) && WC()->cart ? WC()->cart->get_cart_contents_count() : 0;
 			$fragments['span.wpat-drawer-cart-count'] = '<span class="wpat-drawer-cart-count">' . esc_html( $cart_count ) . '</span>';
@@ -542,7 +598,28 @@ class WPAT_Woo_Checkout_Designer {
 	 * Agrega la miniatura del producto y badge de cantidad en el resumen del checkout.
 	 */
 	public function add_product_thumbnail_to_checkout( $product_name, $cart_item, $cart_item_key ) {
-		if ( ! $this->is_checkout_page() && ! wp_doing_ajax() ) {
+		// 1. Si se está renderizando un mini-carrito o drawer cart, jamás añadir la miniatura aquí
+		if ( $this->is_rendering_mini_cart ) {
+			return $product_name;
+		}
+
+		// 2. Si estamos en la página de carrito, jamás añadir la miniatura
+		if ( $this->is_cart_page() ) {
+			return $product_name;
+		}
+
+		// 3. Si es una petición AJAX de fragmentos de carrito/mini-cart (get_refreshed_fragments o add_to_cart), abortar
+		if ( isset( $_GET['wc-ajax'] ) && in_array( sanitize_text_field( wp_unslash( $_GET['wc-ajax'] ) ), array( 'get_refreshed_fragments', 'add_to_cart' ), true ) ) {
+			return $product_name;
+		}
+
+		// 4. Solo debe inyectarse cuando se está renderizando el resumen de pedido en el checkout
+		$is_checkout_review = $this->is_rendering_checkout_review;
+		if ( ! $is_checkout_review && wp_doing_ajax() && isset( $_GET['wc-ajax'] ) && 'update_order_review' === $_GET['wc-ajax'] ) {
+			$is_checkout_review = true;
+		}
+
+		if ( ! $is_checkout_review ) {
 			return $product_name;
 		}
 
@@ -570,7 +647,18 @@ class WPAT_Woo_Checkout_Designer {
 	 * Añade controles interactivos de cantidad (+/-) y botón de eliminar (x) en los productos del checkout.
 	 */
 	public function add_checkout_qty_controls( $quantity_html, $cart_item, $cart_item_key ) {
-		if ( ! $this->is_checkout_page() && ! wp_doing_ajax() ) {
+		// 1. Si se está renderizando un mini-carrito o drawer cart, jamás añadir controles de checkout
+		if ( $this->is_rendering_mini_cart ) {
+			return $quantity_html;
+		}
+
+		// 2. Si estamos en la página de carrito, jamás añadir controles de checkout
+		if ( $this->is_cart_page() ) {
+			return $quantity_html;
+		}
+
+		// 3. Si no estamos en la página de checkout ni en la revisión de pedido, salir
+		if ( ! $this->is_checkout_page() && ! $this->is_rendering_checkout_review ) {
 			return $quantity_html;
 		}
 

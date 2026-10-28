@@ -4,6 +4,11 @@
  */
 
 defined( 'ABSPATH' ) || exit;
+
+$wpat_designer = class_exists( 'WPAT_Woo_Checkout_Designer' ) ? WPAT_Woo_Checkout_Designer::get_instance() : null;
+if ( $wpat_designer ) {
+	$wpat_designer->start_mini_cart_render();
+}
 ?>
 
 <?php if ( function_exists( 'WC' ) && WC()->cart && ! WC()->cart->is_empty() ) : ?>
@@ -97,4 +102,9 @@ defined( 'ABSPATH' ) || exit;
 			<?php esc_html_e( 'Volver a la tienda', 'woocommerce' ); ?>
 		</a>
 	</div>
-<?php endif; ?>
+<?php
+endif;
+
+if ( $wpat_designer ) {
+	$wpat_designer->end_mini_cart_render();
+}

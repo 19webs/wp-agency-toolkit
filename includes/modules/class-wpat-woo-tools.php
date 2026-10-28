@@ -582,7 +582,7 @@ class WPAT_Woo_Tools {
 	public function render_empty_cart_button() {
 		$url = wp_nonce_url( add_query_arg( 'wpat_empty_cart', '1', wc_get_cart_url() ), 'wpat_empty_cart_action' );
 		$confirm_text = esc_js( __( '¿Estás seguro de que deseas vaciar todos los productos del carrito?', 'wp-agency-toolkit' ) );
-		echo '<a href="' . esc_url( $url ) . '" class="button wpat-btn-empty-cart" style="background:#fee2e2; color:#b91c1c; border-color:#fca5a5; font-weight:600; margin-left: 8px;" onclick="return confirm(\'' . $confirm_text . '\');">' . esc_html__( '🗑️ Vaciar Carrito', 'wp-agency-toolkit' ) . '</a>';
+		echo '<a href="' . esc_url( $url ) . '" class="button wpat-btn-empty-cart" style="background:#fee2e2; color:#b91c1c; border-color:#fca5a5; font-weight:600; margin-left: 8px;" onclick="return confirm(\'' . $confirm_text . '\');">' . esc_html__( 'Vaciar Carrito', 'wp-agency-toolkit' ) . '</a>';
 	}
 
 	/**

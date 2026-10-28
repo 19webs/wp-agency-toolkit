@@ -5953,7 +5953,7 @@ class WPAT_Admin {
 				<div class="wpat-module-card">
 					<div class="wpat-module-header">
 						<div class="wpat-module-info">
-							<h3>🛠️ Herramientas y Ajustes para WooCommerce</h3>
+							<h3>Herramientas y Ajustes para WooCommerce</h3>
 							<p>Colección de ajustes rápidos, optimizaciones de compra y utilidades ligeras de activación/desactivación para tu tienda online.</p>
 						</div>
 						<?php $this->render_module_toggle( 'woo-tools', $settings, true ); ?>
@@ -5964,8 +5964,7 @@ class WPAT_Admin {
 						     SECCIÓN 1: CARRITO Y CHECKOUT
 						     ========================================== -->
 						<div style="margin-bottom: 25px;">
-							<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
-								<span style="background: #eff6ff; color: #2563eb; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 14px;">🛒</span>
+							<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
 								Carrito y Finalizar Compra (Checkout)
 							</h4>
 
@@ -5975,8 +5974,7 @@ class WPAT_Admin {
 								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
 									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
 										<div>
-											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-												<span class="dashicons dashicons-update" style="color: #2563eb; font-size: 17px; width: 17px; height: 17px;"></span>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: block; margin-bottom: 4px;">
 												Actualización automática del carrito (AJAX)
 											</label>
 											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
@@ -5994,8 +5992,7 @@ class WPAT_Admin {
 								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
 									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
 										<div>
-											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-												<span class="dashicons dashicons-car" style="color: #059669; font-size: 17px; width: 17px; height: 17px;"></span>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: block; margin-bottom: 4px;">
 												Ocultar métodos de envío de pago cuando haya "Envío Gratuito"
 											</label>
 											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
@@ -6013,8 +6010,7 @@ class WPAT_Admin {
 								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
 									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
 										<div>
-											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-												<span class="dashicons dashicons-trash" style="color: #ef4444; font-size: 17px; width: 17px; height: 17px;"></span>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: block; margin-bottom: 4px;">
 												Botón "Vaciar Carrito" con 1 clic
 											</label>
 											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
@@ -6032,8 +6028,7 @@ class WPAT_Admin {
 								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
 									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
 										<div>
-											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-												<span class="dashicons dashicons-edit" style="color: #6366f1; font-size: 17px; width: 17px; height: 17px;"></span>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: block; margin-bottom: 4px;">
 												Ocultar campo "Notas del pedido" en el Checkout
 											</label>
 											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
@@ -6051,8 +6046,7 @@ class WPAT_Admin {
 								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
 									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
 										<div>
-											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-												<span class="dashicons dashicons-editor-unlink" style="color: #ea580c; font-size: 17px; width: 17px; height: 17px;"></span>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: block; margin-bottom: 4px;">
 												Desactivar enlaces a productos en Carrito y Checkout
 											</label>
 											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
@@ -6070,8 +6064,7 @@ class WPAT_Admin {
 								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
 									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 12px;">
 										<div>
-											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-												<span class="dashicons dashicons-cart" style="color: #8b5cf6; font-size: 17px; width: 17px; height: 17px;"></span>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: block; margin-bottom: 4px;">
 												Pedido mínimo obligatorio
 											</label>
 											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
@@ -6126,8 +6119,7 @@ class WPAT_Admin {
 						     SECCIÓN 2: CATÁLOGO Y PRODUCTOS
 						     ========================================== -->
 						<div style="margin-bottom: 25px;">
-							<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
-								<span style="background: #fdf2f8; color: #db2777; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 14px;">🏪</span>
+							<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
 								Catálogo y Fichas de Producto
 							</h4>
 
@@ -6137,8 +6129,7 @@ class WPAT_Admin {
 								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
 									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 12px;">
 										<div>
-											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-												<span class="dashicons dashicons-lock" style="color: #d97706; font-size: 17px; width: 17px; height: 17px;"></span>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: block; margin-bottom: 4px;">
 												Solo usuarios registrados pueden ver precios
 											</label>
 											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
@@ -6174,8 +6165,7 @@ class WPAT_Admin {
 								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
 									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
 										<div>
-											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-												<span class="dashicons dashicons-external" style="color: #0284c7; font-size: 17px; width: 17px; height: 17px;"></span>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: block; margin-bottom: 4px;">
 												Abrir productos en nueva pestaña (<code>target="_blank"</code>)
 											</label>
 											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
@@ -6193,8 +6183,7 @@ class WPAT_Admin {
 								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
 									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
 										<div>
-											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-												<span class="dashicons dashicons-sort" style="color: #475569; font-size: 17px; width: 17px; height: 17px;"></span>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: block; margin-bottom: 4px;">
 												Ocultar selector de ordenación en la tienda
 											</label>
 											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
@@ -6212,8 +6201,7 @@ class WPAT_Admin {
 								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
 									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
 										<div>
-											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-												<span class="dashicons dashicons-visibility" style="color: #475569; font-size: 17px; width: 17px; height: 17px;"></span>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: block; margin-bottom: 4px;">
 												Ocultar contador de resultados en la tienda
 											</label>
 											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
@@ -6231,8 +6219,7 @@ class WPAT_Admin {
 								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
 									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
 										<div>
-											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-												<span class="dashicons dashicons-tag" style="color: #059669; font-size: 17px; width: 17px; height: 17px;"></span>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: block; margin-bottom: 4px;">
 												Límite de 1 unidad por producto (Venta individualizada global)
 											</label>
 											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
@@ -6253,8 +6240,7 @@ class WPAT_Admin {
 						     SECCIÓN 3: MEDIOS Y ENLACES
 						     ========================================== -->
 						<div style="margin-bottom: 25px;">
-							<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
-								<span style="background: #f0fdf4; color: #16a34a; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 14px;">🖼️</span>
+							<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
 								Gestión de Medios y Enlaces
 							</h4>
 
@@ -6264,15 +6250,14 @@ class WPAT_Admin {
 								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
 									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
 										<div>
-											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-												<span class="dashicons dashicons-trash" style="color: #ef4444; font-size: 17px; width: 17px; height: 17px;"></span>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: block; margin-bottom: 4px;">
 												Borrar imágenes al eliminar un producto
 											</label>
 											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
 												Elimina automáticamente la imagen destacada, galería y fotos de variaciones de la biblioteca al borrar definitivamente un producto.
 											</p>
 											<p style="margin: 4px 0 0 0; font-size: 11.5px; color: #059669; font-weight: 600;">
-												🛡️ Protección inteligente: Si una imagen está en uso por otro post o producto, no será eliminada.
+												Protección inteligente: Si una imagen está en uso por otro post o producto, no será eliminada.
 											</p>
 										</div>
 										<label class="wpat-toggle-switch" style="flex-shrink: 0;">
@@ -6286,8 +6271,7 @@ class WPAT_Admin {
 								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
 									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
 										<div>
-											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-												<span class="dashicons dashicons-admin-links" style="color: #0284c7; font-size: 17px; width: 17px; height: 17px;"></span>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: block; margin-bottom: 4px;">
 												Acceso a productos mediante SKU en la URL
 											</label>
 											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
@@ -6308,8 +6292,7 @@ class WPAT_Admin {
 						     SECCIÓN 4: ADMINISTRACIÓN Y CUENTAS
 						     ========================================== -->
 						<div style="margin-bottom: 10px;">
-							<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
-								<span style="background: #faf5ff; color: #9333ea; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 14px;">👤</span>
+							<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
 								Administración y Cuentas de Usuario
 							</h4>
 
@@ -6319,8 +6302,7 @@ class WPAT_Admin {
 								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
 									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
 										<div>
-											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-												<span class="dashicons dashicons-format-image" style="color: #6366f1; font-size: 17px; width: 17px; height: 17px;"></span>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: block; margin-bottom: 4px;">
 												Mostrar miniatura y SKU en el detalle de pedidos de administración
 											</label>
 											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
@@ -6336,8 +6318,7 @@ class WPAT_Admin {
 
 								<!-- 4.2 Redirecciones de Login y Logout -->
 								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-									<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-										<span class="dashicons dashicons-redo" style="color: #0284c7; font-size: 17px; width: 17px; height: 17px;"></span>
+									<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: block; margin-bottom: 12px;">
 										Redirecciones personalizadas de acceso y salida
 									</label>
 

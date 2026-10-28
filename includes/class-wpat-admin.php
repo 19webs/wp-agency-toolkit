@@ -1853,14 +1853,40 @@ class WPAT_Admin {
 					$updated_fields = array();
 					foreach ( $_POST['fields_data'] as $f_data ) {
 						if ( ! empty( $f_data['id'] ) ) {
+							$field_type      = sanitize_key( $f_data['type'] );
+							$raw_options_str = isset( $f_data['options_str'] ) ? sanitize_text_field( wp_unslash( $f_data['options_str'] ) ) : '';
+							$parsed_options  = array();
+							if ( ! empty( $raw_options_str ) ) {
+								$parts = preg_split( '/[\r\n,]+/', $raw_options_str );
+								foreach ( $parts as $p ) {
+									$p = trim( $p );
+									if ( '' === $p ) {
+										continue;
+									}
+									if ( strpos( $p, ':' ) !== false ) {
+										list( $k, $v ) = explode( ':', $p, 2 );
+										$parsed_options[ sanitize_text_field( trim( $k ) ) ] = sanitize_text_field( trim( $v ) );
+									} else {
+										$parsed_options[ sanitize_text_field( $p ) ] = sanitize_text_field( $p );
+									}
+								}
+							}
+
 							$updated_fields[] = array(
-								'id'          => sanitize_key( $f_data['id'] ),
-								'type'        => sanitize_key( $f_data['type'] ),
-								'label'       => sanitize_text_field( wp_unslash( $f_data['label'] ) ),
-								'placeholder' => sanitize_text_field( wp_unslash( $f_data['placeholder'] ) ),
-								'required'    => ! empty( $f_data['required'] ) ? '1' : '0',
-								'width'       => ( isset( $f_data['width'] ) && 'half' === $f_data['width'] ) ? 'half' : 'full',
-								'is_native'   => ! empty( $f_data['is_native'] ) ? '1' : '0',
+								'id'                       => sanitize_key( $f_data['id'] ),
+								'type'                     => $field_type,
+								'label'                    => sanitize_text_field( wp_unslash( $f_data['label'] ) ),
+								'placeholder'              => isset( $f_data['placeholder'] ) ? sanitize_text_field( wp_unslash( $f_data['placeholder'] ) ) : '',
+								'subtitle'                 => isset( $f_data['subtitle'] ) ? sanitize_text_field( wp_unslash( $f_data['subtitle'] ) ) : '',
+								'options_str'              => $raw_options_str,
+								'options'                  => $parsed_options,
+								'required'                 => ( 'heading' !== $field_type && ! empty( $f_data['required'] ) ) ? '1' : '0',
+								'width'                    => ( 'heading' === $field_type || ! isset( $f_data['width'] ) || 'full' === $f_data['width'] ) ? 'full' : 'half',
+								'is_native'                => ! empty( $f_data['is_native'] ) ? '1' : '0',
+								'conditional_role_enabled' => ! empty( $f_data['conditional_role_enabled'] ) ? '1' : '0',
+								'conditional_value'        => isset( $f_data['conditional_value'] ) ? sanitize_text_field( wp_unslash( $f_data['conditional_value'] ) ) : '',
+								'conditional_role'         => isset( $f_data['conditional_role'] ) ? sanitize_key( $f_data['conditional_role'] ) : '',
+								'meta_key'                 => isset( $f_data['meta_key'] ) ? sanitize_key( $f_data['meta_key'] ) : '',
 							);
 						}
 					}
@@ -16810,20 +16836,28 @@ class WPAT_Admin {
 
 							<div class="wpat-reg-fields-list">
 								<?php foreach ( $active_form['fields'] as $f_idx => $field ) : ?>
-									<div class="wpat-reg-field-row">
+									<?php
+									$ftype = isset( $field['type'] ) ? $field['type'] : 'text';
+									?>
+									<div class="wpat-reg-field-row" data-type="<?php echo esc_attr( $ftype ); ?>">
 										<div class="wpat-reg-field-row-info">
 											<span class="dashicons dashicons-menu wpat-reg-field-drag-handle"></span>
 											<div>
 												<strong style="font-size: 13.5px; color: #1e293b;" class="wpat-row-title-lbl"><?php echo esc_html( $field['label'] ); ?></strong>
 												<div style="font-size: 11px; color: #64748b; font-family: monospace;">ID: <?php echo esc_html( $field['id'] ); ?></div>
 											</div>
-											<span class="wpat-reg-field-badge-type"><?php echo esc_html( strtoupper( $field['type'] ) ); ?></span>
-											<?php if ( ! empty( $field['required'] ) && '1' === (string) $field['required'] ) : ?>
-												<span style="color: #ef4444; font-size: 11px; font-weight: 700;" class="wpat-row-req-lbl">Obligatorio</span>
+											<?php if ( 'heading' === $ftype ) : ?>
+												<span class="wpat-reg-field-badge-type" style="background: #e0e7ff; color: #4338ca;">TÍTULO / SECCIÓN</span>
+												<span style="color: #6366f1; font-size: 11px; font-weight: 600;">Separador Visual</span>
 											<?php else : ?>
-												<span style="color: #94a3b8; font-size: 11px;" class="wpat-row-req-lbl">Opcional</span>
+												<span class="wpat-reg-field-badge-type"><?php echo esc_html( strtoupper( $ftype ) ); ?></span>
+												<?php if ( ! empty( $field['required'] ) && '1' === (string) $field['required'] ) : ?>
+													<span style="color: #ef4444; font-size: 11px; font-weight: 700;" class="wpat-row-req-lbl">Obligatorio</span>
+												<?php else : ?>
+													<span style="color: #94a3b8; font-size: 11px;" class="wpat-row-req-lbl">Opcional</span>
+												<?php endif; ?>
+												<span style="font-size: 11px; color: #64748b;" class="wpat-row-width-lbl"><?php echo ( isset( $field['width'] ) && 'half' === $field['width'] ) ? '50% (Media col)' : '100% (Ancho completo)'; ?></span>
 											<?php endif; ?>
-											<span style="font-size: 11px; color: #64748b;" class="wpat-row-width-lbl"><?php echo ( isset( $field['width'] ) && 'half' === $field['width'] ) ? '50% (Media col)' : '100% (Ancho completo)'; ?></span>
 										</div>
 
 										<div style="display: flex; align-items: center; gap: 8px;">
@@ -16833,29 +16867,108 @@ class WPAT_Admin {
 
 										<!-- Opciones expandibles del campo -->
 										<div class="wpat-reg-field-options" style="display: none; width: 100%; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9;">
-											<div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">
-												<div>
-													<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Etiqueta (Label):</label>
-													<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][label]" value="<?php echo esc_attr( $field['label'] ); ?>" class="wpat-input-field-label" style="width: 100%;" />
+											<?php if ( 'heading' === $ftype ) : ?>
+												<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+													<div>
+														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Título de la Sección / Separador:</label>
+														<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][label]" value="<?php echo esc_attr( $field['label'] ); ?>" class="wpat-input-field-label" placeholder="Ej: LOS DATOS DE TU TIENDA" style="width: 100%; font-weight: 600;" />
+													</div>
+													<div>
+														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Subtítulo o descripción explicativa (opcional):</label>
+														<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][subtitle]" value="<?php echo esc_attr( isset( $field['subtitle'] ) ? $field['subtitle'] : '' ); ?>" placeholder="Texto de ayuda o instrucción opcional" style="width: 100%;" />
+													</div>
 												</div>
-												<div>
-													<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Placeholder:</label>
-													<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][placeholder]" value="<?php echo esc_attr( $field['placeholder'] ); ?>" style="width: 100%;" />
+												<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][placeholder]" value="" />
+												<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][width]" value="full" />
+												<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][required]" value="0" />
+											<?php elseif ( 'radio' === $ftype ) : ?>
+												<div style="display: grid; grid-template-columns: 2fr 2fr 1fr auto; gap: 12px; align-items: flex-end;">
+													<div>
+														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Pregunta / Etiqueta:</label>
+														<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][label]" value="<?php echo esc_attr( $field['label'] ); ?>" class="wpat-input-field-label" style="width: 100%;" />
+													</div>
+													<div>
+														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Opciones (separadas por comas):</label>
+														<?php
+														$cur_opt_str = isset( $field['options_str'] ) ? $field['options_str'] : ( ! empty( $field['options'] ) && is_array( $field['options'] ) ? implode( ', ', array_values( $field['options'] ) ) : 'Sí, No' );
+														?>
+														<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][options_str]" value="<?php echo esc_attr( $cur_opt_str ); ?>" placeholder="Sí, No" style="width: 100%;" />
+													</div>
+													<div>
+														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Ancho:</label>
+														<select name="fields_data[<?php echo esc_attr( $f_idx ); ?>][width]" class="wpat-select-field-width" style="width: 100%;">
+															<option value="full" <?php selected( isset( $field['width'] ) ? $field['width'] : 'full', 'full' ); ?>>100%</option>
+															<option value="half" <?php selected( isset( $field['width'] ) ? $field['width'] : 'full', 'half' ); ?>>50%</option>
+														</select>
+													</div>
+													<div style="padding-bottom: 8px;">
+														<label style="font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+															<input type="checkbox" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][required]" value="1" class="wpat-check-field-req" <?php checked( ! empty( $field['required'] ) && '1' === (string) $field['required'] ); ?> />
+															<span>Obligatorio</span>
+														</label>
+													</div>
 												</div>
-												<div>
-													<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Ancho en formulario:</label>
-													<select name="fields_data[<?php echo esc_attr( $f_idx ); ?>][width]" class="wpat-select-field-width" style="width: 100%;">
-														<option value="full" <?php selected( isset( $field['width'] ) ? $field['width'] : 'full', 'full' ); ?>>100% (Ancho completo)</option>
-														<option value="half" <?php selected( isset( $field['width'] ) ? $field['width'] : 'full', 'half' ); ?>>50% (Media columna)</option>
-													</select>
+
+												<!-- Panel de Asignación Condicional de Rol y Metadato (B2B / Recargo de Equivalencia) -->
+												<div class="wpat-reg-cond-box" style="margin-top: 14px; padding: 12px 14px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">
+													<div style="display: flex; align-items: center; justify-content: space-between;">
+														<strong style="font-size: 12px; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+															<span class="dashicons dashicons-admin-users" style="font-size: 16px; width: 16px; height: 16px; color: #2563eb;"></span>
+															Asignación Condicional de Rol y Metadato (Recargo de Equivalencia / B2B)
+														</strong>
+														<label style="font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+															<input type="checkbox" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][conditional_role_enabled]" value="1" class="wpat-check-cond-role" <?php checked( ! empty( $field['conditional_role_enabled'] ) && '1' === (string) $field['conditional_role_enabled'] ); ?> />
+															<span>Activar asignación de rol condicional</span>
+														</label>
+													</div>
+													<div class="wpat-reg-cond-fields" style="display: <?php echo ( ! empty( $field['conditional_role_enabled'] ) && '1' === (string) $field['conditional_role_enabled'] ) ? 'grid' : 'none'; ?>; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 10px;">
+														<div>
+															<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 4px;">Si el usuario elige el valor:</label>
+															<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][conditional_value]" value="<?php echo esc_attr( isset( $field['conditional_value'] ) ? $field['conditional_value'] : 'Sí' ); ?>" placeholder="Ej: Sí" style="width: 100%;" />
+														</div>
+														<div>
+															<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 4px;">Asignar este Rol al usuario:</label>
+															<select name="fields_data[<?php echo esc_attr( $f_idx ); ?>][conditional_role]" style="width: 100%;">
+																<?php
+																$selected_role = isset( $field['conditional_role'] ) ? $field['conditional_role'] : '';
+																foreach ( $wp_roles as $r_slug => $r_data ) {
+																	$r_name = isset( $r_data['name'] ) ? translate_user_role( $r_data['name'] ) : ucfirst( $r_slug );
+																	echo '<option value="' . esc_attr( $r_slug ) . '" ' . selected( $selected_role, $r_slug, false ) . '>' . esc_html( $r_name ) . ' (' . esc_html( $r_slug ) . ')</option>';
+																}
+																?>
+															</select>
+														</div>
+														<div>
+															<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 4px;">Guardar en User Meta (Key):</label>
+															<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][meta_key]" value="<?php echo esc_attr( isset( $field['meta_key'] ) ? $field['meta_key'] : 'billing_recargo_equivalencia' ); ?>" placeholder="billing_recargo_equivalencia" style="width: 100%; font-family: monospace; font-size: 12px;" />
+														</div>
+													</div>
 												</div>
-												<div style="display: flex; align-items: center; padding-top: 18px;">
-													<label style="font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-														<input type="checkbox" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][required]" value="1" class="wpat-check-field-req" <?php checked( ! empty( $field['required'] ) && '1' === (string) $field['required'] ); ?> />
-														<span>Campo obligatorio</span>
-													</label>
+											<?php else : ?>
+												<div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">
+													<div>
+														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Etiqueta (Label):</label>
+														<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][label]" value="<?php echo esc_attr( $field['label'] ); ?>" class="wpat-input-field-label" style="width: 100%;" />
+													</div>
+													<div>
+														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Placeholder:</label>
+														<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][placeholder]" value="<?php echo esc_attr( isset( $field['placeholder'] ) ? $field['placeholder'] : '' ); ?>" style="width: 100%;" />
+													</div>
+													<div>
+														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Ancho en formulario:</label>
+														<select name="fields_data[<?php echo esc_attr( $f_idx ); ?>][width]" class="wpat-select-field-width" style="width: 100%;">
+															<option value="full" <?php selected( isset( $field['width'] ) ? $field['width'] : 'full', 'full' ); ?>>100% (Ancho completo)</option>
+															<option value="half" <?php selected( isset( $field['width'] ) ? $field['width'] : 'full', 'half' ); ?>>50% (Media columna)</option>
+														</select>
+													</div>
+													<div style="display: flex; align-items: center; padding-top: 18px;">
+														<label style="font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+															<input type="checkbox" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][required]" value="1" class="wpat-check-field-req" <?php checked( ! empty( $field['required'] ) && '1' === (string) $field['required'] ); ?> />
+															<span>Campo obligatorio</span>
+														</label>
+													</div>
 												</div>
-											</div>
+											<?php endif; ?>
 											<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][id]" value="<?php echo esc_attr( $field['id'] ); ?>" />
 											<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][type]" value="<?php echo esc_attr( $field['type'] ); ?>" />
 											<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][is_native]" value="<?php echo esc_attr( isset( $field['is_native'] ) ? $field['is_native'] : '0' ); ?>" />
@@ -16888,6 +17001,9 @@ class WPAT_Admin {
 										<?php esc_html_e( 'Elige un campo nativo de WooCommerce o crea uno personalizado:', 'wp-agency-toolkit' ); ?>
 									</label>
 									<select id="wpat_reg_new_field_type" style="width: 100%; height: 40px; font-size: 13.5px;">
+										<optgroup label="🎨 Elementos de Estructura y Secciones">
+											<option value="custom_heading" data-label="Título de Sección" data-input-type="heading" data-native="0">Título de Sección / Encabezado (Heading)</option>
+										</optgroup>
 										<optgroup label="🛒 Campos Nativos de WooCommerce (Checkout Sync)">
 											<option value="billing_company" data-id="billing_company" data-label="Nombre de Empresa / Razón Social" data-input-type="text" data-native="1">Empresa / Razón Social (billing_company)</option>
 											<option value="billing_vat" data-id="billing_vat" data-label="NIF / CIF / DNI" data-input-type="text" data-native="1">NIF / CIF / DNI (billing_vat)</option>
@@ -16900,6 +17016,7 @@ class WPAT_Admin {
 										</optgroup>
 										<optgroup label="📝 Campos Personalizados Adicionales">
 											<option value="custom_text" data-label="Texto Libre" data-input-type="text" data-native="0">Texto Corto (Línea simple)</option>
+											<option value="custom_radio" data-label="¿Tu actividad está en Recargo de Equivalencia?" data-input-type="radio" data-native="0">Selector de Opciones (Radio Buttons / Rol Condicional)</option>
 											<option value="custom_textarea" data-label="Comentarios / Observaciones" data-input-type="textarea" data-native="0">Área de Texto (Múltiples líneas)</option>
 											<option value="custom_file" data-label="Subida de Documento (Modelo 036 / CIF)" data-input-type="file" data-native="0">Subida de Archivo (PDF, JPG, PNG)</option>
 											<option value="custom_number" data-label="Número" data-input-type="number" data-native="0">Campo Numérico</option>
@@ -16953,11 +17070,11 @@ class WPAT_Admin {
 						<table class="wp-list-table widefat fixed striped" style="border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
 							<thead>
 								<tr>
-									<th style="font-weight: 700; width: 28%;">Nombre del Formulario</th>
-									<th style="font-weight: 700; width: 26%;">Shortcode</th>
+									<th style="font-weight: 700; width: 30%;">Nombre del Formulario</th>
+									<th style="font-weight: 700; width: 28%;">Shortcode</th>
 									<th style="font-weight: 700; width: 14%;">Rol Asignado</th>
 									<th style="font-weight: 700; width: 14%;">Aprobación</th>
-									<th style="font-weight: 700; width: 18%; text-align: right;">Acciones</th>
+									<th style="font-weight: 700; width: 14%; text-align: right;">Acciones</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -16991,20 +17108,19 @@ class WPAT_Admin {
 											<?php endif; ?>
 										</td>
 										<td style="vertical-align: middle; text-align: right;">
-											<div style="display: inline-flex; align-items: center; gap: 4px;">
-												<button type="button" class="button button-small wpat-open-preview-btn" data-form-id="<?php echo esc_attr( $f_key ); ?>" title="Ver cómo queda este formulario" style="display: inline-flex; align-items: center; gap: 3px;">
-													<span class="dashicons dashicons-visibility" style="font-size: 14px; width: 14px; height: 14px; line-height: 1;"></span>
-													<?php esc_html_e( 'Vista Previa', 'wp-agency-toolkit' ); ?>
+											<div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px;">
+												<button type="button" class="button wpat-btn-icon wpat-open-preview-btn" data-form-id="<?php echo esc_attr( $f_key ); ?>" title="<?php esc_attr_e( 'Vista Previa del formulario', 'wp-agency-toolkit' ); ?>" aria-label="<?php esc_attr_e( 'Vista Previa', 'wp-agency-toolkit' ); ?>">
+													<span class="dashicons dashicons-visibility"></span>
 												</button>
-												<a href="<?php echo esc_url( add_query_arg( array( 'form_action' => 'edit', 'form_id' => $f_key ), $base_url ) ); ?>" class="button button-small button-primary" title="Editar campos y opciones">
-													Editar ✏️
+												<a href="<?php echo esc_url( add_query_arg( array( 'form_action' => 'edit', 'form_id' => $f_key ), $base_url ) ); ?>" class="button button-primary wpat-btn-icon" title="<?php esc_attr_e( 'Editar formulario', 'wp-agency-toolkit' ); ?>" aria-label="<?php esc_attr_e( 'Editar', 'wp-agency-toolkit' ); ?>">
+													<span class="dashicons dashicons-edit"></span>
 												</a>
-												<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'form_action' => 'clone', 'form_id' => $f_key ), $base_url ), 'wpat_clone_form_' . $f_key ) ); ?>" class="button button-small" title="Clonar formulario">
-													Clonar 📋
+												<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'form_action' => 'clone', 'form_id' => $f_key ), $base_url ), 'wpat_clone_form_' . $f_key ) ); ?>" class="button wpat-btn-icon" title="<?php esc_attr_e( 'Clonar formulario', 'wp-agency-toolkit' ); ?>" aria-label="<?php esc_attr_e( 'Clonar', 'wp-agency-toolkit' ); ?>">
+													<span class="dashicons dashicons-admin-page"></span>
 												</a>
 												<?php if ( count( $forms ) > 1 ) : ?>
-													<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'form_action' => 'delete', 'form_id' => $f_key ), $base_url ), 'wpat_delete_form_' . $f_key ) ); ?>" class="button button-small button-link-delete" style="color: #dc2626;" onclick="return confirm('¿Estás seguro de que deseas eliminar este formulario de registro?');" title="Eliminar">
-														Eliminar 🗑️
+													<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'form_action' => 'delete', 'form_id' => $f_key ), $base_url ), 'wpat_delete_form_' . $f_key ) ); ?>" class="button button-link-delete wpat-btn-icon" style="color: #dc2626;" onclick="return confirm('<?php esc_attr_e( '¿Estás seguro de que deseas eliminar este formulario de registro?', 'wp-agency-toolkit' ); ?>');" title="<?php esc_attr_e( 'Eliminar formulario', 'wp-agency-toolkit' ); ?>" aria-label="<?php esc_attr_e( 'Eliminar', 'wp-agency-toolkit' ); ?>">
+														<span class="dashicons dashicons-trash"></span>
 													</a>
 												<?php endif; ?>
 											</div>

@@ -213,6 +213,12 @@
 			$('#wpat_reg_add_field_modal').fadeOut(200);
 		});
 
+		// Alternar visibilidad de campos de asignación condicional de rol
+		$(document).on('change', '.wpat-check-cond-role', function() {
+			var isChecked = $(this).is(':checked');
+			$(this).closest('.wpat-reg-cond-box').find('.wpat-reg-cond-fields').css('display', isChecked ? 'grid' : 'none');
+		});
+
 		// Confirmar añadir campo seleccionado
 		$(document).on('click', '#wpat_reg_confirm_add_field_btn', function(e) {
 			e.preventDefault();
@@ -226,47 +232,132 @@
 			var fieldId    = $opt.data('id') || ('custom_' + Date.now().toString(36));
 
 			var newIdx = $('.wpat-reg-field-row').length + Math.floor(Math.random() * 1000);
+			var safeLabel = $('<div>').text(fieldLabel).html();
 
-			var rowHtml = '<div class="wpat-reg-field-row" style="background:#f0fdf4; border-color:#86efac;">' +
+			var rowHtml = '<div class="wpat-reg-field-row" data-type="' + inputType + '" style="background:#f0fdf4; border-color:#86efac;">' +
 				'<div class="wpat-reg-field-row-info">' +
 					'<span class="dashicons dashicons-menu wpat-reg-field-drag-handle"></span>' +
 					'<div>' +
-						'<strong style="font-size: 13.5px; color: #1e293b;" class="wpat-row-title-lbl">' + $('<div>').text(fieldLabel).html() + '</strong>' +
+						'<strong style="font-size: 13.5px; color: #1e293b;" class="wpat-row-title-lbl">' + safeLabel + '</strong>' +
 						'<div style="font-size: 11px; color: #64748b; font-family: monospace;">ID: ' + fieldId + '</div>' +
-					'</div>' +
-					'<span class="wpat-reg-field-badge-type">' + inputType.toUpperCase() + '</span>' +
+					'</div>';
+
+			if (inputType === 'heading') {
+				rowHtml += '<span class="wpat-reg-field-badge-type" style="background:#e0e7ff; color:#4338ca;">TÍTULO / SECCIÓN</span>' +
+					'<span style="color: #6366f1; font-size: 11px; font-weight: 600;">Separador Visual</span>';
+			} else {
+				var badgeStyle = (inputType === 'radio') ? 'background:#fef3c7; color:#92400e;' : '';
+				rowHtml += '<span class="wpat-reg-field-badge-type" style="' + badgeStyle + '">' + inputType.toUpperCase() + '</span>' +
 					'<span style="color: #94a3b8; font-size: 11px;" class="wpat-row-req-lbl">Opcional</span>' +
-					'<span style="font-size: 11px; color: #64748b;" class="wpat-row-width-lbl">100% (Ancho completo)</span>' +
-				'</div>' +
+					'<span style="font-size: 11px; color: #64748b;" class="wpat-row-width-lbl">100% (Ancho completo)</span>';
+			}
+
+			rowHtml += '</div>' +
 				'<div style="display: flex; align-items: center; gap: 8px;">' +
 					'<button type="button" class="button button-small wpat-reg-toggle-field-btn">Editar</button>' +
 					'<button type="button" class="button button-small button-link-delete wpat-reg-remove-field-btn" style="color: #dc2626;">Eliminar</button>' +
 				'</div>' +
-				'<div class="wpat-reg-field-options" style="display: block; width: 100%; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">' +
-					'<div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">' +
+				'<div class="wpat-reg-field-options" style="display: block; width: 100%; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">';
+
+			if (inputType === 'heading') {
+				rowHtml += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">' +
+					'<div>' +
+						'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Título de la Sección / Separador:</label>' +
+						'<input type="text" name="fields_data[' + newIdx + '][label]" value="' + safeLabel + '" class="wpat-input-field-label" placeholder="Ej: LOS DATOS DE TU TIENDA" style="width: 100%; font-weight: 600;" />' +
+					'</div>' +
+					'<div>' +
+						'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Subtítulo o descripción explicativa (opcional):</label>' +
+						'<input type="text" name="fields_data[' + newIdx + '][subtitle]" value="" placeholder="Texto de ayuda o instrucción opcional" style="width: 100%;" />' +
+					'</div>' +
+				'</div>' +
+				'<input type="hidden" name="fields_data[' + newIdx + '][placeholder]" value="" />' +
+				'<input type="hidden" name="fields_data[' + newIdx + '][width]" value="full" />' +
+				'<input type="hidden" name="fields_data[' + newIdx + '][required]" value="0" />';
+			} else if (inputType === 'radio') {
+				var rolesOptionsHtml = '';
+				var rolesObj = (window.wpatRegForms && window.wpatRegForms.roles) ? window.wpatRegForms.roles : { 'customer': 'Cliente' };
+				for (var rSlug in rolesObj) {
+					rolesOptionsHtml += '<option value="' + rSlug + '">' + rolesObj[rSlug] + ' (' + rSlug + ')</option>';
+				}
+
+				rowHtml += '<div style="display: grid; grid-template-columns: 2fr 2fr 1fr auto; gap: 12px; align-items: flex-end;">' +
+					'<div>' +
+						'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Pregunta / Etiqueta:</label>' +
+						'<input type="text" name="fields_data[' + newIdx + '][label]" value="' + safeLabel + '" class="wpat-input-field-label" style="width: 100%;" />' +
+					'</div>' +
+					'<div>' +
+						'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Opciones (separadas por comas):</label>' +
+						'<input type="text" name="fields_data[' + newIdx + '][options_str]" value="Sí, No" placeholder="Sí, No" style="width: 100%;" />' +
+					'</div>' +
+					'<div>' +
+						'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Ancho:</label>' +
+						'<select name="fields_data[' + newIdx + '][width]" class="wpat-select-field-width" style="width: 100%;">' +
+							'<option value="full" selected>100%</option>' +
+							'<option value="half">50%</option>' +
+						'</select>' +
+					'</div>' +
+					'<div style="padding-bottom: 8px;">' +
+						'<label style="font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">' +
+							'<input type="checkbox" name="fields_data[' + newIdx + '][required]" value="1" class="wpat-check-field-req" />' +
+							'<span>Obligatorio</span>' +
+						'</label>' +
+					'</div>' +
+				'</div>' +
+				'<div class="wpat-reg-cond-box" style="margin-top: 14px; padding: 12px 14px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">' +
+					'<div style="display: flex; align-items: center; justify-content: space-between;">' +
+						'<strong style="font-size: 12px; color: #1e293b; display: flex; align-items: center; gap: 6px;">' +
+							'<span class="dashicons dashicons-admin-users" style="font-size: 16px; width: 16px; height: 16px; color: #2563eb;"></span>' +
+							'Asignación Condicional de Rol y Metadato (Recargo de Equivalencia / B2B)' +
+						'</strong>' +
+						'<label style="font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">' +
+							'<input type="checkbox" name="fields_data[' + newIdx + '][conditional_role_enabled]" value="1" class="wpat-check-cond-role" />' +
+							'<span>Activar asignación de rol condicional</span>' +
+						'</label>' +
+					'</div>' +
+					'<div class="wpat-reg-cond-fields" style="display: none; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 10px;">' +
 						'<div>' +
-							'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Etiqueta (Label):</label>' +
-							'<input type="text" name="fields_data[' + newIdx + '][label]" value="' + $('<div>').text(fieldLabel).html() + '" class="wpat-input-field-label" style="width: 100%;" />' +
+							'<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 4px;">Si el usuario elige el valor:</label>' +
+							'<input type="text" name="fields_data[' + newIdx + '][conditional_value]" value="Sí" placeholder="Ej: Sí" style="width: 100%;" />' +
 						'</div>' +
 						'<div>' +
-							'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Placeholder:</label>' +
-							'<input type="text" name="fields_data[' + newIdx + '][placeholder]" value="" style="width: 100%;" />' +
-						'</div>' +
-						'<div>' +
-							'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Ancho:</label>' +
-							'<select name="fields_data[' + newIdx + '][width]" class="wpat-select-field-width" style="width: 100%;">' +
-								'<option value="full" selected>100% (Ancho completo)</option>' +
-								'<option value="half">50% (Media columna)</option>' +
+							'<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 4px;">Asignar este Rol al usuario:</label>' +
+							'<select name="fields_data[' + newIdx + '][conditional_role]" style="width: 100%;">' +
+								rolesOptionsHtml +
 							'</select>' +
 						'</div>' +
-						'<div style="display: flex; align-items: center; padding-top: 18px;">' +
-							'<label style="font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">' +
-								'<input type="checkbox" name="fields_data[' + newIdx + '][required]" value="1" class="wpat-check-field-req" />' +
-								'<span>Campo obligatorio</span>' +
-							'</label>' +
+						'<div>' +
+							'<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 4px;">Guardar en User Meta (Key):</label>' +
+							'<input type="text" name="fields_data[' + newIdx + '][meta_key]" value="billing_recargo_equivalencia" placeholder="billing_recargo_equivalencia" style="width: 100%; font-family: monospace; font-size: 12px;" />' +
 						'</div>' +
 					'</div>' +
-					'<input type="hidden" name="fields_data[' + newIdx + '][id]" value="' + fieldId + '" />' +
+				'</div>';
+			} else {
+				rowHtml += '<div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">' +
+					'<div>' +
+						'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Etiqueta (Label):</label>' +
+						'<input type="text" name="fields_data[' + newIdx + '][label]" value="' + safeLabel + '" class="wpat-input-field-label" style="width: 100%;" />' +
+					'</div>' +
+					'<div>' +
+						'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Placeholder:</label>' +
+						'<input type="text" name="fields_data[' + newIdx + '][placeholder]" value="" style="width: 100%;" />' +
+					'</div>' +
+					'<div>' +
+						'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Ancho:</label>' +
+						'<select name="fields_data[' + newIdx + '][width]" class="wpat-select-field-width" style="width: 100%;">' +
+							'<option value="full" selected>100% (Ancho completo)</option>' +
+							'<option value="half">50% (Media columna)</option>' +
+						'</select>' +
+					'</div>' +
+					'<div style="display: flex; align-items: center; padding-top: 18px;">' +
+						'<label style="font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">' +
+							'<input type="checkbox" name="fields_data[' + newIdx + '][required]" value="1" class="wpat-check-field-req" />' +
+							'<span>Campo obligatorio</span>' +
+						'</label>' +
+					'</div>' +
+				'</div>';
+			}
+
+			rowHtml += '<input type="hidden" name="fields_data[' + newIdx + '][id]" value="' + fieldId + '" />' +
 					'<input type="hidden" name="fields_data[' + newIdx + '][type]" value="' + inputType + '" />' +
 					'<input type="hidden" name="fields_data[' + newIdx + '][is_native]" value="' + isNative + '" />' +
 				'</div>' +
@@ -351,6 +442,8 @@
 						type: $row.find('input[name*="[type]"]').val() || 'text',
 						label: $row.find('.wpat-input-field-label').val() || '',
 						placeholder: $row.find('input[name*="[placeholder]"]').val() || '',
+						subtitle: $row.find('input[name*="[subtitle]"]').val() || '',
+						options_str: $row.find('input[name*="[options_str]"]').val() || '',
 						width: $row.find('.wpat-select-field-width').val() || 'full',
 						required: $row.find('.wpat-check-field-req').is(':checked') ? '1' : '0',
 						is_native: $row.find('input[name*="[is_native]"]').val() || '0'

@@ -240,12 +240,21 @@ class WPAT_Woo_Registration_Forms {
 		if ( 'users.php' === $hook || false !== strpos( $hook, 'wp-agency-toolkit' ) ) {
 			wp_enqueue_style( 'wpat-woo-registration-forms-css', WPAT_URL . 'assets/css/wpat-woo-registration-forms.css', array(), WPAT_VERSION );
 			wp_enqueue_script( 'wpat-woo-registration-forms-js', WPAT_URL . 'assets/js/wpat-woo-registration-forms.js', array( 'jquery', 'jquery-ui-sortable' ), WPAT_VERSION, true );
+
+			$available_roles = array();
+			if ( function_exists( 'wp_roles' ) ) {
+				foreach ( wp_roles()->roles as $r_slug => $r_val ) {
+					$available_roles[ $r_slug ] = isset( $r_val['name'] ) ? translate_user_role( $r_val['name'] ) : ucfirst( $r_slug );
+				}
+			}
+
 			wp_localize_script(
 				'wpat-woo-registration-forms-js',
 				'wpatRegForms',
 				array(
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 					'nonce'   => wp_create_nonce( 'wpat_reg_forms_nonce' ),
+					'roles'   => $available_roles,
 				)
 			);
 		}
@@ -460,6 +469,58 @@ class WPAT_Woo_Registration_Forms {
 		$input_name = 'wpat_fields[' . $f_id . ']';
 		$html_id    = 'wpat_f_' . $form_id . '_' . $f_id;
 
+		// Separador de sección / Encabezado
+		if ( 'heading' === $f_type ) {
+			echo '<div class="wpat-reg-section-header col-full">';
+			echo '<h3 class="wpat-reg-section-title">' . esc_html( $f_label ) . '</h3>';
+			if ( ! empty( $field['subtitle'] ) ) {
+				echo '<p class="wpat-reg-section-subtitle">' . esc_html( $field['subtitle'] ) . '</p>';
+			}
+			echo '</div>';
+			return;
+		}
+
+		// Selector de Opciones con Radio Buttons
+		if ( 'radio' === $f_type ) {
+			$options = array();
+			if ( ! empty( $field['options'] ) && is_array( $field['options'] ) ) {
+				$options = $field['options'];
+			} elseif ( ! empty( $field['options_str'] ) ) {
+				$parts = preg_split( '/[\r\n,]+/', $field['options_str'] );
+				foreach ( $parts as $p ) {
+					$p = trim( $p );
+					if ( '' === $p ) {
+						continue;
+					}
+					if ( strpos( $p, ':' ) !== false ) {
+						list( $k, $v ) = explode( ':', $p, 2 );
+						$options[ trim( $k ) ] = trim( $v );
+					} else {
+						$options[ $p ] = $p;
+					}
+				}
+			}
+			if ( empty( $options ) ) {
+				$options = array( 'Sí' => __( 'Sí', 'wp-agency-toolkit' ), 'No' => __( 'No', 'wp-agency-toolkit' ) );
+			}
+
+			echo '<div class="wpat-reg-field-group ' . esc_attr( $f_width ) . ' wpat-reg-field-radio-wrap">';
+			echo '<span class="wpat-reg-label">' . esc_html( $f_label ) . ( $f_req ? ' <span class="wpat-reg-required">*</span>' : '' ) . '</span>';
+			echo '<div class="wpat-reg-radio-group">';
+			$r_idx = 0;
+			foreach ( $options as $opt_val => $opt_lbl ) {
+				$r_id = $html_id . '_' . $r_idx;
+				echo '<label class="wpat-reg-radio-label" for="' . esc_attr( $r_id ) . '">';
+				echo '<input type="radio" name="' . esc_attr( $input_name ) . '" id="' . esc_attr( $r_id ) . '" value="' . esc_attr( $opt_val ) . '" ' . ( $f_req && 0 === $r_idx ? 'required' : '' ) . ' /> ';
+				echo '<span>' . esc_html( $opt_lbl ) . '</span>';
+				echo '</label>';
+				$r_idx++;
+			}
+			echo '</div>';
+			echo '</div>';
+			return;
+		}
+
 		echo '<div class="wpat-reg-field-group ' . esc_attr( $f_width ) . '">';
 
 		if ( 'checkbox' === $f_type ) {
@@ -553,6 +614,10 @@ class WPAT_Woo_Registration_Forms {
 		$submitted_fields = isset( $_POST['wpat_fields'] ) && is_array( $_POST['wpat_fields'] ) ? $_POST['wpat_fields'] : array();
 		if ( ! empty( $form['fields'] ) && is_array( $form['fields'] ) ) {
 			foreach ( $form['fields'] as $f ) {
+				if ( 'heading' === $f['type'] ) {
+					continue;
+				}
+
 				$fid = $f['id'];
 				$req = ! empty( $f['required'] ) && '1' === (string) $f['required'];
 
@@ -562,7 +627,7 @@ class WPAT_Woo_Registration_Forms {
 						$this->redirect_with_error( sprintf( __( 'El archivo "%s" es obligatorio.', 'wp-agency-toolkit' ), $f['label'] ) );
 						return;
 					}
-				} elseif ( $req && empty( $submitted_fields[ $fid ] ) ) {
+				} elseif ( $req && ( ! isset( $submitted_fields[ $fid ] ) || '' === trim( (string) $submitted_fields[ $fid ] ) ) ) {
 					$this->redirect_with_error( sprintf( __( 'El campo "%s" es obligatorio.', 'wp-agency-toolkit' ), $f['label'] ) );
 					return;
 				}
@@ -575,6 +640,22 @@ class WPAT_Woo_Registration_Forms {
 			$chosen_role = sanitize_key( $_POST['user_role'] );
 			if ( ! empty( $form['allowed_roles'] ) && in_array( $chosen_role, $form['allowed_roles'], true ) ) {
 				$assigned_role = $chosen_role;
+			}
+		}
+
+		// Asignación condicional de rol por campo (ej. Recargo de Equivalencia = Sí)
+		if ( ! empty( $form['fields'] ) && is_array( $form['fields'] ) ) {
+			foreach ( $form['fields'] as $cf_field ) {
+				if ( ! empty( $cf_field['conditional_role_enabled'] ) && ! empty( $cf_field['conditional_role'] ) && ! empty( $cf_field['conditional_value'] ) ) {
+					$cf_id      = $cf_field['id'];
+					$cf_val     = isset( $submitted_fields[ $cf_id ] ) ? trim( (string) $submitted_fields[ $cf_id ] ) : '';
+					$target_val = trim( (string) $cf_field['conditional_value'] );
+
+					if ( '' !== $cf_val && strcasecmp( $cf_val, $target_val ) === 0 ) {
+						$assigned_role = $cf_field['conditional_role'];
+						break;
+					}
+				}
 			}
 		}
 
@@ -615,6 +696,25 @@ class WPAT_Woo_Registration_Forms {
 			} else {
 				// Metadato personalizado del formulario
 				update_user_meta( $user_id, 'wpat_reg_' . $f_key, $clean_val );
+			}
+		}
+
+		// Sincronizar campos con meta_key personalizada explícita (ej. billing_recargo_equivalencia)
+		if ( ! empty( $form['fields'] ) && is_array( $form['fields'] ) ) {
+			foreach ( $form['fields'] as $cf_field ) {
+				if ( 'heading' === $cf_field['type'] ) {
+					continue;
+				}
+				$cf_id = $cf_field['id'];
+				if ( isset( $submitted_fields[ $cf_id ] ) && ! empty( $cf_field['meta_key'] ) ) {
+					$val         = sanitize_text_field( wp_unslash( $submitted_fields[ $cf_id ] ) );
+					$custom_meta = sanitize_key( $cf_field['meta_key'] );
+					update_user_meta( $user_id, $custom_meta, $val );
+					// Si es Recargo de Equivalencia y el valor es afirmativo, también guardar flag 'yes' estándar
+					if ( strcasecmp( $val, 'sí' ) === 0 || strcasecmp( $val, 'si' ) === 0 || strcasecmp( $val, 'yes' ) === 0 || '1' === $val ) {
+						update_user_meta( $user_id, $custom_meta, 'yes' );
+					}
+				}
 			}
 		}
 
@@ -899,13 +999,35 @@ class WPAT_Woo_Registration_Forms {
 			if ( isset( $live['fields'] ) && is_array( $live['fields'] ) ) {
 				foreach ( $live['fields'] as $f ) {
 					if ( ! empty( $f['id'] ) ) {
+						$f_type          = sanitize_key( $f['type'] );
+						$raw_options_str = isset( $f['options_str'] ) ? sanitize_text_field( $f['options_str'] ) : '';
+						$parsed_options  = array();
+						if ( ! empty( $raw_options_str ) ) {
+							$parts = preg_split( '/[\r\n,]+/', $raw_options_str );
+							foreach ( $parts as $p ) {
+								$p = trim( $p );
+								if ( '' === $p ) {
+									continue;
+								}
+								if ( strpos( $p, ':' ) !== false ) {
+									list( $k, $v ) = explode( ':', $p, 2 );
+									$parsed_options[ sanitize_text_field( trim( $k ) ) ] = sanitize_text_field( trim( $v ) );
+								} else {
+									$parsed_options[ sanitize_text_field( $p ) ] = sanitize_text_field( $p );
+								}
+							}
+						}
+
 						$form['fields'][] = array(
 							'id'          => sanitize_key( $f['id'] ),
-							'type'        => sanitize_key( $f['type'] ),
+							'type'        => $f_type,
 							'label'       => sanitize_text_field( $f['label'] ),
 							'placeholder' => isset( $f['placeholder'] ) ? sanitize_text_field( $f['placeholder'] ) : '',
-							'required'    => ! empty( $f['required'] ) ? '1' : '0',
-							'width'       => ( isset( $f['width'] ) && 'half' === $f['width'] ) ? 'half' : 'full',
+							'subtitle'    => isset( $f['subtitle'] ) ? sanitize_text_field( $f['subtitle'] ) : '',
+							'options_str' => $raw_options_str,
+							'options'     => $parsed_options,
+							'required'    => ( 'heading' !== $f_type && ! empty( $f['required'] ) ) ? '1' : '0',
+							'width'       => ( 'heading' === $f_type || ! isset( $f['width'] ) || 'full' === $f['width'] ) ? 'full' : 'half',
 							'is_native'   => ! empty( $f['is_native'] ) ? '1' : '0',
 						);
 					}

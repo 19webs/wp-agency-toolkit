@@ -532,3 +532,123 @@
 	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
 }
 
+/* ==========================================================================
+   6. BOTONES DE ACCIÓN COMPACTOS SOLO-ICONO (Tabla de Formularios)
+   ========================================================================== */
+
+.wpat-btn-icon {
+	width: 32px !important;
+	height: 32px !important;
+	min-width: 32px !important;
+	min-height: 32px !important;
+	padding: 0 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	border-radius: 6px !important;
+	line-height: 1 !important;
+	box-sizing: border-box !important;
+	text-align: center !important;
+	transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease !important;
+}
+
+.wpat-btn-icon .dashicons {
+	font-size: 16px !important;
+	width: 16px !important;
+	height: 16px !important;
+	line-height: 16px !important;
+	margin: 0 !important;
+	display: inline-block !important;
+}
+
+.wpat-btn-icon:hover {
+	transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   7. SEPARADORES DE SECCIÓN / ENCABEZADOS (Heading)
+   ========================================================================== */
+
+.wpat-reg-section-header {
+	width: 100%;
+	flex-basis: 100%;
+	margin: 22px 0 10px 0;
+	padding-bottom: 8px;
+	border-bottom: 2px solid #e2e8f0;
+}
+
+.wpat-reg-section-header:first-child {
+	margin-top: 4px;
+}
+
+.wpat-reg-section-title {
+	margin: 0 0 3px 0 !important;
+	font-size: 15px !important;
+	font-weight: 700 !important;
+	color: #0f172a !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.05em !important;
+	line-height: 1.3 !important;
+}
+
+.wpat-reg-section-subtitle {
+	margin: 0 !important;
+	font-size: 12.5px !important;
+	color: #64748b !important;
+	line-height: 1.4 !important;
+}
+
+/* ==========================================================================
+   8. SELECTOR DE OPCIONES (Radio Buttons)
+   ========================================================================== */
+
+.wpat-reg-field-radio-wrap {
+	margin-top: 4px;
+}
+
+.wpat-reg-radio-group {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 18px;
+	align-items: center;
+	margin-top: 6px;
+	padding: 4px 0;
+}
+
+.wpat-reg-radio-label {
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 8px !important;
+	font-size: 14px !important;
+	color: #1e293b !important;
+	cursor: pointer !important;
+	margin: 0 !important;
+	user-select: none;
+	font-weight: 500 !important;
+}
+
+.wpat-reg-radio-label input[type="radio"] {
+	margin: 0 !important;
+	cursor: pointer !important;
+	width: 18px !important;
+	height: 18px !important;
+	accent-color: #2563eb !important;
+}
+
+/* ==========================================================================
+   9. PANEL CONDICIONAL EN ADMIN BUILDER
+   ========================================================================== */
+
+.wpat-reg-cond-box {
+	background: #f8fafc;
+	border: 1px dashed #cbd5e1;
+	border-radius: 8px;
+	padding: 12px 14px;
+	transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.wpat-reg-cond-box:hover {
+	border-color: #94a3b8;
+	background: #f1f5f9;
+}
+

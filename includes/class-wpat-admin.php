@@ -1880,7 +1880,7 @@ class WPAT_Admin {
 								'subtitle'                 => isset( $f_data['subtitle'] ) ? sanitize_text_field( wp_unslash( $f_data['subtitle'] ) ) : '',
 								'options_str'              => $raw_options_str,
 								'options'                  => $parsed_options,
-								'required'                 => ( 'heading' !== $field_type && ! empty( $f_data['required'] ) ) ? '1' : '0',
+								'required'                 => ( 'heading' !== $field_type && ( in_array( $f_data['id'], array( 'user_email', 'user_pass' ), true ) || ! empty( $f_data['required'] ) ) ) ? '1' : '0',
 								'width'                    => ( 'heading' === $field_type || ! isset( $f_data['width'] ) || 'full' === $f_data['width'] ) ? 'full' : 'half',
 								'is_native'                => ! empty( $f_data['is_native'] ) ? '1' : '0',
 								'conditional_role_enabled' => ! empty( $f_data['conditional_role_enabled'] ) ? '1' : '0',
@@ -16837,16 +16837,21 @@ class WPAT_Admin {
 							<div class="wpat-reg-fields-list">
 								<?php foreach ( $active_form['fields'] as $f_idx => $field ) : ?>
 									<?php
-									$ftype = isset( $field['type'] ) ? $field['type'] : 'text';
+									$ftype           = isset( $field['type'] ) ? $field['type'] : 'text';
+									$is_core_account = in_array( $field['id'], array( 'user_email', 'user_pass' ), true );
 									?>
 									<div class="wpat-reg-field-row" data-type="<?php echo esc_attr( $ftype ); ?>">
 										<div class="wpat-reg-field-row-info">
-											<span class="dashicons dashicons-menu wpat-reg-field-drag-handle"></span>
+											<span class="dashicons dashicons-menu wpat-reg-field-drag-handle" title="Arrastrar para mover de posición"></span>
 											<div>
 												<strong style="font-size: 13.5px; color: #1e293b;" class="wpat-row-title-lbl"><?php echo esc_html( $field['label'] ); ?></strong>
 												<div style="font-size: 11px; color: #64748b; font-family: monospace;">ID: <?php echo esc_html( $field['id'] ); ?></div>
 											</div>
-											<?php if ( 'heading' === $ftype ) : ?>
+											<?php if ( $is_core_account ) : ?>
+												<span class="wpat-reg-field-badge-type" style="background: #e0f2fe; color: #0369a1;">CUENTA WP</span>
+												<span style="color: #0369a1; font-size: 11px; font-weight: 700;" class="wpat-row-req-lbl">Obligatorio (Fijo)</span>
+												<span style="font-size: 11px; color: #64748b;" class="wpat-row-width-lbl"><?php echo ( isset( $field['width'] ) && 'full' === $field['width'] ) ? '100% (Ancho completo)' : '50% (Media col)'; ?></span>
+											<?php elseif ( 'heading' === $ftype ) : ?>
 												<span class="wpat-reg-field-badge-type" style="background: #e0e7ff; color: #4338ca;">TÍTULO / SECCIÓN</span>
 												<span style="color: #6366f1; font-size: 11px; font-weight: 600;">Separador Visual</span>
 											<?php else : ?>
@@ -16862,12 +16867,39 @@ class WPAT_Admin {
 
 										<div style="display: flex; align-items: center; gap: 8px;">
 											<button type="button" class="button button-small wpat-reg-toggle-field-btn">Editar</button>
-											<button type="button" class="button button-small button-link-delete wpat-reg-remove-field-btn" style="color: #dc2626;">Eliminar</button>
+											<?php if ( $is_core_account ) : ?>
+												<span class="dashicons dashicons-lock" title="<?php esc_attr_e( 'Campo necesario para crear la cuenta de usuario en WordPress (no eliminable)', 'wp-agency-toolkit' ); ?>" style="color: #94a3b8; font-size: 18px; width: 18px; height: 18px; line-height: 28px; cursor: help;"></span>
+											<?php else : ?>
+												<button type="button" class="button button-small button-link-delete wpat-reg-remove-field-btn" style="color: #dc2626;">Eliminar</button>
+											<?php endif; ?>
 										</div>
 
 										<!-- Opciones expandibles del campo -->
 										<div class="wpat-reg-field-options" style="display: none; width: 100%; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9;">
-											<?php if ( 'heading' === $ftype ) : ?>
+											<?php if ( $is_core_account ) : ?>
+												<div style="display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 12px; align-items: flex-end;">
+													<div>
+														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Etiqueta (Label):</label>
+														<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][label]" value="<?php echo esc_attr( $field['label'] ); ?>" class="wpat-input-field-label" style="width: 100%;" />
+													</div>
+													<div>
+														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Placeholder:</label>
+														<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][placeholder]" value="<?php echo esc_attr( isset( $field['placeholder'] ) ? $field['placeholder'] : '' ); ?>" style="width: 100%;" />
+													</div>
+													<div>
+														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Ancho en formulario:</label>
+														<select name="fields_data[<?php echo esc_attr( $f_idx ); ?>][width]" class="wpat-select-field-width" style="width: 100%;">
+															<option value="half" <?php selected( isset( $field['width'] ) ? $field['width'] : 'half', 'half' ); ?>>50% (Media columna)</option>
+															<option value="full" <?php selected( isset( $field['width'] ) ? $field['width'] : 'half', 'full' ); ?>>100% (Ancho completo)</option>
+														</select>
+													</div>
+												</div>
+												<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][required]" value="1" />
+												<p style="margin: 8px 0 0 0; font-size: 11.5px; color: #64748b; font-style: italic;">
+													<span class="dashicons dashicons-info" style="font-size: 14px; width: 14px; height: 14px; vertical-align: middle;"></span>
+													<?php esc_html_e( 'Campo nativo de cuenta. Puedes arrastrarlo para colocarlo en cualquier posición del formulario.', 'wp-agency-toolkit' ); ?>
+												</p>
+											<?php elseif ( 'heading' === $ftype ) : ?>
 												<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
 													<div>
 														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Título de la Sección / Separador:</label>
@@ -16881,8 +16913,8 @@ class WPAT_Admin {
 												<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][placeholder]" value="" />
 												<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][width]" value="full" />
 												<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][required]" value="0" />
-											<?php elseif ( 'radio' === $ftype ) : ?>
-												<div style="display: grid; grid-template-columns: 2fr 2fr 1fr auto; gap: 12px; align-items: flex-end;">
+											<?php elseif ( 'radio' === $ftype || 'select' === $ftype ) : ?>
+												<div style="display: grid; grid-template-columns: 2fr 2fr <?php echo 'select' === $ftype ? '1.5fr ' : ''; ?>1fr auto; gap: 12px; align-items: flex-end;">
 													<div>
 														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Pregunta / Etiqueta:</label>
 														<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][label]" value="<?php echo esc_attr( $field['label'] ); ?>" class="wpat-input-field-label" style="width: 100%;" />
@@ -16890,10 +16922,18 @@ class WPAT_Admin {
 													<div>
 														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Opciones (separadas por comas):</label>
 														<?php
-														$cur_opt_str = isset( $field['options_str'] ) ? $field['options_str'] : ( ! empty( $field['options'] ) && is_array( $field['options'] ) ? implode( ', ', array_values( $field['options'] ) ) : 'Sí, No' );
+														$cur_opt_str = isset( $field['options_str'] ) ? $field['options_str'] : ( ! empty( $field['options'] ) && is_array( $field['options'] ) ? implode( ', ', array_values( $field['options'] ) ) : ( 'radio' === $ftype ? 'Sí, No' : 'Opción 1, Opción 2, Opción 3' ) );
 														?>
-														<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][options_str]" value="<?php echo esc_attr( $cur_opt_str ); ?>" placeholder="Sí, No" style="width: 100%;" />
+														<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][options_str]" value="<?php echo esc_attr( $cur_opt_str ); ?>" placeholder="<?php echo 'radio' === $ftype ? 'Sí, No' : 'Opción 1, Opción 2, Opción 3'; ?>" style="width: 100%;" />
 													</div>
+													<?php if ( 'select' === $ftype ) : ?>
+														<div>
+															<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Placeholder (opcional):</label>
+															<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][placeholder]" value="<?php echo esc_attr( isset( $field['placeholder'] ) ? $field['placeholder'] : '' ); ?>" placeholder="Selecciona una opción..." style="width: 100%;" />
+														</div>
+													<?php else : ?>
+														<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][placeholder]" value="" />
+													<?php endif; ?>
 													<div>
 														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Ancho:</label>
 														<select name="fields_data[<?php echo esc_attr( $f_idx ); ?>][width]" class="wpat-select-field-width" style="width: 100%;">
@@ -17016,6 +17056,7 @@ class WPAT_Admin {
 										</optgroup>
 										<optgroup label="📝 Campos Personalizados Adicionales">
 											<option value="custom_text" data-label="Texto Libre" data-input-type="text" data-native="0">Texto Corto (Línea simple)</option>
+											<option value="custom_select" data-label="Selección Desplegable" data-input-type="select" data-native="0">Menú Desplegable (Select / Desplegable)</option>
 											<option value="custom_radio" data-label="¿Tu actividad está en Recargo de Equivalencia?" data-input-type="radio" data-native="0">Selector de Opciones (Radio Buttons / Rol Condicional)</option>
 											<option value="custom_textarea" data-label="Comentarios / Observaciones" data-input-type="textarea" data-native="0">Área de Texto (Múltiples líneas)</option>
 											<option value="custom_file" data-label="Subida de Documento (Modelo 036 / CIF)" data-input-type="file" data-native="0">Subida de Archivo (PDF, JPG, PNG)</option>
@@ -17108,18 +17149,18 @@ class WPAT_Admin {
 											<?php endif; ?>
 										</td>
 										<td style="vertical-align: middle; text-align: right;">
-											<div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px;">
+											<div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px;">
 												<button type="button" class="button wpat-btn-icon wpat-open-preview-btn" data-form-id="<?php echo esc_attr( $f_key ); ?>" title="<?php esc_attr_e( 'Vista Previa del formulario', 'wp-agency-toolkit' ); ?>" aria-label="<?php esc_attr_e( 'Vista Previa', 'wp-agency-toolkit' ); ?>">
 													<span class="dashicons dashicons-visibility"></span>
 												</button>
-												<a href="<?php echo esc_url( add_query_arg( array( 'form_action' => 'edit', 'form_id' => $f_key ), $base_url ) ); ?>" class="button button-primary wpat-btn-icon" title="<?php esc_attr_e( 'Editar formulario', 'wp-agency-toolkit' ); ?>" aria-label="<?php esc_attr_e( 'Editar', 'wp-agency-toolkit' ); ?>">
+												<a href="<?php echo esc_url( add_query_arg( array( 'form_action' => 'edit', 'form_id' => $f_key ), $base_url ) ); ?>" class="button wpat-btn-icon" title="<?php esc_attr_e( 'Editar formulario', 'wp-agency-toolkit' ); ?>" aria-label="<?php esc_attr_e( 'Editar', 'wp-agency-toolkit' ); ?>">
 													<span class="dashicons dashicons-edit"></span>
 												</a>
 												<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'form_action' => 'clone', 'form_id' => $f_key ), $base_url ), 'wpat_clone_form_' . $f_key ) ); ?>" class="button wpat-btn-icon" title="<?php esc_attr_e( 'Clonar formulario', 'wp-agency-toolkit' ); ?>" aria-label="<?php esc_attr_e( 'Clonar', 'wp-agency-toolkit' ); ?>">
 													<span class="dashicons dashicons-admin-page"></span>
 												</a>
 												<?php if ( count( $forms ) > 1 ) : ?>
-													<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'form_action' => 'delete', 'form_id' => $f_key ), $base_url ), 'wpat_delete_form_' . $f_key ) ); ?>" class="button button-link-delete wpat-btn-icon" style="color: #dc2626;" onclick="return confirm('<?php esc_attr_e( '¿Estás seguro de que deseas eliminar este formulario de registro?', 'wp-agency-toolkit' ); ?>');" title="<?php esc_attr_e( 'Eliminar formulario', 'wp-agency-toolkit' ); ?>" aria-label="<?php esc_attr_e( 'Eliminar', 'wp-agency-toolkit' ); ?>">
+													<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'form_action' => 'delete', 'form_id' => $f_key ), $base_url ), 'wpat_delete_form_' . $f_key ) ); ?>" class="button wpat-btn-icon wpat-btn-icon-danger" onclick="return confirm('<?php esc_attr_e( '¿Estás seguro de que deseas eliminar este formulario de registro?', 'wp-agency-toolkit' ); ?>');" title="<?php esc_attr_e( 'Eliminar formulario', 'wp-agency-toolkit' ); ?>" aria-label="<?php esc_attr_e( 'Eliminar', 'wp-agency-toolkit' ); ?>">
 														<span class="dashicons dashicons-trash"></span>
 													</a>
 												<?php endif; ?>

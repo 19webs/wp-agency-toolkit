@@ -273,23 +273,36 @@
 				'<input type="hidden" name="fields_data[' + newIdx + '][placeholder]" value="" />' +
 				'<input type="hidden" name="fields_data[' + newIdx + '][width]" value="full" />' +
 				'<input type="hidden" name="fields_data[' + newIdx + '][required]" value="0" />';
-			} else if (inputType === 'radio') {
+			} else if (inputType === 'radio' || inputType === 'select') {
 				var rolesOptionsHtml = '';
 				var rolesObj = (window.wpatRegForms && window.wpatRegForms.roles) ? window.wpatRegForms.roles : { 'customer': 'Cliente' };
 				for (var rSlug in rolesObj) {
 					rolesOptionsHtml += '<option value="' + rSlug + '">' + rolesObj[rSlug] + ' (' + rSlug + ')</option>';
 				}
 
-				rowHtml += '<div style="display: grid; grid-template-columns: 2fr 2fr 1fr auto; gap: 12px; align-items: flex-end;">' +
+				var defaultOpts = (inputType === 'radio') ? 'Sí, No' : 'Opción 1, Opción 2, Opción 3';
+				var defaultPlh  = (inputType === 'select') ? 'Selecciona una opción...' : '';
+
+				rowHtml += '<div style="display: grid; grid-template-columns: 2fr 2fr ' + (inputType === 'select' ? '1.5fr ' : '') + '1fr auto; gap: 12px; align-items: flex-end;">' +
 					'<div>' +
 						'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Pregunta / Etiqueta:</label>' +
 						'<input type="text" name="fields_data[' + newIdx + '][label]" value="' + safeLabel + '" class="wpat-input-field-label" style="width: 100%;" />' +
 					'</div>' +
 					'<div>' +
 						'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Opciones (separadas por comas):</label>' +
-						'<input type="text" name="fields_data[' + newIdx + '][options_str]" value="Sí, No" placeholder="Sí, No" style="width: 100%;" />' +
-					'</div>' +
-					'<div>' +
+						'<input type="text" name="fields_data[' + newIdx + '][options_str]" value="' + defaultOpts + '" placeholder="' + defaultOpts + '" style="width: 100%;" />' +
+					'</div>';
+
+				if (inputType === 'select') {
+					rowHtml += '<div>' +
+						'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Placeholder (opcional):</label>' +
+						'<input type="text" name="fields_data[' + newIdx + '][placeholder]" value="' + defaultPlh + '" placeholder="Selecciona una opción..." style="width: 100%;" />' +
+					'</div>';
+				} else {
+					rowHtml += '<input type="hidden" name="fields_data[' + newIdx + '][placeholder]" value="" />';
+				}
+
+				rowHtml += '<div>' +
 						'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Ancho:</label>' +
 						'<select name="fields_data[' + newIdx + '][width]" class="wpat-select-field-width" style="width: 100%;">' +
 							'<option value="full" selected>100%</option>' +
@@ -317,7 +330,7 @@
 					'<div class="wpat-reg-cond-fields" style="display: none; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 10px;">' +
 						'<div>' +
 							'<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 4px;">Si el usuario elige el valor:</label>' +
-							'<input type="text" name="fields_data[' + newIdx + '][conditional_value]" value="Sí" placeholder="Ej: Sí" style="width: 100%;" />' +
+							'<input type="text" name="fields_data[' + newIdx + '][conditional_value]" value="' + (inputType === 'radio' ? 'Sí' : 'Opción 1') + '" placeholder="Ej: Sí" style="width: 100%;" />' +
 						'</div>' +
 						'<div>' +
 							'<label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 4px;">Asignar este Rol al usuario:</label>' +

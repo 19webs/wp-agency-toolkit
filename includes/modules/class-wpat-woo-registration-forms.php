@@ -103,6 +103,24 @@ class WPAT_Woo_Registration_Forms {
 				'attach_to_my_account' => '0',
 				'fields'               => array(
 					array(
+						'id'          => 'user_email',
+						'type'        => 'email',
+						'label'       => __( 'Correo electrónico', 'wp-agency-toolkit' ),
+						'placeholder' => 'ejemplo@empresa.com',
+						'required'    => '1',
+						'width'       => 'half',
+						'is_native'   => '1',
+					),
+					array(
+						'id'          => 'user_pass',
+						'type'        => 'password',
+						'label'       => __( 'Contraseña de acceso', 'wp-agency-toolkit' ),
+						'placeholder' => __( 'Mínimo 8 caracteres', 'wp-agency-toolkit' ),
+						'required'    => '1',
+						'width'       => 'half',
+						'is_native'   => '1',
+					),
+					array(
 						'id'          => 'billing_first_name',
 						'type'        => 'text',
 						'label'       => 'Nombre',
@@ -179,6 +197,45 @@ class WPAT_Woo_Registration_Forms {
 
 			$forms = array( 'b2b-registration' => $default_form );
 			update_option( self::OPTION_FORMS, $forms );
+		}
+
+		// Garantizar que todos los formularios incluyan los campos de cuenta user_email y user_pass
+		foreach ( $forms as $f_k => $f_data ) {
+			if ( isset( $f_data['fields'] ) && is_array( $f_data['fields'] ) ) {
+				$has_email = false;
+				$has_pass  = false;
+				foreach ( $f_data['fields'] as $fld ) {
+					if ( 'user_email' === $fld['id'] ) {
+						$has_email = true;
+					}
+					if ( 'user_pass' === $fld['id'] ) {
+						$has_pass = true;
+					}
+				}
+				if ( ! $has_email ) {
+					array_unshift( $forms[ $f_k ]['fields'], array(
+						'id'          => 'user_email',
+						'type'        => 'email',
+						'label'       => __( 'Correo electrónico', 'wp-agency-toolkit' ),
+						'placeholder' => 'ejemplo@empresa.com',
+						'required'    => '1',
+						'width'       => 'half',
+						'is_native'   => '1',
+					) );
+				}
+				if ( ! $has_pass ) {
+					$insert_idx = 1;
+					array_splice( $forms[ $f_k ]['fields'], $insert_idx, 0, array( array(
+						'id'          => 'user_pass',
+						'type'        => 'password',
+						'label'       => __( 'Contraseña de acceso', 'wp-agency-toolkit' ),
+						'placeholder' => __( 'Mínimo 8 caracteres', 'wp-agency-toolkit' ),
+						'required'    => '1',
+						'width'       => 'half',
+						'is_native'   => '1',
+					) ) );
+				}
+			}
 		}
 
 		return $forms;
@@ -393,20 +450,43 @@ class WPAT_Woo_Registration_Forms {
 			<?php endif; ?>
 
 					<div class="wpat-reg-grid">
-						<!-- Campos estándar obligatorios de WordPress / WooCommerce: Email y Contraseña -->
-						<div class="wpat-reg-field-group col-half">
-							<label class="wpat-reg-label" for="wpat_user_email_<?php echo esc_attr( $form_id ); ?>">
-								<?php esc_html_e( 'Correo electrónico', 'wp-agency-toolkit' ); ?> <span class="wpat-reg-required">*</span>
-							</label>
-							<input type="email" name="user_email" id="wpat_user_email_<?php echo esc_attr( $form_id ); ?>" class="wpat-reg-input" required autocomplete="email" placeholder="ejemplo@empresa.com" />
-						</div>
+						<?php
+						// Fallback de seguridad: si un formulario antiguo no tiene user_email o user_pass en su lista de campos
+						$has_email_in_fields = false;
+						$has_pass_in_fields  = false;
+						if ( ! empty( $form['fields'] ) && is_array( $form['fields'] ) ) {
+							foreach ( $form['fields'] as $cf ) {
+								if ( 'user_email' === $cf['id'] ) {
+									$has_email_in_fields = true;
+								}
+								if ( 'user_pass' === $cf['id'] ) {
+									$has_pass_in_fields = true;
+								}
+							}
+						}
 
-						<div class="wpat-reg-field-group col-half">
-							<label class="wpat-reg-label" for="wpat_user_pass_<?php echo esc_attr( $form_id ); ?>">
-								<?php esc_html_e( 'Contraseña de acceso', 'wp-agency-toolkit' ); ?> <span class="wpat-reg-required">*</span>
-							</label>
-							<input type="password" name="user_pass" id="wpat_user_pass_<?php echo esc_attr( $form_id ); ?>" class="wpat-reg-input" required autocomplete="new-password" placeholder="Mínimo 8 caracteres" />
-						</div>
+						if ( ! $has_email_in_fields ) {
+							$this->render_field_input( array(
+								'id'          => 'user_email',
+								'type'        => 'email',
+								'label'       => __( 'Correo electrónico', 'wp-agency-toolkit' ),
+								'placeholder' => 'ejemplo@empresa.com',
+								'required'    => '1',
+								'width'       => 'half',
+							), $form_id );
+						}
+
+						if ( ! $has_pass_in_fields ) {
+							$this->render_field_input( array(
+								'id'          => 'user_pass',
+								'type'        => 'password',
+								'label'       => __( 'Contraseña de acceso', 'wp-agency-toolkit' ),
+								'placeholder' => __( 'Mínimo 8 caracteres', 'wp-agency-toolkit' ),
+								'required'    => '1',
+								'width'       => 'half',
+							), $form_id );
+						}
+						?>
 
 						<!-- Si está configurado selección de rol en desplegable -->
 						<?php if ( isset( $form['role_assignment'] ) && 'dropdown' === $form['role_assignment'] && ! empty( $form['allowed_roles'] ) ) : ?>
@@ -468,6 +548,28 @@ class WPAT_Woo_Registration_Forms {
 		$f_width    = isset( $field['width'] ) && 'half' === $field['width'] ? 'col-half' : 'col-full';
 		$input_name = 'wpat_fields[' . $f_id . ']';
 		$html_id    = 'wpat_f_' . $form_id . '_' . $f_id;
+
+		// Campo especial de cuenta WordPress: Correo electrónico
+		if ( 'user_email' === $f_id ) {
+			echo '<div class="wpat-reg-field-group ' . esc_attr( $f_width ) . '">';
+			echo '<label class="wpat-reg-label" for="wpat_user_email_' . esc_attr( $form_id ) . '">';
+			echo esc_html( ! empty( $f_label ) ? $f_label : __( 'Correo electrónico', 'wp-agency-toolkit' ) ) . ' <span class="wpat-reg-required">*</span>';
+			echo '</label>';
+			echo '<input type="email" name="user_email" id="wpat_user_email_' . esc_attr( $form_id ) . '" class="wpat-reg-input" required autocomplete="email" placeholder="' . esc_attr( ! empty( $f_plh ) ? $f_plh : 'ejemplo@empresa.com' ) . '" />';
+			echo '</div>';
+			return;
+		}
+
+		// Campo especial de cuenta WordPress: Contraseña
+		if ( 'user_pass' === $f_id ) {
+			echo '<div class="wpat-reg-field-group ' . esc_attr( $f_width ) . '">';
+			echo '<label class="wpat-reg-label" for="wpat_user_pass_' . esc_attr( $form_id ) . '">';
+			echo esc_html( ! empty( $f_label ) ? $f_label : __( 'Contraseña de acceso', 'wp-agency-toolkit' ) ) . ' <span class="wpat-reg-required">*</span>';
+			echo '</label>';
+			echo '<input type="password" name="user_pass" id="wpat_user_pass_' . esc_attr( $form_id ) . '" class="wpat-reg-input" required autocomplete="new-password" placeholder="' . esc_attr( ! empty( $f_plh ) ? $f_plh : __( 'Mínimo 8 caracteres', 'wp-agency-toolkit' ) ) . '" />';
+			echo '</div>';
+			return;
+		}
 
 		// Separador de sección / Encabezado
 		if ( 'heading' === $f_type ) {
@@ -540,10 +642,28 @@ class WPAT_Woo_Registration_Forms {
 
 				case 'select':
 					echo '<select name="' . esc_attr( $input_name ) . '" id="' . esc_attr( $html_id ) . '" class="wpat-reg-select" ' . ( $f_req ? 'required' : '' ) . '>';
-					if ( ! empty( $f_plh ) ) {
-						echo '<option value="">' . esc_html( $f_plh ) . '</option>';
+					$default_placeholder = ! empty( $f_plh ) ? $f_plh : __( 'Selecciona una opción...', 'wp-agency-toolkit' );
+					echo '<option value="">' . esc_html( $default_placeholder ) . '</option>';
+
+					$options = array();
+					if ( ! empty( $field['options'] ) && is_array( $field['options'] ) ) {
+						$options = $field['options'];
+					} elseif ( ! empty( $field['options_str'] ) ) {
+						$parts = preg_split( '/[\r\n,]+/', $field['options_str'] );
+						foreach ( $parts as $p ) {
+							$p = trim( $p );
+							if ( '' === $p ) {
+								continue;
+							}
+							if ( strpos( $p, ':' ) !== false ) {
+								list( $k, $v ) = explode( ':', $p, 2 );
+								$options[ trim( $k ) ] = trim( $v );
+							} else {
+								$options[ $p ] = $p;
+							}
+						}
 					}
-					$options = isset( $field['options'] ) && is_array( $field['options'] ) ? $field['options'] : array();
+
 					foreach ( $options as $opt_val => $opt_label ) {
 						echo '<option value="' . esc_attr( $opt_val ) . '">' . esc_html( $opt_label ) . '</option>';
 					}
@@ -614,7 +734,7 @@ class WPAT_Woo_Registration_Forms {
 		$submitted_fields = isset( $_POST['wpat_fields'] ) && is_array( $_POST['wpat_fields'] ) ? $_POST['wpat_fields'] : array();
 		if ( ! empty( $form['fields'] ) && is_array( $form['fields'] ) ) {
 			foreach ( $form['fields'] as $f ) {
-				if ( 'heading' === $f['type'] ) {
+				if ( 'heading' === $f['type'] || in_array( $f['id'], array( 'user_email', 'user_pass' ), true ) ) {
 					continue;
 				}
 
@@ -702,7 +822,7 @@ class WPAT_Woo_Registration_Forms {
 		// Sincronizar campos con meta_key personalizada explícita (ej. billing_recargo_equivalencia)
 		if ( ! empty( $form['fields'] ) && is_array( $form['fields'] ) ) {
 			foreach ( $form['fields'] as $cf_field ) {
-				if ( 'heading' === $cf_field['type'] ) {
+				if ( 'heading' === $cf_field['type'] || in_array( $cf_field['id'], array( 'user_email', 'user_pass' ), true ) ) {
 					continue;
 				}
 				$cf_id = $cf_field['id'];
@@ -1026,7 +1146,7 @@ class WPAT_Woo_Registration_Forms {
 							'subtitle'    => isset( $f['subtitle'] ) ? sanitize_text_field( $f['subtitle'] ) : '',
 							'options_str' => $raw_options_str,
 							'options'     => $parsed_options,
-							'required'    => ( 'heading' !== $f_type && ! empty( $f['required'] ) ) ? '1' : '0',
+							'required'    => ( 'heading' !== $f_type && ( in_array( $f['id'], array( 'user_email', 'user_pass' ), true ) || ! empty( $f['required'] ) ) ) ? '1' : '0',
 							'width'       => ( 'heading' === $f_type || ! isset( $f['width'] ) || 'full' === $f['width'] ) ? 'full' : 'half',
 							'is_native'   => ! empty( $f['is_native'] ) ? '1' : '0',
 						);

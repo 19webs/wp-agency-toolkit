@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.149
+ * Version:     4.3.150
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.149' );
+define( 'WPAT_VERSION', '4.3.150' );
 define( 'WPAT_FILE', __FILE__ );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_DIR', WPAT_PATH );
@@ -252,6 +252,10 @@ class WPAT_Main {
 			'file'  => 'includes/modules/class-wpat-html-aria-fixer.php',
 			'class' => 'WPAT_HTML_ARIA_Fixer',
 		),
+		'woo-tools' => array(
+			'file'  => 'includes/modules/class-wpat-woo-tools.php',
+			'class' => 'WPAT_Woo_Tools',
+		),
 	);
 
 	/**
@@ -473,6 +477,28 @@ class WPAT_Main {
 				'woo_catalog_wa_message'    => 'Estoy interesado en el producto {product_title} ({product_url}). ¿Cómo podría comprarlo?',
 				'woo_catalog_form_enable'   => '0',
 				'woo_catalog_form_email'    => '',
+				'woo-tools'                 => '0',
+				'woo_tools_delete_images'   => '0',
+				'woo_tools_sku_url'         => '0',
+				'woo_tools_min_order_enabled'=> '0',
+				'woo_tools_min_order_amount' => '0',
+				'woo_tools_min_order_type'  => 'subtotal',
+				'woo_tools_min_order_msg'   => 'El importe mínimo para realizar un pedido es de {min_order}. Tu pedido actual suma {current_order}.',
+				'woo_tools_login_for_prices_enabled' => '0',
+				'woo_tools_login_for_prices_text'    => 'Inicia sesión para ver precios',
+				'woo_tools_login_for_prices_url'     => '',
+				'woo_tools_auto_update_cart'         => '0',
+				'woo_tools_hide_shipping_when_free'  => '0',
+				'woo_tools_empty_cart_btn'           => '0',
+				'woo_tools_hide_order_notes'         => '0',
+				'woo_tools_disable_cart_links'       => '0',
+				'woo_tools_open_products_new_tab'    => '0',
+				'woo_tools_hide_shop_ordering'       => '0',
+				'woo_tools_hide_shop_results_count'  => '0',
+				'woo_tools_sold_individually'        => '0',
+				'woo_tools_admin_order_sku_thumb'    => '0',
+				'woo_tools_login_redirect_url'       => '',
+				'woo_tools_logout_redirect_url'      => '',
 				'duplicator_title_suffix'   => ' (Copia)',
 				'duplicator_post_status'    => 'draft',
 				'duplicator_redirect_to'    => 'edit',

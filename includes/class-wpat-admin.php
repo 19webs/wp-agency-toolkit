@@ -764,6 +764,7 @@ class WPAT_Admin {
 				'wpat-file-manager'          => 'file-manager',
 				'wpat-woo-registration-forms' => 'woo-registration-forms',
 				'wpat-tools'                 => 'tools',
+				'wpat-woo-tools'             => 'woo-tools',
 			);
 			if ( isset( $page_map[ $_GET['page'] ] ) ) {
 				$saving_module = $page_map[ $_GET['page'] ];
@@ -830,6 +831,7 @@ class WPAT_Admin {
 			'woo-registration-forms',
 			'html-aria-fixer',
 			'tools',
+			'woo-tools',
 		);
 
 		// Actualizar estado ON/OFF del módulo o de todos si es el guardado global
@@ -1018,6 +1020,36 @@ class WPAT_Admin {
 			$new_settings['woo_catalog_wa_message']  = isset( $input_settings['woo_catalog_wa_message'] ) ? sanitize_textarea_field( $input_settings['woo_catalog_wa_message'] ) : '';
 			$new_settings['woo_catalog_form_enable'] = isset( $input_settings['woo_catalog_form_enable'] ) && '1' === $input_settings['woo_catalog_form_enable'] ? '1' : '0';
 			$new_settings['woo_catalog_form_email']  = isset( $input_settings['woo_catalog_form_email'] ) ? sanitize_email( $input_settings['woo_catalog_form_email'] ) : '';
+		}
+
+		// 5b. Sanitizar Herramientas y Ajustes WooCommerce
+		if ( empty( $saving_module ) || 'woo-tools' === $saving_module ) {
+			$new_settings['woo-tools']                          = isset( $input_settings['woo-tools'] ) && '1' === $input_settings['woo-tools'] ? '1' : '0';
+			$new_settings['woo_tools_delete_images']            = isset( $input_settings['woo_tools_delete_images'] ) && '1' === $input_settings['woo_tools_delete_images'] ? '1' : '0';
+			$new_settings['woo_tools_sku_url']                  = isset( $input_settings['woo_tools_sku_url'] ) && '1' === $input_settings['woo_tools_sku_url'] ? '1' : '0';
+			$new_settings['woo_tools_min_order_enabled']        = isset( $input_settings['woo_tools_min_order_enabled'] ) && '1' === $input_settings['woo_tools_min_order_enabled'] ? '1' : '0';
+			$new_settings['woo_tools_min_order_amount']         = isset( $input_settings['woo_tools_min_order_amount'] ) ? (float) $input_settings['woo_tools_min_order_amount'] : 0;
+			$new_settings['woo_tools_min_order_type']           = isset( $input_settings['woo_tools_min_order_type'] ) && 'total' === $input_settings['woo_tools_min_order_type'] ? 'total' : 'subtotal';
+			$new_settings['woo_tools_min_order_msg']            = isset( $input_settings['woo_tools_min_order_msg'] ) ? sanitize_text_field( $input_settings['woo_tools_min_order_msg'] ) : '';
+			$new_settings['woo_tools_login_for_prices_enabled'] = isset( $input_settings['woo_tools_login_for_prices_enabled'] ) && '1' === $input_settings['woo_tools_login_for_prices_enabled'] ? '1' : '0';
+			$new_settings['woo_tools_login_for_prices_text']    = isset( $input_settings['woo_tools_login_for_prices_text'] ) ? sanitize_text_field( $input_settings['woo_tools_login_for_prices_text'] ) : '';
+			$new_settings['woo_tools_login_for_prices_url']     = isset( $input_settings['woo_tools_login_for_prices_url'] ) ? esc_url_raw( trim( $input_settings['woo_tools_login_for_prices_url'] ) ) : '';
+			$new_settings['woo_tools_auto_update_cart']         = isset( $input_settings['woo_tools_auto_update_cart'] ) && '1' === $input_settings['woo_tools_auto_update_cart'] ? '1' : '0';
+			$new_settings['woo_tools_hide_shipping_when_free']  = isset( $input_settings['woo_tools_hide_shipping_when_free'] ) && '1' === $input_settings['woo_tools_hide_shipping_when_free'] ? '1' : '0';
+			$new_settings['woo_tools_empty_cart_btn']           = isset( $input_settings['woo_tools_empty_cart_btn'] ) && '1' === $input_settings['woo_tools_empty_cart_btn'] ? '1' : '0';
+			$new_settings['woo_tools_hide_order_notes']         = isset( $input_settings['woo_tools_hide_order_notes'] ) && '1' === $input_settings['woo_tools_hide_order_notes'] ? '1' : '0';
+			$new_settings['woo_tools_disable_cart_links']       = isset( $input_settings['woo_tools_disable_cart_links'] ) && '1' === $input_settings['woo_tools_disable_cart_links'] ? '1' : '0';
+			$new_settings['woo_tools_open_products_new_tab']    = isset( $input_settings['woo_tools_open_products_new_tab'] ) && '1' === $input_settings['woo_tools_open_products_new_tab'] ? '1' : '0';
+			$new_settings['woo_tools_hide_shop_ordering']       = isset( $input_settings['woo_tools_hide_shop_ordering'] ) && '1' === $input_settings['woo_tools_hide_shop_ordering'] ? '1' : '0';
+			$new_settings['woo_tools_hide_shop_results_count']  = isset( $input_settings['woo_tools_hide_shop_results_count'] ) && '1' === $input_settings['woo_tools_hide_shop_results_count'] ? '1' : '0';
+			$new_settings['woo_tools_sold_individually']        = isset( $input_settings['woo_tools_sold_individually'] ) && '1' === $input_settings['woo_tools_sold_individually'] ? '1' : '0';
+			$new_settings['woo_tools_admin_order_sku_thumb']    = isset( $input_settings['woo_tools_admin_order_sku_thumb'] ) && '1' === $input_settings['woo_tools_admin_order_sku_thumb'] ? '1' : '0';
+			$new_settings['woo_tools_login_redirect_url']       = isset( $input_settings['woo_tools_login_redirect_url'] ) ? esc_url_raw( trim( $input_settings['woo_tools_login_redirect_url'] ) ) : '';
+			$new_settings['woo_tools_logout_redirect_url']      = isset( $input_settings['woo_tools_logout_redirect_url'] ) ? esc_url_raw( trim( $input_settings['woo_tools_logout_redirect_url'] ) ) : '';
+
+			if ( ! empty( $new_settings['woo_tools_sku_url'] ) ) {
+				flush_rewrite_rules( false );
+			}
 		}
 
 		// 6. Sanitizar WooCommerce Gallery Zoom
@@ -2281,6 +2313,7 @@ class WPAT_Admin {
 			'woo-registration-forms',
 			'html-aria-fixer',
 			'tools',
+			'woo-tools',
 		);
 
 		if ( ! in_array( $module_id, $modules, true ) ) {
@@ -3357,6 +3390,7 @@ class WPAT_Admin {
 				'wpat-file-manager'          => 'file-manager',
 				'wpat-woo-registration-forms' => 'woo-registration-forms',
 				'wpat-tools'                 => 'tools',
+				'wpat-woo-tools'             => 'woo-tools',
 			);
 			if ( isset( $map[ $page_slug ] ) ) {
 				$mod_id = $map[ $page_slug ];
@@ -3692,6 +3726,18 @@ class WPAT_Admin {
 				'icon'        => '⚡',
 				'icon_bg'     => 'woo',
 				'keywords'    => 'compra directa direct checkout saltar carrito comprar ahora 1 clic pago rapido express checkout'
+			),
+			array(
+				'id'          => 'woo-tools',
+				'is_new'      => true,
+				'title'       => 'Herramientas y Ajustes WooCommerce',
+				'badge'       => 'Configuración',
+				'badge_class' => 'tweak',
+				'desc'        => 'Ajustes rápidos: borrado automático de imágenes de productos eliminados, URLs por SKU, pedido mínimo obligatorio y precios solo para registrados.',
+				'cat_class'   => 'cat-woocommerce',
+				'icon'        => '🛠️',
+				'icon_bg'     => 'woo',
+				'keywords'    => 'herramientas ajustes tweaks borrar imagenes fotos producto sku url enlace pedido minimo login precios usuarios registrados mayoristas b2b woocommerce'
 			),
 			array(
 				'id'          => 'woo-pdf-invoices',
@@ -5876,6 +5922,447 @@ class WPAT_Admin {
 									</div>
 									<?php $this->render_module_toggle( 'woo-dni', $settings, false ); ?>
 								</div>
+				<?php
+				break;
+			case 'woo-tools':
+				$currency_symbol      = function_exists( 'get_woocommerce_currency_symbol' ) ? get_woocommerce_currency_symbol() : '€';
+				$del_images           = isset( $settings['woo_tools_delete_images'] ) && '1' === $settings['woo_tools_delete_images'];
+				$sku_url              = isset( $settings['woo_tools_sku_url'] ) && '1' === $settings['woo_tools_sku_url'];
+				$min_order_on         = isset( $settings['woo_tools_min_order_enabled'] ) && '1' === $settings['woo_tools_min_order_enabled'];
+				$min_amount           = isset( $settings['woo_tools_min_order_amount'] ) ? (float) $settings['woo_tools_min_order_amount'] : 0;
+				$min_type             = isset( $settings['woo_tools_min_order_type'] ) ? $settings['woo_tools_min_order_type'] : 'subtotal';
+				$min_msg              = isset( $settings['woo_tools_min_order_msg'] ) && '' !== $settings['woo_tools_min_order_msg'] ? $settings['woo_tools_min_order_msg'] : 'El importe mínimo para realizar un pedido es de {min_order}. Tu pedido actual suma {current_order}.';
+				$login_prices_on      = isset( $settings['woo_tools_login_for_prices_enabled'] ) && '1' === $settings['woo_tools_login_for_prices_enabled'];
+				$login_text           = isset( $settings['woo_tools_login_for_prices_text'] ) && '' !== $settings['woo_tools_login_for_prices_text'] ? $settings['woo_tools_login_for_prices_text'] : 'Inicia sesión para ver precios';
+				$login_url            = isset( $settings['woo_tools_login_for_prices_url'] ) ? $settings['woo_tools_login_for_prices_url'] : '';
+
+				// Nuevas utilidades
+				$auto_update_cart     = isset( $settings['woo_tools_auto_update_cart'] ) && '1' === $settings['woo_tools_auto_update_cart'];
+				$hide_shipping_free   = isset( $settings['woo_tools_hide_shipping_when_free'] ) && '1' === $settings['woo_tools_hide_shipping_when_free'];
+				$empty_cart_btn       = isset( $settings['woo_tools_empty_cart_btn'] ) && '1' === $settings['woo_tools_empty_cart_btn'];
+				$hide_order_notes     = isset( $settings['woo_tools_hide_order_notes'] ) && '1' === $settings['woo_tools_hide_order_notes'];
+				$disable_cart_links   = isset( $settings['woo_tools_disable_cart_links'] ) && '1' === $settings['woo_tools_disable_cart_links'];
+				$open_products_blank  = isset( $settings['woo_tools_open_products_new_tab'] ) && '1' === $settings['woo_tools_open_products_new_tab'];
+				$hide_shop_ordering   = isset( $settings['woo_tools_hide_shop_ordering'] ) && '1' === $settings['woo_tools_hide_shop_ordering'];
+				$hide_shop_count      = isset( $settings['woo_tools_hide_shop_results_count'] ) && '1' === $settings['woo_tools_hide_shop_results_count'];
+				$sold_individually    = isset( $settings['woo_tools_sold_individually'] ) && '1' === $settings['woo_tools_sold_individually'];
+				$admin_order_sku      = isset( $settings['woo_tools_admin_order_sku_thumb'] ) && '1' === $settings['woo_tools_admin_order_sku_thumb'];
+				$login_redirect       = isset( $settings['woo_tools_login_redirect_url'] ) ? $settings['woo_tools_login_redirect_url'] : '';
+				$logout_redirect      = isset( $settings['woo_tools_logout_redirect_url'] ) ? $settings['woo_tools_logout_redirect_url'] : '';
+				?>
+				<div class="wpat-module-card">
+					<div class="wpat-module-header">
+						<div class="wpat-module-info">
+							<h3>🛠️ Herramientas y Ajustes para WooCommerce</h3>
+							<p>Colección de ajustes rápidos, optimizaciones de compra y utilidades ligeras de activación/desactivación para tu tienda online.</p>
+						</div>
+						<?php $this->render_module_toggle( 'woo-tools', $settings, true ); ?>
+					</div>
+					<div class="wpat-module-body" style="display: block; padding: 22px;">
+
+						<!-- ==========================================
+						     SECCIÓN 1: CARRITO Y CHECKOUT
+						     ========================================== -->
+						<div style="margin-bottom: 25px;">
+							<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+								<span style="background: #eff6ff; color: #2563eb; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 14px;">🛒</span>
+								Carrito y Finalizar Compra (Checkout)
+							</h4>
+
+							<div style="display: flex; flex-direction: column; gap: 12px;">
+
+								<!-- 1.1 Actualización automática del carrito -->
+								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
+										<div>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+												<span class="dashicons dashicons-update" style="color: #2563eb; font-size: 17px; width: 17px; height: 17px;"></span>
+												Actualización automática del carrito (AJAX)
+											</label>
+											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
+												Al modificar la cantidad con <code>+</code>/<code>-</code> o teclear en la página del carrito, se recalcula el total al instante sin obligar al usuario a pulsar el botón "Actualizar carrito".
+											</p>
+										</div>
+										<label class="wpat-toggle-switch" style="flex-shrink: 0;">
+											<input type="checkbox" name="wpat_settings[woo_tools_auto_update_cart]" value="1" <?php checked( $auto_update_cart ); ?> />
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+								</div>
+
+								<!-- 1.2 Ocultar otros métodos de envío cuando el Envío Gratuito esté disponible -->
+								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
+										<div>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+												<span class="dashicons dashicons-car" style="color: #059669; font-size: 17px; width: 17px; height: 17px;"></span>
+												Ocultar métodos de envío de pago cuando haya "Envío Gratuito"
+											</label>
+											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
+												Si el pedido califica para envío gratis, oculta automáticamente las tarifas estándar de pago para que el cliente no pague el envío por confusión (mantiene la recogida local).
+											</p>
+										</div>
+										<label class="wpat-toggle-switch" style="flex-shrink: 0;">
+											<input type="checkbox" name="wpat_settings[woo_tools_hide_shipping_when_free]" value="1" <?php checked( $hide_shipping_free ); ?> />
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+								</div>
+
+								<!-- 1.3 Botón Vaciar Carrito -->
+								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
+										<div>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+												<span class="dashicons dashicons-trash" style="color: #ef4444; font-size: 17px; width: 17px; height: 17px;"></span>
+												Botón "Vaciar Carrito" con 1 clic
+											</label>
+											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
+												Añade un botón de acción en la página del carrito para vaciar todos los artículos de golpe con un aviso de confirmación.
+											</p>
+										</div>
+										<label class="wpat-toggle-switch" style="flex-shrink: 0;">
+											<input type="checkbox" name="wpat_settings[woo_tools_empty_cart_btn]" value="1" <?php checked( $empty_cart_btn ); ?> />
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+								</div>
+
+								<!-- 1.4 Ocultar campo Notas del Pedido -->
+								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
+										<div>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+												<span class="dashicons dashicons-edit" style="color: #6366f1; font-size: 17px; width: 17px; height: 17px;"></span>
+												Ocultar campo "Notas del pedido" en el Checkout
+											</label>
+											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
+												Elimina la caja de comentarios adicionales en la pantalla de finalizar compra para un checkout más limpio y rápido.
+											</p>
+										</div>
+										<label class="wpat-toggle-switch" style="flex-shrink: 0;">
+											<input type="checkbox" name="wpat_settings[woo_tools_hide_order_notes]" value="1" <?php checked( $hide_order_notes ); ?> />
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+								</div>
+
+								<!-- 1.5 Desactivar enlaces a productos en Carrito y Checkout -->
+								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
+										<div>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+												<span class="dashicons dashicons-editor-unlink" style="color: #ea580c; font-size: 17px; width: 17px; height: 17px;"></span>
+												Desactivar enlaces a productos en Carrito y Checkout
+											</label>
+											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
+												Evita fugas de compradores quitando los enlaces clicables en los títulos y fotos de la tabla del carrito/checkout para que el cliente finalice la compra.
+											</p>
+										</div>
+										<label class="wpat-toggle-switch" style="flex-shrink: 0;">
+											<input type="checkbox" name="wpat_settings[woo_tools_disable_cart_links]" value="1" <?php checked( $disable_cart_links ); ?> />
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+								</div>
+
+								<!-- 1.6 Pedido mínimo obligatorio -->
+								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 12px;">
+										<div>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+												<span class="dashicons dashicons-cart" style="color: #8b5cf6; font-size: 17px; width: 17px; height: 17px;"></span>
+												Pedido mínimo obligatorio
+											</label>
+											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
+												Impide tramitar el pedido si la cesta no alcanza la cantidad mínima estipulada, mostrando un aviso bloqueante informativo.
+											</p>
+										</div>
+										<label class="wpat-toggle-switch" style="flex-shrink: 0;">
+											<input type="checkbox" name="wpat_settings[woo_tools_min_order_enabled]" value="1" <?php checked( $min_order_on ); ?> onchange="document.getElementById('wpat-min-order-subfields').style.display = this.checked ? 'block' : 'none';" />
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+
+									<div id="wpat-min-order-subfields" style="<?php echo $min_order_on ? 'display: block;' : 'display: none;'; ?> border-top: 1px dashed #cbd5e1; padding-top: 14px; margin-top: 10px;">
+										<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 12px;">
+											<div>
+												<label style="font-weight: 600; font-size: 12.5px; color: #334155; display: block; margin-bottom: 5px;">
+													Importe mínimo requerido (<?php echo esc_html( $currency_symbol ); ?>)
+												</label>
+												<div style="position: relative; max-width: 200px;">
+													<input type="number" step="0.01" min="0" name="wpat_settings[woo_tools_min_order_amount]" value="<?php echo esc_attr( $min_amount > 0 ? $min_amount : '' ); ?>" placeholder="50.00" class="regular-text" style="width: 100%; padding-right: 30px; font-weight: 600;" />
+													<span style="position: absolute; right: 10px; top: 7px; color: #94a3b8; font-weight: 700;"><?php echo esc_html( $currency_symbol ); ?></span>
+												</div>
+											</div>
+
+											<div>
+												<label style="font-weight: 600; font-size: 12.5px; color: #334155; display: block; margin-bottom: 5px;">
+													Aplicar sobre
+												</label>
+												<select name="wpat_settings[woo_tools_min_order_type]" style="height: 36px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; width: 100%; max-width: 250px;">
+													<option value="subtotal" <?php selected( $min_type, 'subtotal' ); ?>>Subtotal del carrito (sin impuestos/envío)</option>
+													<option value="total" <?php selected( $min_type, 'total' ); ?>>Total final del pedido (con impuestos)</option>
+												</select>
+											</div>
+										</div>
+
+										<div>
+											<label style="font-weight: 600; font-size: 12.5px; color: #334155; display: block; margin-bottom: 5px;">
+												Mensaje de aviso bloqueante
+											</label>
+											<input type="text" name="wpat_settings[woo_tools_min_order_msg]" value="<?php echo esc_attr( $min_msg ); ?>" class="large-text" placeholder="El importe mínimo para realizar un pedido es de {min_order}. Tu pedido actual suma {current_order}." />
+											<p class="description" style="margin-top: 4px; font-size: 11.5px; color: #64748b;">
+												Variables: <code>{min_order}</code> (importe mínimo formateado) y <code>{current_order}</code> (importe actual del carrito).
+											</p>
+										</div>
+									</div>
+								</div>
+
+							</div>
+						</div>
+
+						<!-- ==========================================
+						     SECCIÓN 2: CATÁLOGO Y PRODUCTOS
+						     ========================================== -->
+						<div style="margin-bottom: 25px;">
+							<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+								<span style="background: #fdf2f8; color: #db2777; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 14px;">🏪</span>
+								Catálogo y Fichas de Producto
+							</h4>
+
+							<div style="display: flex; flex-direction: column; gap: 12px;">
+
+								<!-- 2.1 Precios exclusivos para usuarios registrados -->
+								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 12px;">
+										<div>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+												<span class="dashicons dashicons-lock" style="color: #d97706; font-size: 17px; width: 17px; height: 17px;"></span>
+												Solo usuarios registrados pueden ver precios
+											</label>
+											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
+												Oculta los precios y los botones de compra a visitantes no autenticados, invitándoles a iniciar sesión (ideal para tiendas B2B o venta privada).
+											</p>
+										</div>
+										<label class="wpat-toggle-switch" style="flex-shrink: 0;">
+											<input type="checkbox" name="wpat_settings[woo_tools_login_for_prices_enabled]" value="1" <?php checked( $login_prices_on ); ?> onchange="document.getElementById('wpat-login-prices-subfields').style.display = this.checked ? 'block' : 'none';" />
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+
+									<div id="wpat-login-prices-subfields" style="<?php echo $login_prices_on ? 'display: block;' : 'display: none;'; ?> border-top: 1px dashed #cbd5e1; padding-top: 14px; margin-top: 10px;">
+										<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+											<div>
+												<label style="font-weight: 600; font-size: 12.5px; color: #334155; display: block; margin-bottom: 5px;">
+													Texto sustitutivo del precio y botón
+												</label>
+												<input type="text" name="wpat_settings[woo_tools_login_for_prices_text]" value="<?php echo esc_attr( $login_text ); ?>" class="regular-text" style="width: 100%;" placeholder="Inicia sesión para ver precios" />
+											</div>
+
+											<div>
+												<label style="font-weight: 600; font-size: 12.5px; color: #334155; display: block; margin-bottom: 5px;">
+													URL de destino personalizada (Opcional)
+												</label>
+												<input type="url" name="wpat_settings[woo_tools_login_for_prices_url]" value="<?php echo esc_attr( $login_url ); ?>" class="regular-text" style="width: 100%;" placeholder="https://tutienda.com/mi-cuenta/ (vacío = Mi Cuenta)" />
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<!-- 2.2 Abrir productos en nueva pestaña -->
+								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
+										<div>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+												<span class="dashicons dashicons-external" style="color: #0284c7; font-size: 17px; width: 17px; height: 17px;"></span>
+												Abrir productos en nueva pestaña (<code>target="_blank"</code>)
+											</label>
+											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
+												Al hacer clic en cualquier producto desde la tienda o categorías se abre en una pestaña nueva, conservando la posición de scroll del cliente en el catálogo.
+											</p>
+										</div>
+										<label class="wpat-toggle-switch" style="flex-shrink: 0;">
+											<input type="checkbox" name="wpat_settings[woo_tools_open_products_new_tab]" value="1" <?php checked( $open_products_blank ); ?> />
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+								</div>
+
+								<!-- 2.3 Ocultar selector de ordenación del catálogo -->
+								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
+										<div>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+												<span class="dashicons dashicons-sort" style="color: #475569; font-size: 17px; width: 17px; height: 17px;"></span>
+												Ocultar selector de ordenación en la tienda
+											</label>
+											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
+												Elimina el menú desplegable *"Ordenar por popularidad, precio..."* en las páginas de catálogo y archivos de categoría.
+											</p>
+										</div>
+										<label class="wpat-toggle-switch" style="flex-shrink: 0;">
+											<input type="checkbox" name="wpat_settings[woo_tools_hide_shop_ordering]" value="1" <?php checked( $hide_shop_ordering ); ?> />
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+								</div>
+
+								<!-- 2.4 Ocultar contador de resultados -->
+								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
+										<div>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+												<span class="dashicons dashicons-visibility" style="color: #475569; font-size: 17px; width: 17px; height: 17px;"></span>
+												Ocultar contador de resultados en la tienda
+											</label>
+											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
+												Elimina el texto *"Mostrando 1–12 de 35 resultados"* en las páginas de tienda y archivos para un diseño más limpio y minimalista.
+											</p>
+										</div>
+										<label class="wpat-toggle-switch" style="flex-shrink: 0;">
+											<input type="checkbox" name="wpat_settings[woo_tools_hide_shop_results_count]" value="1" <?php checked( $hide_shop_count ); ?> />
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+								</div>
+
+								<!-- 2.5 Límite de 1 unidad por producto -->
+								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
+										<div>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+												<span class="dashicons dashicons-tag" style="color: #059669; font-size: 17px; width: 17px; height: 17px;"></span>
+												Límite de 1 unidad por producto (Venta individualizada global)
+											</label>
+											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
+												Oculta el selector de cantidades y solo permite adquirir un máximo de 1 unidad de cada producto (ideal para entradas, cursos, consultorías o servicios).
+											</p>
+										</div>
+										<label class="wpat-toggle-switch" style="flex-shrink: 0;">
+											<input type="checkbox" name="wpat_settings[woo_tools_sold_individually]" value="1" <?php checked( $sold_individually ); ?> />
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+								</div>
+
+							</div>
+						</div>
+
+						<!-- ==========================================
+						     SECCIÓN 3: MEDIOS Y ENLACES
+						     ========================================== -->
+						<div style="margin-bottom: 25px;">
+							<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+								<span style="background: #f0fdf4; color: #16a34a; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 14px;">🖼️</span>
+								Gestión de Medios y Enlaces
+							</h4>
+
+							<div style="display: flex; flex-direction: column; gap: 12px;">
+
+								<!-- 3.1 Borrado automático de imágenes al eliminar producto -->
+								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
+										<div>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+												<span class="dashicons dashicons-trash" style="color: #ef4444; font-size: 17px; width: 17px; height: 17px;"></span>
+												Borrar imágenes al eliminar un producto
+											</label>
+											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
+												Elimina automáticamente la imagen destacada, galería y fotos de variaciones de la biblioteca al borrar definitivamente un producto.
+											</p>
+											<p style="margin: 4px 0 0 0; font-size: 11.5px; color: #059669; font-weight: 600;">
+												🛡️ Protección inteligente: Si una imagen está en uso por otro post o producto, no será eliminada.
+											</p>
+										</div>
+										<label class="wpat-toggle-switch" style="flex-shrink: 0;">
+											<input type="checkbox" name="wpat_settings[woo_tools_delete_images]" value="1" <?php checked( $del_images ); ?> />
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+								</div>
+
+								<!-- 3.2 Acceso y Redirección por SKU -->
+								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
+										<div>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+												<span class="dashicons dashicons-admin-links" style="color: #0284c7; font-size: 17px; width: 17px; height: 17px;"></span>
+												Acceso a productos mediante SKU en la URL
+											</label>
+											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
+												Permite consultar cualquier producto mediante su SKU usando <code>/sku/{sku}/</code>, <code>/p/{sku}/</code> o <code>?sku={sku}</code>, redirigiendo de forma instantánea (301) a su enlace canónico.
+											</p>
+										</div>
+										<label class="wpat-toggle-switch" style="flex-shrink: 0;">
+											<input type="checkbox" name="wpat_settings[woo_tools_sku_url]" value="1" <?php checked( $sku_url ); ?> />
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+								</div>
+
+							</div>
+						</div>
+
+						<!-- ==========================================
+						     SECCIÓN 4: ADMINISTRACIÓN Y CUENTAS
+						     ========================================== -->
+						<div style="margin-bottom: 10px;">
+							<h4 style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+								<span style="background: #faf5ff; color: #9333ea; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 14px;">👤</span>
+								Administración y Cuentas de Usuario
+							</h4>
+
+							<div style="display: flex; flex-direction: column; gap: 12px;">
+
+								<!-- 4.1 Mostrar miniatura y SKU en pedidos del panel -->
+								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+									<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px;">
+										<div>
+											<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+												<span class="dashicons dashicons-format-image" style="color: #6366f1; font-size: 17px; width: 17px; height: 17px;"></span>
+												Mostrar miniatura y SKU en el detalle de pedidos de administración
+											</label>
+											<p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
+												Muestra una pequeña miniatura y la etiqueta del SKU en cada línea de producto al consultar o preparar un pedido en el panel de WordPress.
+											</p>
+										</div>
+										<label class="wpat-toggle-switch" style="flex-shrink: 0;">
+											<input type="checkbox" name="wpat_settings[woo_tools_admin_order_sku_thumb]" value="1" <?php checked( $admin_order_sku ); ?> />
+											<span class="wpat-toggle-slider"></span>
+										</label>
+									</div>
+								</div>
+
+								<!-- 4.2 Redirecciones de Login y Logout -->
+								<div class="wpat-field-group" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+									<label style="font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+										<span class="dashicons dashicons-redo" style="color: #0284c7; font-size: 17px; width: 17px; height: 17px;"></span>
+										Redirecciones personalizadas de acceso y salida
+									</label>
+
+									<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+										<div>
+											<label style="font-weight: 600; font-size: 12.5px; color: #334155; display: block; margin-bottom: 5px;">
+												Redirección tras Iniciar Sesión (URL)
+											</label>
+											<input type="url" name="wpat_settings[woo_tools_login_redirect_url]" value="<?php echo esc_attr( $login_redirect ); ?>" class="regular-text" style="width: 100%;" placeholder="https://tutienda.com/tienda/ (vacío = Mi Cuenta)" />
+										</div>
+
+										<div>
+											<label style="font-weight: 600; font-size: 12.5px; color: #334155; display: block; margin-bottom: 5px;">
+												Redirección tras Cerrar Sesión (URL)
+											</label>
+											<input type="url" name="wpat_settings[woo_tools_logout_redirect_url]" value="<?php echo esc_attr( $logout_redirect ); ?>" class="regular-text" style="width: 100%;" placeholder="https://tutienda.com/ (vacío = inicio)" />
+										</div>
+									</div>
+								</div>
+
+							</div>
+						</div>
+
+					</div>
+				</div>
 				<?php
 				break;
 			case 'woo-catalog':

@@ -245,6 +245,10 @@
 			if (inputType === 'heading') {
 				rowHtml += '<span class="wpat-reg-field-badge-type" style="background:#e0e7ff; color:#4338ca;">TÍTULO / SECCIÓN</span>' +
 					'<span style="color: #6366f1; font-size: 11px; font-weight: 600;">Separador Visual</span>';
+			} else if (inputType === 'captcha') {
+				rowHtml += '<span class="wpat-reg-field-badge-type" style="background:#fee2e2; color:#b91c1c;">CAPTCHA</span>' +
+					'<span style="color: #b91c1c; font-size: 11px; font-weight: 700;" class="wpat-row-req-lbl">Obligatorio (Fijo)</span>' +
+					'<span style="font-size: 11px; color: #64748b;" class="wpat-row-width-lbl">50% (Media col)</span>';
 			} else {
 				var badgeStyle = (inputType === 'radio') ? 'background:#fef3c7; color:#92400e;' : '';
 				rowHtml += '<span class="wpat-reg-field-badge-type" style="' + badgeStyle + '">' + inputType.toUpperCase() + '</span>' +
@@ -344,6 +348,29 @@
 						'</div>' +
 					'</div>' +
 				'</div>';
+			} else if (inputType === 'captcha') {
+				rowHtml += '<div style="display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 12px; align-items: flex-end;">' +
+					'<div>' +
+						'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Etiqueta (Pregunta de seguridad):</label>' +
+						'<input type="text" name="fields_data[' + newIdx + '][label]" value="' + safeLabel + '" class="wpat-input-field-label" style="width: 100%;" />' +
+					'</div>' +
+					'<div>' +
+						'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Placeholder:</label>' +
+						'<input type="text" name="fields_data[' + newIdx + '][placeholder]" value="Tu respuesta numérica" style="width: 100%;" />' +
+					'</div>' +
+					'<div>' +
+						'<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Ancho en formulario:</label>' +
+						'<select name="fields_data[' + newIdx + '][width]" class="wpat-select-field-width" style="width: 100%;">' +
+							'<option value="half" selected>50% (Media columna)</option>' +
+							'<option value="full">100% (Ancho completo)</option>' +
+						'</select>' +
+					'</div>' +
+				'</div>' +
+				'<input type="hidden" name="fields_data[' + newIdx + '][required]" value="1" />' +
+				'<p style="margin: 8px 0 0 0; font-size: 11.5px; color: #64748b; font-style: italic;">' +
+					'<span class="dashicons dashicons-shield" style="font-size: 14px; width: 14px; height: 14px; vertical-align: middle; color:#10b981;"></span> ' +
+					'Genera automáticamente una suma o resta matemática al azar verificada con firma criptográfica HMAC.' +
+				'</p>';
 			} else {
 				rowHtml += '<div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">' +
 					'<div>' +

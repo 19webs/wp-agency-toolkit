@@ -1874,6 +1874,8 @@ class WPAT_Admin {
 					'default_role'         => isset( $_POST['form_default_role'] ) ? sanitize_key( $_POST['form_default_role'] ) : 'customer',
 					'allowed_roles'        => isset( $_POST['form_allowed_roles'] ) && is_array( $_POST['form_allowed_roles'] ) ? array_map( 'sanitize_key', $_POST['form_allowed_roles'] ) : array( 'customer' ),
 					'approval_required'    => isset( $_POST['form_approval_required'] ) ? '1' : '0',
+					'notification_emails'  => isset( $_POST['form_notification_emails'] ) ? sanitize_text_field( wp_unslash( $_POST['form_notification_emails'] ) ) : '',
+					'notify_on_auto'       => isset( $_POST['form_notify_on_auto'] ) ? '1' : '0',
 					'redirect_type'        => isset( $_POST['form_redirect_type'] ) ? sanitize_key( $_POST['form_redirect_type'] ) : 'default',
 					'redirect_url'         => isset( $_POST['form_redirect_url'] ) ? esc_url_raw( wp_unslash( $_POST['form_redirect_url'] ) ) : '',
 					'success_msg'          => isset( $_POST['form_success_msg'] ) ? sanitize_textarea_field( wp_unslash( $_POST['form_success_msg'] ) ) : '',
@@ -1912,7 +1914,7 @@ class WPAT_Admin {
 								'subtitle'                 => isset( $f_data['subtitle'] ) ? sanitize_text_field( wp_unslash( $f_data['subtitle'] ) ) : '',
 								'options_str'              => $raw_options_str,
 								'options'                  => $parsed_options,
-								'required'                 => ( 'heading' !== $field_type && ( in_array( $f_data['id'], array( 'user_email', 'user_pass' ), true ) || ! empty( $f_data['required'] ) ) ) ? '1' : '0',
+								'required'                 => ( 'heading' !== $field_type && ( in_array( $f_data['id'], array( 'user_email', 'user_pass', 'captcha' ), true ) || 'captcha' === $field_type || ! empty( $f_data['required'] ) ) ) ? '1' : '0',
 								'width'                    => ( 'heading' === $field_type || ! isset( $f_data['width'] ) || 'full' === $f_data['width'] ) ? 'full' : 'half',
 								'is_native'                => ! empty( $f_data['is_native'] ) ? '1' : '0',
 								'conditional_role_enabled' => ! empty( $f_data['conditional_role_enabled'] ) ? '1' : '0',
@@ -17092,6 +17094,8 @@ class WPAT_Admin {
 				'default_role'         => 'customer',
 				'allowed_roles'        => array( 'customer' ),
 				'approval_required'    => '0',
+				'notification_emails'  => '',
+				'notify_on_auto'       => '1',
 				'redirect_type'        => 'default',
 				'redirect_url'         => '',
 				'success_msg'          => '¡Gracias por registrarte! Tu cuenta ha sido creada con éxito.',
@@ -17284,12 +17288,39 @@ class WPAT_Admin {
 							</div>
 						</div>
 
-						<!-- Bloque 3: Constructor de Campos -->
+						<!-- Bloque 3: Destinatarios y Notificaciones por Correo Electrónico -->
+						<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 22px;">
+							<h4 style="margin: 0 0 16px 0; font-size: 14.5px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+								<span class="dashicons dashicons-email-alt" style="color: #2563eb;"></span> 3. Destinatarios y Notificaciones por Correo Electrónico
+							</h4>
+
+							<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: flex-start;">
+								<div class="wpat-field-group">
+									<label for="form_notification_emails" style="font-weight: 600; display: block; margin-bottom: 6px;">Enviar avisos de registro a estos emails:</label>
+									<input type="text" name="form_notification_emails" id="form_notification_emails" value="<?php echo esc_attr( isset( $active_form['notification_emails'] ) ? $active_form['notification_emails'] : '' ); ?>" placeholder="ej: ventas@mitienda.com, comercial@mitienda.com" class="regular-text" style="width: 100%;" />
+									<p class="description" style="margin-top: 4px;">
+										Indica uno o varios correos electrónicos separados por comas. Si lo dejas vacío, las notificaciones se enviarán por defecto al email del administrador del sitio (<code><?php echo esc_html( get_option( 'admin_email' ) ); ?></code>).
+									</p>
+								</div>
+
+								<div class="wpat-field-group" style="padding-top: 24px;">
+									<label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; color: #1e293b;">
+										<input type="checkbox" name="form_notify_on_auto" value="1" <?php checked( ! isset( $active_form['notify_on_auto'] ) || '1' === (string) $active_form['notify_on_auto'] ); ?> />
+										<span><strong>Notificar también si la cuenta se aprueba automáticamente</strong></span>
+									</label>
+									<p class="description" style="margin-top: 4px;">
+										Recibe un correo con el desglose de datos cada vez que un usuario se registre, sin importar si requiere aprobación manual o no.
+									</p>
+								</div>
+							</div>
+						</div>
+
+						<!-- Bloque 4: Constructor de Campos -->
 						<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 22px;">
 							<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
 								<div>
 									<h4 style="margin: 0; font-size: 14.5px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-										<span class="dashicons dashicons-forms" style="color: #2563eb;"></span> 3. Campos del Formulario (<span id="wpat_fields_count"><?php echo count( $active_form['fields'] ); ?></span>)
+										<span class="dashicons dashicons-forms" style="color: #2563eb;"></span> 4. Campos del Formulario (<span id="wpat_fields_count"><?php echo count( $active_form['fields'] ); ?></span>)
 									</h4>
 									<p style="margin: 4px 0 0 0; font-size: 12.5px; color: #64748b;">
 										Los campos con prefijo <code>billing_*</code> sincronizan automáticamente los datos con el proceso de compra (Checkout) de WooCommerce.
@@ -17322,6 +17353,10 @@ class WPAT_Admin {
 											<?php elseif ( 'heading' === $ftype ) : ?>
 												<span class="wpat-reg-field-badge-type" style="background: #e0e7ff; color: #4338ca;">TÍTULO / SECCIÓN</span>
 												<span style="color: #6366f1; font-size: 11px; font-weight: 600;">Separador Visual</span>
+											<?php elseif ( 'captcha' === $ftype ) : ?>
+												<span class="wpat-reg-field-badge-type" style="background: #fee2e2; color: #b91c1c;">CAPTCHA</span>
+												<span style="color: #b91c1c; font-size: 11px; font-weight: 700;" class="wpat-row-req-lbl">Obligatorio (Fijo)</span>
+												<span style="font-size: 11px; color: #64748b;" class="wpat-row-width-lbl"><?php echo ( isset( $field['width'] ) && 'half' === $field['width'] ) ? '50% (Media col)' : '100% (Ancho completo)'; ?></span>
 											<?php else : ?>
 												<span class="wpat-reg-field-badge-type"><?php echo esc_html( strtoupper( $ftype ) ); ?></span>
 												<?php if ( ! empty( $field['required'] ) && '1' === (string) $field['required'] ) : ?>
@@ -17381,6 +17416,29 @@ class WPAT_Admin {
 												<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][placeholder]" value="" />
 												<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][width]" value="full" />
 												<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][required]" value="0" />
+											<?php elseif ( 'captcha' === $ftype ) : ?>
+												<div style="display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 12px; align-items: flex-end;">
+													<div>
+														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Etiqueta (Pregunta de seguridad):</label>
+														<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][label]" value="<?php echo esc_attr( $field['label'] ); ?>" class="wpat-input-field-label" style="width: 100%;" />
+													</div>
+													<div>
+														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Placeholder:</label>
+														<input type="text" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][placeholder]" value="<?php echo esc_attr( isset( $field['placeholder'] ) ? $field['placeholder'] : 'Tu respuesta numérica' ); ?>" style="width: 100%;" />
+													</div>
+													<div>
+														<label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Ancho en formulario:</label>
+														<select name="fields_data[<?php echo esc_attr( $f_idx ); ?>][width]" class="wpat-select-field-width" style="width: 100%;">
+															<option value="half" <?php selected( isset( $field['width'] ) ? $field['width'] : 'half', 'half' ); ?>>50% (Media columna)</option>
+															<option value="full" <?php selected( isset( $field['width'] ) ? $field['width'] : 'half', 'full' ); ?>>100% (Ancho completo)</option>
+														</select>
+													</div>
+												</div>
+												<input type="hidden" name="fields_data[<?php echo esc_attr( $f_idx ); ?>][required]" value="1" />
+												<p style="margin: 8px 0 0 0; font-size: 11.5px; color: #64748b; font-style: italic;">
+													<span class="dashicons dashicons-shield" style="font-size: 14px; width: 14px; height: 14px; vertical-align: middle; color:#10b981;"></span>
+													<?php esc_html_e( 'Genera automáticamente una suma o resta matemática al azar verificada con firma criptográfica HMAC.', 'wp-agency-toolkit' ); ?>
+												</p>
 											<?php elseif ( 'radio' === $ftype || 'select' === $ftype ) : ?>
 												<div style="display: grid; grid-template-columns: 2fr 2fr <?php echo 'select' === $ftype ? '1.5fr ' : ''; ?>1fr auto; gap: 12px; align-items: flex-end;">
 													<div>
@@ -17521,6 +17579,9 @@ class WPAT_Admin {
 											<option value="billing_postcode" data-id="billing_postcode" data-label="Código Postal" data-input-type="text" data-native="1">Código Postal (billing_postcode)</option>
 											<option value="billing_state" data-id="billing_state" data-label="Provincia / Estado" data-input-type="text" data-native="1">Provincia (billing_state)</option>
 											<option value="billing_country" data-id="billing_country" data-label="País" data-input-type="text" data-native="1">País (billing_country)</option>
+										</optgroup>
+										<optgroup label="🛡️ Seguridad y Anti-Spam">
+											<option value="custom_captcha" data-id="captcha" data-label="Pregunta de Seguridad (Captcha)" data-input-type="captcha" data-native="0">Captcha Antispam Matemático (Ej: ¿Cuánto es 3 + 4?)</option>
 										</optgroup>
 										<optgroup label="📝 Campos Personalizados Adicionales">
 											<option value="custom_text" data-label="Texto Libre" data-input-type="text" data-native="0">Texto Corto (Línea simple)</option>

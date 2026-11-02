@@ -137,6 +137,25 @@
 	left: -9999px !important;
 }
 
+/* Captcha Matemático Frontend */
+.wpat-reg-field-captcha-wrap .wpat-captcha-challenge-badge {
+	background: #f1f5f9;
+	color: #0f172a;
+	padding: 3px 9px;
+	border-radius: 6px;
+	border: 1px solid #cbd5e1;
+	font-size: 13.5px;
+	font-weight: 700;
+	margin-left: 6px;
+	display: inline-block;
+}
+
+.wpat-reg-field-captcha-wrap input[type="number"] {
+	max-width: 180px !important;
+	font-weight: 700 !important;
+	letter-spacing: 0.5px !important;
+}
+
 .wpat-reg-submit-wrap {
 	margin-top: 24px;
 	padding-top: 16px;

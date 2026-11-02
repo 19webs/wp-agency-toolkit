@@ -97,6 +97,8 @@ class WPAT_Woo_Registration_Forms {
 				'default_role'         => 'customer',
 				'allowed_roles'        => array( 'customer' ),
 				'approval_required'    => '1', // '1' = Manual (pendiente), '0' = Automático
+				'notification_emails'  => '',
+				'notify_on_auto'       => '1',
 				'redirect_type'        => 'default', // 'default', 'custom', 'myaccount'
 				'redirect_url'         => '',
 				'success_msg'          => '¡Gracias por registrarte! Tu solicitud de cuenta ha sido enviada y será revisada por nuestro equipo comercial.',
@@ -582,6 +584,38 @@ class WPAT_Woo_Registration_Forms {
 			return;
 		}
 
+		// Campo especial: Captcha matemático de seguridad anti-spam
+		if ( 'captcha' === $f_type ) {
+			$num1 = wp_rand( 2, 9 );
+			$num2 = wp_rand( 1, 8 );
+			$ops  = array( '+' => '+', '-' => '-' );
+			$op   = array_rand( $ops );
+
+			if ( '-' === $op && $num1 < $num2 ) {
+				$temp = $num1;
+				$num1 = $num2;
+				$num2 = $temp;
+			}
+
+			$expected = ( '+' === $op ) ? ( $num1 + $num2 ) : ( $num1 - $num2 );
+			$time     = time();
+			$salt     = defined( 'AUTH_KEY' ) ? AUTH_KEY : 'wpat_reg_captcha_salt';
+			$hash     = hash_hmac( 'sha256', $time . '|' . $expected, $salt );
+			$payload  = base64_encode( $time . '|' . $expected . '|' . $hash );
+
+			$challenge_text = sprintf( '¿Cuánto es %1$d %2$s %3$d?', $num1, $op, $num2 );
+			$label_text     = ! empty( $f_label ) ? $f_label : __( 'Pregunta de seguridad', 'wp-agency-toolkit' );
+
+			echo '<div class="wpat-reg-field-group ' . esc_attr( $f_width ) . ' wpat-reg-field-captcha-wrap">';
+			echo '<label class="wpat-reg-label" for="' . esc_attr( $html_id ) . '">';
+			echo esc_html( $label_text ) . ': <strong class="wpat-captcha-challenge-badge">' . esc_html( $challenge_text ) . '</strong> <span class="wpat-reg-required">*</span>';
+			echo '</label>';
+			echo '<input type="number" name="wpat_captcha_ans" id="' . esc_attr( $html_id ) . '" class="wpat-reg-input" required autocomplete="off" placeholder="' . esc_attr( ! empty( $f_plh ) ? $f_plh : __( 'Respuesta', 'wp-agency-toolkit' ) ) . '" style="max-width: 180px;" />';
+			echo '<input type="hidden" name="wpat_captcha_challenge" value="' . esc_attr( $payload ) . '" />';
+			echo '</div>';
+			return;
+		}
+
 		// Selector de Opciones con Radio Buttons
 		if ( 'radio' === $f_type ) {
 			$options = array();
@@ -730,11 +764,59 @@ class WPAT_Woo_Registration_Forms {
 			return;
 		}
 
+		// 3. Validar Captcha de seguridad si el formulario lo incluye
+		$has_captcha = false;
+		if ( ! empty( $form['fields'] ) && is_array( $form['fields'] ) ) {
+			foreach ( $form['fields'] as $f ) {
+				if ( ( isset( $f['type'] ) && 'captcha' === $f['type'] ) || ( isset( $f['id'] ) && 'captcha' === $f['id'] ) ) {
+					$has_captcha = true;
+					break;
+				}
+			}
+		}
+
+		if ( $has_captcha ) {
+			if ( ! isset( $_POST['wpat_captcha_challenge'] ) || ! isset( $_POST['wpat_captcha_ans'] ) || '' === trim( (string) $_POST['wpat_captcha_ans'] ) ) {
+				$this->redirect_with_error( __( 'Por favor, introduce la respuesta a la pregunta de seguridad (Captcha).', 'wp-agency-toolkit' ) );
+				return;
+			}
+
+			$raw_payload = sanitize_text_field( wp_unslash( $_POST['wpat_captcha_challenge'] ) );
+			$decoded     = base64_decode( $raw_payload, true );
+
+			if ( ! $decoded || substr_count( $decoded, '|' ) < 2 ) {
+				$this->redirect_with_error( __( 'El captcha de seguridad no es válido.', 'wp-agency-toolkit' ) );
+				return;
+			}
+
+			list( $timestamp, $expected, $hash ) = explode( '|', $decoded, 3 );
+
+			// Comprobar expiración (15 minutos = 900 segundos)
+			if ( ( time() - (int) $timestamp ) > 900 ) {
+				$this->redirect_with_error( __( 'El captcha de seguridad ha caducado. Por favor, recarga la página e inténtalo de nuevo.', 'wp-agency-toolkit' ) );
+				return;
+			}
+
+			$salt           = defined( 'AUTH_KEY' ) ? AUTH_KEY : 'wpat_reg_captcha_salt';
+			$recreated_hash = hash_hmac( 'sha256', $timestamp . '|' . $expected, $salt );
+
+			if ( ! hash_equals( $recreated_hash, $hash ) ) {
+				$this->redirect_with_error( __( 'Error de seguridad en la verificación del captcha.', 'wp-agency-toolkit' ) );
+				return;
+			}
+
+			$user_ans = intval( $_POST['wpat_captcha_ans'] );
+			if ( $user_ans !== (int) $expected ) {
+				$this->redirect_with_error( __( 'La respuesta a la pregunta de seguridad es incorrecta.', 'wp-agency-toolkit' ) );
+				return;
+			}
+		}
+
 		// Validar campos obligatorios
 		$submitted_fields = isset( $_POST['wpat_fields'] ) && is_array( $_POST['wpat_fields'] ) ? $_POST['wpat_fields'] : array();
 		if ( ! empty( $form['fields'] ) && is_array( $form['fields'] ) ) {
 			foreach ( $form['fields'] as $f ) {
-				if ( 'heading' === $f['type'] || in_array( $f['id'], array( 'user_email', 'user_pass' ), true ) ) {
+				if ( 'heading' === $f['type'] || 'captcha' === $f['type'] || in_array( $f['id'], array( 'user_email', 'user_pass', 'captcha' ), true ) ) {
 					continue;
 				}
 
@@ -822,7 +904,7 @@ class WPAT_Woo_Registration_Forms {
 		// Sincronizar campos con meta_key personalizada explícita (ej. billing_recargo_equivalencia)
 		if ( ! empty( $form['fields'] ) && is_array( $form['fields'] ) ) {
 			foreach ( $form['fields'] as $cf_field ) {
-				if ( 'heading' === $cf_field['type'] || in_array( $cf_field['id'], array( 'user_email', 'user_pass' ), true ) ) {
+				if ( 'heading' === $cf_field['type'] || 'captcha' === $cf_field['type'] || in_array( $cf_field['id'], array( 'user_email', 'user_pass', 'captcha' ), true ) ) {
 					continue;
 				}
 				$cf_id = $cf_field['id'];
@@ -890,8 +972,8 @@ class WPAT_Woo_Registration_Forms {
 			// Estado: Pendiente de aprobación
 			update_user_meta( $user_id, 'wpat_account_status', 'pending' );
 
-			// Notificar al Administrador por email
-			$this->send_admin_pending_notification( $user_id, $form );
+			// Notificar a los destinatarios configurados por email (o al admin_email)
+			$this->send_admin_registration_notification( $user_id, $form, true );
 
 			// Notificar al Usuario por email que su solicitud está en proceso
 			$this->send_user_pending_notification( $user_id, $form );
@@ -915,6 +997,12 @@ class WPAT_Woo_Registration_Forms {
 			// Iniciar sesión automáticamente
 			wp_set_current_user( $user_id );
 			wp_set_auth_cookie( $user_id );
+
+			// Notificar a los destinatarios configurados si está habilitado el aviso de registro automático
+			$notify_on_auto = ! isset( $form['notify_on_auto'] ) || '1' === (string) $form['notify_on_auto'];
+			if ( $notify_on_auto ) {
+				$this->send_admin_registration_notification( $user_id, $form, false );
+			}
 
 			// Redirigir según ajustes
 			$target_url = '';
@@ -1146,7 +1234,7 @@ class WPAT_Woo_Registration_Forms {
 							'subtitle'    => isset( $f['subtitle'] ) ? sanitize_text_field( $f['subtitle'] ) : '',
 							'options_str' => $raw_options_str,
 							'options'     => $parsed_options,
-							'required'    => ( 'heading' !== $f_type && ( in_array( $f['id'], array( 'user_email', 'user_pass' ), true ) || ! empty( $f['required'] ) ) ) ? '1' : '0',
+							'required'    => ( 'heading' !== $f_type && ( in_array( $f['id'], array( 'user_email', 'user_pass', 'captcha' ), true ) || 'captcha' === $f_type || ! empty( $f['required'] ) ) ) ? '1' : '0',
 							'width'       => ( 'heading' === $f_type || ! isset( $f['width'] ) || 'full' === $f['width'] ) ? 'full' : 'half',
 							'is_native'   => ! empty( $f['is_native'] ) ? '1' : '0',
 						);
@@ -1257,40 +1345,146 @@ class WPAT_Woo_Registration_Forms {
 	}
 
 	/**
-	 * Envía notificación al administrador cuando se crea una cuenta pendiente.
+	 * Obtiene la lista de emails destinatarios de notificación para este formulario.
 	 *
-	 * @param int   $user_id ID del usuario.
-	 * @param array $form    Datos del formulario.
+	 * @param array $form Datos del formulario.
+	 * @return array Lista de emails sanitizados y validados.
 	 */
-	private function send_admin_pending_notification( $user_id, $form ) {
-		$admin_email = get_option( 'admin_email' );
-		$user        = get_userdata( $user_id );
+	public function get_form_recipients( $form ) {
+		$recipients = array();
+
+		if ( ! empty( $form['notification_emails'] ) ) {
+			$raw_emails = explode( ',', $form['notification_emails'] );
+			foreach ( $raw_emails as $em ) {
+				$em = sanitize_email( trim( $em ) );
+				if ( is_email( $em ) ) {
+					$recipients[] = $em;
+				}
+			}
+		}
+
+		if ( empty( $recipients ) ) {
+			$admin_email = get_option( 'admin_email' );
+			if ( is_email( $admin_email ) ) {
+				$recipients[] = $admin_email;
+			}
+		}
+
+		return array_unique( $recipients );
+	}
+
+	/**
+	 * Envía notificación a los destinatarios configurados cuando se registra un cliente (pendiente o activo).
+	 *
+	 * @param int   $user_id    ID del usuario creado.
+	 * @param array $form       Datos del formulario.
+	 * @param bool  $is_pending Si la cuenta está pendiente de validación manual o activa.
+	 */
+	public function send_admin_registration_notification( $user_id, $form, $is_pending = true ) {
+		$recipients = $this->get_form_recipients( $form );
+		if ( empty( $recipients ) ) {
+			return;
+		}
+
+		$user = get_userdata( $user_id );
 		if ( ! $user ) {
 			return;
 		}
 
-		$company = get_user_meta( $user_id, 'billing_company', true );
-		$cif     = get_user_meta( $user_id, 'billing_vat', true );
+		$site_name  = get_bloginfo( 'name' );
+		$form_title = isset( $form['title'] ) ? $form['title'] : __( 'Registro', 'wp-agency-toolkit' );
 
-		$subject = sprintf( '[%s] Nueva solicitud de registro de cliente pendiente de aprobación', get_bloginfo( 'name' ) );
-		$edit_link = admin_url( 'user-edit.php?user_id=' . $user_id );
-		$users_list = admin_url( 'users.php' );
+		if ( $is_pending ) {
+			$subject = sprintf( '[%s] Nueva solicitud de registro pendiente de aprobación (%s)', $site_name, $form_title );
+		} else {
+			$subject = sprintf( '[%s] Nuevo cliente registrado con éxito (%s)', $site_name, $form_title );
+		}
 
-		$message = "Hola Administrador,\r\n\r\n";
-		$message .= "Se ha registrado un nuevo usuario a través del formulario \"" . $form['title'] . "\" y requiere tu revisión y aprobación:\r\n\r\n";
+		$edit_link  = admin_url( 'user-edit.php?user_id=' . $user_id );
+		$users_list = admin_url( 'admin.php?page=wp-agency-toolkit&mod=woo-registration-forms' );
+
+		$message = "Hola,\r\n\r\n";
+		if ( $is_pending ) {
+			$message .= "Se ha recibido una nueva solicitud de registro a través del formulario \"" . $form_title . "\" que REQUIERE APROBACIÓN MANUAL:\r\n\r\n";
+		} else {
+			$message .= "Se ha registrado un nuevo usuario con éxito a través del formulario \"" . $form_title . "\":\r\n\r\n";
+		}
+
+		$message .= "==================================================\r\n";
+		$message .= "DATOS DE LA CUENTA:\r\n";
+		$message .= "==================================================\r\n";
 		$message .= "• Usuario: " . $user->user_login . "\r\n";
 		$message .= "• Email: " . $user->user_email . "\r\n";
-		$message .= "• Nombre: " . $user->display_name . "\r\n";
-		if ( ! empty( $company ) ) {
-			$message .= "• Empresa: " . $company . "\r\n";
-		}
-		if ( ! empty( $cif ) ) {
-			$message .= "• CIF / NIF: " . $cif . "\r\n";
-		}
-		$message .= "\r\nPuedes revisar y aprobar o rechazar la solicitud directamente desde:\r\n" . $users_list . "\r\n\r\n";
-		$message .= "O ver su perfil completo:\r\n" . $edit_link . "\r\n";
+		$message .= "• Nombre / Razón: " . ( $user->display_name ? $user->display_name : $user->user_login ) . "\r\n";
+		$message .= "• Rol asignado: " . implode( ', ', $user->roles ) . "\r\n";
+		$message .= "• Estado: " . ( $is_pending ? 'Pendiente de aprobación' : 'Activo (Aprobado automáticamente)' ) . "\r\n";
+		$message .= "• Fecha: " . current_time( 'd/m/Y H:i:s' ) . "\r\n\r\n";
 
-		wp_mail( $admin_email, $subject, $message );
+		// Resumen detallado de todos los campos completados por el usuario
+		$fields_summary = "";
+		if ( ! empty( $form['fields'] ) && is_array( $form['fields'] ) ) {
+			foreach ( $form['fields'] as $fld ) {
+				$f_type = isset( $fld['type'] ) ? $fld['type'] : 'text';
+				$f_id   = isset( $fld['id'] ) ? $fld['id'] : '';
+
+				if ( in_array( $f_type, array( 'heading', 'captcha' ), true ) || in_array( $f_id, array( 'user_email', 'user_pass', 'captcha' ), true ) ) {
+					continue;
+				}
+
+				$label = ! empty( $fld['label'] ) ? $fld['label'] : $f_id;
+				$val   = '';
+
+				// Buscar en billing_*, shipping_* o wpat_reg_*
+				if ( strpos( $f_id, 'billing_' ) === 0 || strpos( $f_id, 'shipping_' ) === 0 ) {
+					$val = get_user_meta( $user_id, $f_id, true );
+				} else {
+					$val = get_user_meta( $user_id, 'wpat_reg_' . $f_id, true );
+				}
+
+				// Si tiene custom meta_key
+				if ( empty( $val ) && ! empty( $fld['meta_key'] ) ) {
+					$val = get_user_meta( $user_id, $fld['meta_key'], true );
+				}
+
+				if ( ! empty( $val ) ) {
+					if ( is_array( $val ) ) {
+						$val = implode( ', ', $val );
+					}
+					$fields_summary .= "• " . $label . ": " . $val . "\r\n";
+				}
+			}
+		}
+
+		if ( ! empty( $fields_summary ) ) {
+			$message .= "==================================================\r\n";
+			$message .= "CAMPOS COMPLETADOS EN EL FORMULARIO:\r\n";
+			$message .= "==================================================\r\n";
+			$message .= $fields_summary . "\r\n";
+		}
+
+		if ( $is_pending ) {
+			$message .= "==================================================\r\n";
+			$message .= "GESTIÓN Y VALIDACIÓN:\r\n";
+			$message .= "==================================================\r\n";
+			$message .= "Puedes revisar, aprobar o rechazar la solicitud en el panel de control:\r\n" . $users_list . "\r\n\r\n";
+			$message .= "O ver la ficha de usuario de WordPress:\r\n" . $edit_link . "\r\n";
+		} else {
+			$message .= "Puedes ver la ficha completa del usuario en:\r\n" . $edit_link . "\r\n";
+		}
+
+		$headers = array( 'Content-Type: text/plain; charset=UTF-8' );
+
+		wp_mail( $recipients, $subject, $message, $headers );
+	}
+
+	/**
+	 * Envía notificación al administrador cuando se crea una cuenta pendiente (compatibilidad retroactiva).
+	 *
+	 * @param int   $user_id ID del usuario.
+	 * @param array $form    Datos del formulario.
+	 */
+	public function send_admin_pending_notification( $user_id, $form ) {
+		$this->send_admin_registration_notification( $user_id, $form, true );
 	}
 
 	/**
@@ -1422,8 +1616,10 @@ class WPAT_Woo_Registration_Forms {
 		// Si ese formulario requiere aprobación manual
 		if ( $form && isset( $form['approval_required'] ) && '1' === (string) $form['approval_required'] ) {
 			update_user_meta( $customer_id, 'wpat_account_status', 'pending' );
-			$this->send_admin_pending_notification( $customer_id, $form );
+			$this->send_admin_registration_notification( $customer_id, $form, true );
 			$this->send_user_pending_notification( $customer_id, $form );
+		} elseif ( $form && ( ! isset( $form['notify_on_auto'] ) || '1' === (string) $form['notify_on_auto'] ) ) {
+			$this->send_admin_registration_notification( $customer_id, $form, false );
 		}
 	}
 }

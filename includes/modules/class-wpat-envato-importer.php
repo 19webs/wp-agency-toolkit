@@ -67,78 +67,125 @@ class WPAT_Envato_Importer {
 	 * AJAX: Sube un archivo ZIP de kit de plantillas de Envato y lo procesa.
 	 */
 	public function ajax_upload_envato_kit() {
-		check_ajax_referer( 'wpat_envato_importer_nonce', 'security' );
+		try {
+			check_ajax_referer( 'wpat_envato_importer_nonce', 'security' );
 
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
-		}
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => 'No tienes permisos suficientes.' ) );
+			}
 
-		if ( empty( $_FILES['kit_zip'] ) ) {
-			wp_send_json_error( array( 'message' => 'No se ha subido ningún archivo.' ) );
-		}
+			if ( empty( $_FILES['kit_zip'] ) ) {
+				wp_send_json_error( array( 'message' => 'No se ha recibido ningún archivo en el servidor.' ) );
+			}
 
-		$file = $_FILES['kit_zip'];
-		$ext  = pathinfo( $file['name'], PATHINFO_EXTENSION );
+			$file = $_FILES['kit_zip'];
 
-		if ( 'zip' !== strtolower( $ext ) ) {
-			wp_send_json_error( array( 'message' => 'Solo se admiten archivos ZIP de kits de plantilla.' ) );
-		}
+			// Comprobar errores nativos de subida de PHP
+			if ( ! empty( $file['error'] ) && UPLOAD_ERR_OK !== $file['error'] ) {
+				$upload_errors = array(
+					UPLOAD_ERR_INI_SIZE   => 'El archivo excede el tamaño máximo permitido por tu servidor (upload_max_filesize).',
+					UPLOAD_ERR_FORM_SIZE  => 'El archivo excede el tamaño máximo permitido por el formulario.',
+					UPLOAD_ERR_PARTIAL    => 'El archivo se subió solo parcialmente.',
+					UPLOAD_ERR_NO_FILE    => 'No se seleccionó ningún archivo.',
+					UPLOAD_ERR_NO_TMP_DIR => 'Falta el directorio temporal en el servidor PHP.',
+					UPLOAD_ERR_CANT_WRITE => 'No se pudo escribir el archivo en el disco del servidor.',
+					UPLOAD_ERR_EXTENSION  => 'Una extensión de PHP detuvo la subida del archivo.',
+				);
+				$msg = isset( $upload_errors[ $file['error'] ] ) ? $upload_errors[ $file['error'] ] : 'Error al subir el archivo (código ' . $file['error'] . ').';
+				wp_send_json_error( array( 'message' => $msg ) );
+			}
 
-		// Crear directorio de destino si no existe
-		if ( ! file_exists( $this->upload_base_dir ) ) {
-			wp_mkdir_p( $this->upload_base_dir );
-		}
+			if ( empty( $file['tmp_name'] ) || ! is_uploaded_file( $file['tmp_name'] ) ) {
+				wp_send_json_error( array( 'message' => 'El archivo temporal subido no es válido.' ) );
+			}
 
-		$slug = sanitize_title( pathinfo( $file['name'], PATHINFO_FILENAME ) );
-		$dest_dir = $this->upload_base_dir . '/' . $slug;
+			$ext = pathinfo( $file['name'], PATHINFO_EXTENSION );
+			if ( 'zip' !== strtolower( $ext ) ) {
+				wp_send_json_error( array( 'message' => 'Solo se admiten archivos comprimidos en formato .zip.' ) );
+			}
 
-		// Si ya existe la carpeta del kit, la eliminamos para sobreescribir
-		if ( file_exists( $dest_dir ) ) {
-			$this->recursive_rmdir( $dest_dir );
-		}
+			if ( function_exists( 'wp_raise_memory_limit' ) ) {
+				wp_raise_memory_limit( 'admin' );
+			}
+			@set_time_limit( 300 );
 
-		wp_mkdir_p( $dest_dir );
+			// Crear directorio de destino si no existe
+			if ( ! file_exists( $this->upload_base_dir ) ) {
+				wp_mkdir_p( $this->upload_base_dir );
+			}
 
-		// Descomprimir ZIP
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-		WP_Filesystem();
-		$unzipfile = unzip_file( $file['tmp_name'], $dest_dir );
+			$slug = sanitize_title( pathinfo( $file['name'], PATHINFO_FILENAME ) );
+			if ( empty( $slug ) ) {
+				$slug = 'kit-' . time();
+			}
+			$dest_dir = $this->upload_base_dir . '/' . $slug;
 
-		if ( is_wp_error( $unzipfile ) ) {
-			wp_send_json_error( array( 'message' => 'Error al descomprimir archivo: ' . $unzipfile->get_error_message() ) );
-		}
+			// Si ya existe la carpeta del kit, la eliminamos para sobreescribir limpiamente
+			if ( file_exists( $dest_dir ) ) {
+				$this->recursive_rmdir( $dest_dir );
+			}
 
-		// Buscar manifest.json recursivamente
-		$manifest_path = $this->find_manifest_file( $dest_dir );
+			wp_mkdir_p( $dest_dir );
 
-		if ( ! $manifest_path ) {
-			$this->recursive_rmdir( $dest_dir );
-			wp_send_json_error( array( 'message' => 'No se encontró un archivo manifest.json válido dentro del kit.' ) );
-		}
+			// Descomprimir ZIP con fallback ultra-resiliente para WP_Filesystem
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			if ( ! function_exists( 'WP_Filesystem' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
+			WP_Filesystem();
+			global $wp_filesystem;
+			if ( ! $wp_filesystem || ! is_object( $wp_filesystem ) ) {
+				require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
+				require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
+				$wp_filesystem = new WP_Filesystem_Direct( false );
+			}
 
-		// Leer manifest.json
-		$manifest_content = file_get_contents( $manifest_path );
-		$manifest_data    = json_decode( $manifest_content, true );
+			$unzipfile = unzip_file( $file['tmp_name'], $dest_dir );
 
-		if ( ! $manifest_data || empty( $manifest_data['title'] ) ) {
-			$this->recursive_rmdir( $dest_dir );
-			wp_send_json_error( array( 'message' => 'El formato del manifest.json no es válido.' ) );
-		}
+			if ( is_wp_error( $unzipfile ) ) {
+				wp_send_json_error( array( 'message' => 'Error al descomprimir archivo: ' . $unzipfile->get_error_message() ) );
+			}
 
-		// Obtener la carpeta donde está el manifest para resolver las rutas relativas
-		$manifest_dir = dirname( $manifest_path );
-		$relative_manifest_dir = str_replace( $this->upload_base_dir, '', $manifest_dir );
-		$relative_manifest_dir = ltrim( str_replace( '\\', '/', $relative_manifest_dir ), '/' );
+			// Buscar manifest.json recursivamente
+			$manifest_path = $this->find_manifest_file( $dest_dir );
+			$manifest_data = array();
+			$relative_manifest_dir = '';
 
-		// Obtener miniatura/portada global del kit
-		$kit_thumbnail = '';
-		if ( ! empty( $manifest_data['thumbnail'] ) ) {
-			$kit_thumbnail = $manifest_data['thumbnail'];
-		} elseif ( ! empty( $manifest_data['preview'] ) ) {
-			$kit_thumbnail = $manifest_data['preview'];
-		} elseif ( ! empty( $manifest_data['image'] ) ) {
-			$kit_thumbnail = $manifest_data['image'];
-		}
+			if ( $manifest_path && file_exists( $manifest_path ) ) {
+				$manifest_content = file_get_contents( $manifest_path );
+				$manifest_data    = json_decode( $manifest_content, true );
+				$manifest_dir     = dirname( $manifest_path );
+				$relative_manifest_dir = str_replace( $this->upload_base_dir, '', $manifest_dir );
+				$relative_manifest_dir = ltrim( str_replace( '\\', '/', $relative_manifest_dir ), '/' );
+			}
+
+			// Si no hay manifest.json o es inválido, auto-escanear plantillas JSON en la carpeta
+			if ( ! is_array( $manifest_data ) || ( empty( $manifest_data['title'] ) && empty( $manifest_data['name'] ) && empty( $manifest_data['templates'] ) ) ) {
+				$auto_templates = $this->find_json_templates_recursive( $dest_dir );
+				if ( ! empty( $auto_templates ) ) {
+					$manifest_data = array(
+						'title'            => ucwords( str_replace( array( '-', '_' ), ' ', $slug ) ),
+						'templates'        => $auto_templates,
+						'required_plugins' => array(),
+					);
+					$relative_manifest_dir = $slug;
+				} else {
+					$this->recursive_rmdir( $dest_dir );
+					wp_send_json_error( array( 'message' => 'No se encontró un archivo manifest.json válido ni plantillas JSON compatibles dentro del archivo ZIP.' ) );
+				}
+			}
+
+			$kit_title = ! empty( $manifest_data['title'] ) ? sanitize_text_field( $manifest_data['title'] ) : ( ! empty( $manifest_data['name'] ) ? sanitize_text_field( $manifest_data['name'] ) : ucwords( str_replace( array( '-', '_' ), ' ', $slug ) ) );
+
+			// Obtener miniatura/portada global del kit
+			$kit_thumbnail = '';
+			if ( ! empty( $manifest_data['thumbnail'] ) ) {
+				$kit_thumbnail = $manifest_data['thumbnail'];
+			} elseif ( ! empty( $manifest_data['preview'] ) ) {
+				$kit_thumbnail = $manifest_data['preview'];
+			} elseif ( ! empty( $manifest_data['image'] ) ) {
+				$kit_thumbnail = $manifest_data['image'];
+			}
 
 		if ( ! empty( $kit_thumbnail ) && ! filter_var( $kit_thumbnail, FILTER_VALIDATE_URL ) ) {
 			// Es una ruta relativa, resolvemos su URL completa
@@ -209,7 +256,7 @@ class WPAT_Envato_Importer {
 		$kits = get_option( 'wpat_envato_kits', array() );
 
 		$new_kit = array(
-			'title'            => sanitize_text_field( $manifest_data['title'] ),
+			'title'            => sanitize_text_field( $kit_title ),
 			'slug'             => $slug,
 			'folder'           => $relative_manifest_dir,
 			'thumbnail'        => $kit_thumbnail,
@@ -217,8 +264,22 @@ class WPAT_Envato_Importer {
 			'templates'        => array(),
 		);
 
+		$raw_templates = array();
 		if ( ! empty( $manifest_data['templates'] ) && is_array( $manifest_data['templates'] ) ) {
-			foreach ( $manifest_data['templates'] as $tpl ) {
+			$raw_templates = $manifest_data['templates'];
+		} elseif ( ! empty( $manifest_data['pages'] ) && is_array( $manifest_data['pages'] ) ) {
+			$raw_templates = $manifest_data['pages'];
+		} elseif ( ! empty( $manifest_data['items'] ) && is_array( $manifest_data['items'] ) ) {
+			$raw_templates = $manifest_data['items'];
+		}
+
+		// Si sigue vacío, auto-detectar templates escaneando los JSON del directorio
+		if ( empty( $raw_templates ) ) {
+			$raw_templates = $this->find_json_templates_recursive( $dest_dir );
+		}
+
+		if ( ! empty( $raw_templates ) && is_array( $raw_templates ) ) {
+			foreach ( $raw_templates as $tpl ) {
 				// Soporte flexible para 'title' o 'name'
 				$tpl_title = '';
 				if ( ! empty( $tpl['title'] ) ) {
@@ -317,7 +378,10 @@ class WPAT_Envato_Importer {
 			'message' => 'Kit de plantilla subido e indexado correctamente.', 
 			'kit'     => $enriched_kit 
 		) );
+	} catch ( \Throwable $t ) {
+		wp_send_json_error( array( 'message' => 'Error al procesar el kit: ' . $t->getMessage() ) );
 	}
+}
 
 	/**
 	 * AJAX: Importa una plantilla específica en la biblioteca local de Elementor.
@@ -626,6 +690,51 @@ class WPAT_Envato_Importer {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Busca archivos de plantilla JSON recursivamente dentro de un directorio.
+	 *
+	 * @param string $dir Directorio donde buscar.
+	 * @param string $base_dir Directorio base para calcular rutas relativas.
+	 * @return array
+	 */
+	public function find_json_templates_recursive( $dir, $base_dir = '' ) {
+		$templates = array();
+		if ( ! is_dir( $dir ) ) {
+			return $templates;
+		}
+		if ( empty( $base_dir ) ) {
+			$base_dir = $dir;
+		}
+
+		$files = scandir( $dir );
+		if ( false === $files ) {
+			return $templates;
+		}
+
+		foreach ( $files as $file ) {
+			if ( '.' === $file || '..' === $file || 'manifest.json' === strtolower( $file ) || 'package.json' === strtolower( $file ) ) {
+				continue;
+			}
+			$path = $dir . '/' . $file;
+			if ( is_dir( $path ) ) {
+				$sub = $this->find_json_templates_recursive( $path, $base_dir );
+				$templates = array_merge( $templates, $sub );
+			} elseif ( 'json' === strtolower( pathinfo( $file, PATHINFO_EXTENSION ) ) ) {
+				$content = file_get_contents( $path );
+				if ( false !== strpos( $content, 'elementor' ) || false !== strpos( $content, 'elements' ) || false !== strpos( $content, 'content' ) || false !== strpos( $content, 'widgetType' ) || false !== strpos( $content, 'version' ) ) {
+					$rel_file = ltrim( str_replace( '\\', '/', str_replace( $base_dir, '', $path ) ), '/' );
+					$clean_title = ucwords( str_replace( array( '-', '_' ), ' ', pathinfo( $file, PATHINFO_FILENAME ) ) );
+					$templates[] = array(
+						'title' => $clean_title,
+						'file'  => $rel_file,
+						'type'  => ( false !== strpos( strtolower( $clean_title ), 'global' ) ) ? 'global-styles' : 'page',
+					);
+				}
+			}
+		}
+		return $templates;
 	}
 
 	/**

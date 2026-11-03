@@ -1672,54 +1672,76 @@ jQuery(document).ready(function($) {
 	});
 
 	// --- IMPORTADOR DE KITS DE PLANTILLAS (ENVATO) ---
-	var $dragDropZone = $('#wpat_kit_dragdrop_zone');
-	var $fileInput    = $('#wpat_kit_file_input');
-	var $selectBtn    = $('#wpat_select_kit_zip_btn');
-
-	if ($dragDropZone.length) {
-		// Abrir explorador de archivos al pulsar el botón
-		$selectBtn.on('click', function(e) {
-			e.preventDefault();
-			$fileInput.click();
-		});
-
-		// Manejar cambio en el input file
-		$fileInput.on('change', function() {
-			var files = this.files;
-			if (files.length > 0) {
-				handleKitZipUpload(files[0]);
-			}
-		});
-
-		// Eventos Drag & Drop
-		$dragDropZone.on('dragover', function(e) {
-			e.preventDefault();
-			$(this).css('background-color', '#f1f5f9').css('border-color', '#9333ea');
-		});
-
-		$dragDropZone.on('dragleave', function(e) {
-			e.preventDefault();
-			$(this).css('background-color', '#f8fafc').css('border-color', 'var(--wpat-border)');
-		});
-
-		$dragDropZone.on('drop', function(e) {
-			e.preventDefault();
-			$(this).css('background-color', '#f8fafc').css('border-color', 'var(--wpat-border)');
-			
-			var files = e.originalEvent.dataTransfer.files;
-			if (files.length > 0) {
-				handleKitZipUpload(files[0]);
-			}
-		});
+	function getEnvatoNonce() {
+		if (typeof wpat_object !== 'undefined' && wpat_object.envato_nonce) {
+			return wpat_object.envato_nonce;
+		}
+		var $n = $('#wpat_envato_importer_nonce');
+		if ($n.length && $n.val()) return $n.val();
+		var $alt = $('#wpat_envato_nonce');
+		if ($alt.length && $alt.val()) return $alt.val();
+		return '';
 	}
 
+	// Interceptar envío tradicional del formulario para prevenir pantalla en blanco
+	$(document).on('submit', '#wpat_envato_upload_form', function(e) {
+		e.preventDefault();
+		e.stopPropagation();
+		var fileInput = document.getElementById('wpat_kit_zip_input') || document.getElementById('wpat_kit_file_input');
+		if (fileInput && fileInput.files && fileInput.files.length > 0) {
+			handleKitZipUpload(fileInput.files[0]);
+		} else {
+			alert('Por favor selecciona primero un archivo ZIP del kit de plantillas.');
+		}
+		return false;
+	});
+
+	// Disparar subida automática al seleccionar archivo desde el explorador
+	$(document).on('change', '#wpat_kit_file_input, #wpat_kit_zip_input, .wpat_kit_file_input', function() {
+		var files = this.files;
+		if (files && files.length > 0) {
+			handleKitZipUpload(files[0]);
+		}
+	});
+
+	// Botón auxiliar para abrir el selector de archivos si se hace clic
+	$(document).on('click', '#wpat_select_kit_zip_btn', function(e) {
+		e.preventDefault();
+		var fileInput = $('#wpat_kit_zip_input, #wpat_kit_file_input');
+		if (fileInput.length) {
+			fileInput.trigger('click');
+		}
+	});
+
+	// Drag & Drop
+	$(document).on('dragover', '#wpat_kit_dragdrop_zone, .wpat-kit-upload-box', function(e) {
+		e.preventDefault();
+		e.stopPropagation();
+		$(this).css('background-color', '#eff6ff').css('border-color', '#2563eb');
+	});
+
+	$(document).on('dragleave drop', '#wpat_kit_dragdrop_zone, .wpat-kit-upload-box', function(e) {
+		e.preventDefault();
+		e.stopPropagation();
+		$(this).css('background-color', 'var(--wpat-card-bg, #f8fafc)').css('border-color', 'var(--wpat-border, #cbd5e1)');
+	});
+
+	$(document).on('drop', '#wpat_kit_dragdrop_zone, .wpat-kit-upload-box', function(e) {
+		e.preventDefault();
+		e.stopPropagation();
+		var files = e.originalEvent && e.originalEvent.dataTransfer ? e.originalEvent.dataTransfer.files : null;
+		if (files && files.length > 0) {
+			handleKitZipUpload(files[0]);
+		}
+	});
+
 	function handleKitZipUpload(file) {
-		if (file.type !== 'application/zip' && !file.name.endsWith('.zip')) {
-			alert('Por favor, selecciona un archivo comprimido .zip.');
+		if (file.type !== 'application/zip' && !file.name.toLowerCase().endsWith('.zip')) {
+			alert('Por favor, selecciona un archivo comprimido .zip válido.');
 			return;
 		}
 
-		var nonce = $('#wpat_envato_importer_nonce').val();
+		var nonce = getEnvatoNonce();
 		var formData = new FormData();
 		formData.append('action', 'wpat_upload_envato_kit');
 		formData.append('security', nonce);
@@ -1727,8 +1749,8 @@ jQuery(document).ready(function($) {
 
 		$('#wpat_kit_upload_progress').show();
 		$('#wpat_kit_upload_bar').css('width', '0%');
-		$('#wpat_kit_upload_status').text('Subiendo kit: ' + file.name + ' (0%)');
-		$selectBtn.prop('disabled', true);
+		$('#wpat_kit_upload_status').text('Subiendo kit: ' + file.name + ' (0%)').show();
+		$('#wpat_upload_kit_btn, #wpat_select_kit_zip_btn').prop('disabled', true);
 
 		$.ajax({
 			url: (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php')),
@@ -1750,84 +1772,21 @@ jQuery(document).ready(function($) {
 				return myXhr;
 			},
 			success: function(response) {
-				$selectBtn.prop('disabled', false);
+				$('#wpat_upload_kit_btn, #wpat_select_kit_zip_btn').prop('disabled', false);
 				if (response.success) {
-					var newKit = response.data.kit;
-					
-					// Asegurar la variable de datos global
-					if (typeof wpatEnvatoEditor === 'undefined') {
-						wpatEnvatoEditor = { kits: {} };
-					}
-					if (!wpatEnvatoEditor.kits) {
-						wpatEnvatoEditor.kits = {};
-					}
-					wpatEnvatoEditor.kits[newKit.slug] = newKit;
-					
-					// Limpiar progreso e input
-					$('#wpat_kit_upload_progress').hide();
-					$('#wpat_kit_file_input').val('');
-					
-					// Función auxiliar para renderizar el HTML del card
-					function renderKitCardHtml(slug, kit) {
-						var thumbHtml = '';
-						if (kit.thumbnail) {
-							thumbHtml = '<div class="wpat-kit-cover" style="height: 140px; background-image: url(\'' + kit.thumbnail + '\'); background-size: cover; background-position: center; border-bottom: 1px solid var(--wpat-border);"></div>';
-						} else {
-							thumbHtml = '<div class="wpat-kit-cover" style="height: 140px; background: linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%); display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--wpat-border);">' +
-										'  <span class="dashicons dashicons-download" style="font-size: 48px; width:48px; height:48px; color: #94a3b8;"></span>' +
-										'</div>';
-						}
-						
-						var templatesCount = kit.templates ? kit.templates.length : 0;
-						var pluginsCount = kit.required_plugins ? kit.required_plugins.length : 0;
-						var pluginsBadge = '';
-						if (pluginsCount > 0) {
-							pluginsBadge = '<span class="wpat-badge" style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">' + pluginsCount + ' plugins necesarios</span>';
-						} else {
-							pluginsBadge = '<span class="wpat-badge" style="background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">0 plugins necesarios</span>';
-						}
-
-						var html = '<div class="wpat-module-card wpat-kit-card" style="margin: 0; padding: 0; overflow:hidden; display: flex; flex-direction: column; border: 1px solid var(--wpat-border);" data-slug="' + slug + '">' +
-								   thumbHtml +
-								   '  <div style="padding: 20px; display: flex; flex-direction: column; flex-grow: 1;">' +
-								   '    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 12px;">' +
-								   '      <h4 style="margin: 0; font-size: 15px; font-weight: 600; color: var(--wpat-text);">' + kit.title + '</h4>' +
-								   '      <button type="button" class="wpat-delete-kit-btn button-link-delete" data-slug="' + slug + '" title="Eliminar Kit Completo" style="border:none; background:none; cursor:pointer; padding:0; color:#ea580c;"><span class="dashicons dashicons-trash" style="font-size:18px;"></span></button>' +
-								   '    </div>' +
-								   '    <div style="display: flex; gap: 5px; margin-bottom: 15px; flex-wrap: wrap;">' +
-								   '      <span class="wpat-badge" style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">' + templatesCount + ' plantillas</span>' +
-								   pluginsBadge +
-								   '    </div>' +
-								   '    <button type="button" class="button wpat-view-kit-templates-btn" data-slug="' + slug + '" style="width: 100%; margin-top: auto;">Ver Plantillas</button>' +
-								   '  </div>' +
-								   '</div>';
-						return html;
-					}
-
-					var cardHtml = renderKitCardHtml(newKit.slug, newKit);
-					var $container = $('#wpat_installed_kits_container');
-					var $emptyState = $container.find('.wpat-empty-kits');
-					
-					if ($emptyState.length > 0) {
-						$emptyState.remove();
-						$container.html('<div class="wpat-kits-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;"></div>');
-					}
-					
-					var $grid = $container.find('.wpat-kits-grid');
-					if ($grid.length > 0) {
-						var $newCard = $(cardHtml).hide();
-						$grid.append($newCard);
-						$newCard.fadeIn(300);
-					}
-					
+					$('#wpat_kit_upload_bar').css('width', '100%');
+					$('#wpat_kit_upload_status').text('¡Kit subido e indexado con éxito! Recargando listado...');
 					showToast('Kit subido y descomprimido correctamente.', false);
+					setTimeout(function() {
+						window.location.reload();
+					}, 1000);
 				} else {
 					$('#wpat_kit_upload_progress').hide();
 					alert('Error al subir el kit: ' + (response.data ? response.data.message : 'Error desconocido.'));
 				}
 			},
 			error: function(xhr, status, errorThrown) {
-				$selectBtn.prop('disabled', false);
+				$('#wpat_upload_kit_btn, #wpat_select_kit_zip_btn').prop('disabled', false);
 				$('#wpat_kit_upload_progress').hide();
 				
 				var errorMsg = 'Fallo al subir el kit de plantilla.\n\n';
@@ -1959,7 +1918,7 @@ jQuery(document).ready(function($) {
 		var $btn = $(this);
 		var kitSlug = $btn.data('kit');
 		var tplId   = $btn.data('id');
-		var nonce   = $('#wpat_envato_importer_nonce').val();
+		var nonce   = getEnvatoNonce();
 
 		$btn.prop('disabled', true).text('Importando...');
 
@@ -2034,7 +1993,7 @@ jQuery(document).ready(function($) {
 		var kitSlug = $btn.data('kit');
 		var tplId   = $btn.data('id');
 		var defaultTitle = $btn.data('title') || 'Nueva Página';
-		var nonce   = $('#wpat_envato_importer_nonce').val();
+		var nonce   = getEnvatoNonce();
 
 		var pageTitle = prompt('Introduce el título para la nueva página:', defaultTitle);
 		if (pageTitle === null || pageTitle.trim() === '') {
@@ -2107,7 +2066,7 @@ jQuery(document).ready(function($) {
 		e.stopPropagation();
 		var $btn = $(this);
 		var slug = $btn.data('slug');
-		var nonce = $('#wpat_envato_importer_nonce').val();
+		var nonce = getEnvatoNonce();
 
 		if (!confirm('¿Estás seguro de que deseas eliminar este kit de plantillas del servidor? Esta acción eliminará permanentemente la carpeta de archivos.')) {
 			return;
@@ -2344,7 +2303,7 @@ jQuery(document).ready(function($) {
 		e.preventDefault();
 		var $btn = $(this);
 		var slug = $btn.data('slug');
-		var nonce = $('#wpat_envato_importer_nonce').val();
+		var nonce = getEnvatoNonce();
 		
 		$btn.prop('disabled', true).text('Activando...');
 		
@@ -2395,7 +2354,7 @@ jQuery(document).ready(function($) {
 		e.preventDefault();
 		var $btn = $(this);
 		var slug = $btn.data('slug');
-		var nonce = $('#wpat_envato_importer_nonce').val();
+		var nonce = getEnvatoNonce();
 		
 		$btn.prop('disabled', true).text('Instalando...');
 		
@@ -2447,7 +2406,7 @@ jQuery(document).ready(function($) {
 		e.preventDefault();
 		var $btn = $(this);
 		var slug = $btn.data('slug');
-		var nonce = $('#wpat_envato_importer_nonce').val();
+		var nonce = getEnvatoNonce();
 		
 		$btn.prop('disabled', true).text('Configurando...');
 		

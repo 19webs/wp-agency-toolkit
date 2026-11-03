@@ -243,6 +243,7 @@ class WPAT_Admin {
 			'studio_nonce'         => wp_create_nonce( 'wpat_client_studio_nonce' ),
 			'file_manager_nonce'   => wp_create_nonce( 'wpat_file_manager_nonce' ),
 			'reg_forms_nonce'      => wp_create_nonce( 'wpat_reg_forms_nonce' ),
+			'envato_nonce'         => wp_create_nonce( 'wpat_envato_importer_nonce' ),
 		) );
 
 		// Localizar kits instalados para el JS de administración
@@ -4453,6 +4454,7 @@ class WPAT_Admin {
 			</div>
 
 			<div class="wpat-module-body" style="display: block; padding: 20px;">
+				<input type="hidden" id="wpat_envato_importer_nonce" value="<?php echo esc_attr( wp_create_nonce( 'wpat_envato_importer_nonce' ) ); ?>" />
 				<?php if ( $active_kit ) : ?>
 					<!-- VISTA DETALLADA DEL KIT SELECCIONADO (Subpágina de Plantillas) -->
 					<div class="wpat-kit-detail-view">
@@ -4555,21 +4557,29 @@ class WPAT_Admin {
 
 				<?php else : ?>
 					<!-- VISTA PRINCIPAL (CARGADOR ZIP + LISTA DE KITS INSTALADOS) -->
-					<div class="wpat-kit-upload-box" style="background: var(--wpat-card-bg, #f8fafc); border: 2px dashed var(--wpat-border, #cbd5e1); border-radius: 8px; padding: 25px; text-align: center; margin-bottom: 25px;">
+					<div class="wpat-kit-upload-box" id="wpat_kit_dragdrop_zone" style="background: var(--wpat-card-bg, #f8fafc); border: 2px dashed var(--wpat-border, #cbd5e1); border-radius: 8px; padding: 25px; text-align: center; margin-bottom: 25px; transition: all 0.2s ease;">
 						<span class="dashicons dashicons-cloud-upload" style="font-size: 42px; width: 42px; height: 42px; color: #2563eb; margin-bottom: 10px; display: inline-block;"></span>
 						<h4 style="margin: 0 0 5px 0; font-size: 16px; font-weight: 700;">Sube tu archivo ZIP de Kit de Plantilla</h4>
-						<p style="margin: 0 0 15px 0; color: #64748b; font-size: 13px;">Arrastra tu archivo ZIP aquí o haz clic en el botón para seleccionarlo desde tu ordenador.</p>
-						<form id="wpat_envato_upload_form" style="display: inline-flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center;">
+						<p style="margin: 0 0 15px 0; color: #64748b; font-size: 13px;">Arrastra tu archivo ZIP aquí o selecciónalo desde tu ordenador para comenzar la importación.</p>
+						<form id="wpat_envato_upload_form" method="post" action="" enctype="multipart/form-data" style="display: inline-flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center;">
 							<?php wp_nonce_field( 'wpat_envato_importer_nonce', 'wpat_envato_nonce' ); ?>
-							<input type="file" name="kit_zip" id="wpat_kit_zip_input" accept=".zip" style="font-size: 13px;" required />
-							<button type="submit" class="button button-primary" id="wpat_upload_kit_btn">Seleccionar ZIP de Kit</button>
+							<input type="file" name="kit_zip" id="wpat_kit_zip_input" class="wpat_kit_file_input" accept=".zip" style="font-size: 13px;" required />
+							<button type="submit" class="button button-primary" id="wpat_upload_kit_btn">
+								<span class="dashicons dashicons-upload" style="vertical-align: middle; margin-top: -2px; margin-right: 4px; font-size: 17px; width: 17px; height: 17px;"></span>
+								Subir e Importar Kit
+							</button>
 						</form>
-						<div id="wpat_kit_upload_status" style="margin-top: 12px; font-size: 13px; font-weight: 600; display: none;"></div>
+						<div id="wpat_kit_upload_progress" style="display: none; width: 100%; max-width: 450px; margin: 15px auto 0 auto;">
+							<div style="background: #e2e8f0; border-radius: 9999px; height: 8px; width: 100%; overflow: hidden; margin-bottom: 6px;">
+								<div id="wpat_kit_upload_bar" style="width: 0%; height: 100%; background: #2563eb; transition: width 0.3s ease; border-radius: 9999px;"></div>
+							</div>
+							<div id="wpat_kit_upload_status" style="font-size: 12px; color: #64748b; font-weight: 600;"></div>
+						</div>
 					</div>
 
 					<h4 style="margin: 0 0 15px 0; font-size: 16px; font-weight: 700;">Kits Instalados</h4>
 					<?php if ( ! empty( $kits ) ) : ?>
-						<div class="wpat-kits-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+						<div class="wpat-kits-list" id="wpat_installed_kits_container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
 							<?php foreach ( $kits as $slug => $kit ) : ?>
 								<?php
 								$num_templates = count( isset( $kit['templates'] ) ? $kit['templates'] : array() );

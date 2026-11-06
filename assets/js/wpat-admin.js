@@ -636,7 +636,7 @@ jQuery(document).ready(function($) {
 	// 4. Cargador de Medios de WordPress para el Logotipo
 	var custom_uploader;
 	
-	$('#wpat_login_logo_btn').on('click', function(e) {
+	$(document).on('click', '#wpat_login_logo_btn', function(e) {
 		e.preventDefault();
 		
 		// Si el uploader ya existe, abrirlo
@@ -674,7 +674,7 @@ jQuery(document).ready(function($) {
 	});
 	
 	// Eliminar logotipo seleccionado
-	$('#wpat_login_logo_remove').on('click', function(e) {
+	$(document).on('click', '#wpat_login_logo_remove', function(e) {
 		e.preventDefault();
 		
 		$('#wpat_login_logo').val('');
@@ -684,7 +684,7 @@ jQuery(document).ready(function($) {
 
 	// Selector de imagen de fondo de login moderno
 	var bg_uploader;
-	$('#wpat_login_bg_image_btn').on('click', function(e) {
+	$(document).on('click', '#wpat_login_bg_image_btn', function(e) {
 		e.preventDefault();
 		if (bg_uploader) {
 			bg_uploader.open();
@@ -707,7 +707,7 @@ jQuery(document).ready(function($) {
 		bg_uploader.open();
 	});
 	
-	$('#wpat_login_bg_image_remove').on('click', function(e) {
+	$(document).on('click', '#wpat_login_bg_image_remove', function(e) {
 		e.preventDefault();
 		$('#wpat_login_bg_image').val('');
 		$('#wpat_login_bg_image_preview').html('').hide();
@@ -715,25 +715,27 @@ jQuery(document).ready(function($) {
 	});
 
 	// Mostrar/Ocultar campos avanzados según el estilo de login seleccionado
-	$('#wpat_login_style').on('change', function() {
+	$(document).on('change', '#wpat_login_style', function() {
 		if ($(this).val() === 'modern') {
 			$('.wpat-modern-login-subfields').slideDown(250);
 		} else {
 			$('.wpat-modern-login-subfields').slideUp(250);
 		}
-	}).trigger('change');
+	});
+	$('#wpat_login_style').trigger('change');
 
 	// Mostrar/Ocultar cargador de imagen de fondo según el tipo de fondo seleccionado
-	$('#wpat_login_bg_type').on('change', function() {
+	$(document).on('change', '#wpat_login_bg_type', function() {
 		if ($(this).val() === 'image') {
 			$('.wpat-login-bg-image-group').slideDown(200);
 		} else {
 			$('.wpat-login-bg-image-group').slideUp(200);
 		}
-	}).trigger('change');
+	});
+	$('#wpat_login_bg_type').trigger('change');
 
 	// 5. Ocultar/Mostrar subcampos de límite de intentos de login
-	$('#wpat_hide_login_limit_attempts').on('change', function() {
+	$(document).on('change', '#wpat_hide_login_limit_attempts', function() {
 		var $subfields = $(this).closest('.wpat-module-body').find('.wpat-sub-field');
 		if ($(this).is(':checked')) {
 			$subfields.slideDown(200);
@@ -750,7 +752,7 @@ jQuery(document).ready(function($) {
 	var currentOptimizeIndex = 0;
 
 	// Acción: Escanear biblioteca
-	$('#wpat_scan_images_btn').on('click', function(e) {
+	$(document).on('click', '#wpat_scan_images_btn', function(e) {
 		e.preventDefault();
 		var $btn = $(this);
 
@@ -827,7 +829,7 @@ jQuery(document).ready(function($) {
 	});
 
 	// Acción: Iniciar Optimización
-	$('#wpat_start_bulk_btn').on('click', function(e) {
+	$(document).on('click', '#wpat_start_bulk_btn', function(e) {
 		e.preventDefault();
 		var $btn = $(this);
 		$btn.prop('disabled', true).text('Procesando...');
@@ -1054,7 +1056,7 @@ jQuery(document).ready(function($) {
 	var detectedOrphans = [];
 
 	// Escanear huérfanas
-	$('#wpat_scan_orphans_btn').on('click', function(e) {
+	$(document).on('click', '#wpat_scan_orphans_btn', function(e) {
 		e.preventDefault();
 		var $btn = $(this);
 		$btn.prop('disabled', true).text('Buscando...');
@@ -1192,7 +1194,7 @@ jQuery(document).ready(function($) {
 	});
 
 	// Eliminar seleccionadas
-	$('#wpat_delete_selected_orphans_btn').on('click', function(e) {
+	$(document).on('click', '#wpat_delete_selected_orphans_btn', function(e) {
 		e.preventDefault();
 		var selectedIds = [];
 		$('.wpat-orphan-checkbox:checked').each(function() {
@@ -1253,7 +1255,7 @@ jQuery(document).ready(function($) {
 
 
 	// 7. Ocultar/Mostrar opciones selectivas de comentarios según deshabilitación global
-	$('#wpat_disable_comments_global').on('change', function() {
+	$(document).on('change', '#wpat_disable_comments_global', function() {
 		var $options = $(this).closest('.wpat-module-body').find('.wpat-comments-options');
 		if ($(this).is(':checked')) {
 			$options.slideUp(200);
@@ -1263,7 +1265,7 @@ jQuery(document).ready(function($) {
 	});
 
 	// 8. Ocultar/Mostrar opciones de Modo Catálogo según "Desactivar añadir al carrito"
-	$('input[name="wpat_settings[woo_catalog_hide_cart]"]').on('change', function() {
+	$(document).on('change', 'input[name="wpat_settings[woo_catalog_hide_cart]"]', function() {
 		if ($(this).is(':checked')) {
 			$('.wpat-catalog-actions-container').slideDown(250);
 		} else {
@@ -1271,7 +1273,7 @@ jQuery(document).ready(function($) {
 		}
 	});
 
-	$('#wpat_woo_catalog_wa_enable').on('change', function() {
+	$(document).on('change', '#wpat_woo_catalog_wa_enable', function() {
 		if ($(this).is(':checked')) {
 			$('.wpat-catalog-wa-subfields').slideDown(250);
 		} else {
@@ -1279,7 +1281,7 @@ jQuery(document).ready(function($) {
 		}
 	});
 
-	$('#wpat_woo_catalog_form_enable').on('change', function() {
+	$(document).on('change', '#wpat_woo_catalog_form_enable', function() {
 		if ($(this).is(':checked')) {
 			$('.wpat-catalog-form-subfields').slideDown(250);
 		} else {
@@ -1291,19 +1293,19 @@ jQuery(document).ready(function($) {
 	// --- GESTOR DE SNIPPETS (AJAX) ---
 
 	// Importación rápida de fragmentos de código (.json)
-	$('#wpat_import_snippets_only_btn').on('click', function(e) {
+	$(document).on('click', '#wpat_import_snippets_only_btn', function(e) {
 		e.preventDefault();
 		$('#wpat_import_snippets_only_file').trigger('click');
 	});
 
-	$('#wpat_import_snippets_only_file').on('change', function() {
+	$(document).on('change', '#wpat_import_snippets_only_file', function() {
 		if ($(this).val()) {
 			$('#wpat_execute_import_snippets_only_submit').trigger('click');
 		}
 	});
 
 	// 1. Mostrar formulario de Añadir Nuevo Snippet
-	$('#wpat_add_new_snippet_btn').on('click', function(e) {
+	$(document).on('click', '#wpat_add_new_snippet_btn', function(e) {
 		e.preventDefault();
 		
 		// Limpiar campos del editor
@@ -1321,7 +1323,7 @@ jQuery(document).ready(function($) {
 	});
 
 	// 2. Cancelar edición/creación
-	$('#wpat_cancel_snippet_btn').on('click', function(e) {
+	$(document).on('click', '#wpat_cancel_snippet_btn', function(e) {
 		e.preventDefault();
 		$('.wpat-snippet-editor').hide();
 		$('.wpat-snippets-list').fadeIn(200);
@@ -1353,7 +1355,7 @@ jQuery(document).ready(function($) {
 	});
 
 	// 4. Guardar fragmento vía AJAX
-	$('#wpat_save_snippet_btn').on('click', function(e) {
+	$(document).on('click', '#wpat_save_snippet_btn', function(e) {
 		e.preventDefault();
 		var $btn = $(this);
 		
@@ -1596,7 +1598,7 @@ jQuery(document).ready(function($) {
 	});
 
 	// Limpiar todo (Optimizar todo)
-	$('#wpat_db_clean_all_btn').on('click', function(e) {
+	$(document).on('click', '#wpat_db_clean_all_btn', function(e) {
 		e.preventDefault();
 		var $btn = $(this);
 		var nonce = $('#wpat_cleanup_ajax_nonce').val() || (typeof wpat_object !== 'undefined' ? wpat_object.cleanup_nonce : '');
@@ -1901,7 +1903,7 @@ jQuery(document).ready(function($) {
 	});
 
 	// Cerrar detalle y volver al listado de kits
-	$('#wpat_close_kit_detail_btn').on('click', function(e) {
+	$(document).on('click', '#wpat_close_kit_detail_btn', function(e) {
 		e.preventDefault();
 		sessionStorage.removeItem('wpat_active_kit_slug');
 		$('#wpat_kit_templates_detail_wrapper').hide();
@@ -2590,13 +2592,13 @@ jQuery(document).ready(function($) {
 
 	// --- ASISTENTE DE CONFIGURACIÓN INICIAL ---
 	// Marcar/Desmarcar sub-páginas de forma coordinada
-	$('#wpat_init_create_pages').on('change', function() {
+	$(document).on('change', '#wpat_init_create_pages', function() {
 		var isChecked = $(this).is(':checked');
 		$('.wpat-init-page-checkbox').prop('checked', isChecked);
 	});
 
 	// Si se desmarca cualquier sub-página de página individual, actualizar el padre
-	$('.wpat-init-page-checkbox').on('change', function() {
+	$(document).on('change', '.wpat-init-page-checkbox', function() {
 		var totalCheckboxes = $('.wpat-init-page-checkbox').length;
 		var checkedCheckboxes = $('.wpat-init-page-checkbox:checked').length;
 		$('#wpat_init_create_pages').prop('checked', totalCheckboxes === checkedCheckboxes);

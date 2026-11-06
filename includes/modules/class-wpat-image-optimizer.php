@@ -35,30 +35,41 @@ class WPAT_Image_Optimizer {
 		$settings = WPAT_Main::get_instance()->get_settings();
 
 		// Interceptar la carga del archivo una vez subido con éxito (automatización en caliente)
-		$auto_convert = ! isset( $settings['image_optimizer_auto_convert'] ) || '1' === $settings['image_optimizer_auto_convert'];
+		$auto_convert = ! isset( $settings['image_optimizer_auto_convert'] ) || '1' === (string) $settings['image_optimizer_auto_convert'];
 		if ( $auto_convert ) {
 			add_filter( 'wp_handle_upload', array( $this, 'optimize_and_convert_to_webp' ), 10, 2 );
 			add_filter( 'wp_handle_sideload', array( $this, 'optimize_and_convert_to_webp' ), 10, 2 );
 		}
 
+		// Hook al crear el adjunto en la biblioteca: auto-alt y marcado como optimizado
+		add_action( 'add_attachment', array( $this, 'on_attachment_added' ) );
+
 		// Endpoints AJAX para optimización masiva retroactiva
-		add_action( 'wp_ajax_wpat_scan_images', array( $this, 'ajax_scan_images' ) );
-		add_action( 'wp_ajax_wpat_optimize_image_batch', array( $this, 'ajax_optimize_image_batch' ) );
+		if ( ! has_action( 'wp_ajax_wpat_scan_images' ) ) {
+			add_action( 'wp_ajax_wpat_scan_images', array( $this, 'ajax_scan_images' ) );
+		}
+		if ( ! has_action( 'wp_ajax_wpat_optimize_image_batch' ) ) {
+			add_action( 'wp_ajax_wpat_optimize_image_batch', array( $this, 'ajax_optimize_image_batch' ) );
+		}
 
 		// Endpoints AJAX para detector de imágenes huérfanas
-		add_action( 'wp_ajax_wpat_scan_unused_images', array( $this, 'ajax_scan_unused_images' ) );
-		add_action( 'wp_ajax_wpat_check_unused_images_batch', array( $this, 'ajax_check_unused_images_batch' ) );
-		add_action( 'wp_ajax_wpat_delete_unused_images', array( $this, 'ajax_delete_unused_images' ) );
-
-		// Hook para generación automática de textos ALT en subida
-		$auto_alt = ! isset( $settings['image_optimizer_auto_alt'] ) || '1' === $settings['image_optimizer_auto_alt'];
-		if ( $auto_alt ) {
-			add_action( 'add_attachment', array( $this, 'maybe_auto_generate_alt' ) );
+		if ( ! has_action( 'wp_ajax_wpat_scan_unused_images' ) ) {
+			add_action( 'wp_ajax_wpat_scan_unused_images', array( $this, 'ajax_scan_unused_images' ) );
+		}
+		if ( ! has_action( 'wp_ajax_wpat_check_unused_images_batch' ) ) {
+			add_action( 'wp_ajax_wpat_check_unused_images_batch', array( $this, 'ajax_check_unused_images_batch' ) );
+		}
+		if ( ! has_action( 'wp_ajax_wpat_delete_unused_images' ) ) {
+			add_action( 'wp_ajax_wpat_delete_unused_images', array( $this, 'ajax_delete_unused_images' ) );
 		}
 
 		// Endpoints AJAX para escáner y reparación masiva de textos ALT
-		add_action( 'wp_ajax_wpat_scan_empty_alt_images', array( $this, 'ajax_scan_empty_alt_images' ) );
-		add_action( 'wp_ajax_wpat_fill_empty_alt_batch', array( $this, 'ajax_fill_empty_alt_batch' ) );
+		if ( ! has_action( 'wp_ajax_wpat_scan_empty_alt_images' ) ) {
+			add_action( 'wp_ajax_wpat_scan_empty_alt_images', array( $this, 'ajax_scan_empty_alt_images' ) );
+		}
+		if ( ! has_action( 'wp_ajax_wpat_fill_empty_alt_batch' ) ) {
+			add_action( 'wp_ajax_wpat_fill_empty_alt_batch', array( $this, 'ajax_fill_empty_alt_batch' ) );
+		}
 	}
 
 	/**
@@ -98,10 +109,10 @@ class WPAT_Image_Optimizer {
 		}
 
 		$file_path = $upload['file'];
-		$mime_type = isset( $upload['type'] ) ? $upload['type'] : '';
+		$mime_type = isset( $upload['type'] ) ? strtolower( $upload['type'] ) : '';
 		$ext       = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
 
-		// Omitir de inmediato si la imagen ya es WebP o no es un formato compatible
+		// Omitir de inmediato si la imagen ya es WebP
 		if ( 'image/webp' === $mime_type || 'webp' === $ext ) {
 			return $upload;
 		}
@@ -111,81 +122,104 @@ class WPAT_Image_Optimizer {
 			return $upload;
 		}
 
-		$allowed_types = array( 'image/jpeg', 'image/png', 'image/gif' );
-		if ( ! in_array( $mime_type, $allowed_types, true ) ) {
+		$allowed_types = array( 'image/jpeg', 'image/jpg', 'image/pjpeg', 'image/png', 'image/x-png', 'image/gif' );
+		$allowed_exts  = array( 'jpg', 'jpeg', 'png', 'gif' );
+		if ( ! in_array( $mime_type, $allowed_types, true ) && ! in_array( $ext, $allowed_exts, true ) ) {
 			return $upload;
 		}
 
-		// Elevar el límite de memoria para manipulación de imágenes grandes
-		if ( function_exists( 'wp_raise_memory_limit' ) ) {
-			wp_raise_memory_limit( 'image' );
-		}
+		try {
+			// Elevar el límite de memoria para manipulación de imágenes grandes
+			if ( function_exists( 'wp_raise_memory_limit' ) ) {
+				wp_raise_memory_limit( 'image' );
+			}
+			@set_time_limit( 180 );
 
-		// Obtener configuración del módulo
-		$settings      = WPAT_Main::get_instance()->get_settings();
-		$quality       = isset( $settings['image_optimizer_quality'] ) ? max( 40, min( 100, intval( $settings['image_optimizer_quality'] ) ) ) : 82;
-		$max_width     = isset( $settings['image_optimizer_max_width'] ) ? max( 0, intval( $settings['image_optimizer_max_width'] ) ) : 1920;
-		$max_height    = isset( $settings['image_optimizer_max_height'] ) ? max( 0, intval( $settings['image_optimizer_max_height'] ) ) : 1920;
-		$keep_original = isset( $settings['image_optimizer_keep_original'] ) && '1' === $settings['image_optimizer_keep_original'];
+			// Obtener configuración del módulo
+			$settings      = WPAT_Main::get_instance()->get_settings();
+			$quality       = isset( $settings['image_optimizer_quality'] ) ? max( 40, min( 100, intval( $settings['image_optimizer_quality'] ) ) ) : 82;
+			$max_width     = isset( $settings['image_optimizer_max_width'] ) ? max( 0, intval( $settings['image_optimizer_max_width'] ) ) : 1920;
+			$max_height    = isset( $settings['image_optimizer_max_height'] ) ? max( 0, intval( $settings['image_optimizer_max_height'] ) ) : 1920;
+			$keep_original = isset( $settings['image_optimizer_keep_original'] ) && '1' === $settings['image_optimizer_keep_original'];
 
-		// Inicializar el editor de imágenes de WordPress (GD o Imagick)
-		$editor = wp_get_image_editor( $file_path );
-		if ( is_wp_error( $editor ) ) {
-			return $upload;
-		}
-
-		// 1. Redimensionar si supera las dimensiones máximas configuradas
-		$sizes       = $editor->get_size();
-		$width       = $sizes['width'];
-		$height      = $sizes['height'];
-		$was_resized = false;
-
-		if ( ( $max_width > 0 && $width > $max_width ) || ( $max_height > 0 && $height > $max_height ) ) {
-			$target_w = $max_width > 0 ? $max_width : $width;
-			$target_h = $max_height > 0 ? $max_height : $height;
-			$editor->resize( $target_w, $target_h, false );
-			$was_resized = true;
-		}
-
-		// Verificar soporte del servidor para codificación WebP
-		if ( ! $editor->supports_mime_type( 'image/webp' ) ) {
-			// Si el servidor no soporta WebP, optimizamos con compresión en su formato original
-			$editor->set_quality( $quality );
-			$editor->save( $file_path );
-			return $upload;
-		}
-
-		// 2. Convertir y Guardar en formato WebP con calidad configurada
-		$editor->set_quality( $quality );
-
-		// Preparar la nueva ruta y nombre de archivo .webp
-		$path_info = pathinfo( $file_path );
-		$directory = $path_info['dirname'];
-		$filename  = $path_info['filename'];
-		$webp_path = $directory . '/' . $filename . '.webp';
-
-		// Guardar el nuevo archivo WebP
-		$saved = $editor->save( $webp_path, 'image/webp' );
-
-		if ( ! is_wp_error( $saved ) && file_exists( $webp_path ) && filesize( $webp_path ) > 0 ) {
-			// Eliminar físicamente la imagen original pesada si no se configuró conservarla
-			if ( ! $keep_original && file_exists( $file_path ) && $file_path !== $webp_path ) {
-				@unlink( $file_path );
+			// Inicializar el editor de imágenes de WordPress (GD o Imagick)
+			$editor = wp_get_image_editor( $file_path );
+			if ( is_wp_error( $editor ) ) {
+				return $upload;
 			}
 
-			// Actualizar el array del upload para que WordPress registre la versión .webp
-			$upload['file'] = $webp_path;
-			$upload['type'] = 'image/webp';
-			
-			// Actualizar la URL pública de la imagen
-			if ( isset( $upload['url'] ) ) {
-				$url_info      = pathinfo( $upload['url'] );
-				$upload['url'] = $url_info['dirname'] . '/' . $filename . '.webp';
+			// 1. Redimensionar si supera las dimensiones máximas configuradas
+			$sizes       = $editor->get_size();
+			$width       = isset( $sizes['width'] ) ? $sizes['width'] : 0;
+			$height      = isset( $sizes['height'] ) ? $sizes['height'] : 0;
+			$was_resized = false;
+			$target_w    = $width;
+			$target_h    = $height;
+
+			if ( ( $max_width > 0 && $width > $max_width ) || ( $max_height > 0 && $height > $max_height ) ) {
+				$target_w = $max_width > 0 ? $max_width : $width;
+				$target_h = $max_height > 0 ? $max_height : $height;
+				$editor->resize( $target_w, $target_h, false );
+				$was_resized = true;
 			}
-		} else {
-			if ( $was_resized ) {
+
+			// Si el editor actual (ej: Imagick) no soporta WebP pero GD sí, intentar con GD
+			if ( ! $editor->supports_mime_type( 'image/webp' ) ) {
+				if ( class_exists( 'WP_Image_Editor_GD' ) && WP_Image_Editor_GD::test() && WP_Image_Editor_GD::supports_mime_type( 'image/webp' ) ) {
+					$gd_editor = new WP_Image_Editor_GD( $file_path );
+					$loaded    = $gd_editor->load();
+					if ( ! is_wp_error( $loaded ) ) {
+						$editor = $gd_editor;
+						if ( $was_resized ) {
+							$editor->resize( $target_w, $target_h, false );
+						}
+					}
+				}
+			}
+
+			// Verificar soporte del servidor para codificación WebP
+			if ( ! $editor->supports_mime_type( 'image/webp' ) ) {
+				// Si el servidor no soporta WebP, optimizamos con compresión en su formato original
+				$editor->set_quality( $quality );
 				$editor->save( $file_path );
+				return $upload;
 			}
+
+			// 2. Convertir y Guardar en formato WebP con calidad configurada
+			$editor->set_quality( $quality );
+
+			// Preparar la nueva ruta y nombre de archivo .webp (único para evitar colisiones)
+			$path_info     = pathinfo( $file_path );
+			$directory     = $path_info['dirname'];
+			$filename      = $path_info['filename'];
+			$webp_filename = function_exists( 'wp_unique_filename' ) ? wp_unique_filename( $directory, $filename . '.webp' ) : ( $filename . '.webp' );
+			$webp_path     = $directory . '/' . $webp_filename;
+
+			// Guardar el nuevo archivo WebP
+			$saved = $editor->save( $webp_path, 'image/webp' );
+
+			if ( ! is_wp_error( $saved ) && file_exists( $webp_path ) && filesize( $webp_path ) > 0 ) {
+				// Eliminar físicamente la imagen original pesada si no se configuró conservarla
+				if ( ! $keep_original && file_exists( $file_path ) && $file_path !== $webp_path ) {
+					@unlink( $file_path );
+				}
+
+				// Actualizar el array del upload para que WordPress registre la versión .webp
+				$upload['file'] = $webp_path;
+				$upload['type'] = 'image/webp';
+				
+				// Actualizar la URL pública de la imagen
+				if ( isset( $upload['url'] ) ) {
+					$url_info      = pathinfo( $upload['url'] );
+					$upload['url'] = $url_info['dirname'] . '/' . $webp_filename;
+				}
+			} else {
+				if ( $was_resized ) {
+					$editor->save( $file_path );
+				}
+			}
+		} catch ( \Throwable $t ) {
+			// En caso de cualquier excepción, devolver el upload original para no interrumpir la subida de WP
 		}
 
 		return $upload;
@@ -199,101 +233,118 @@ class WPAT_Image_Optimizer {
 			wp_send_json_error( array( 'message' => 'Permisos insuficientes.' ) );
 		}
 
-		global $wpdb;
+		if ( function_exists( 'wp_raise_memory_limit' ) ) {
+			wp_raise_memory_limit( 'admin' );
+		}
+		@set_time_limit( 300 );
 
-		$min_size   = isset( $_POST['min_size'] ) ? (int) $_POST['min_size'] : 0;
-		$date_start = isset( $_POST['date_start'] ) ? sanitize_text_field( wp_unslash( $_POST['date_start'] ) ) : '';
-		$date_end   = isset( $_POST['date_end'] ) ? sanitize_text_field( wp_unslash( $_POST['date_end'] ) ) : '';
+		try {
+			global $wpdb;
 
-		// Formatos seleccionados por el usuario
-		$allowed_valid_formats = array( 'image/jpeg', 'image/png', 'image/gif' );
-		$selected_formats      = array();
+			$min_size   = isset( $_POST['min_size'] ) ? (int) $_POST['min_size'] : 0;
+			$date_start = isset( $_POST['date_start'] ) ? sanitize_text_field( wp_unslash( $_POST['date_start'] ) ) : '';
+			$date_end   = isset( $_POST['date_end'] ) ? sanitize_text_field( wp_unslash( $_POST['date_end'] ) ) : '';
 
-		if ( isset( $_POST['formats'] ) ) {
-			$raw_formats = is_array( $_POST['formats'] ) ? $_POST['formats'] : explode( ',', sanitize_text_field( wp_unslash( $_POST['formats'] ) ) );
-			foreach ( $raw_formats as $fmt ) {
-				$fmt = sanitize_text_field( wp_unslash( $fmt ) );
-				if ( in_array( $fmt, $allowed_valid_formats, true ) ) {
-					$selected_formats[] = $fmt;
+			// Formatos seleccionados por el usuario
+			$allowed_valid_formats = array( 'image/jpeg', 'image/png', 'image/gif' );
+			$selected_formats      = array();
+
+			if ( isset( $_POST['formats'] ) ) {
+				$raw_formats = is_array( $_POST['formats'] ) ? $_POST['formats'] : explode( ',', sanitize_text_field( wp_unslash( $_POST['formats'] ) ) );
+				foreach ( $raw_formats as $fmt ) {
+					$fmt = sanitize_text_field( wp_unslash( $fmt ) );
+					if ( in_array( $fmt, $allowed_valid_formats, true ) ) {
+						$selected_formats[] = $fmt;
+					}
 				}
 			}
-		}
 
-		if ( empty( $selected_formats ) ) {
-			$selected_formats = array( 'image/jpeg', 'image/png' );
-		}
-
-		$date_conditions = array();
-		if ( ! empty( $date_start ) ) {
-			$date_conditions[] = $wpdb->prepare( "post_date >= %s", $date_start . ' 00:00:00' );
-		}
-		if ( ! empty( $date_end ) ) {
-			$date_conditions[] = $wpdb->prepare( "post_date <= %s", $date_end . ' 23:59:59' );
-		}
-
-		$date_query = ! empty( $date_conditions ) ? 'AND ' . implode( ' AND ', $date_conditions ) : '';
-
-		$format_placeholders = implode( ', ', array_fill( 0, count( $selected_formats ), '%s' ) );
-
-		// Obtener todos los candidatos no optimizados
-		$query = $wpdb->prepare(
-			"SELECT ID 
-			FROM {$wpdb->posts} 
-			WHERE post_type = 'attachment' 
-			AND post_mime_type IN ({$format_placeholders}) 
-			AND ID NOT IN (
-				SELECT post_id 
-				FROM {$wpdb->postmeta} 
-				WHERE meta_key = '_wpat_optimized' AND meta_value = '1'
-			)
-			{$date_query}",
-			$selected_formats
-		);
-
-		$ids          = array_map( 'intval', $wpdb->get_col( $query ) );
-		$matching_ids = array();
-		$total_bytes  = 0;
-
-		foreach ( $ids as $id ) {
-			$file_path = get_attached_file( $id );
-			if ( $file_path && file_exists( $file_path ) ) {
-				$mime_type = get_post_mime_type( $id );
-				$ext       = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
-
-				// Si la imagen ya es de tipo WebP o su extensión es .webp, marcarla como optimizada y omitirla
-				if ( 'image/webp' === $mime_type || 'webp' === $ext ) {
-					update_post_meta( $id, '_wpat_optimized', '1' );
-					continue;
-				}
-
-				if ( ! in_array( $mime_type, $selected_formats, true ) ) {
-					continue;
-				}
-
-				// Si es un GIF animado, omitir para no perder la animación
-				if ( ( 'image/gif' === $mime_type || 'gif' === $ext ) && $this->is_animated_gif( $file_path ) ) {
-					update_post_meta( $id, '_wpat_optimized', '1' );
-					continue;
-				}
-
-				$size_bytes = filesize( $file_path );
-				$size_kb    = $size_bytes / 1024;
-				if ( $min_size > 0 && $size_kb < $min_size ) {
-					continue;
-				}
-				$matching_ids[] = $id;
-				$total_bytes   += $size_bytes;
+			if ( empty( $selected_formats ) ) {
+				$selected_formats = array( 'image/jpeg', 'image/png' );
 			}
-		}
 
-		wp_send_json_success( array(
-			'ids'              => $matching_ids,
-			'count'            => count( $matching_ids ),
-			'total_bytes'      => $total_bytes,
-			'total_bytes_pref' => size_format( $total_bytes ),
-			'est_opt_bytes'    => $total_bytes * 0.35,
-			'est_opt_bytes_f'  => size_format( $total_bytes * 0.35 ),
-		) );
+			$date_conditions = array();
+			if ( ! empty( $date_start ) ) {
+				$date_conditions[] = $wpdb->prepare( "post_date >= %s", $date_start . ' 00:00:00' );
+			}
+			if ( ! empty( $date_end ) ) {
+				$date_conditions[] = $wpdb->prepare( "post_date <= %s", $date_end . ' 23:59:59' );
+			}
+
+			$date_query = ! empty( $date_conditions ) ? 'AND ' . implode( ' AND ', $date_conditions ) : '';
+
+			$format_placeholders = implode( ', ', array_fill( 0, count( $selected_formats ), '%s' ) );
+
+			// Obtener todos los candidatos no optimizados
+			$query = $wpdb->prepare(
+				"SELECT ID 
+				FROM {$wpdb->posts} 
+				WHERE post_type = 'attachment' 
+				AND post_status != 'trash'
+				AND post_mime_type IN ({$format_placeholders}) 
+				AND ID NOT IN (
+					SELECT post_id 
+					FROM {$wpdb->postmeta} 
+					WHERE meta_key = '_wpat_optimized' AND meta_value = '1'
+				)
+				{$date_query}",
+				$selected_formats
+			);
+
+			$ids          = array_map( 'intval', $wpdb->get_col( $query ) );
+			$matching_ids = array();
+			$total_bytes  = 0;
+			$upload_dir   = wp_upload_dir();
+
+			foreach ( $ids as $id ) {
+				$file_path = get_attached_file( $id );
+				if ( $file_path && ! file_exists( $file_path ) ) {
+					$possible_path = path_join( $upload_dir['basedir'], $file_path );
+					if ( file_exists( $possible_path ) ) {
+						$file_path = $possible_path;
+					}
+				}
+				if ( $file_path && file_exists( $file_path ) ) {
+					$mime_type = get_post_mime_type( $id );
+					$ext       = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+
+					// Si la imagen ya es de tipo WebP o su extensión es .webp, marcarla como optimizada y omitirla
+					if ( 'image/webp' === $mime_type || 'webp' === $ext ) {
+						update_post_meta( $id, '_wpat_optimized', '1' );
+						continue;
+					}
+
+					if ( ! in_array( $mime_type, $selected_formats, true ) ) {
+						continue;
+					}
+
+					// Si es un GIF animado, omitir para no perder la animación
+					if ( ( 'image/gif' === $mime_type || 'gif' === $ext ) && $this->is_animated_gif( $file_path ) ) {
+						update_post_meta( $id, '_wpat_optimized', '1' );
+						continue;
+					}
+
+					$size_bytes = filesize( $file_path );
+					$size_kb    = $size_bytes / 1024;
+					if ( $min_size > 0 && $size_kb < $min_size ) {
+						continue;
+					}
+					$matching_ids[] = $id;
+					$total_bytes   += $size_bytes;
+				}
+			}
+
+			wp_send_json_success( array(
+				'ids'              => $matching_ids,
+				'count'            => count( $matching_ids ),
+				'total_bytes'      => $total_bytes,
+				'total_bytes_pref' => size_format( $total_bytes ),
+				'est_opt_bytes'    => $total_bytes * 0.35,
+				'est_opt_bytes_f'  => size_format( $total_bytes * 0.35 ),
+			) );
+		} catch ( \Throwable $t ) {
+			wp_send_json_error( array( 'message' => $t->getMessage() ) );
+		}
 	}
 
 	/**
@@ -501,15 +552,25 @@ class WPAT_Image_Optimizer {
 			wp_send_json_error( array( 'message' => 'Permisos insuficientes.' ) );
 		}
 
-		global $wpdb;
-		$ids = $wpdb->get_col( "
-			SELECT ID 
-			FROM {$wpdb->posts} 
-			WHERE post_type = 'attachment' 
-			AND post_mime_type IN ('image/jpeg', 'image/png', 'image/gif', 'image/webp')
-		" );
+		if ( function_exists( 'wp_raise_memory_limit' ) ) {
+			wp_raise_memory_limit( 'admin' );
+		}
+		@set_time_limit( 300 );
 
-		wp_send_json_success( array( 'ids' => array_map( 'intval', $ids ) ) );
+		try {
+			global $wpdb;
+			$ids = $wpdb->get_col( "
+				SELECT ID 
+				FROM {$wpdb->posts} 
+				WHERE post_type = 'attachment' 
+				AND post_status != 'trash'
+				AND post_mime_type IN ('image/jpeg', 'image/png', 'image/gif', 'image/webp')
+			" );
+
+			wp_send_json_success( array( 'ids' => array_map( 'intval', $ids ? $ids : array() ) ) );
+		} catch ( \Throwable $t ) {
+			wp_send_json_error( array( 'message' => $t->getMessage() ) );
+		}
 	}
 
 	/**
@@ -520,33 +581,49 @@ class WPAT_Image_Optimizer {
 			wp_send_json_error( array( 'message' => 'Permisos insuficientes.' ) );
 		}
 
-		$ids = isset( $_POST['ids'] ) ? array_map( 'intval', (array) $_POST['ids'] ) : array();
-		if ( empty( $ids ) ) {
-			wp_send_json_success( array( 'unused' => array() ) );
+		if ( function_exists( 'wp_raise_memory_limit' ) ) {
+			wp_raise_memory_limit( 'admin' );
 		}
+		@set_time_limit( 120 );
 
-		$unused = array();
-
-		foreach ( $ids as $id ) {
-			if ( ! self::is_attachment_in_use( $id ) ) {
-				$file_path = get_attached_file( $id );
-				$size      = '0 KB';
-				if ( $file_path && file_exists( $file_path ) ) {
-					$size = size_format( filesize( $file_path ) );
-				}
-				
-				$thumb_url = wp_get_attachment_image_src( $id, 'thumbnail' );
-				$unused[]  = array(
-					'id'    => $id,
-					'name'  => basename( $file_path ? $file_path : 'Desconocido' ),
-					'url'   => $thumb_url ? $thumb_url[0] : '',
-					'size'  => $size,
-					'date'  => get_the_date( 'Y-m-d', $id )
-				);
+		try {
+			$ids = isset( $_POST['ids'] ) ? array_map( 'intval', (array) $_POST['ids'] ) : array();
+			if ( empty( $ids ) ) {
+				wp_send_json_success( array( 'unused' => array() ) );
 			}
-		}
 
-		wp_send_json_success( array( 'unused' => $unused ) );
+			$unused     = array();
+			$upload_dir = wp_upload_dir();
+
+			foreach ( $ids as $id ) {
+				if ( ! self::is_attachment_in_use( $id ) ) {
+					$file_path = get_attached_file( $id );
+					if ( $file_path && ! file_exists( $file_path ) ) {
+						$possible_path = path_join( $upload_dir['basedir'], $file_path );
+						if ( file_exists( $possible_path ) ) {
+							$file_path = $possible_path;
+						}
+					}
+					$size = '0 KB';
+					if ( $file_path && file_exists( $file_path ) ) {
+						$size = size_format( filesize( $file_path ) );
+					}
+					
+					$thumb_url = wp_get_attachment_image_src( $id, 'thumbnail' );
+					$unused[]  = array(
+						'id'   => $id,
+						'name' => basename( $file_path ? $file_path : 'Desconocido' ),
+						'url'  => $thumb_url ? $thumb_url[0] : '',
+						'size' => $size,
+						'date' => get_the_date( 'Y-m-d', $id )
+					);
+				}
+			}
+
+			wp_send_json_success( array( 'unused' => $unused ) );
+		} catch ( \Throwable $t ) {
+			wp_send_json_error( array( 'message' => $t->getMessage() ) );
+		}
 	}
 
 	/**
@@ -785,6 +862,28 @@ class WPAT_Image_Optimizer {
 	}
 
 	/**
+	 * Callback para el hook 'add_attachment'.
+	 * Marca el archivo como optimizado si es WebP y genera su ALT si está habilitado.
+	 *
+	 * @param int $attachment_id ID del adjunto.
+	 */
+	public function on_attachment_added( $attachment_id ) {
+		$file_path = get_attached_file( $attachment_id );
+		if ( $file_path ) {
+			$ext = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+			if ( 'webp' === $ext || 'image/webp' === get_post_mime_type( $attachment_id ) ) {
+				update_post_meta( $attachment_id, '_wpat_optimized', '1' );
+			}
+		}
+
+		$settings = WPAT_Main::get_instance()->get_settings();
+		$auto_alt = ! isset( $settings['image_optimizer_auto_alt'] ) || '1' === (string) $settings['image_optimizer_auto_alt'];
+		if ( $auto_alt ) {
+			$this->maybe_auto_generate_alt( $attachment_id );
+		}
+	}
+
+	/**
 	 * Hook al subir una nueva imagen para auto-generar su texto ALT si está vacío.
 	 *
 	 * @param int $attachment_id ID del adjunto recién subido.
@@ -817,26 +916,36 @@ class WPAT_Image_Optimizer {
 			wp_send_json_error( array( 'message' => __( 'Permisos insuficientes.', 'wp-agency-toolkit' ) ) );
 		}
 
-		global $wpdb;
+		if ( function_exists( 'wp_raise_memory_limit' ) ) {
+			wp_raise_memory_limit( 'admin' );
+		}
+		@set_time_limit( 300 );
 
-		// Buscar adjuntos de tipo imagen donde _wp_attachment_image_alt no existe o está en blanco
-		$query = "
-			SELECT p.ID
-			FROM {$wpdb->posts} p
-			LEFT JOIN {$wpdb->postmeta} pm ON (p.ID = pm.post_id AND pm.meta_key = '_wp_attachment_image_alt')
-			WHERE p.post_type = 'attachment'
-			  AND p.post_mime_type LIKE 'image/%'
-			  AND (pm.meta_value IS NULL OR TRIM(pm.meta_value) = '')
-			ORDER BY p.ID DESC
-		";
+		try {
+			global $wpdb;
 
-		$ids = $wpdb->get_col( $query );
-		$ids = array_map( 'intval', (array) $ids );
+			// Buscar adjuntos de tipo imagen donde _wp_attachment_image_alt no existe o está en blanco
+			$query = "
+				SELECT p.ID
+				FROM {$wpdb->posts} p
+				LEFT JOIN {$wpdb->postmeta} pm ON (p.ID = pm.post_id AND pm.meta_key = '_wp_attachment_image_alt')
+				WHERE p.post_type = 'attachment'
+				  AND p.post_status != 'trash'
+				  AND p.post_mime_type LIKE 'image/%'
+				  AND (pm.meta_value IS NULL OR TRIM(pm.meta_value) = '')
+				ORDER BY p.ID DESC
+			";
 
-		wp_send_json_success( array(
-			'ids'   => $ids,
-			'count' => count( $ids ),
-		) );
+			$ids = $wpdb->get_col( $query );
+			$ids = array_map( 'intval', (array) $ids );
+
+			wp_send_json_success( array(
+				'ids'   => $ids,
+				'count' => count( $ids ),
+			) );
+		} catch ( \Throwable $t ) {
+			wp_send_json_error( array( 'message' => $t->getMessage() ) );
+		}
 	}
 
 	/**

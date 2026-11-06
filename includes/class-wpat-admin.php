@@ -46,9 +46,15 @@ class WPAT_Admin {
 		add_action( 'wp_ajax_wpat_load_hub_view', array( $this, 'ajax_load_hub_view' ) );
 		add_action( 'wp_ajax_wpat_cleanup_database', array( $this, 'ajax_cleanup_database' ) );
 		add_action( 'wp_ajax_wpat_get_health_status', array( $this, 'ajax_get_health_status' ) );
+
+		// Acciones AJAX para Optimizador de Imágenes, Textos ALT y Limpiador de Huérfanas
+		add_action( 'wp_ajax_wpat_scan_images', array( $this, 'ajax_scan_images' ) );
+		add_action( 'wp_ajax_wpat_optimize_image_batch', array( $this, 'ajax_optimize_image_batch' ) );
 		add_action( 'wp_ajax_wpat_scan_unused_images', array( $this, 'ajax_scan_unused_images' ) );
 		add_action( 'wp_ajax_wpat_check_unused_images_batch', array( $this, 'ajax_check_unused_images_batch' ) );
 		add_action( 'wp_ajax_wpat_delete_unused_images', array( $this, 'ajax_delete_unused_images' ) );
+		add_action( 'wp_ajax_wpat_scan_empty_alt_images', array( $this, 'ajax_scan_empty_alt_images' ) );
+		add_action( 'wp_ajax_wpat_fill_empty_alt_batch', array( $this, 'ajax_fill_empty_alt_batch' ) );
 
 		add_action( 'wp_ajax_wpat_seo_get_pages_to_scan', array( $this, 'ajax_seo_get_pages_to_scan' ) );
 		add_action( 'wp_ajax_wpat_seo_audit_page', array( $this, 'ajax_seo_audit_page' ) );
@@ -2775,82 +2781,62 @@ class WPAT_Admin {
 	}
 
 	/**
+	 * Asegura y devuelve la instancia del optimizador de imágenes.
+	 *
+	 * @return WPAT_Image_Optimizer
+	 */
+	private function get_image_optimizer() {
+		require_once WPAT_PATH . 'includes/modules/class-wpat-image-optimizer.php';
+		return WPAT_Image_Optimizer::get_instance();
+	}
+
+	/**
+	 * AJAX: Escanea imágenes para optimización masiva WebP.
+	 */
+	public function ajax_scan_images() {
+		$this->get_image_optimizer()->ajax_scan_images();
+	}
+
+	/**
+	 * AJAX: Optimiza por lotes imágenes a WebP.
+	 */
+	public function ajax_optimize_image_batch() {
+		$this->get_image_optimizer()->ajax_optimize_image_batch();
+	}
+
+	/**
 	 * AJAX: Escanea todos los IDs de adjuntos para el limpiador de imágenes huérfanas.
 	 */
 	public function ajax_scan_unused_images() {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => 'Permisos insuficientes.' ) );
-		}
-
-		global $wpdb;
-		$ids = $wpdb->get_col( "
-			SELECT ID 
-			FROM {$wpdb->posts} 
-			WHERE post_type = 'attachment' 
-			AND post_mime_type IN ('image/jpeg', 'image/png', 'image/gif', 'image/webp')
-		" );
-
-		wp_send_json_success( array( 'ids' => array_map( 'intval', $ids ) ) );
+		$this->get_image_optimizer()->ajax_scan_unused_images();
 	}
 
 	/**
 	 * AJAX: Comprueba si un lote de IDs de adjunto está en uso y devuelve los huérfanos.
 	 */
 	public function ajax_check_unused_images_batch() {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => 'Permisos insuficientes.' ) );
-		}
-
-		$ids = isset( $_POST['ids'] ) ? array_map( 'intval', $_POST['ids'] ) : array();
-		if ( empty( $ids ) ) {
-			wp_send_json_success( array( 'unused' => array() ) );
-		}
-
-		$unused = array();
-
-		foreach ( $ids as $id ) {
-			if ( ! $this->is_attachment_in_use( $id ) ) {
-				$file_path = get_attached_file( $id );
-				$size = '0 KB';
-				if ( $file_path && file_exists( $file_path ) ) {
-					$size = size_format( filesize( $file_path ) );
-				}
-				
-				$thumb_url = wp_get_attachment_image_src( $id, 'thumbnail' );
-				$unused[] = array(
-					'id'    => $id,
-					'name'  => basename( $file_path ? $file_path : 'Desconocido' ),
-					'url'   => $thumb_url ? $thumb_url[0] : '',
-					'size'  => $size,
-					'date'  => get_the_date( 'Y-m-d', $id )
-				);
-			}
-		}
-
-		wp_send_json_success( array( 'unused' => $unused ) );
+		$this->get_image_optimizer()->ajax_check_unused_images_batch();
 	}
 
 	/**
 	 * AJAX: Elimina una lista de adjuntos huérfanos seleccionados.
 	 */
 	public function ajax_delete_unused_images() {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => 'Permisos insuficientes.' ) );
-		}
+		$this->get_image_optimizer()->ajax_delete_unused_images();
+	}
 
-		$ids = isset( $_POST['ids'] ) ? array_map( 'intval', $_POST['ids'] ) : array();
-		if ( empty( $ids ) ) {
-			wp_send_json_error( array( 'message' => 'No se especificaron imágenes para eliminar.' ) );
-		}
+	/**
+	 * AJAX: Escanea imágenes sin texto ALT.
+	 */
+	public function ajax_scan_empty_alt_images() {
+		$this->get_image_optimizer()->ajax_scan_empty_alt_images();
+	}
 
-		$deleted_count = 0;
-		foreach ( $ids as $id ) {
-			if ( wp_delete_attachment( $id, true ) ) {
-				$deleted_count++;
-			}
-		}
-
-		wp_send_json_success( array( 'deleted' => $deleted_count ) );
+	/**
+	 * AJAX: Rellena textos ALT vacíos por lote.
+	 */
+	public function ajax_fill_empty_alt_batch() {
+		$this->get_image_optimizer()->ajax_fill_empty_alt_batch();
 	}
 
 	/**
@@ -2860,8 +2846,7 @@ class WPAT_Admin {
 	 * @return bool
 	 */
 	public function is_attachment_in_use( $attachment_id ) {
-		require_once WPAT_PATH . 'includes/modules/class-wpat-image-optimizer.php';
-		return WPAT_Image_Optimizer::is_attachment_in_use( $attachment_id );
+		return $this->get_image_optimizer()->is_attachment_in_use( $attachment_id );
 	}
 
 	/**

@@ -1637,6 +1637,7 @@ class WPAT_Admin {
 			$new_settings['cookie_consent_floating_pos']       = isset( $input_settings['cookie_consent_floating_pos'] ) && in_array( $input_settings['cookie_consent_floating_pos'], array( 'bottom-left', 'bottom-right' ), true ) ? $input_settings['cookie_consent_floating_pos'] : 'bottom-left';
 			$new_settings['cookie_consent_revoke_badge']       = isset( $input_settings['cookie_consent_revoke_badge'] ) && '1' === $input_settings['cookie_consent_revoke_badge'] ? '1' : '0';
 			$new_settings['cookie_consent_revoke_badge_pos']   = isset( $input_settings['cookie_consent_revoke_badge_pos'] ) && in_array( $input_settings['cookie_consent_revoke_badge_pos'], array( 'bottom-left', 'bottom-right' ), true ) ? $input_settings['cookie_consent_revoke_badge_pos'] : 'bottom-left';
+			$new_settings['cookie_consent_revoke_custom_icon'] = isset( $input_settings['cookie_consent_revoke_custom_icon'] ) ? esc_url_raw( $input_settings['cookie_consent_revoke_custom_icon'] ) : '';
 			$new_settings['cookie_consent_version']            = isset( $input_settings['cookie_consent_version'] ) ? sanitize_text_field( $input_settings['cookie_consent_version'] ) : '1.0';
 			$new_settings['cookie_consent_title']              = isset( $input_settings['cookie_consent_title'] ) ? sanitize_text_field( $input_settings['cookie_consent_title'] ) : '';
 			$new_settings['cookie_consent_text']               = isset( $input_settings['cookie_consent_text'] ) ? wp_kses_post( $input_settings['cookie_consent_text'] ) : '';
@@ -13762,6 +13763,7 @@ class WPAT_Admin {
 		$floating_pos       = isset( $settings['cookie_consent_floating_pos'] ) && 'bottom-right' === $settings['cookie_consent_floating_pos'] ? 'bottom-right' : 'bottom-left';
 		$revoke_badge       = ! isset( $settings['cookie_consent_revoke_badge'] ) || '1' === (string) $settings['cookie_consent_revoke_badge'];
 		$badge_pos          = isset( $settings['cookie_consent_revoke_badge_pos'] ) && 'bottom-right' === $settings['cookie_consent_revoke_badge_pos'] ? 'bottom-right' : 'bottom-left';
+		$revoke_custom_icon = isset( $settings['cookie_consent_revoke_custom_icon'] ) ? $settings['cookie_consent_revoke_custom_icon'] : '';
 		$policy_version     = isset( $settings['cookie_consent_version'] ) && ! empty( $settings['cookie_consent_version'] ) ? $settings['cookie_consent_version'] : '1.0';
 
 		$cookie_policy_url  = isset( $settings['cookie_consent_cookie_policy_url'] ) && ! empty( $settings['cookie_consent_cookie_policy_url'] ) ? $settings['cookie_consent_cookie_policy_url'] : ( isset( $settings['cookie_consent_policy_url'] ) ? $settings['cookie_consent_policy_url'] : '' );
@@ -13900,6 +13902,25 @@ class WPAT_Admin {
 								<option value="bottom-left" <?php selected( $badge_pos, 'bottom-left' ); ?>>Esquina Inferior Izquierda (Recomendado)</option>
 								<option value="bottom-right" <?php selected( $badge_pos, 'bottom-right' ); ?>>Esquina Inferior Derecha</option>
 							</select>
+						</div>
+
+						<div class="wpat-field-group" style="margin-top: 14px;">
+							<label for="wpat_cookie_consent_revoke_custom_icon" style="font-size: 12.5px; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Icono Personalizado de Revocación</label>
+							<div style="display: flex; gap: 8px; align-items: center;">
+								<input type="text" name="wpat_settings[cookie_consent_revoke_custom_icon]" id="wpat_cookie_consent_revoke_custom_icon" value="<?php echo esc_url( $revoke_custom_icon ); ?>" class="regular-text" placeholder="https://... (por defecto 🍪)" style="flex: 1; height: 34px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12.5px;" />
+								<button type="button" class="button" id="wpat_cookie_revoke_icon_btn" style="height: 34px; line-height: 32px; font-size: 12.5px;">Subir Icono</button>
+								<button type="button" class="button button-link-delete" id="wpat_cookie_revoke_icon_remove" style="height: 34px; line-height: 32px; font-size: 12.5px; <?php echo empty( $revoke_custom_icon ) ? 'display: none;' : ''; ?>">Eliminar</button>
+							</div>
+							<p class="description" style="font-size: 11px; color: #64748b; margin-top: 5px; line-height: 1.4;">
+								Recomendado: Imagen cuadrada de <strong>32×32 px o 48×48 px</strong> con fondo transparente (formato <strong>PNG, SVG o WebP</strong>) y poco peso (inferior a 25 KB). Si se deja vacío, se mostrará el icono nativo 🍪.
+							</p>
+							<div id="wpat_cookie_revoke_icon_preview" style="margin-top: 8px; <?php echo empty( $revoke_custom_icon ) ? 'display: none;' : ''; ?>">
+								<?php if ( ! empty( $revoke_custom_icon ) ) : ?>
+									<div style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; background: #1e293b; border-radius: 10px; border: 1px solid #cbd5e1; padding: 4px; box-sizing: border-box;">
+										<img src="<?php echo esc_url( $revoke_custom_icon ); ?>" alt="Vista previa del icono" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+									</div>
+								<?php endif; ?>
+							</div>
 						</div>
 					</div>
 				</div>

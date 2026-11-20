@@ -359,8 +359,9 @@ gtag('consent', 'default', {
 			$legal_links[] = '<a href="' . esc_url( $legal_notice_url ) . '" target="_blank" rel="noopener noreferrer" class="wpat-cookie-legal-link">Aviso Legal</a>';
 		}
 
-		$revoke_badge  = ( ! isset( $settings['cookie_consent_revoke_badge'] ) || '1' === (string) $settings['cookie_consent_revoke_badge'] );
-		$badge_pos     = isset( $settings['cookie_consent_revoke_badge_pos'] ) && 'bottom-right' === $settings['cookie_consent_revoke_badge_pos'] ? 'bottom-right' : 'bottom-left';
+		$revoke_badge       = ( ! isset( $settings['cookie_consent_revoke_badge'] ) || '1' === (string) $settings['cookie_consent_revoke_badge'] );
+		$badge_pos          = isset( $settings['cookie_consent_revoke_badge_pos'] ) && 'bottom-right' === $settings['cookie_consent_revoke_badge_pos'] ? 'bottom-right' : 'bottom-left';
+		$revoke_custom_icon = ! empty( $settings['cookie_consent_revoke_custom_icon'] ) ? esc_url( $settings['cookie_consent_revoke_custom_icon'] ) : '';
 
 		// Colores personalizados
 		$bg_color          = isset( $settings['cookie_consent_bg_color'] ) && ! empty( $settings['cookie_consent_bg_color'] ) ? $settings['cookie_consent_bg_color'] : '#1e293b';
@@ -529,8 +530,13 @@ gtag('consent', 'default', {
 
 		<?php if ( $revoke_badge ) : ?>
 			<!-- BOTÓN FLOTANTE PARA REVOCAR / REABRIR CONSENTIMIENTO -->
-			<button type="button" id="wpat_cookie_revoke_badge" class="<?php echo esc_attr( $badge_pos ); ?>" style="display: none;" title="Gestionar Preferencias de Cookies" aria-label="Gestionar Preferencias de Cookies">
-				<span>🍪</span> <span class="wpat-cookie-badge-label">Cookies</span>
+			<button type="button" id="wpat_cookie_revoke_badge" class="<?php echo esc_attr( $badge_pos ); ?><?php echo ! empty( $revoke_custom_icon ) ? ' has-custom-icon' : ''; ?>" style="display: none;" title="Gestionar Preferencias de Cookies" aria-label="Gestionar Preferencias de Cookies">
+				<?php if ( ! empty( $revoke_custom_icon ) ) : ?>
+					<img src="<?php echo esc_url( $revoke_custom_icon ); ?>" alt="Cookies" class="wpat-cookie-revoke-custom-icon" />
+				<?php else : ?>
+					<span class="wpat-cookie-default-icon">🍪</span>
+				<?php endif; ?>
+				<span class="wpat-cookie-badge-label">Cookies</span>
 			</button>
 		<?php endif; ?>
 		<?php

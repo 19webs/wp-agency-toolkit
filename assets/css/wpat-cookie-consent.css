@@ -709,6 +709,23 @@
 	font-family: inherit;
 }
 
+#wpat_cookie_revoke_badge .wpat-cookie-revoke-custom-icon {
+	width: 18px;
+	height: 18px;
+	max-width: 22px;
+	max-height: 22px;
+	object-fit: contain;
+	display: inline-block;
+	vertical-align: middle;
+	flex-shrink: 0;
+}
+
+#wpat_cookie_revoke_badge .wpat-cookie-default-icon {
+	font-size: 14px;
+	line-height: 1;
+	display: inline-block;
+}
+
 #wpat_cookie_revoke_badge.bottom-left {
 	bottom: 18px;
 	left: 18px;

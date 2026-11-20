@@ -48,6 +48,11 @@ class WPAT_Hide_Login {
 		// Captcha matemático en formulario
 		add_action( 'login_form', array( $this, 'render_captcha_field' ) );
 		add_filter( 'authenticate', array( $this, 'validate_captcha' ), 20, 3 );
+
+		// Prevenir advertencias de PHP 8+ en wp-login.php (variables no inicializadas $user_login y $error)
+		add_action( 'login_init', array( $this, 'prevent_core_login_warnings' ), 1 );
+		add_action( 'login_head', array( $this, 'prevent_core_login_warnings' ), 1 );
+		add_filter( 'enable_login_autofocus', array( $this, 'prevent_core_autofocus_warning' ), 1 );
 	}
 
 	/**
@@ -133,6 +138,16 @@ class WPAT_Hide_Login {
 			if ( isset( $_SERVER['SCRIPT_NAME'] ) ) {
 				$_SERVER['SCRIPT_NAME'] = str_replace( $slug, 'wp-login.php', sanitize_text_field( wp_unslash( $_SERVER['SCRIPT_NAME'] ) ) );
 			}
+
+			// Prevenir variables no inicializadas en PHP 8+ al requerir wp-login.php dentro de este método
+			global $error, $interim_login, $action, $user_login;
+			if ( ! isset( $user_login ) ) {
+				$user_login = '';
+			}
+			if ( ! isset( $error ) ) {
+				$error = '';
+			}
+
 			require_once ABSPATH . 'wp-login.php';
 			exit;
 		}
@@ -391,6 +406,33 @@ class WPAT_Hide_Login {
 		}
 
 		return $user;
+	}
+
+	/**
+	 * Previene advertencias de PHP 8+ en wp-login.php (variables no inicializadas $user_login y $error).
+	 */
+	public function prevent_core_login_warnings() {
+		global $user_login, $error;
+		if ( ! isset( $user_login ) ) {
+			$user_login = '';
+		}
+		if ( ! isset( $error ) ) {
+			$error = '';
+		}
+	}
+
+	/**
+	 * Asegura que $error esté definido antes de que wp-login.php evalúe '! $error' en el script de autofocus.
+	 *
+	 * @param bool $enable
+	 * @return bool
+	 */
+	public function prevent_core_autofocus_warning( $enable ) {
+		global $error;
+		if ( ! isset( $error ) ) {
+			$error = '';
+		}
+		return $enable;
 	}
 }
 

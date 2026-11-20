@@ -34,6 +34,11 @@ class WPAT_Login_Customizer {
 		add_filter( 'login_headerurl', array( $this, 'custom_login_logo_url' ) );
 		add_filter( 'login_headertext', array( $this, 'custom_login_logo_title' ) );
 		
+		// Prevenir advertencias de PHP 8+ en wp-login.php (variables no inicializadas $user_login y $error)
+		add_action( 'login_init', array( $this, 'prevent_core_login_warnings' ), 1 );
+		add_action( 'login_head', array( $this, 'prevent_core_login_warnings' ), 1 );
+		add_filter( 'enable_login_autofocus', array( $this, 'prevent_core_autofocus_warning' ), 1 );
+
 		if ( is_admin() ) {
 			add_filter( 'admin_footer_text', array( $this, 'custom_admin_footer_text' ) );
 			add_filter( 'update_footer', array( $this, 'custom_admin_footer_version' ), 99 );
@@ -46,7 +51,7 @@ class WPAT_Login_Customizer {
 	public function custom_login_styles() {
 		$settings = WPAT_Main::get_instance()->get_settings();
 		$style    = isset( $settings['login_style'] ) ? $settings['login_style'] : 'default';
-		$logo     = $settings['login_logo'];
+		$logo     = isset( $settings['login_logo'] ) ? $settings['login_logo'] : '';
 		$bg_color = ! empty( $settings['login_bg_color'] ) ? $settings['login_bg_color'] : '#f0f0f0';
 		$hide_langs = isset( $settings['login_hide_languages'] ) ? $settings['login_hide_languages'] : '0';
 
@@ -415,5 +420,32 @@ class WPAT_Login_Customizer {
 		}
 
 		return $default_version;
+	}
+
+	/**
+	 * Previene advertencias de PHP 8+ en wp-login.php (variables no inicializadas $user_login y $error).
+	 */
+	public function prevent_core_login_warnings() {
+		global $user_login, $error;
+		if ( ! isset( $user_login ) ) {
+			$user_login = '';
+		}
+		if ( ! isset( $error ) ) {
+			$error = '';
+		}
+	}
+
+	/**
+	 * Asegura que $error esté definido antes de que wp-login.php evalúe '! $error' en el script de autofocus.
+	 *
+	 * @param bool $enable
+	 * @return bool
+	 */
+	public function prevent_core_autofocus_warning( $enable ) {
+		global $error;
+		if ( ! isset( $error ) ) {
+			$error = '';
+		}
+		return $enable;
 	}
 }

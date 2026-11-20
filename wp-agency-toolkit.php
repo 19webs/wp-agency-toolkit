@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.155
+ * Version:     4.3.156
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.155' );
+define( 'WPAT_VERSION', '4.3.156' );
 define( 'WPAT_FILE', __FILE__ );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_DIR', WPAT_PATH );
@@ -322,6 +322,38 @@ class WPAT_Main {
 			require_once WPAT_PATH . 'includes/class-wpat-admin.php';
 			WPAT_Admin::get_instance();
 		}
+
+		// Blindaje global contra advertencias de variables no inicializadas de PHP 8+ en wp-login.php ($user_login y $error)
+		add_action( 'login_init', array( $this, 'prevent_core_login_warnings' ), 1 );
+		add_action( 'login_head', array( $this, 'prevent_core_login_warnings' ), 1 );
+		add_filter( 'enable_login_autofocus', array( $this, 'prevent_core_autofocus_warning' ), 1 );
+	}
+
+	/**
+	 * Previene advertencias de PHP 8+ en wp-login.php (variables no inicializadas $user_login y $error).
+	 */
+	public function prevent_core_login_warnings() {
+		global $user_login, $error;
+		if ( ! isset( $user_login ) ) {
+			$user_login = '';
+		}
+		if ( ! isset( $error ) ) {
+			$error = '';
+		}
+	}
+
+	/**
+	 * Asegura que $error esté definido antes de que wp-login.php evalúe '! $error' en el script de autofocus.
+	 *
+	 * @param bool $enable
+	 * @return bool
+	 */
+	public function prevent_core_autofocus_warning( $enable ) {
+		global $error;
+		if ( ! isset( $error ) ) {
+			$error = '';
+		}
+		return $enable;
 	}
 
 	/**
@@ -809,6 +841,7 @@ class WPAT_Main {
 				'cookie_consent_legal_notice_url'    => '',
 				'cookie_consent_revoke_badge'        => '1',
 				'cookie_consent_revoke_badge_pos'    => 'bottom-left',
+				'cookie_consent_revoke_custom_icon'  => '',
 				'cookie_consent_version'             => '1.0',
 				'cookie_consent_bg_color'            => '#1e293b',
 				'cookie_consent_text_color'          => '#f8fafc',

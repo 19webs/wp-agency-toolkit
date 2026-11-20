@@ -5400,6 +5400,38 @@ jQuery(document).ready(function($) {
 		showToast('Versión actualizada a ' + nextVal + '. Guarda los cambios para forzar el banner.', false);
 	});
 
+	// 6. Subir Icono Personalizado de Revocación de Cookies
+	var cookie_icon_uploader;
+	$(document).on('click', '#wpat_cookie_revoke_icon_btn', function(e) {
+		e.preventDefault();
+		if (cookie_icon_uploader) {
+			cookie_icon_uploader.open();
+			return;
+		}
+		cookie_icon_uploader = wp.media({
+			title: 'Seleccionar Icono Flotante de Revocación de Cookies',
+			button: { text: 'Usar este Icono' },
+			multiple: false,
+			library: { type: 'image' }
+		});
+		cookie_icon_uploader.on('select', function() {
+			var attachment = cookie_icon_uploader.state().get('selection').first().toJSON();
+			$('#wpat_cookie_consent_revoke_custom_icon').val(attachment.url);
+			var $preview = $('#wpat_cookie_revoke_icon_preview');
+			$preview.html('<div style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; background: #1e293b; border-radius: 10px; border: 1px solid #cbd5e1; padding: 4px; box-sizing: border-box;"><img src="' + attachment.url + '" alt="Vista previa del icono" style="max-width: 100%; max-height: 100%; object-fit: contain;" /></div>').show();
+			$('#wpat_cookie_revoke_icon_remove').show();
+		});
+		cookie_icon_uploader.open();
+	});
+
+	// Eliminar Icono Personalizado de Revocación
+	$(document).on('click', '#wpat_cookie_revoke_icon_remove', function(e) {
+		e.preventDefault();
+		$('#wpat_cookie_consent_revoke_custom_icon').val('');
+		$('#wpat_cookie_revoke_icon_preview').empty().hide();
+		$(this).hide();
+	});
+
 	/* ==========================================================================
 	   MÓDULO: GENERADOR DE CÓDIGOS QR & ENLACES DIRECTOS
 	   ========================================================================== */

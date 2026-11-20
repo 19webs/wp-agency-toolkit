@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Agency Toolkit
  * Description: Un plugin modular, ligero y de alto rendimiento que unifica utilidades esenciales de administración, seguridad, WooCommerce, rendimiento y optimización de medios.
- * Version:     4.3.156
+ * Version:     4.3.157
  * Author:      19webs
  * License:     GPLv2 or later
  * Text Domain: wp-agency-toolkit
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Constantes del plugin
-define( 'WPAT_VERSION', '4.3.156' );
+define( 'WPAT_VERSION', '4.3.157' );
 define( 'WPAT_FILE', __FILE__ );
 define( 'WPAT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPAT_DIR', WPAT_PATH );
@@ -255,6 +255,10 @@ class WPAT_Main {
 		'woo-tools' => array(
 			'file'  => 'includes/modules/class-wpat-woo-tools.php',
 			'class' => 'WPAT_Woo_Tools',
+		),
+		'security-auditor' => array(
+			'file'  => 'includes/modules/class-wpat-security-auditor.php',
+			'class' => 'WPAT_Security_Auditor',
 		),
 	);
 
@@ -571,6 +575,7 @@ class WPAT_Main {
 				'sitemap_include_taxonomies' => '1',
 				'sitemap_include_images'     => '1',
 				'sitemap_exclude_urls'       => '',
+				'disable_comments_mode'     => 'global',
 				'disable_comments_global'   => '1',
 				'disable_comments_posts'    => '0',
 				'disable_comments_pages'    => '0',
@@ -591,6 +596,7 @@ class WPAT_Main {
 				'sec_disable_xmlrpc'        => '0',
 				'sec_block_admin_user'      => '0',
 				'sec_security_headers'      => '0',
+				'security-auditor'          => '1',
 
 				// Opciones de SMTP
 				'smtp_host'                 => '',

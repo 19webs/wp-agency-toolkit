@@ -242,11 +242,344 @@ jQuery(document).ready(function($) {
 		return baseUrl + path;
 	}
 
+	function refreshCommentStats() {
+		var $statTotal = $('#wpat-comment-stat-total');
+		if (!$statTotal.length) return;
+
+		var $statApproved = $('#wpat-comment-stat-approved');
+		var $statSpam     = $('#wpat-comment-stat-spam');
+		var $statTrash    = $('#wpat-comment-stat-trash');
+
+		$statTotal.text('...');
+		if ($statApproved.length) $statApproved.text('...');
+		if ($statSpam.length) $statSpam.text('...');
+		if ($statTrash.length) $statTrash.text('...');
+
+		var nonce = $('#wpat_comments_nonce').val() || (typeof wpat_object !== 'undefined' ? (wpat_object.comments_nonce || wpat_object.nonce) : '');
+		var ajaxUrl = (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php'));
+
+		$.ajax({
+			url: ajaxUrl,
+			type: 'POST',
+			data: {
+				action: 'wpat_comments_get_stats',
+				security: nonce
+			},
+			success: function(resp) {
+				if (resp && resp.success && resp.data) {
+					$statTotal.text(resp.data.total);
+					if ($statApproved.length) $statApproved.text(resp.data.approved);
+					if ($statSpam.length) $statSpam.text(resp.data.spam);
+					if ($statTrash.length) $statTrash.text(resp.data.trash);
+				}
+			}
+		});
+	}
+
 	function initModuleComponents($scope) {
 		if ($.fn.wpColorPicker) {
 			$scope.find('.wpat-color-picker').wpColorPicker();
 		}
+		if ($scope.find('#wpat-comment-stat-total').length) {
+			refreshCommentStats();
+		}
 	}
+
+	// Delegated events for Disable Comments & Anti-Spam module
+	$(document).on('change', '.wpat-comments-mode-radio', function() {
+		if ($(this).is(':checked')) {
+			if ($(this).val() === 'selective') {
+				$('#wpat-granular-comments-box').slideDown(200);
+			} else {
+				$('#wpat-granular-comments-box').slideUp(200);
+			}
+		}
+	});
+
+	$(document).on('click', '#wpat-comments-refresh-btn', function(e) {
+		e.preventDefault();
+		refreshCommentStats();
+	});
+
+	$(document).on('click', '#wpat-btn-delete-all-comments', function(e) {
+		e.preventDefault();
+		if (!confirm('¡ATENCIÓN! Esta acción eliminará permanentemente TODOS los comentarios y valoraciones existentes de la base de datos de WordPress. ¿Deseas continuar?')) {
+			return;
+		}
+
+		var $btn = $(this);
+		var originalText = $btn.html();
+		$btn.prop('disabled', true).text('Eliminando...');
+		var $resBox = $('#wpat-comments-action-result');
+
+		var nonce = $('#wpat_comments_nonce').val() || (typeof wpat_object !== 'undefined' ? (wpat_object.comments_nonce || wpat_object.nonce) : '');
+		var ajaxUrl = (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php'));
+
+		$.ajax({
+			url: ajaxUrl,
+			type: 'POST',
+			data: {
+				action: 'wpat_comments_delete_all',
+				security: nonce
+			},
+			success: function(resp) {
+				$btn.prop('disabled', false).html(originalText);
+				if (resp && resp.success) {
+					if ($resBox.length) {
+						$resBox.css('color', '#15803d').text('✓ ' + ((resp.data && resp.data.message) ? resp.data.message : 'Comentarios eliminados con éxito.'));
+					}
+					refreshCommentStats();
+				} else {
+					if ($resBox.length) {
+						$resBox.css('color', '#b91c1c').text('⚠️ ' + ((resp && resp.data && resp.data.message) ? resp.data.message : 'Error al eliminar.'));
+					}
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).html(originalText);
+				if ($resBox.length) {
+					$resBox.css('color', '#b91c1c').text('⚠️ Error de comunicación con el servidor.');
+				}
+			}
+		});
+	});
+
+	if ($('#wpat-comment-stat-total').length) {
+		refreshCommentStats();
+	}
+
+	// -------------------------------------------------------------
+	// MÓDULO: AUDITOR DE SEGURIDAD E INTEGRIDAD DE ARCHIVOS
+	// -------------------------------------------------------------
+	function renderSecurityAuditorResults(data) {
+		if (!data) return;
+
+		// 1. Puntuación y cabecera
+		var score = typeof data.score !== 'undefined' ? parseInt(data.score, 10) : 100;
+		var scoreColor = '#10b981';
+		var scoreLabel = 'Seguro';
+		if (score < 60) {
+			scoreColor = '#ef4444';
+			scoreLabel = 'Riesgo Crítico';
+		} else if (score < 85) {
+			scoreColor = '#f59e0b';
+			scoreLabel = 'Atención Requerida';
+		}
+
+		$('#wpat_auditor_score_badge').css('background', scoreColor).text(scoreLabel + ' (' + score + '/100)');
+
+		if (data.date_formatted) {
+			$('#wpat_auditor_last_scan_info').html('Última auditoría realizada el <strong>' + data.date_formatted + '</strong> (duración: <strong>' + (data.elapsed_seconds || '0.5') + '</strong> s).');
+		}
+
+		// 2. Tarjetas de métricas
+		var rootIssues = (data.root_scan && data.root_scan.suspicious_files) ? data.root_scan.suspicious_files : [];
+		var uploadsIssues = (data.uploads_scan && data.uploads_scan.suspicious_files) ? data.uploads_scan.suspicious_files : [];
+		var coreIssues = (data.core_scan && data.core_scan.issues) ? data.core_scan.issues : [];
+		var configIssues = (data.config_scan && data.config_scan.warnings) ? data.config_scan.warnings : [];
+
+		if (rootIssues.length === 0) {
+			$('#wpat_metric_root').html('<span style="color: #10b981;">✓ 0 extraños</span>');
+		} else {
+			$('#wpat_metric_root').html('<span style="color: #ef4444;">⚠️ ' + rootIssues.length + ' sospechosos</span>');
+		}
+
+		if (uploadsIssues.length === 0) {
+			$('#wpat_metric_uploads').html('<span style="color: #10b981;">✓ 0 ejecutables</span>');
+		} else {
+			$('#wpat_metric_uploads').html('<span style="color: #ef4444;">🚨 ' + uploadsIssues.length + ' críticos</span>');
+		}
+
+		if (coreIssues.length === 0) {
+			$('#wpat_metric_core').html('<span style="color: #10b981;">✓ 100% oficial</span>');
+		} else {
+			$('#wpat_metric_core').html('<span style="color: #ef4444;">⚠️ ' + coreIssues.length + ' alterados</span>');
+		}
+
+		if (data.hardening && data.hardening.items) {
+			var activeCount = 0;
+			var totalCount = data.hardening.items.length;
+			data.hardening.items.forEach(function(item) {
+				if (item.is_active) activeCount++;
+			});
+			var hardColor = (activeCount >= totalCount - 2) ? '#10b981' : ((activeCount >= 5) ? '#f59e0b' : '#ef4444');
+			$('#wpat_metric_hardening').html('<span style="color: ' + hardColor + ';">' + activeCount + '/' + totalCount + ' activas</span>');
+		}
+
+		// 3. Renderizar resultados detallados de archivos
+		var $resultsContainer = $('#wpat_auditor_results_container');
+		if ($resultsContainer.length) {
+			var html = '<div style="margin-bottom: 24px;">';
+			html += '<h4 style="margin: 0 0 12px 0; font-size: 14.5px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">';
+			html += '<span class="dashicons dashicons-search" style="color: #2563eb;"></span> Diagnóstico de Archivos e Integridad del Sistema</h4>';
+
+			var hasThreats = (rootIssues.length > 0 || uploadsIssues.length > 0 || coreIssues.length > 0 || configIssues.length > 0);
+
+			if (!hasThreats) {
+				html += '<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px 18px; color: #15803d; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 10px;">';
+				html += '<span class="dashicons dashicons-yes-alt" style="font-size: 20px; width: 20px; height: 20px; line-height: 1;"></span>';
+				html += '<span>¡Excelente! No se detectaron archivos sospechosos en la raíz, no hay scripts ejecutables en uploads y los archivos del Core coinciden al 100% con los oficiales de WordPress.org.</span>';
+				html += '</div>';
+			} else {
+				if (uploadsIssues.length > 0) {
+					html += '<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 14px;">';
+					html += '<div style="color: #b91c1c; font-weight: 700; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">';
+					html += '<span class="dashicons dashicons-warning"></span> ¡Alerta Crítica! Se detectaron ' + uploadsIssues.length + ' script(s) PHP en la carpeta de medios (uploads):</div>';
+					html += '<table class="widefat fixed striped" style="background: #fff; border-radius: 6px; overflow: hidden;">';
+					html += '<thead><tr><th style="font-weight: 700; width: 50%;">Ruta del Archivo</th><th style="font-weight: 700; width: 15%;">Tamaño</th><th style="font-weight: 700; width: 20%;">Modificado</th><th style="font-weight: 700; width: 15%;">Severidad</th></tr></thead><tbody>';
+					uploadsIssues.forEach(function(f) {
+						html += '<tr><td><code>' + $('<div>').text(f.path).html() + '</code></td><td>' + f.size + '</td><td>' + f.modified + '</td><td><span style="background: #dc2626; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">Crítico</span></td></tr>';
+					});
+					html += '</tbody></table></div>';
+				}
+
+				if (rootIssues.length > 0) {
+					html += '<div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 16px; margin-bottom: 14px;">';
+					html += '<div style="color: #b45309; font-weight: 700; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">';
+					html += '<span class="dashicons dashicons-info"></span> Archivos o directorios no estándar en la raíz (' + rootIssues.length + ' detectados):</div>';
+					html += '<table class="widefat fixed striped" style="background: #fff; border-radius: 6px; overflow: hidden;">';
+					html += '<thead><tr><th style="font-weight: 700; width: 40%;">Elemento</th><th style="font-weight: 700; width: 35%;">Diagnóstico</th><th style="font-weight: 700; width: 15%;">Tamaño / Fecha</th><th style="font-weight: 700; width: 10%;">Riesgo</th></tr></thead><tbody>';
+					rootIssues.forEach(function(f) {
+						var sevBadge = (f.severity === 'high') ? '<span style="background: #ea580c; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">Alto</span>' : '<span style="background: #eab308; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">Medio</span>';
+						html += '<tr><td><code>' + $('<div>').text(f.path).html() + '</code></td><td style="font-size: 12px; color: #475569;">' + $('<div>').text(f.explanation).html() + '</td><td style="font-size: 12px;">' + f.size + ' (' + f.modified + ')</td><td>' + sevBadge + '</td></tr>';
+					});
+					html += '</tbody></table></div>';
+				}
+
+				if (coreIssues.length > 0) {
+					html += '<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 14px;">';
+					html += '<div style="color: #b91c1c; font-weight: 700; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">';
+					html += '<span class="dashicons dashicons-dismiss"></span> Archivos del Core de WordPress alterados o ausentes (' + coreIssues.length + ' detectados):</div>';
+					html += '<table class="widefat fixed striped" style="background: #fff; border-radius: 6px; overflow: hidden;">';
+					html += '<thead><tr><th style="font-weight: 700; width: 45%;">Archivo del Core</th><th style="font-weight: 700; width: 40%;">Detalle</th><th style="font-weight: 700; width: 15%;">Estado</th></tr></thead><tbody>';
+					coreIssues.forEach(function(c) {
+						var stText = (c.status === 'modified') ? 'Modificado' : 'Faltante';
+						html += '<tr><td><code>' + $('<div>').text(c.file).html() + '</code></td><td style="font-size: 12px; color: #475569;">' + $('<div>').text(c.explanation).html() + '</td><td><span style="background: #dc2626; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">' + stText + '</span></td></tr>';
+					});
+					html += '</tbody></table></div>';
+				}
+
+				if (configIssues.length > 0) {
+					html += '<div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 16px; margin-bottom: 14px;">';
+					html += '<div style="color: #b45309; font-weight: 700; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">';
+					html += '<span class="dashicons dashicons-admin-settings"></span> Avisos de Configuración y Permisos de WordPress:</div>';
+					html += '<div style="display: flex; flex-direction: column; gap: 8px;">';
+					configIssues.forEach(function(w) {
+						html += '<div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">';
+						html += '<div><strong style="color: #0f172a; font-size: 13px; display: block;">' + $('<div>').text(w.title).html() + '</strong><span style="font-size: 12px; color: #64748b;">' + $('<div>').text(w.description).html() + '</span></div>';
+						if (w.action_url) {
+							html += '<a href="' + w.action_url + '" class="button button-secondary button-small" target="_blank" style="font-weight: 600;">Revisar Ajuste</a>';
+						}
+						html += '</div>';
+					});
+					html += '</div></div>';
+				}
+			}
+
+			html += '</div>';
+			$resultsContainer.html(html);
+		}
+
+		// 4. Actualizar tabla de checklist de blindaje
+		if (data.hardening && data.hardening.items) {
+			data.hardening.items.forEach(function(item) {
+				var $row = $('#wpat_row_rule_' + item.key);
+				if ($row.length) {
+					var $badgeCol = $row.find('td:nth-child(3)');
+					var $actionCol = $row.find('td:nth-child(4)');
+					if (item.is_active) {
+						$badgeCol.html('<span class="wpat-rule-badge" style="background: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 12px; font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">✓ Protegido</span>');
+						$actionCol.html('<span style="color: #10b981; font-size: 12px; font-weight: 600;">Activo</span>');
+					} else {
+						$badgeCol.html('<span class="wpat-rule-badge" style="background: #fee2e2; color: #b91c1c; padding: 4px 10px; border-radius: 12px; font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">⚠️ Inactivo</span>');
+						if (item.can_auto_fix) {
+							$actionCol.html('<button type="button" class="button button-secondary button-small wpat-auditor-fix-btn" data-rule="' + item.key + '" style="font-weight: 600; color: #1d4ed8; border-color: #93c5fd; background: #eff6ff;">Activar en 1 Clic</button>');
+						} else {
+							$actionCol.html('<a href="admin.php?page=wp-agency-toolkit&mod=' + item.target_mod + '" class="button button-secondary button-small" style="font-weight: 600;">Configurar</a>');
+						}
+					}
+				}
+			});
+		}
+	}
+
+	$(document).on('click', '#wpat_run_security_audit_btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		if ($btn.prop('disabled')) return;
+
+		var originalHtml = $btn.html();
+		$btn.prop('disabled', true).html('<span class="dashicons dashicons-update wpat-spin" style="font-size:18px;width:18px;height:18px;line-height:1;margin-right:6px;vertical-align:middle;"></span> <span class="wpat-btn-text">Auditando sistema y archivos...</span>');
+
+		var nonce = $('#wpat_security_auditor_nonce').val() || (typeof wpat_object !== 'undefined' ? (wpat_object.security_auditor_nonce || wpat_object.nonce) : '');
+		var ajaxUrl = (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php'));
+
+		$.ajax({
+			url: ajaxUrl,
+			type: 'POST',
+			data: {
+				action: 'wpat_security_auditor_scan',
+				security: nonce
+			},
+			success: function(resp) {
+				$btn.prop('disabled', false).html(originalHtml);
+				if (resp && resp.success && resp.data) {
+					renderSecurityAuditorResults(resp.data);
+					if (typeof window.showToast === 'function') {
+						window.showToast('Auditoría de seguridad completada con éxito.');
+					}
+				} else {
+					alert((resp && resp.data && resp.data.message) ? resp.data.message : 'Error al ejecutar la auditoría de seguridad.');
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).html(originalHtml);
+				alert('Error de conexión al ejecutar la auditoría.');
+			}
+		});
+	});
+
+	$(document).on('click', '.wpat-auditor-fix-btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		if ($btn.prop('disabled')) return;
+
+		var ruleKey = $btn.data('rule');
+		if (!ruleKey) return;
+
+		var originalText = $btn.text();
+		$btn.prop('disabled', true).text('Aplicando...');
+
+		var nonce = $('#wpat_security_auditor_nonce').val() || (typeof wpat_object !== 'undefined' ? (wpat_object.security_auditor_nonce || wpat_object.nonce) : '');
+		var ajaxUrl = (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php'));
+
+		$.ajax({
+			url: ajaxUrl,
+			type: 'POST',
+			data: {
+				action: 'wpat_security_auditor_fix',
+				rule_key: ruleKey,
+				security: nonce
+			},
+			success: function(resp) {
+				if (resp && resp.success) {
+					if (resp.data && resp.data.audit) {
+						renderSecurityAuditorResults(resp.data.audit);
+					}
+					if (typeof window.showToast === 'function') {
+						window.showToast(resp.data.message || 'Regla de protección activada.');
+					}
+				} else {
+					$btn.prop('disabled', false).text(originalText);
+					alert((resp && resp.data && resp.data.message) ? resp.data.message : 'Error al aplicar la corrección.');
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).text(originalText);
+				alert('Error de conexión al aplicar la regla.');
+			}
+		});
+	});
 
 	function loadModuleView(modId, cat, pushState) {
 		if (!modId) return;

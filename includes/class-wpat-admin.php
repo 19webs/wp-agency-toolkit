@@ -30,6 +30,11 @@ class WPAT_Admin {
 	 * Constructor.
 	 */
 	private function __construct() {
+		if ( ! class_exists( 'WPAT_Security_Auditor' ) ) {
+			require_once WPAT_PATH . 'includes/modules/class-wpat-security-auditor.php';
+		}
+		WPAT_Security_Auditor::get_instance();
+
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 		add_action( 'admin_init', array( $this, 'save_settings' ) );
@@ -250,6 +255,8 @@ class WPAT_Admin {
 			'file_manager_nonce'   => wp_create_nonce( 'wpat_file_manager_nonce' ),
 			'reg_forms_nonce'      => wp_create_nonce( 'wpat_reg_forms_nonce' ),
 			'envato_nonce'         => wp_create_nonce( 'wpat_envato_importer_nonce' ),
+			'comments_nonce'       => wp_create_nonce( 'wpat_comments_nonce' ),
+			'security_auditor_nonce' => wp_create_nonce( 'wpat_security_auditor_nonce' ),
 		) );
 
 		// Localizar kits instalados para el JS de administración
@@ -727,7 +734,7 @@ class WPAT_Admin {
 			exit;
 		}
 
-		if ( ! isset( $_POST['wpat_save_settings'] ) ) {
+		if ( ! isset( $_POST['wpat_save_settings'] ) && ! isset( $_POST['wpat_saving_module'] ) ) {
 			return;
 		}
 
@@ -757,6 +764,8 @@ class WPAT_Admin {
 				'wpat-login-customizer'      => 'login-customizer',
 				'wpat-seo'                   => 'seo',
 				'wpat-sitemap-xml'           => 'sitemap-xml',
+				'wpat-disable-comments'      => 'disable-comments',
+				'wpat-security-auditor'      => 'security-auditor',
 				'wpat-error-log-viewer'      => 'error-log-viewer',
 				'wpat-role-manager'          => 'role-manager',
 				'wpat-cookie-consent'        => 'cookie-consent',
@@ -801,6 +810,7 @@ class WPAT_Admin {
 			'sitemap-xml',
 			'disable-comments',
 			'security-hardening',
+			'security-auditor',
 			'envato-importer',
 			'smtp',
 			'hide_admin_bar',
@@ -926,14 +936,21 @@ class WPAT_Admin {
 
 		// 4. Sanitizar Deshabilitar Comentarios
 		if ( empty( $saving_module ) || 'disable-comments' === $saving_module ) {
-			$new_settings['disable_comments_global']       = isset( $input_settings['disable_comments_global'] ) && '1' === $input_settings['disable_comments_global'] ? '1' : '0';
-			$new_settings['disable_comments_posts']        = isset( $input_settings['disable_comments_posts'] ) && '1' === $input_settings['disable_comments_posts'] ? '1' : '0';
-			$new_settings['disable_comments_pages']        = isset( $input_settings['disable_comments_pages'] ) && '1' === $input_settings['disable_comments_pages'] ? '1' : '0';
-			$new_settings['disable_comments_media']        = isset( $input_settings['disable_comments_media'] ) && '1' === $input_settings['disable_comments_media'] ? '1' : '0';
-			$new_settings['disable_comments_keep_reviews'] = isset( $input_settings['disable_comments_keep_reviews'] ) && '1' === $input_settings['disable_comments_keep_reviews'] ? '1' : '0';
+			if ( 'disable-comments' === $saving_module || isset( $input_settings['disable_comments_mode'] ) || isset( $input_settings['disable_comments_global'] ) ) {
+				$mode = isset( $input_settings['disable_comments_mode'] ) && in_array( $input_settings['disable_comments_mode'], array( 'global', 'selective' ), true )
+					? $input_settings['disable_comments_mode']
+					: ( ( isset( $input_settings['disable_comments_global'] ) && '1' === (string) $input_settings['disable_comments_global'] ) ? 'global' : 'global' );
 
-			$cpts_raw = isset( $input_settings['disable_comments_cpts'] ) && is_array( $input_settings['disable_comments_cpts'] ) ? $input_settings['disable_comments_cpts'] : array();
-			$new_settings['disable_comments_cpts'] = array_map( 'sanitize_key', $cpts_raw );
+				$new_settings['disable_comments_mode']         = $mode;
+				$new_settings['disable_comments_global']       = ( 'global' === $mode ) ? '1' : '0';
+				$new_settings['disable_comments_posts']        = isset( $input_settings['disable_comments_posts'] ) && '1' === (string) $input_settings['disable_comments_posts'] ? '1' : '0';
+				$new_settings['disable_comments_pages']        = isset( $input_settings['disable_comments_pages'] ) && '1' === (string) $input_settings['disable_comments_pages'] ? '1' : '0';
+				$new_settings['disable_comments_media']        = isset( $input_settings['disable_comments_media'] ) && '1' === (string) $input_settings['disable_comments_media'] ? '1' : '0';
+				$new_settings['disable_comments_keep_reviews'] = isset( $input_settings['disable_comments_keep_reviews'] ) && '1' === (string) $input_settings['disable_comments_keep_reviews'] ? '1' : '0';
+
+				$cpts_raw = isset( $input_settings['disable_comments_cpts'] ) && is_array( $input_settings['disable_comments_cpts'] ) ? $input_settings['disable_comments_cpts'] : array();
+				$new_settings['disable_comments_cpts']         = array_map( 'sanitize_key', $cpts_raw );
+			}
 		}
 
 		// 5. Sanitizar WooCommerce Catalog
@@ -2286,6 +2303,7 @@ class WPAT_Admin {
 			'sitemap-xml',
 			'disable-comments',
 			'security-hardening',
+			'security-auditor',
 			'envato-importer',
 			'smtp',
 			'hide_admin_bar',
@@ -2417,7 +2435,7 @@ class WPAT_Admin {
 					<div class="wpat-cat-nav-list" style="display: flex; flex-direction: column; gap: 4px;">
 						<button type="button" class="wpat-cat-item <?php echo ( 'all' === $active_cat ) ? 'active' : ''; ?>" data-cat="all">
 							<span class="wpat-cat-label">📌 Todos</span>
-							<span class="wpat-cat-badge">51</span>
+							<span class="wpat-cat-badge">52</span>
 						</button>
 						<button type="button" class="wpat-cat-item <?php echo ( 'woocommerce' === $active_cat ) ? 'active' : ''; ?>" data-cat="woocommerce">
 							<span class="wpat-cat-label">🛍️ WooCommerce</span>
@@ -2429,7 +2447,7 @@ class WPAT_Admin {
 						</button>
 						<button type="button" class="wpat-cat-item <?php echo ( 'security' === $active_cat ) ? 'active' : ''; ?>" data-cat="security">
 							<span class="wpat-cat-label">🛡️ Seguridad</span>
-							<span class="wpat-cat-badge">6</span>
+							<span class="wpat-cat-badge">7</span>
 						</button>
 						<button type="button" class="wpat-cat-item <?php echo ( 'legal' === $active_cat ) ? 'active' : ''; ?>" data-cat="legal">
 							<span class="wpat-cat-label">⚖️ Legal & Privacidad</span>
@@ -3532,7 +3550,7 @@ class WPAT_Admin {
 										<div class="wpat-cat-nav-list" style="display: flex; flex-direction: column; gap: 4px;">
 											<button type="button" class="wpat-cat-item <?php echo ( 'all' === $active_cat ) ? 'active' : ''; ?>" data-cat="all">
 												<span class="wpat-cat-label">📌 Todos</span>
-												<span class="wpat-cat-badge">51</span>
+												<span class="wpat-cat-badge">52</span>
 											</button>
 											<button type="button" class="wpat-cat-item <?php echo ( 'woocommerce' === $active_cat ) ? 'active' : ''; ?>" data-cat="woocommerce">
 												<span class="wpat-cat-label">🛍️ WooCommerce</span>
@@ -3544,7 +3562,7 @@ class WPAT_Admin {
 											</button>
 											<button type="button" class="wpat-cat-item <?php echo ( 'security' === $active_cat ) ? 'active' : ''; ?>" data-cat="security">
 												<span class="wpat-cat-label">🛡️ Seguridad</span>
-												<span class="wpat-cat-badge">6</span>
+												<span class="wpat-cat-badge">7</span>
 											</button>
 											<button type="button" class="wpat-cat-item <?php echo ( 'legal' === $active_cat ) ? 'active' : ''; ?>" data-cat="legal">
 												<span class="wpat-cat-label">⚖️ Legal & Privacidad</span>
@@ -3936,7 +3954,19 @@ class WPAT_Admin {
 				'keywords'    => 'integraciones analytics tag manager pixel scripts head body'
 			),
 
-			// 3. SEGURIDAD (6)
+			// 3. SEGURIDAD (7)
+			array(
+				'id'          => 'security-auditor',
+				'is_updated'  => true,
+				'title'       => 'Auditor de Seguridad e Integridad',
+				'badge'       => 'Herramienta',
+				'badge_class' => 'subpage',
+				'desc'        => 'Escaneo de archivos no estándar en la raíz, scripts PHP en uploads, integridad de WordPress y checklist de blindaje.',
+				'cat_class'   => 'cat-security',
+				'icon'        => '🔍',
+				'icon_bg'     => 'sec',
+				'keywords'    => 'auditor seguridad integridad archivos sospechosos malware core checklist escaneo'
+			),
 			array(
 				'id'          => 'security-hardening',
 				'is_updated'  => true,
@@ -4779,6 +4809,7 @@ class WPAT_Admin {
 
 	public function render_single_module_standalone_view( $mod_id, $settings ) {
 		echo '<input type="hidden" name="wpat_saving_module" value="' . esc_attr( $mod_id ) . '" />';
+		echo '<input type="hidden" name="wpat_save_settings" value="1" />';
 		echo '<style>.wpat-module-body { display: block !important; } .wpat-collapse-btn { display: none !important; }</style>';
 
 		switch ( $mod_id ) {
@@ -5741,90 +5772,15 @@ class WPAT_Admin {
 							<div id="wpat-comments-action-result" style="font-size: 13px; margin-top: 10px; font-weight: 600;"></div>
 						</div>
 
-						<script type="text/javascript">
-							document.addEventListener('DOMContentLoaded', function() {
-								var modeRadios = document.querySelectorAll('.wpat-comments-mode-radio');
-								var granularBox = document.getElementById('wpat-granular-comments-box');
-								if (modeRadios.length && granularBox) {
-									modeRadios.forEach(function(r) {
-										r.addEventListener('change', function() {
-											if (this.checked) {
-												granularBox.style.display = (this.value === 'selective') ? 'block' : 'none';
-											}
-										});
-									});
-								}
+						<input type="hidden" id="wpat_comments_nonce" value="<?php echo esc_attr( $comments_nonce ); ?>" />
 
-								var nonce = '<?php echo esc_js( $comments_nonce ); ?>';
-								var ajaxUrl = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
-
-								function updateCommentStats() {
-									var statTotal = document.getElementById('wpat-comment-stat-total');
-									var statApproved = document.getElementById('wpat-comment-stat-approved');
-									var statSpam = document.getElementById('wpat-comment-stat-spam');
-									var statTrash = document.getElementById('wpat-comment-stat-trash');
-
-									if (statTotal) statTotal.textContent = '...';
-									if (statApproved) statApproved.textContent = '...';
-									if (statSpam) statSpam.textContent = '...';
-									if (statTrash) statTrash.textContent = '...';
-
-									var xhr = new XMLHttpRequest();
-									xhr.open('POST', ajaxUrl, true);
-									xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-									xhr.onload = function() {
-										var resp = JSON.parse(xhr.responseText || '{}');
-										if (resp.success) {
-											if (statTotal) statTotal.textContent = resp.data.total;
-											if (statApproved) statApproved.textContent = resp.data.approved;
-											if (statSpam) statSpam.textContent = resp.data.spam;
-											if (statTrash) statTrash.textContent = resp.data.trash;
-										}
-									};
-									xhr.send('action=wpat_comments_get_stats&security=' + encodeURIComponent(nonce));
-								}
-
-								updateCommentStats();
-
-								var refreshBtn = document.getElementById('wpat-comments-refresh-btn');
-								if (refreshBtn) {
-									refreshBtn.addEventListener('click', updateCommentStats);
-								}
-
-								var deleteBtn = document.getElementById('wpat-btn-delete-all-comments');
-								if (deleteBtn) {
-									deleteBtn.addEventListener('click', function() {
-										if (!confirm('<?php echo esc_js( __( '¡ATENCIÓN! Esta acción eliminará permanentemente TODOS los comentarios y valoraciones existentes de la base de datos de WordPress. ¿Deseas continuar?', 'wp-agency-toolkit' ) ); ?>')) return;
-
-										deleteBtn.disabled = true;
-										deleteBtn.textContent = '<?php echo esc_js( __( 'Eliminando...', 'wp-agency-toolkit' ) ); ?>';
-										var resBox = document.getElementById('wpat-comments-action-result');
-
-										var xhr = new XMLHttpRequest();
-										xhr.open('POST', ajaxUrl, true);
-										xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-										xhr.onload = function() {
-											deleteBtn.disabled = false;
-											deleteBtn.textContent = '<?php echo esc_js( __( 'Purgar Todos los Comentarios de la BD', 'wp-agency-toolkit' ) ); ?>';
-											var resp = JSON.parse(xhr.responseText || '{}');
-											if (resp.success) {
-												if (resBox) {
-													resBox.style.color = '#15803d';
-													resBox.textContent = '✓ ' + (resp.data.message || 'Comentarios eliminados con éxito.');
-												}
-												updateCommentStats();
-											} else {
-												if (resBox) {
-													resBox.style.color = '#b91c1c';
-													resBox.textContent = '⚠️ ' + (resp.data.message || 'Error al eliminar.');
-												}
-											}
-										};
-										xhr.send('action=wpat_comments_delete_all&security=' + encodeURIComponent(nonce));
-									});
-								}
-							});
-						</script>
+						<!-- Botón Inferior de Guardar Cambios -->
+						<div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end;">
+							<button type="submit" name="wpat_save_settings" value="1" class="button button-primary" style="background: #2563eb; border-color: #1d4ed8; font-weight: 700; height: 38px; padding: 0 24px; font-size: 13.5px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
+								<span class="dashicons dashicons-saved" style="font-size: 17px; width: 17px; height: 17px; line-height: 1;"></span>
+								<?php esc_html_e( 'Guardar Cambios', 'wp-agency-toolkit' ); ?>
+							</button>
+						</div>
 					</div>
 				</div>
 				<?php
@@ -12768,6 +12724,9 @@ class WPAT_Admin {
 			case 'post-csv-importer':
 				$this->render_tab_tools_content( $settings );
 				break;
+			case 'security-auditor':
+				$this->render_security_auditor_content( $settings );
+				break;
 			case 'error-log-viewer':
 				$this->render_error_log_viewer_content( $settings );
 				break;
@@ -12810,6 +12769,409 @@ class WPAT_Admin {
 				echo '<div class="notice notice-info"><p>Módulo de configuración en preparación.</p></div>';
 				break;
 		}
+	}
+
+	/**
+	 * Renderiza la interfaz del Auditor de Seguridad e Integridad de Archivos.
+	 *
+	 * @param array $settings Ajustes del plugin.
+	 */
+	public function render_security_auditor_content( $settings ) {
+		if ( ! class_exists( 'WPAT_Security_Auditor' ) ) {
+			require_once WPAT_PATH . 'includes/modules/class-wpat-security-auditor.php';
+		}
+
+		$auditor   = WPAT_Security_Auditor::get_instance();
+		$last_scan = WPAT_Security_Auditor::get_last_scan_data();
+		$hardening = $auditor->check_hardening_checklist();
+
+		$has_scan = ! empty( $last_scan ) && is_array( $last_scan );
+		$score    = $has_scan && isset( $last_scan['score'] ) ? (int) $last_scan['score'] : null;
+
+		$score_color = '#10b981';
+		$score_label = __( 'Seguro', 'wp-agency-toolkit' );
+		if ( null !== $score ) {
+			if ( $score < 60 ) {
+				$score_color = '#ef4444';
+				$score_label = __( 'Riesgo Crítico', 'wp-agency-toolkit' );
+			} elseif ( $score < 85 ) {
+				$score_color = '#f59e0b';
+				$score_label = __( 'Atención Requerida', 'wp-agency-toolkit' );
+			}
+		}
+
+		$nonce = wp_create_nonce( 'wpat_security_auditor_nonce' );
+		?>
+		<div class="wpat-module-card wpat-security-auditor-wrapper">
+			<div class="wpat-module-header">
+				<div class="wpat-module-info">
+					<h3><?php esc_html_e( 'Auditor de Seguridad e Integridad de Archivos', 'wp-agency-toolkit' ); ?></h3>
+					<p><?php esc_html_e( 'Escaneo bajo demanda de archivos sospechosos en la raíz, scripts PHP en uploads, integridad de WordPress y checklist de blindaje.', 'wp-agency-toolkit' ); ?></p>
+				</div>
+				<?php $this->render_module_toggle( 'security-auditor', $settings, true ); ?>
+			</div>
+
+			<div class="wpat-module-body" style="display: block; padding: 22px;">
+				<input type="hidden" id="wpat_security_auditor_nonce" value="<?php echo esc_attr( $nonce ); ?>" />
+
+				<!-- BARRA SUPERIOR DE ACCIÓN Y ESTADO -->
+				<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 22px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+					<div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+						<div style="font-size: 26px; line-height: 1;">🛡️</div>
+						<div>
+							<div style="font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 10px;">
+								<span><?php esc_html_e( 'Estado de Seguridad del Sitio:', 'wp-agency-toolkit' ); ?></span>
+								<span id="wpat_auditor_score_badge" style="background: <?php echo esc_attr( $score_color ); ?>; color: #fff; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.3px;">
+									<?php echo ( null !== $score ) ? esc_html( $score_label . ' (' . $score . '/100)' ) : esc_html__( 'Sin Analizar', 'wp-agency-toolkit' ); ?>
+								</span>
+							</div>
+							<div id="wpat_auditor_last_scan_info" style="font-size: 12.5px; color: #64748b; margin-top: 3px;">
+								<?php
+								if ( $has_scan && ! empty( $last_scan['date_formatted'] ) ) {
+									printf(
+										/* translators: 1: date, 2: seconds */
+										esc_html__( 'Última auditoría realizada el %1$s (duración: %2$s s).', 'wp-agency-toolkit' ),
+										'<strong>' . esc_html( $last_scan['date_formatted'] ) . '</strong>',
+										'<strong>' . esc_html( $last_scan['elapsed_seconds'] ) . '</strong>'
+									);
+								} else {
+									esc_html_e( 'Aún no se ha realizado ninguna auditoría en este sitio.', 'wp-agency-toolkit' );
+								}
+								?>
+							</div>
+						</div>
+					</div>
+
+					<button type="button" id="wpat_run_security_audit_btn" class="button button-primary" style="background: #2563eb; border-color: #1d4ed8; height: 40px; padding: 0 22px; font-weight: 700; font-size: 13.5px; border-radius: 6px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 1px 2px rgba(37,99,235,0.2);">
+						<span class="dashicons dashicons-shield" style="font-size: 18px; width: 18px; height: 18px; line-height: 1;"></span>
+						<span class="wpat-btn-text"><?php esc_html_e( 'Escanear Sitio Ahora', 'wp-agency-toolkit' ); ?></span>
+					</button>
+				</div>
+
+				<!-- TARJETAS DE MÉTRICAS -->
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px;">
+					<!-- 1. Raíz de WordPress -->
+					<div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+						<div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+							<?php esc_html_e( '1. Archivos en Raíz (/)', 'wp-agency-toolkit' ); ?>
+						</div>
+						<div id="wpat_metric_root" style="font-size: 19px; font-weight: 800; color: #1e293b;">
+							<?php
+							if ( $has_scan && isset( $last_scan['root_scan']['suspicious_files'] ) ) {
+								$count = count( $last_scan['root_scan']['suspicious_files'] );
+								if ( 0 === $count ) {
+									echo '<span style="color: #10b981;">✓ 0 ' . esc_html__( 'extraños', 'wp-agency-toolkit' ) . '</span>';
+								} else {
+									echo '<span style="color: #ef4444;">⚠️ ' . esc_html( $count ) . ' ' . esc_html__( 'sospechosos', 'wp-agency-toolkit' ) . '</span>';
+								}
+							} else {
+								echo '--';
+							}
+							?>
+						</div>
+						<div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">
+							<?php esc_html_e( 'Scripts no estándar o volcados', 'wp-agency-toolkit' ); ?>
+						</div>
+					</div>
+
+					<!-- 2. Scripts en Uploads -->
+					<div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+						<div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+							<?php esc_html_e( '2. Scripts en Uploads', 'wp-agency-toolkit' ); ?>
+						</div>
+						<div id="wpat_metric_uploads" style="font-size: 19px; font-weight: 800; color: #1e293b;">
+							<?php
+							if ( $has_scan && isset( $last_scan['uploads_scan']['suspicious_files'] ) ) {
+								$count = count( $last_scan['uploads_scan']['suspicious_files'] );
+								if ( 0 === $count ) {
+									echo '<span style="color: #10b981;">✓ 0 ' . esc_html__( 'ejecutables', 'wp-agency-toolkit' ) . '</span>';
+								} else {
+									echo '<span style="color: #ef4444;">🚨 ' . esc_html( $count ) . ' ' . esc_html__( 'críticos', 'wp-agency-toolkit' ) . '</span>';
+								}
+							} else {
+								echo '--';
+							}
+							?>
+						</div>
+						<div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">
+							<?php esc_html_e( 'Puertas traseras / Webshells PHP', 'wp-agency-toolkit' ); ?>
+						</div>
+					</div>
+
+					<!-- 3. Integridad Core -->
+					<div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+						<div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+							<?php esc_html_e( '3. Integridad WordPress', 'wp-agency-toolkit' ); ?>
+						</div>
+						<div id="wpat_metric_core" style="font-size: 19px; font-weight: 800; color: #1e293b;">
+							<?php
+							if ( $has_scan && isset( $last_scan['core_scan']['issues'] ) ) {
+								$count = count( $last_scan['core_scan']['issues'] );
+								if ( 0 === $count ) {
+									echo '<span style="color: #10b981;">✓ 100% ' . esc_html__( 'oficial', 'wp-agency-toolkit' ) . '</span>';
+								} else {
+									echo '<span style="color: #ef4444;">⚠️ ' . esc_html( $count ) . ' ' . esc_html__( 'alterados', 'wp-agency-toolkit' ) . '</span>';
+								}
+							} else {
+								echo '--';
+							}
+							?>
+						</div>
+						<div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">
+							<?php esc_html_e( 'Checksums oficiales WP.org', 'wp-agency-toolkit' ); ?>
+						</div>
+					</div>
+
+					<!-- 4. Blindaje Activo -->
+					<div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+						<div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+							<?php esc_html_e( '4. Blindaje de la Suite', 'wp-agency-toolkit' ); ?>
+						</div>
+						<div id="wpat_metric_hardening" style="font-size: 19px; font-weight: 800; color: #1e293b;">
+							<?php
+							$act_count = 0;
+							$tot_count = count( $hardening['items'] );
+							foreach ( $hardening['items'] as $it ) {
+								if ( ! empty( $it['is_active'] ) ) {
+									$act_count++;
+								}
+							}
+							$hard_color = ( $act_count >= ( $tot_count - 2 ) ) ? '#10b981' : ( ( $act_count >= 5 ) ? '#f59e0b' : '#ef4444' );
+							echo '<span style="color: ' . esc_attr( $hard_color ) . ';">' . esc_html( $act_count . '/' . $tot_count ) . ' ' . esc_html__( 'activas', 'wp-agency-toolkit' ) . '</span>';
+							?>
+						</div>
+						<div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">
+							<?php esc_html_e( 'Reglas de protección aplicadas', 'wp-agency-toolkit' ); ?>
+						</div>
+					</div>
+				</div>
+
+				<!-- CONTENEDOR DE RESULTADOS DETALLADOS -->
+				<div id="wpat_auditor_results_container">
+					<?php if ( $has_scan ) : ?>
+						<?php
+						$root_issues    = isset( $last_scan['root_scan']['suspicious_files'] ) ? $last_scan['root_scan']['suspicious_files'] : array();
+						$uploads_issues = isset( $last_scan['uploads_scan']['suspicious_files'] ) ? $last_scan['uploads_scan']['suspicious_files'] : array();
+						$core_issues    = isset( $last_scan['core_scan']['issues'] ) ? $last_scan['core_scan']['issues'] : array();
+						$config_issues  = isset( $last_scan['config_scan']['warnings'] ) ? $last_scan['config_scan']['warnings'] : array();
+						$has_threats    = ! empty( $root_issues ) || ! empty( $uploads_issues ) || ! empty( $core_issues ) || ! empty( $config_issues );
+						?>
+
+						<!-- A. Alertas de Archivos Sospechosos / Malware -->
+						<div style="margin-bottom: 24px;">
+							<h4 style="margin: 0 0 12px 0; font-size: 14.5px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+								<span class="dashicons dashicons-search" style="color: #2563eb;"></span>
+								<?php esc_html_e( 'Diagnóstico de Archivos e Integridad del Sistema', 'wp-agency-toolkit' ); ?>
+							</h4>
+
+							<?php if ( ! $has_threats ) : ?>
+								<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px 18px; color: #15803d; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+									<span class="dashicons dashicons-yes-alt" style="font-size: 20px; width: 20px; height: 20px; line-height: 1;"></span>
+									<span><?php esc_html_e( '¡Excelente! No se detectaron archivos sospechosos en la raíz, no hay scripts ejecutables en uploads y los archivos del Core coinciden al 100% con los oficiales de WordPress.org.', 'wp-agency-toolkit' ); ?></span>
+								</div>
+							<?php else : ?>
+								<!-- Alertas en Uploads (Crítico) -->
+								<?php if ( ! empty( $uploads_issues ) ) : ?>
+									<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 14px;">
+										<div style="color: #b91c1c; font-weight: 700; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+											<span class="dashicons dashicons-warning"></span>
+											<?php printf( esc_html__( '¡Alerta Crítica! Se detectaron %d script(s) PHP en la carpeta de medios (uploads):', 'wp-agency-toolkit' ), count( $uploads_issues ) ); ?>
+										</div>
+										<table class="widefat fixed striped" style="background: #fff; border-radius: 6px; overflow: hidden;">
+											<thead>
+												<tr>
+													<th style="font-weight: 700; width: 50%;"><?php esc_html_e( 'Ruta del Archivo', 'wp-agency-toolkit' ); ?></th>
+													<th style="font-weight: 700; width: 15%;"><?php esc_html_e( 'Tamaño', 'wp-agency-toolkit' ); ?></th>
+													<th style="font-weight: 700; width: 20%;"><?php esc_html_e( 'Modificado', 'wp-agency-toolkit' ); ?></th>
+													<th style="font-weight: 700; width: 15%;"><?php esc_html_e( 'Severidad', 'wp-agency-toolkit' ); ?></th>
+												</tr>
+											</thead>
+											<tbody>
+												<?php foreach ( $uploads_issues as $f ) : ?>
+													<tr>
+														<td><code><?php echo esc_html( $f['path'] ); ?></code></td>
+														<td><?php echo esc_html( $f['size'] ); ?></td>
+														<td><?php echo esc_html( $f['modified'] ); ?></td>
+														<td><span style="background: #dc2626; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;"><?php esc_html_e( 'Crítico', 'wp-agency-toolkit' ); ?></span></td>
+													</tr>
+												<?php endforeach; ?>
+											</tbody>
+										</table>
+									</div>
+								<?php endif; ?>
+
+								<!-- Alertas en Raíz (Alto) -->
+								<?php if ( ! empty( $root_issues ) ) : ?>
+									<div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 16px; margin-bottom: 14px;">
+										<div style="color: #b45309; font-weight: 700; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+											<span class="dashicons dashicons-info"></span>
+											<?php printf( esc_html__( 'Archivos o directorios no estándar en la raíz (%d detectados):', 'wp-agency-toolkit' ), count( $root_issues ) ); ?>
+										</div>
+										<table class="widefat fixed striped" style="background: #fff; border-radius: 6px; overflow: hidden;">
+											<thead>
+												<tr>
+													<th style="font-weight: 700; width: 40%;"><?php esc_html_e( 'Elemento', 'wp-agency-toolkit' ); ?></th>
+													<th style="font-weight: 700; width: 35%;"><?php esc_html_e( 'Diagnóstico', 'wp-agency-toolkit' ); ?></th>
+													<th style="font-weight: 700; width: 15%;"><?php esc_html_e( 'Tamaño / Fecha', 'wp-agency-toolkit' ); ?></th>
+													<th style="font-weight: 700; width: 10%;"><?php esc_html_e( 'Riesgo', 'wp-agency-toolkit' ); ?></th>
+												</tr>
+											</thead>
+											<tbody>
+												<?php foreach ( $root_issues as $f ) : ?>
+													<tr>
+														<td><code><?php echo esc_html( $f['path'] ); ?></code></td>
+														<td style="font-size: 12px; color: #475569;"><?php echo esc_html( $f['explanation'] ); ?></td>
+														<td style="font-size: 12px;"><?php echo esc_html( $f['size'] . ' (' . $f['modified'] . ')' ); ?></td>
+														<td>
+															<?php if ( 'high' === $f['severity'] ) : ?>
+																<span style="background: #ea580c; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;"><?php esc_html_e( 'Alto', 'wp-agency-toolkit' ); ?></span>
+															<?php else : ?>
+																<span style="background: #eab308; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;"><?php esc_html_e( 'Medio', 'wp-agency-toolkit' ); ?></span>
+															<?php endif; ?>
+														</td>
+													</tr>
+												<?php endforeach; ?>
+											</tbody>
+										</table>
+									</div>
+								<?php endif; ?>
+
+								<!-- Alertas en Core (Modificados) -->
+								<?php if ( ! empty( $core_issues ) ) : ?>
+									<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 14px;">
+										<div style="color: #b91c1c; font-weight: 700; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+											<span class="dashicons dashicons-dismiss"></span>
+											<?php printf( esc_html__( 'Archivos del Core de WordPress alterados o ausentes (%d detectados):', 'wp-agency-toolkit' ), count( $core_issues ) ); ?>
+										</div>
+										<table class="widefat fixed striped" style="background: #fff; border-radius: 6px; overflow: hidden;">
+											<thead>
+												<tr>
+													<th style="font-weight: 700; width: 45%;"><?php esc_html_e( 'Archivo del Core', 'wp-agency-toolkit' ); ?></th>
+													<th style="font-weight: 700; width: 40%;"><?php esc_html_e( 'Detalle', 'wp-agency-toolkit' ); ?></th>
+													<th style="font-weight: 700; width: 15%;"><?php esc_html_e( 'Estado', 'wp-agency-toolkit' ); ?></th>
+												</tr>
+											</thead>
+											<tbody>
+												<?php foreach ( $core_issues as $c ) : ?>
+													<tr>
+														<td><code><?php echo esc_html( $c['file'] ); ?></code></td>
+														<td style="font-size: 12px; color: #475569;"><?php echo esc_html( $c['explanation'] ); ?></td>
+														<td>
+															<span style="background: #dc2626; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">
+																<?php echo ( 'modified' === $c['status'] ) ? esc_html__( 'Modificado', 'wp-agency-toolkit' ) : esc_html__( 'Faltante', 'wp-agency-toolkit' ); ?>
+															</span>
+														</td>
+													</tr>
+												<?php endforeach; ?>
+											</tbody>
+										</table>
+									</div>
+								<?php endif; ?>
+
+								<!-- Alertas de Configuración / Sistema -->
+								<?php if ( ! empty( $config_issues ) ) : ?>
+									<div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 16px; margin-bottom: 14px;">
+										<div style="color: #b45309; font-weight: 700; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+											<span class="dashicons dashicons-admin-settings"></span>
+											<?php esc_html_e( 'Avisos de Configuración y Permisos de WordPress:', 'wp-agency-toolkit' ); ?>
+										</div>
+										<div style="display: flex; flex-direction: column; gap: 8px;">
+											<?php foreach ( $config_issues as $w ) : ?>
+												<div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+													<div>
+														<strong style="color: #0f172a; font-size: 13px; display: block;"><?php echo esc_html( $w['title'] ); ?></strong>
+														<span style="font-size: 12px; color: #64748b;"><?php echo esc_html( $w['description'] ); ?></span>
+													</div>
+													<?php if ( ! empty( $w['action_url'] ) ) : ?>
+														<a href="<?php echo esc_url( $w['action_url'] ); ?>" class="button button-secondary button-small" target="_blank" style="font-weight: 600;">
+															<?php esc_html_e( 'Revisar Ajuste', 'wp-agency-toolkit' ); ?>
+														</a>
+													<?php endif; ?>
+												</div>
+											<?php endforeach; ?>
+										</div>
+									</div>
+								<?php endif; ?>
+							<?php endif; ?>
+						</div>
+					<?php endif; ?>
+				</div>
+
+				<!-- B. CHECKLIST DE BLINDAJE DE LA SUITE (WP AGENCY TOOLKIT) -->
+				<div style="margin-top: 28px;">
+					<h4 style="margin: 0 0 14px 0; font-size: 14.5px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+						<span class="dashicons dashicons-lock" style="color: #10b981;"></span>
+						<?php esc_html_e( 'Checklist de Blindaje y Recomendaciones de la Suite', 'wp-agency-toolkit' ); ?>
+					</h4>
+					<p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+						<?php esc_html_e( 'Auditoría en tiempo real de los módulos de protección disponibles en WP Agency Toolkit. Puedes activar las reglas recomendadas directamente con un solo clic.', 'wp-agency-toolkit' ); ?>
+					</p>
+
+					<div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #fff;" id="wpat_hardening_checklist_table">
+						<table class="widefat fixed striped" style="border: 0; box-shadow: none;">
+							<thead>
+								<tr>
+									<th style="font-weight: 700; width: 35%;"><?php esc_html_e( 'Medida de Seguridad', 'wp-agency-toolkit' ); ?></th>
+									<th style="font-weight: 700; width: 40%;"><?php esc_html_e( 'Descripción y Vector Mitigado', 'wp-agency-toolkit' ); ?></th>
+									<th style="font-weight: 700; width: 12%; text-align: center;"><?php esc_html_e( 'Estado', 'wp-agency-toolkit' ); ?></th>
+									<th style="font-weight: 700; width: 13%; text-align: right;"><?php esc_html_e( 'Acción', 'wp-agency-toolkit' ); ?></th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ( $hardening['items'] as $item ) : ?>
+									<?php
+									$is_on = ! empty( $item['is_active'] );
+									?>
+									<tr id="wpat_row_rule_<?php echo esc_attr( $item['key'] ); ?>">
+										<td>
+											<strong style="color: #0f172a; font-size: 13px; display: block;"><?php echo esc_html( $item['title'] ); ?></strong>
+											<?php if ( ! $is_on ) : ?>
+												<?php if ( 'critical' === $item['risk_level'] ) : ?>
+													<span style="color: #dc2626; font-size: 11px; font-weight: 700;"><?php esc_html_e( '● Riesgo Crítico si está inactivo', 'wp-agency-toolkit' ); ?></span>
+												<?php elseif ( 'high' === $item['risk_level'] ) : ?>
+													<span style="color: #ea580c; font-size: 11px; font-weight: 700;"><?php esc_html_e( '● Riesgo Alto si está inactivo', 'wp-agency-toolkit' ); ?></span>
+												<?php else : ?>
+													<span style="color: #eab308; font-size: 11px; font-weight: 700;"><?php esc_html_e( '● Recomendado', 'wp-agency-toolkit' ); ?></span>
+												<?php endif; ?>
+											<?php endif; ?>
+										</td>
+										<td style="font-size: 12.5px; color: #475569;">
+											<?php echo esc_html( $item['description'] ); ?>
+										</td>
+										<td style="text-align: center;">
+											<?php if ( $is_on ) : ?>
+												<span class="wpat-rule-badge" style="background: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 12px; font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+													✓ <?php esc_html_e( 'Protegido', 'wp-agency-toolkit' ); ?>
+												</span>
+											<?php else : ?>
+												<span class="wpat-rule-badge" style="background: #fee2e2; color: #b91c1c; padding: 4px 10px; border-radius: 12px; font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+													⚠️ <?php esc_html_e( 'Inactivo', 'wp-agency-toolkit' ); ?>
+												</span>
+											<?php endif; ?>
+										</td>
+										<td style="text-align: right;">
+											<?php if ( $is_on ) : ?>
+												<span style="color: #10b981; font-size: 12px; font-weight: 600;"><?php esc_html_e( 'Activo', 'wp-agency-toolkit' ); ?></span>
+											<?php elseif ( ! empty( $item['can_auto_fix'] ) ) : ?>
+												<button type="button" class="button button-secondary button-small wpat-auditor-fix-btn" data-rule="<?php echo esc_attr( $item['key'] ); ?>" style="font-weight: 600; color: #1d4ed8; border-color: #93c5fd; background: #eff6ff;">
+													<?php esc_html_e( 'Activar en 1 Clic', 'wp-agency-toolkit' ); ?>
+												</button>
+											<?php else : ?>
+												<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-agency-toolkit&mod=' . $item['target_mod'] ) ); ?>" class="button button-secondary button-small" style="font-weight: 600;">
+													<?php esc_html_e( 'Configurar', 'wp-agency-toolkit' ); ?>
+												</a>
+											<?php endif; ?>
+										</td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+			</div>
+		</div>
+		<?php
 	}
 
 	/**

@@ -40,9 +40,11 @@ class WPAT_Security_Auditor {
 	 * Constructor.
 	 */
 	private function __construct() {
-		// Endpoints AJAX para el escaneo y para aplicar correcciones rápidas
+		// Endpoints AJAX para el escaneo, correcciones y eliminación segura de amenazas
 		add_action( 'wp_ajax_wpat_security_auditor_scan', array( $this, 'ajax_run_scan' ) );
 		add_action( 'wp_ajax_wpat_security_auditor_fix', array( $this, 'ajax_apply_fix' ) );
+		add_action( 'wp_ajax_wpat_security_auditor_delete_file', array( $this, 'ajax_delete_file' ) );
+		add_action( 'wp_ajax_wpat_security_auditor_delete_all_uploads', array( $this, 'ajax_delete_all_uploads_scripts' ) );
 	}
 
 	/**
@@ -144,6 +146,138 @@ class WPAT_Security_Auditor {
 		wp_send_json_success( array(
 			'message' => $applied_label,
 			'audit'   => $updated_audit,
+		) );
+	}
+
+	/**
+	 * AJAX: Elimina un archivo sospechoso de forma individual y segura.
+	 */
+	public function ajax_delete_file() {
+		check_ajax_referer( 'wpat_security_auditor_nonce', 'security' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permisos insuficientes.', 'wp-agency-toolkit' ) ) );
+		}
+
+		$raw_path = isset( $_POST['file_path'] ) ? sanitize_text_field( wp_unslash( $_POST['file_path'] ) ) : '';
+		if ( empty( $raw_path ) ) {
+			wp_send_json_error( array( 'message' => __( 'Ruta de archivo no especificada.', 'wp-agency-toolkit' ) ) );
+		}
+
+		$raw_path  = ltrim( str_replace( array( '../', '..\\' ), '', $raw_path ), '/\\' );
+		$full_path = wp_normalize_path( ABSPATH . $raw_path );
+		$real_path = realpath( $full_path );
+
+		if ( ! $real_path || ! file_exists( $real_path ) ) {
+			wp_send_json_error( array( 'message' => __( 'El archivo no existe o ya fue eliminado.', 'wp-agency-toolkit' ) ) );
+		}
+
+		$norm_abspath = wp_normalize_path( realpath( ABSPATH ) );
+		$norm_real    = wp_normalize_path( $real_path );
+
+		// Comprobar que esté dentro de ABSPATH
+		if ( 0 !== strpos( $norm_real, $norm_abspath ) ) {
+			wp_send_json_error( array( 'message' => __( 'Operación denegada: Ruta fuera del directorio permitido.', 'wp-agency-toolkit' ) ) );
+		}
+
+		// Lista de archivos críticos que NUNCA se pueden borrar
+		$protected_files = array(
+			'wp-config.php',
+			'wp-config-sample.php',
+			'wp-settings.php',
+			'wp-load.php',
+			'wp-login.php',
+			'wp-cron.php',
+			'wp-blog-header.php',
+			'wp-comments-post.php',
+			'wp-links-opml.php',
+			'wp-mail.php',
+			'wp-signup.php',
+			'wp-trackback.php',
+			'wp-activate.php',
+			'xmlrpc.php',
+			'index.php',
+			'.htaccess',
+			'web.config',
+			'nginx.conf',
+		);
+		$basename = strtolower( basename( $real_path ) );
+		if ( in_array( $basename, $protected_files, true ) ) {
+			wp_send_json_error( array( 'message' => __( 'Operación denegada: Este es un archivo protegido del sistema.', 'wp-agency-toolkit' ) ) );
+		}
+
+		// Bloquear borrado en carpetas centrales del core
+		if ( 0 === strpos( $norm_real, $norm_abspath . '/wp-admin/' ) || 0 === strpos( $norm_real, $norm_abspath . '/wp-includes/' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Operación denegada: Los archivos del Core deben repararse o reinstalarse, no eliminarse.', 'wp-agency-toolkit' ) ) );
+		}
+
+		$deleted = false;
+		if ( is_file( $real_path ) ) {
+			$deleted = @unlink( $real_path );
+		} elseif ( is_dir( $real_path ) ) {
+			$deleted = @rmdir( $real_path );
+		}
+
+		if ( ! $deleted ) {
+			wp_send_json_error( array( 'message' => __( 'No se pudo eliminar el archivo. Comprueba los permisos de escritura en el servidor.', 'wp-agency-toolkit' ) ) );
+		}
+
+		$updated_audit = $this->run_full_audit();
+
+		wp_send_json_success( array(
+			'message' => sprintf( __( 'Archivo "%s" eliminado correctamente.', 'wp-agency-toolkit' ), esc_html( $basename ) ),
+			'audit'   => $updated_audit,
+		) );
+	}
+
+	/**
+	 * AJAX: Elimina todos los scripts ejecutables detectados en la carpeta uploads.
+	 */
+	public function ajax_delete_all_uploads_scripts() {
+		check_ajax_referer( 'wpat_security_auditor_nonce', 'security' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permisos insuficientes.', 'wp-agency-toolkit' ) ) );
+		}
+
+		$uploads_scan = $this->scan_uploads_directory();
+		$files        = isset( $uploads_scan['suspicious_files'] ) ? $uploads_scan['suspicious_files'] : array();
+		$deleted_count = 0;
+		$failed_count  = 0;
+
+		$upload_dir  = wp_upload_dir();
+		$norm_upload = ! empty( $upload_dir['basedir'] ) ? wp_normalize_path( realpath( $upload_dir['basedir'] ) ) : '';
+
+		if ( empty( $norm_upload ) ) {
+			wp_send_json_error( array( 'message' => __( 'No se pudo determinar la ruta de uploads.', 'wp-agency-toolkit' ) ) );
+		}
+
+		foreach ( $files as $item ) {
+			$raw_path  = isset( $item['path'] ) ? ltrim( $item['path'], '/\\' ) : '';
+			$full_path = wp_normalize_path( ABSPATH . $raw_path );
+			$real_path = realpath( $full_path );
+
+			if ( $real_path && file_exists( $real_path ) && is_file( $real_path ) ) {
+				$norm_real = wp_normalize_path( $real_path );
+
+				// Estricta comprobación de que el archivo resida dentro de wp-content/uploads
+				if ( 0 === strpos( $norm_real, $norm_upload ) ) {
+					if ( @unlink( $real_path ) ) {
+						$deleted_count++;
+					} else {
+						$failed_count++;
+					}
+				}
+			}
+		}
+
+		$updated_audit = $this->run_full_audit();
+
+		wp_send_json_success( array(
+			'message'       => sprintf( __( 'Se han eliminado %d archivo(s) de la carpeta uploads correctamente.', 'wp-agency-toolkit' ), $deleted_count ),
+			'deleted_count' => $deleted_count,
+			'failed_count'  => $failed_count,
+			'audit'         => $updated_audit,
 		) );
 	}
 
@@ -387,7 +521,15 @@ class WPAT_Security_Auditor {
 						$ext = strtolower( $file->getExtension() );
 						if ( in_array( $ext, $forbidden_exts, true ) ) {
 							$filepath = $file->getPathname();
-							$relative = str_replace( ABSPATH, '', $filepath );
+							$relative = wp_normalize_path( str_replace( ABSPATH, '', $filepath ) );
+
+							$explanation = __( '¡Script ejecutable dentro de la carpeta de medios! Es el método más común de inyección de backdoors y webshells.', 'wp-agency-toolkit' );
+							$norm_fp = wp_normalize_path( $filepath );
+							if ( false !== strpos( $norm_fp, 'cache/wpml/twig' ) ) {
+								$explanation = __( 'Caché de plantillas compiladas de WPML. WPML la regenera automáticamente si se elimina.', 'wp-agency-toolkit' );
+							} elseif ( false !== strpos( $norm_fp, 'cache/' ) ) {
+								$explanation = __( 'Script ejecutable en subcarpeta de caché de uploads.', 'wp-agency-toolkit' );
+							}
 
 							$suspicious[] = array(
 								'name'        => $file->getFilename(),
@@ -396,7 +538,7 @@ class WPAT_Security_Auditor {
 								'size'        => size_format( $file->getSize(), 1 ),
 								'modified'    => date_i18n( 'd/m/Y H:i', $file->getMTime() ),
 								'severity'    => 'critical',
-								'explanation' => __( '¡Script ejecutable dentro de la carpeta de medios! Es el método más común de inyección de backdoors y webshells.', 'wp-agency-toolkit' ),
+								'explanation' => $explanation,
 							);
 						}
 					}

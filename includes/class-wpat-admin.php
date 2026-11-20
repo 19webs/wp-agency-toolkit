@@ -12973,26 +12973,43 @@ class WPAT_Admin {
 								<!-- Alertas en Uploads (Crítico) -->
 								<?php if ( ! empty( $uploads_issues ) ) : ?>
 									<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 14px;">
-										<div style="color: #b91c1c; font-weight: 700; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-											<span class="dashicons dashicons-warning"></span>
-											<?php printf( esc_html__( '¡Alerta Crítica! Se detectaron %d script(s) PHP en la carpeta de medios (uploads):', 'wp-agency-toolkit' ), count( $uploads_issues ) ); ?>
+										<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+											<div style="color: #b91c1c; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+												<span class="dashicons dashicons-warning"></span>
+												<?php printf( esc_html__( '¡Alerta Crítica! Se detectaron %d script(s) PHP en la carpeta de medios (uploads):', 'wp-agency-toolkit' ), count( $uploads_issues ) ); ?>
+											</div>
+											<button type="button" class="button button-secondary" id="wpat_auditor_delete_all_uploads_btn" style="color: #dc2626; border-color: #fca5a5; background: #fff1f2; font-weight: 700; height: 30px; line-height: 28px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+												<span class="dashicons dashicons-trash" style="font-size: 15px; width: 15px; height: 15px; line-height: 1;"></span>
+												<?php printf( esc_html__( 'Eliminar Todos los Scripts en Uploads (%d)', 'wp-agency-toolkit' ), count( $uploads_issues ) ); ?>
+											</button>
 										</div>
 										<table class="widefat fixed striped" style="background: #fff; border-radius: 6px; overflow: hidden;">
 											<thead>
 												<tr>
-													<th style="font-weight: 700; width: 50%;"><?php esc_html_e( 'Ruta del Archivo', 'wp-agency-toolkit' ); ?></th>
-													<th style="font-weight: 700; width: 15%;"><?php esc_html_e( 'Tamaño', 'wp-agency-toolkit' ); ?></th>
-													<th style="font-weight: 700; width: 20%;"><?php esc_html_e( 'Modificado', 'wp-agency-toolkit' ); ?></th>
-													<th style="font-weight: 700; width: 15%;"><?php esc_html_e( 'Severidad', 'wp-agency-toolkit' ); ?></th>
+													<th style="font-weight: 700; width: 44%;"><?php esc_html_e( 'Ruta del Archivo', 'wp-agency-toolkit' ); ?></th>
+													<th style="font-weight: 700; width: 13%;"><?php esc_html_e( 'Tamaño', 'wp-agency-toolkit' ); ?></th>
+													<th style="font-weight: 700; width: 18%;"><?php esc_html_e( 'Modificado', 'wp-agency-toolkit' ); ?></th>
+													<th style="font-weight: 700; width: 13%;"><?php esc_html_e( 'Severidad', 'wp-agency-toolkit' ); ?></th>
+													<th style="font-weight: 700; width: 12%; text-align: right;"><?php esc_html_e( 'Acción', 'wp-agency-toolkit' ); ?></th>
 												</tr>
 											</thead>
 											<tbody>
 												<?php foreach ( $uploads_issues as $f ) : ?>
 													<tr>
-														<td><code><?php echo esc_html( $f['path'] ); ?></code></td>
+														<td>
+															<code><?php echo esc_html( $f['path'] ); ?></code>
+															<?php if ( ! empty( $f['explanation'] ) ) : ?>
+																<div style="font-size: 11px; color: #64748b; margin-top: 2px;"><?php echo esc_html( $f['explanation'] ); ?></div>
+															<?php endif; ?>
+														</td>
 														<td><?php echo esc_html( $f['size'] ); ?></td>
 														<td><?php echo esc_html( $f['modified'] ); ?></td>
 														<td><span style="background: #dc2626; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;"><?php esc_html_e( 'Crítico', 'wp-agency-toolkit' ); ?></span></td>
+														<td style="text-align: right;">
+															<button type="button" class="button button-small button-link-delete wpat-auditor-delete-single-file" data-path="<?php echo esc_attr( $f['path'] ); ?>" style="color: #dc2626; font-weight: 600;">
+																<?php esc_html_e( 'Eliminar', 'wp-agency-toolkit' ); ?>
+															</button>
+														</td>
 													</tr>
 												<?php endforeach; ?>
 											</tbody>
@@ -13010,10 +13027,11 @@ class WPAT_Admin {
 										<table class="widefat fixed striped" style="background: #fff; border-radius: 6px; overflow: hidden;">
 											<thead>
 												<tr>
-													<th style="font-weight: 700; width: 40%;"><?php esc_html_e( 'Elemento', 'wp-agency-toolkit' ); ?></th>
-													<th style="font-weight: 700; width: 35%;"><?php esc_html_e( 'Diagnóstico', 'wp-agency-toolkit' ); ?></th>
-													<th style="font-weight: 700; width: 15%;"><?php esc_html_e( 'Tamaño / Fecha', 'wp-agency-toolkit' ); ?></th>
+													<th style="font-weight: 700; width: 35%;"><?php esc_html_e( 'Elemento', 'wp-agency-toolkit' ); ?></th>
+													<th style="font-weight: 700; width: 30%;"><?php esc_html_e( 'Diagnóstico', 'wp-agency-toolkit' ); ?></th>
+													<th style="font-weight: 700; width: 14%;"><?php esc_html_e( 'Tamaño / Fecha', 'wp-agency-toolkit' ); ?></th>
 													<th style="font-weight: 700; width: 10%;"><?php esc_html_e( 'Riesgo', 'wp-agency-toolkit' ); ?></th>
+													<th style="font-weight: 700; width: 11%; text-align: right;"><?php esc_html_e( 'Acción', 'wp-agency-toolkit' ); ?></th>
 												</tr>
 											</thead>
 											<tbody>
@@ -13028,6 +13046,11 @@ class WPAT_Admin {
 															<?php else : ?>
 																<span style="background: #eab308; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;"><?php esc_html_e( 'Medio', 'wp-agency-toolkit' ); ?></span>
 															<?php endif; ?>
+														</td>
+														<td style="text-align: right;">
+															<button type="button" class="button button-small button-link-delete wpat-auditor-delete-single-file" data-path="<?php echo esc_attr( $f['path'] ); ?>" style="color: #dc2626; font-weight: 600;">
+																<?php esc_html_e( 'Eliminar', 'wp-agency-toolkit' ); ?>
+															</button>
 														</td>
 													</tr>
 												<?php endforeach; ?>

@@ -423,12 +423,18 @@ jQuery(document).ready(function($) {
 			} else {
 				if (uploadsIssues.length > 0) {
 					html += '<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 14px;">';
-					html += '<div style="color: #b91c1c; font-weight: 700; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">';
+					html += '<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">';
+					html += '<div style="color: #b91c1c; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px;">';
 					html += '<span class="dashicons dashicons-warning"></span> ¡Alerta Crítica! Se detectaron ' + uploadsIssues.length + ' script(s) PHP en la carpeta de medios (uploads):</div>';
+					html += '<button type="button" class="button button-secondary" id="wpat_auditor_delete_all_uploads_btn" style="color: #dc2626; border-color: #fca5a5; background: #fff1f2; font-weight: 700; height: 30px; line-height: 28px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">';
+					html += '<span class="dashicons dashicons-trash" style="font-size: 15px; width: 15px; height: 15px; line-height: 1;"></span> Eliminar Todos los Scripts en Uploads (' + uploadsIssues.length + ')</button>';
+					html += '</div>';
 					html += '<table class="widefat fixed striped" style="background: #fff; border-radius: 6px; overflow: hidden;">';
-					html += '<thead><tr><th style="font-weight: 700; width: 50%;">Ruta del Archivo</th><th style="font-weight: 700; width: 15%;">Tamaño</th><th style="font-weight: 700; width: 20%;">Modificado</th><th style="font-weight: 700; width: 15%;">Severidad</th></tr></thead><tbody>';
+					html += '<thead><tr><th style="font-weight: 700; width: 44%;">Ruta del Archivo</th><th style="font-weight: 700; width: 13%;">Tamaño</th><th style="font-weight: 700; width: 18%;">Modificado</th><th style="font-weight: 700; width: 13%;">Severidad</th><th style="font-weight: 700; width: 12%; text-align: right;">Acción</th></tr></thead><tbody>';
 					uploadsIssues.forEach(function(f) {
-						html += '<tr><td><code>' + $('<div>').text(f.path).html() + '</code></td><td>' + f.size + '</td><td>' + f.modified + '</td><td><span style="background: #dc2626; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">Crítico</span></td></tr>';
+						var explHtml = f.explanation ? '<div style="font-size: 11px; color: #64748b; margin-top: 2px;">' + $('<div>').text(f.explanation).html() + '</div>' : '';
+						html += '<tr><td><code>' + $('<div>').text(f.path).html() + '</code>' + explHtml + '</td><td>' + f.size + '</td><td>' + f.modified + '</td><td><span style="background: #dc2626; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">Crítico</span></td>';
+						html += '<td style="text-align: right;"><button type="button" class="button button-small button-link-delete wpat-auditor-delete-single-file" data-path="' + $('<div>').text(f.path).html() + '" style="color: #dc2626; font-weight: 600;">Eliminar</button></td></tr>';
 					});
 					html += '</tbody></table></div>';
 				}
@@ -438,10 +444,11 @@ jQuery(document).ready(function($) {
 					html += '<div style="color: #b45309; font-weight: 700; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">';
 					html += '<span class="dashicons dashicons-info"></span> Archivos o directorios no estándar en la raíz (' + rootIssues.length + ' detectados):</div>';
 					html += '<table class="widefat fixed striped" style="background: #fff; border-radius: 6px; overflow: hidden;">';
-					html += '<thead><tr><th style="font-weight: 700; width: 40%;">Elemento</th><th style="font-weight: 700; width: 35%;">Diagnóstico</th><th style="font-weight: 700; width: 15%;">Tamaño / Fecha</th><th style="font-weight: 700; width: 10%;">Riesgo</th></tr></thead><tbody>';
+					html += '<thead><tr><th style="font-weight: 700; width: 35%;">Elemento</th><th style="font-weight: 700; width: 30%;">Diagnóstico</th><th style="font-weight: 700; width: 14%;">Tamaño / Fecha</th><th style="font-weight: 700; width: 10%;">Riesgo</th><th style="font-weight: 700; width: 11%; text-align: right;">Acción</th></tr></thead><tbody>';
 					rootIssues.forEach(function(f) {
 						var sevBadge = (f.severity === 'high') ? '<span style="background: #ea580c; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">Alto</span>' : '<span style="background: #eab308; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">Medio</span>';
-						html += '<tr><td><code>' + $('<div>').text(f.path).html() + '</code></td><td style="font-size: 12px; color: #475569;">' + $('<div>').text(f.explanation).html() + '</td><td style="font-size: 12px;">' + f.size + ' (' + f.modified + ')</td><td>' + sevBadge + '</td></tr>';
+						html += '<tr><td><code>' + $('<div>').text(f.path).html() + '</code></td><td style="font-size: 12px; color: #475569;">' + $('<div>').text(f.explanation).html() + '</td><td style="font-size: 12px;">' + f.size + ' (' + f.modified + ')</td><td>' + sevBadge + '</td>';
+						html += '<td style="text-align: right;"><button type="button" class="button button-small button-link-delete wpat-auditor-delete-single-file" data-path="' + $('<div>').text(f.path).html() + '" style="color: #dc2626; font-weight: 600;">Eliminar</button></td></tr>';
 					});
 					html += '</tbody></table></div>';
 				}
@@ -577,6 +584,94 @@ jQuery(document).ready(function($) {
 			error: function() {
 				$btn.prop('disabled', false).text(originalText);
 				alert('Error de conexión al aplicar la regla.');
+			}
+		});
+	});
+
+	$(document).on('click', '.wpat-auditor-delete-single-file', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		if ($btn.prop('disabled')) return;
+
+		var filePath = $btn.data('path');
+		if (!filePath) return;
+
+		if (!confirm('¿Estás seguro de que deseas eliminar permanentemente este archivo del servidor?\n\n' + filePath)) {
+			return;
+		}
+
+		var originalText = $btn.text();
+		$btn.prop('disabled', true).text('Eliminando...');
+
+		var nonce = $('#wpat_security_auditor_nonce').val() || (typeof wpat_object !== 'undefined' ? (wpat_object.security_auditor_nonce || wpat_object.nonce) : '');
+		var ajaxUrl = (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php'));
+
+		$.ajax({
+			url: ajaxUrl,
+			type: 'POST',
+			data: {
+				action: 'wpat_security_auditor_delete_file',
+				file_path: filePath,
+				security: nonce
+			},
+			success: function(resp) {
+				if (resp && resp.success) {
+					if (resp.data && resp.data.audit) {
+						renderSecurityAuditorResults(resp.data.audit);
+					}
+					if (typeof window.showToast === 'function') {
+						window.showToast(resp.data.message || 'Archivo eliminado con éxito.');
+					}
+				} else {
+					$btn.prop('disabled', false).text(originalText);
+					alert((resp && resp.data && resp.data.message) ? resp.data.message : 'Error al eliminar el archivo.');
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).text(originalText);
+				alert('Error de conexión al eliminar el archivo.');
+			}
+		});
+	});
+
+	$(document).on('click', '#wpat_auditor_delete_all_uploads_btn', function(e) {
+		e.preventDefault();
+		var $btn = $(this);
+		if ($btn.prop('disabled')) return;
+
+		if (!confirm('¡ATENCIÓN! ¿Estás seguro de que deseas eliminar permanentemente TODOS los scripts ejecutables detectados en la carpeta de medios (uploads)?\n\nEsta acción no se puede deshacer.')) {
+			return;
+		}
+
+		var originalHtml = $btn.html();
+		$btn.prop('disabled', true).html('<span class="dashicons dashicons-update wpat-spin" style="font-size:14px;width:14px;height:14px;line-height:1;margin-right:4px;vertical-align:middle;"></span> Eliminando archivos...');
+
+		var nonce = $('#wpat_security_auditor_nonce').val() || (typeof wpat_object !== 'undefined' ? (wpat_object.security_auditor_nonce || wpat_object.nonce) : '');
+		var ajaxUrl = (typeof ajaxurl !== 'undefined' && ajaxurl ? ajaxurl : (typeof wpat_object !== 'undefined' ? wpat_object.ajax_url : '/wp-admin/admin-ajax.php'));
+
+		$.ajax({
+			url: ajaxUrl,
+			type: 'POST',
+			data: {
+				action: 'wpat_security_auditor_delete_all_uploads',
+				security: nonce
+			},
+			success: function(resp) {
+				$btn.prop('disabled', false).html(originalHtml);
+				if (resp && resp.success) {
+					if (resp.data && resp.data.audit) {
+						renderSecurityAuditorResults(resp.data.audit);
+					}
+					if (typeof window.showToast === 'function') {
+						window.showToast(resp.data.message || 'Archivos eliminados correctamente.');
+					}
+				} else {
+					alert((resp && resp.data && resp.data.message) ? resp.data.message : 'Error al eliminar los archivos.');
+				}
+			},
+			error: function() {
+				$btn.prop('disabled', false).html(originalHtml);
+				alert('Error de conexión al eliminar los archivos.');
 			}
 		});
 	});
